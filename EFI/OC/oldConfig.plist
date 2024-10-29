@@ -70,14 +70,6 @@
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
-                    <string>SSDT-GPRW.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
                     <string>SSDT-PLUG-DRTNIA.aml</string>
                 </dict>
                 <dict>
@@ -245,9 +237,9 @@
                 <key>FadtEnableReset</key>
                 <false/>
                 <key>NormalizeHeaders</key>
-                <false/>
+                <true/>
                 <key>RebaseRegions</key>
-                <false/>
+                <true/>
                 <key>ResetHwSig</key>
                 <false/>
                 <key>ResetLogoStatus</key>
@@ -291,7 +283,7 @@
                 <key>ProtectSecureBoot</key>
                 <false/>
                 <key>ProtectUefiServices</key>
-                <false/>
+                <true/>
                 <key>ProvideCustomSlide</key>
                 <true/>
                 <key>ProvideMaxSlide</key>
@@ -301,7 +293,7 @@
                 <key>ResizeAppleGpuBars</key>
                 <integer>-1</integer>
                 <key>SetupVirtualMap</key>
-                <true/>
+                <false/>
                 <key>SignalAppleOS</key>
                 <false/>
                 <key>SyncRuntimePermissions</key>
@@ -339,6 +331,61 @@
                     <key>rom-revision</key>
                     <string>Dortania</string>
                 </dict>
+                <key>PciRoot(0x0)/Pci(0x0,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,0,0</string>
+                    <key>device_type</key>
+                    <string>Host bridge</string>
+                    <key>model</key>
+                    <string>10th Gen Core Processor Host Bridge/DRAM Registers</string>
+                    <key>pci-aspm-default</key>
+                    <data>AgAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,1,0</string>
+                    <key>device_type</key>
+                    <string>PCI bridge</string>
+                    <key>model</key>
+                    <string>Xeon E3-1200 v5/E3-1500 v5/6th Gen Core Processor PCIe Controller (x16)</string>
+                    <key>pci-aspm-default</key>
+                    <data>AgAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x12,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,18,0</string>
+                    <key>device_type</key>
+                    <string>Signal processing controller</string>
+                    <key>model</key>
+                    <string>Comet Lake PCH Thermal Controller</string>
+                    <key>pci-aspm-default</key>
+                    <data>AgAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x14,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,20,0</string>
+                    <key>device_type</key>
+                    <string>USB controller</string>
+                    <key>model</key>
+                    <string>Comet Lake USB 3.1 xHCI Host Controller</string>
+                    <key>pci-aspm-default</key>
+                    <data>AgAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x14,0x2)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,20,2</string>
+                    <key>device_type</key>
+                    <string>RAM memory</string>
+                    <key>model</key>
+                    <string>Comet Lake PCH Shared SRAM</string>
+                    <key>pci-aspm-default</key>
+                    <data>AgAAAA==</data>
+                </dict>
                 <key>PciRoot(0x0)/Pci(0x14,0x3)</key>
                 <dict>
                     <key>AAPL,slot-name</key>
@@ -350,12 +397,119 @@
                     <key>pci-aspm-default</key>
                     <data>AgAAAA==</data>
                 </dict>
+                <key>PciRoot(0x0)/Pci(0x15,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,21,0</string>
+                    <key>model</key>
+                    <string>Comet Lake PCH Serial IO I2C Controller #0</string>
+                    <key>pci-aspm-default</key>
+                    <data>AgAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x15,0x1)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,21,1</string>
+                    <key>model</key>
+                    <string>Comet Lake PCH Serial IO I2C Controller #1</string>
+                    <key>pci-aspm-default</key>
+                    <data>AgAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x16,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,22,0</string>
+                    <key>device_type</key>
+                    <string>Communication controller</string>
+                    <key>model</key>
+                    <string>Comet Lake HECI Controller</string>
+                    <key>pci-aspm-default</key>
+                    <data>AgAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1B,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,27,0</string>
+                    <key>device_type</key>
+                    <string>PCI bridge</string>
+                    <key>model</key>
+                    <string>Comet Lake PCI Express Root Port #17</string>
+                    <key>pci-aspm-default</key>
+                    <data>AgAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1B,0x0)/Pci(0x0,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,27,0/0,0</string>
+                    <key>device_type</key>
+                    <string>Non-Volatile memory controller</string>
+                    <key>pci-aspm-default</key>
+                    <data>AgAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1C,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,28,0</string>
+                    <key>device_type</key>
+                    <string>PCI bridge</string>
+                    <key>pci-aspm-default</key>
+                    <data>AgAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1D,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,29,0</string>
+                    <key>device_type</key>
+                    <string>PCI bridge</string>
+                    <key>model</key>
+                    <string>Comet Lake PCI Express Root Port #9</string>
+                    <key>pci-aspm-default</key>
+                    <data>AgAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1D,0x0)/Pci(0x0,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,29,0/0,0</string>
+                    <key>device_type</key>
+                    <string>Non-Volatile memory controller</string>
+                    <key>pci-aspm-default</key>
+                    <data>AgAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1F,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,31,0</string>
+                    <key>device_type</key>
+                    <string>ISA bridge</string>
+                    <key>pci-aspm-default</key>
+                    <data>AgAAAA==</data>
+                </dict>
                 <key>PciRoot(0x0)/Pci(0x1F,0x3)</key>
                 <dict>
                     <key>hda-gfx</key>
                     <string>onboard-1</string>
                     <key>layout-id</key>
                     <integer>3</integer>
+                    <key>pci-aspm-default</key>
+                    <data>AgAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1F,0x4)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,31,4</string>
+                    <key>device_type</key>
+                    <string>SMBus</string>
+                    <key>model</key>
+                    <string>Comet Lake PCH SMBus Controller</string>
+                    <key>pci-aspm-default</key>
+                    <data>AgAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1F,0x5)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,31,5</string>
+                    <key>model</key>
+                    <string>Comet Lake PCH SPI Controller</string>
                     <key>pci-aspm-default</key>
                     <data>AgAAAA==</data>
                 </dict>
@@ -406,6 +560,17 @@
                     <data>AAAAgA==</data>
                     <key>hda-gfx</key>
                     <string>onboard-1</string>
+                    <key>pci-aspm-default</key>
+                    <data>AgAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x4,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,4,0</string>
+                    <key>device_type</key>
+                    <string>Signal processing controller</string>
+                    <key>model</key>
+                    <string>Xeon E3-1200 v5/E3-1500 v5/6th Gen Core Processor Thermal Subsystem</string>
                     <key>pci-aspm-default</key>
                     <data>AgAAAA==</data>
                 </dict>
@@ -511,49 +676,13 @@
                     <key>Arch</key>
                     <string>Any</string>
                     <key>BundlePath</key>
-                    <string>SMCSuperIO.kext</string>
-                    <key>Comment</key>
-                    <string>V1.3.4</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>ExecutablePath</key>
-                    <string>Contents/MacOS/SMCSuperIO</string>
-                    <key>MaxKernel</key>
-                    <string></string>
-                    <key>MinKernel</key>
-                    <string></string>
-                    <key>PlistPath</key>
-                    <string>Contents/Info.plist</string>
-                </dict>
-                <dict>
-                    <key>Arch</key>
-                    <string>Any</string>
-                    <key>BundlePath</key>
                     <string>AppleALC.kext</string>
                     <key>Comment</key>
-                    <string>V1.9.2 | By RapidEFI</string>
+                    <string>V1.9.3 | By RapidEFI</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
                     <string>Contents/MacOS/AppleALC</string>
-                    <key>MaxKernel</key>
-                    <string></string>
-                    <key>MinKernel</key>
-                    <string></string>
-                    <key>PlistPath</key>
-                    <string>Contents/Info.plist</string>
-                </dict>
-                <dict>
-                    <key>Arch</key>
-                    <string>Any</string>
-                    <key>BundlePath</key>
-                    <string>RTCMemoryFixup.kext</string>
-                    <key>Comment</key>
-                    <string>V1.0.8</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>ExecutablePath</key>
-                    <string>Contents/MacOS/RTCMemoryFixup</string>
                     <key>MaxKernel</key>
                     <string></string>
                     <key>MinKernel</key>
@@ -601,60 +730,6 @@
                     <key>Arch</key>
                     <string>Any</string>
                     <key>BundlePath</key>
-                    <string>AMFIPass.kext</string>
-                    <key>Comment</key>
-                    <string>V1.4.0</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>ExecutablePath</key>
-                    <string>Contents/MacOS/AMFIPass</string>
-                    <key>MaxKernel</key>
-                    <string></string>
-                    <key>MinKernel</key>
-                    <string></string>
-                    <key>PlistPath</key>
-                    <string>Contents/Info.plist</string>
-                </dict>
-                <dict>
-                    <key>Arch</key>
-                    <string>Any</string>
-                    <key>BundlePath</key>
-                    <string>FeatureUnlock.kext</string>
-                    <key>Comment</key>
-                    <string>V1.1.7</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>ExecutablePath</key>
-                    <string>Contents/MacOS/FeatureUnlock</string>
-                    <key>MaxKernel</key>
-                    <string></string>
-                    <key>MinKernel</key>
-                    <string></string>
-                    <key>PlistPath</key>
-                    <string>Contents/Info.plist</string>
-                </dict>
-                <dict>
-                    <key>Arch</key>
-                    <string>Any</string>
-                    <key>BundlePath</key>
-                    <string>NVMeFix.kext</string>
-                    <key>Comment</key>
-                    <string>V1.1.2 | By RapidEFI</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>ExecutablePath</key>
-                    <string>Contents/MacOS/NVMeFix</string>
-                    <key>MaxKernel</key>
-                    <string></string>
-                    <key>MinKernel</key>
-                    <string>18.0.0</string>
-                    <key>PlistPath</key>
-                    <string>Contents/Info.plist</string>
-                </dict>
-                <dict>
-                    <key>Arch</key>
-                    <string>Any</string>
-                    <key>BundlePath</key>
                     <string>IntelMausi.kext</string>
                     <key>Comment</key>
                     <string>V1.0.8 | By RapidEFI</string>
@@ -673,13 +748,13 @@
                     <key>Arch</key>
                     <string>Any</string>
                     <key>BundlePath</key>
-                    <string>itlwm.kext</string>
+                    <string>AirportItlwm.kext</string>
                     <key>Comment</key>
                     <string>V2.3.0</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
-                    <string>Contents/MacOS/itlwm</string>
+                    <string>Contents/MacOS/AirportItlwm</string>
                     <key>MaxKernel</key>
                     <string></string>
                     <key>MinKernel</key>
@@ -745,13 +820,13 @@
                     <key>Arch</key>
                     <string>Any</string>
                     <key>BundlePath</key>
-                    <string>CpuTscSync.kext</string>
+                    <string>USBToolBox.kext</string>
                     <key>Comment</key>
                     <string>V1.1.1</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
-                    <string>Contents/MacOS/CpuTscSync</string>
+                    <string>Contents/MacOS/USBToolBox</string>
                     <key>MaxKernel</key>
                     <string></string>
                     <key>MinKernel</key>
@@ -763,13 +838,31 @@
                     <key>Arch</key>
                     <string>Any</string>
                     <key>BundlePath</key>
-                    <string>VoodooI2C.kext/Contents/PlugIns/VoodooInput.kext</string>
+                    <string>UTBMap.kext</string>
                     <key>Comment</key>
-                    <string>V1.1.4 | By RapidEFI</string>
+                    <string>V1.1</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
-                    <string>Contents/MacOS/VoodooInput</string>
+                    <string></string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>VoodooI2C.kext/Contents/PlugIns/VoodooGPIO.kext</string>
+                    <key>Comment</key>
+                    <string>V1.1 | By RapidEFI</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/VoodooGPIO</string>
                     <key>MaxKernel</key>
                     <string></string>
                     <key>MinKernel</key>
@@ -799,13 +892,13 @@
                     <key>Arch</key>
                     <string>Any</string>
                     <key>BundlePath</key>
-                    <string>VoodooI2C.kext/Contents/PlugIns/VoodooGPIO.kext</string>
+                    <string>VoodooI2C.kext/Contents/PlugIns/VoodooInput.kext</string>
                     <key>Comment</key>
-                    <string>V1.1 | By RapidEFI</string>
+                    <string>V1.1.4 | By RapidEFI</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
-                    <string>Contents/MacOS/VoodooGPIO</string>
+                    <string>Contents/MacOS/VoodooInput</string>
                     <key>MaxKernel</key>
                     <string></string>
                     <key>MinKernel</key>
@@ -855,7 +948,7 @@
                     <key>BundlePath</key>
                     <string>VoodooPS2Controller.kext</string>
                     <key>Comment</key>
-                    <string>V2.3.6 | By RapidEFI</string>
+                    <string>V2.3.7 | By RapidEFI</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
@@ -873,7 +966,7 @@
                     <key>BundlePath</key>
                     <string>VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Keyboard.kext</string>
                     <key>Comment</key>
-                    <string>V2.3.6 | By RapidEFI</string>
+                    <string>V2.3.7 | By RapidEFI</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
@@ -903,69 +996,15 @@
                     <key>PlistPath</key>
                     <string>Contents/Info.plist</string>
                 </dict>
-                <dict>
-                    <key>Arch</key>
-                    <string>Any</string>
-                    <key>BundlePath</key>
-                    <string>HibernationFixup.kext</string>
-                    <key>Comment</key>
-                    <string>V1.5.2</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>ExecutablePath</key>
-                    <string>Contents/MacOS/HibernationFixup</string>
-                    <key>MaxKernel</key>
-                    <string></string>
-                    <key>MinKernel</key>
-                    <string></string>
-                    <key>PlistPath</key>
-                    <string>Contents/Info.plist</string>
-                </dict>
-                <dict>
-                    <key>Arch</key>
-                    <string>Any</string>
-                    <key>BundlePath</key>
-                    <string>USBInjectAll.kext</string>
-                    <key>Comment</key>
-                    <string>V0.8.0</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>ExecutablePath</key>
-                    <string>Contents/MacOS/USBInjectAll</string>
-                    <key>MaxKernel</key>
-                    <string></string>
-                    <key>MinKernel</key>
-                    <string></string>
-                    <key>PlistPath</key>
-                    <string>Contents/Info.plist</string>
-                </dict>
-                <dict>
-                    <key>Arch</key>
-                    <string>Any</string>
-                    <key>BundlePath</key>
-                    <string>HoRNDIS.kext</string>
-                    <key>Comment</key>
-                    <string>V9.2</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>ExecutablePath</key>
-                    <string>Contents/MacOS/HoRNDIS</string>
-                    <key>MaxKernel</key>
-                    <string></string>
-                    <key>MinKernel</key>
-                    <string></string>
-                    <key>PlistPath</key>
-                    <string>Contents/Info.plist</string>
-                </dict>
             </array>
             <key>Block</key>
             <array/>
             <key>Emulate</key>
             <dict>
                 <key>Cpuid1Data</key>
-                <data></data>
+                <data>VQYKAAAAAAAAAAAAAAAAAA==</data>
                 <key>Cpuid1Mask</key>
-                <data></data>
+                <data>/////wAAAAAAAAAAAAAAAA==</data>
                 <key>DummyPowerManagement</key>
                 <false/>
                 <key>MaxKernel</key>
@@ -1396,28 +1435,6 @@
                     <key>TextMode</key>
                     <true/>
                 </dict>
-                <dict>
-                    <key>Arguments</key>
-                    <string></string>
-                    <key>Auxiliary</key>
-                    <true/>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Flavour</key>
-                    <string>Auto</string>
-                    <key>FullNvramAccess</key>
-                    <true/>
-                    <key>Name</key>
-                    <string>CleanNvram</string>
-                    <key>Path</key>
-                    <string>CleanNvram.efi</string>
-                    <key>RealPath</key>
-                    <true/>
-                    <key>TextMode</key>
-                    <true/>
-                </dict>
             </array>
         </dict>
         <key>NVRAM</key>
@@ -1519,23 +1536,23 @@
                 <key>AdviseFeatures</key>
                 <false/>
                 <key>MLB</key>
-                <string>C02114303GU00001M</string>
+                <string>C020101014NN9PR1F</string>
                 <key>MaxBIOSVersion</key>
                 <false/>
                 <key>ProcessorType</key>
                 <integer>1573</integer>
                 <key>ROM</key>
-                <data>axr0yo7S</data>
+                <data>HL0dbhw4</data>
                 <key>SpoofVendor</key>
                 <false/>
                 <key>SystemMemoryStatus</key>
                 <string>Auto</string>
                 <key>SystemProductName</key>
-                <string>MacBookPro16,4</string>
+                <string>MacBookPro16,1</string>
                 <key>SystemSerialNumber</key>
-                <string>C02FJAZ4MD6T</string>
+                <string>C02CDKZXMD6N</string>
                 <key>SystemUUID</key>
-                <string>4E2BB475-FE93-42CE-A9BD-7E03BC8DE10F</string>
+                <string>7984C29E-482F-42DA-BFD0-CC152585A79B</string>
             </dict>
             <key>UpdateDataHub</key>
             <true/>
@@ -1663,25 +1680,13 @@
                     <key>Arguments</key>
                     <string></string>
                     <key>Comment</key>
-                    <string>By RapidEFI</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>LoadEarly</key>
-                    <false/>
-                    <key>Path</key>
-                    <string>ResetNvramEntry.efi</string>
-                </dict>
-                <dict>
-                    <key>Arguments</key>
-                    <string></string>
-                    <key>Comment</key>
                     <string></string>
                     <key>Enabled</key>
                     <true/>
                     <key>LoadEarly</key>
                     <false/>
                     <key>Path</key>
-                    <string>OpenNtfsDxe.efi</string>
+                    <string>ext4_x64.efi</string>
                 </dict>
                 <dict>
                     <key>Arguments</key>
@@ -1705,7 +1710,7 @@
                     <key>LoadEarly</key>
                     <false/>
                     <key>Path</key>
-                    <string>Ext4Dxe.efi</string>
+                    <string>ToggleSipEntry.efi</string>
                 </dict>
                 <dict>
                     <key>Arguments</key>
@@ -1717,7 +1722,19 @@
                     <key>LoadEarly</key>
                     <false/>
                     <key>Path</key>
-                    <string>OpenLegacyBoot.efi</string>
+                    <string>FirmwareSettingsEntry.efi</string>
+                </dict>
+                <dict>
+                    <key>Arguments</key>
+                    <string></string>
+                    <key>Comment</key>
+                    <string>By RapidEFI</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>LoadEarly</key>
+                    <false/>
+                    <key>Path</key>
+                    <string>ResetNvramEntry.efi</string>
                 </dict>
             </array>
             <key>Input</key>
@@ -1826,7 +1843,7 @@
                 <key>DisableSecurityPolicy</key>
                 <false/>
                 <key>EnableVectorAcceleration</key>
-                <false/>
+                <true/>
                 <key>EnableVmx</key>
                 <false/>
                 <key>ExitBootServicesDelay</key>
@@ -1855,6 +1872,8 @@
                 <true/>
             </dict>
             <key>ReservedMemory</key>
+            <array/>
+            <key>Unload</key>
             <array/>
         </dict>
     </dict>
