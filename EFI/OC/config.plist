@@ -22,47 +22,7 @@
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
-                    <string>SSDT-NameS3-disable.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-DeepIdle.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
                     <string>SSDT-EC-USBX-LAPTOP.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-ALS0.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-EHCx_OFF.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-ARTC.aml</string>
                 </dict>
                 <dict>
                     <key>Comment</key>
@@ -78,23 +38,7 @@
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
-                    <string>SSDT-PMCR.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
                     <string>SSDT-PNLF-CFL.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-RHUB.aml</string>
                 </dict>
                 <dict>
                     <key>Comment</key>
@@ -110,7 +54,71 @@
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
+                    <string>SSDT-GPI0.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-GPRW.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-PMCR.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
                     <string>SSDT-SBUS.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-RHUB.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-ALS0.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-ARTC.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-EHCx_OFF.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-DeepIdle.aml</string>
                 </dict>
                 <dict>
                     <key>Comment</key>
@@ -126,14 +134,6 @@
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
-                    <string>SSDT-USBX.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
                     <string>SSDT-XOSI.aml</string>
                 </dict>
             </array>
@@ -141,6 +141,36 @@
             <array/>
             <key>Patch</key>
             <array>
+                <dict>
+                    <key>Base</key>
+                    <string></string>
+                    <key>BaseSkip</key>
+                    <integer>0</integer>
+                    <key>Comment</key>
+                    <string>change Method(GPRW,2,N) to XPRW, pair with SSDT-GPRW.aml</string>
+                    <key>Count</key>
+                    <integer>0</integer>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Find</key>
+                    <data>R1BSVwI=</data>
+                    <key>Limit</key>
+                    <integer>0</integer>
+                    <key>Mask</key>
+                    <data></data>
+                    <key>OemTableId</key>
+                    <data></data>
+                    <key>Replace</key>
+                    <data>WFBSVwI=</data>
+                    <key>ReplaceMask</key>
+                    <data></data>
+                    <key>Skip</key>
+                    <integer>0</integer>
+                    <key>TableLength</key>
+                    <integer>0</integer>
+                    <key>TableSignature</key>
+                    <data></data>
+                </dict>
                 <dict>
                     <key>Base</key>
                     <string></string>
@@ -207,13 +237,13 @@
                     <key>BaseSkip</key>
                     <integer>0</integer>
                     <key>Comment</key>
-                    <string>_S3 to XS3</string>
+                    <string>Fix RTC _STA bug</string>
                     <key>Count</key>
                     <integer>0</integer>
                     <key>Enabled</key>
                     <true/>
                     <key>Find</key>
-                    <data>X1MzXw==</data>
+                    <data>oAqTU1RBUwE=</data>
                     <key>Limit</key>
                     <integer>0</integer>
                     <key>Mask</key>
@@ -221,7 +251,7 @@
                     <key>OemTableId</key>
                     <data></data>
                     <key>Replace</key>
-                    <data>WFMzXw==</data>
+                    <data>oAqRCv8L//8=</data>
                     <key>ReplaceMask</key>
                     <data></data>
                     <key>Skip</key>
@@ -229,7 +259,7 @@
                     <key>TableLength</key>
                     <integer>0</integer>
                     <key>TableSignature</key>
-                    <data></data>
+                    <data>RFNEVA==</data>
                 </dict>
             </array>
             <key>Quirks</key>
@@ -327,7 +357,7 @@
                     <key>model</key>
                     <string>GP107GLM [Quadro P620]</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                     <key>rom-revision</key>
                     <string>Dortania</string>
                 </dict>
@@ -340,7 +370,7 @@
                     <key>model</key>
                     <string>10th Gen Core Processor Host Bridge/DRAM Registers</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1,0x0)</key>
                 <dict>
@@ -351,7 +381,7 @@
                     <key>model</key>
                     <string>Xeon E3-1200 v5/E3-1500 v5/6th Gen Core Processor PCIe Controller (x16)</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x12,0x0)</key>
                 <dict>
@@ -362,7 +392,7 @@
                     <key>model</key>
                     <string>Comet Lake PCH Thermal Controller</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x14,0x0)</key>
                 <dict>
@@ -373,7 +403,7 @@
                     <key>model</key>
                     <string>Comet Lake USB 3.1 xHCI Host Controller</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x14,0x2)</key>
                 <dict>
@@ -384,7 +414,7 @@
                     <key>model</key>
                     <string>Comet Lake PCH Shared SRAM</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x14,0x3)</key>
                 <dict>
@@ -395,7 +425,7 @@
                     <key>model</key>
                     <string>Wi-Fi 6 AX201</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x15,0x0)</key>
                 <dict>
@@ -404,7 +434,7 @@
                     <key>model</key>
                     <string>Comet Lake PCH Serial IO I2C Controller #0</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x15,0x1)</key>
                 <dict>
@@ -413,7 +443,7 @@
                     <key>model</key>
                     <string>Comet Lake PCH Serial IO I2C Controller #1</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x16,0x0)</key>
                 <dict>
@@ -424,7 +454,7 @@
                     <key>model</key>
                     <string>Comet Lake HECI Controller</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1B,0x0)</key>
                 <dict>
@@ -435,7 +465,7 @@
                     <key>model</key>
                     <string>Comet Lake PCI Express Root Port #17</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1B,0x0)/Pci(0x0,0x0)</key>
                 <dict>
@@ -444,7 +474,7 @@
                     <key>device_type</key>
                     <string>Non-Volatile memory controller</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1C,0x0)</key>
                 <dict>
@@ -453,7 +483,73 @@
                     <key>device_type</key>
                     <string>PCI bridge</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,28,0/0,0</string>
+                    <key>device_type</key>
+                    <string>PCI bridge</string>
+                    <key>model</key>
+                    <string>JHL7540 Thunderbolt 3 Bridge [Titan Ridge 2C 2018]</string>
+                    <key>pci-aspm-default</key>
+                    <data>AwAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x0,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,28,0/0,0/0,0</string>
+                    <key>device_type</key>
+                    <string>PCI bridge</string>
+                    <key>model</key>
+                    <string>JHL7540 Thunderbolt 3 Bridge [Titan Ridge 2C 2018]</string>
+                    <key>pci-aspm-default</key>
+                    <data>AwAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x0,0x0)/Pci(0x0,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,28,0/0,0/0,0/0,0</string>
+                    <key>device_type</key>
+                    <string>System peripheral</string>
+                    <key>model</key>
+                    <string>JHL7540 Thunderbolt 3 NHI [Titan Ridge 2C 2018]</string>
+                    <key>pci-aspm-default</key>
+                    <data>AwAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x1,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,28,0/0,0/1,0</string>
+                    <key>device_type</key>
+                    <string>PCI bridge</string>
+                    <key>model</key>
+                    <string>JHL7540 Thunderbolt 3 Bridge [Titan Ridge 2C 2018]</string>
+                    <key>pci-aspm-default</key>
+                    <data>AwAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x2,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,28,0/0,0/2,0</string>
+                    <key>device_type</key>
+                    <string>PCI bridge</string>
+                    <key>model</key>
+                    <string>JHL7540 Thunderbolt 3 Bridge [Titan Ridge 2C 2018]</string>
+                    <key>pci-aspm-default</key>
+                    <data>AwAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x2,0x0)/Pci(0x0,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,28,0/0,0/2,0/0,0</string>
+                    <key>device_type</key>
+                    <string>USB controller</string>
+                    <key>model</key>
+                    <string>JHL7540 Thunderbolt 3 USB Controller [Titan Ridge 2C 2018]</string>
+                    <key>pci-aspm-default</key>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1D,0x0)</key>
                 <dict>
@@ -464,7 +560,7 @@
                     <key>model</key>
                     <string>Comet Lake PCI Express Root Port #9</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1D,0x0)/Pci(0x0,0x0)</key>
                 <dict>
@@ -473,7 +569,7 @@
                     <key>device_type</key>
                     <string>Non-Volatile memory controller</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1F,0x0)</key>
                 <dict>
@@ -482,7 +578,7 @@
                     <key>device_type</key>
                     <string>ISA bridge</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1F,0x3)</key>
                 <dict>
@@ -491,7 +587,7 @@
                     <key>layout-id</key>
                     <integer>3</integer>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1F,0x4)</key>
                 <dict>
@@ -502,7 +598,7 @@
                     <key>model</key>
                     <string>Comet Lake PCH SMBus Controller</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1F,0x5)</key>
                 <dict>
@@ -511,7 +607,7 @@
                     <key>model</key>
                     <string>Comet Lake PCH SPI Controller</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1F,0x6)</key>
                 <dict>
@@ -522,7 +618,7 @@
                     <key>model</key>
                     <string>Ethernet Connection (10) I219-LM</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x2,0x0)</key>
                 <dict>
@@ -572,7 +668,7 @@
                     <key>model</key>
                     <string>Xeon E3-1200 v5/E3-1500 v5/6th Gen Core Processor Thermal Subsystem</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <data>AwAAAA==</data>
                 </dict>
             </dict>
             <key>Delete</key>
@@ -676,6 +772,24 @@
                     <key>Arch</key>
                     <string>Any</string>
                     <key>BundlePath</key>
+                    <string>SMCSuperIO.kext</string>
+                    <key>Comment</key>
+                    <string>V1.3.4</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/SMCSuperIO</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
                     <string>AppleALC.kext</string>
                     <key>Comment</key>
                     <string>V1.9.3 | By RapidEFI</string>
@@ -756,9 +870,27 @@
                     <key>ExecutablePath</key>
                     <string>Contents/MacOS/AirportItlwm</string>
                     <key>MaxKernel</key>
-                    <string></string>
+                    <string>23.99.99</string>
                     <key>MinKernel</key>
                     <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>itlwm.kext</string>
+                    <key>Comment</key>
+                    <string>V2.3.0</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/itlwm</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string>24.0.0</string>
                     <key>PlistPath</key>
                     <string>Contents/Info.plist</string>
                 </dict>
@@ -989,6 +1121,78 @@
                     <true/>
                     <key>ExecutablePath</key>
                     <string>Contents/MacOS/BrightnessKeys</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>HibernationFixup.kext</string>
+                    <key>Comment</key>
+                    <string>V1.5.2</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/HibernationFixup</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>IOElectrify.kext</string>
+                    <key>Comment</key>
+                    <string>V1.0.0</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/IOElectrify</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>CpuTscSync.kext</string>
+                    <key>Comment</key>
+                    <string>V1.1.1</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/CpuTscSync</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>NVMeFix.kext</string>
+                    <key>Comment</key>
+                    <string>V1.1.2</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/NVMeFix</string>
                     <key>MaxKernel</key>
                     <string></string>
                     <key>MinKernel</key>
@@ -1284,7 +1488,7 @@
                 <key>TakeoffDelay</key>
                 <integer>0</integer>
                 <key>Timeout</key>
-                <integer>15</integer>
+                <integer>5</integer>
             </dict>
             <key>Debug</key>
             <dict>
@@ -1315,13 +1519,13 @@
                     <key>Comment</key>
                     <string>Not signed for security reasons</string>
                     <key>Enabled</key>
-                    <false/>
+                    <true/>
                     <key>Flavour</key>
-                    <string>Auto</string>
+                    <string>Kali:Kali</string>
                     <key>Name</key>
-                    <string>CustomOS</string>
+                    <string>Kali</string>
                     <key>Path</key>
-                    <string>PciRoot(0x0)/Pci(0x1,0x1)/Pci(0x0,0x0)/NVMe(0x1,11-22-33-44-55-66-77-88)/HD(1,GPT,00000000-0000-0000-0000-000000000000,0x800,0x64000)/\EFI\BOOT\BOOTX64.EFI</string>
+                    <string>PciRoot(0x0)/Pci(0x1B,0x0)/Pci(0x0,0x0)/NVMe(0x1,93-D8-C5-49-4A-44-1B-00)/HD(1,GPT,C436B0B0-8A4C-4A0A-95BE-0A13C8A177F6,0x28,0x400000)/\EFI\kali\grubx64.efi</string>
                     <key>TextMode</key>
                     <false/>
                 </dict>
@@ -1464,7 +1668,7 @@
                     <key>bluetoothInternalControllerInfo</key>
                     <data>AAAAAAAAAACJZTpVLv0=</data>
                     <key>boot-args</key>
-                    <string>revpatch=auto,sbvmm  keepsyms=1  -igfxblt</string>
+                    <string>revpatch=auto,sbvmm  keepsyms=1 swd_panic=1  -igfxblt</string>
                     <key>csr-active-config</key>
                     <data>AwgAAA==</data>
                     <key>prev-lang:kbd</key>
@@ -1536,23 +1740,23 @@
                 <key>AdviseFeatures</key>
                 <false/>
                 <key>MLB</key>
-                <string>C020101014NN9PR1F</string>
+                <string>C02107104CDP8PG1F</string>
                 <key>MaxBIOSVersion</key>
                 <false/>
                 <key>ProcessorType</key>
                 <integer>1573</integer>
                 <key>ROM</key>
-                <data>HL0dbhw4</data>
+                <data>1MIs5rOm</data>
                 <key>SpoofVendor</key>
                 <false/>
                 <key>SystemMemoryStatus</key>
                 <string>Auto</string>
                 <key>SystemProductName</key>
-                <string>MacBookPro16,1</string>
+                <string>MacBookPro16,2</string>
                 <key>SystemSerialNumber</key>
-                <string>C02CDKZXMD6N</string>
+                <string>C02F8KZ5ML7H</string>
                 <key>SystemUUID</key>
-                <string>7984C29E-482F-42DA-BFD0-CC152585A79B</string>
+                <string>340CD25F-C698-4010-8195-BF913A9511E5</string>
             </dict>
             <key>UpdateDataHub</key>
             <true/>
@@ -1656,30 +1860,6 @@
                     <key>Arguments</key>
                     <string></string>
                     <key>Comment</key>
-                    <string>By RapidEFI</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>LoadEarly</key>
-                    <false/>
-                    <key>Path</key>
-                    <string>OpenRuntime.efi</string>
-                </dict>
-                <dict>
-                    <key>Arguments</key>
-                    <string></string>
-                    <key>Comment</key>
-                    <string>By RapidEFI</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>LoadEarly</key>
-                    <false/>
-                    <key>Path</key>
-                    <string>OpenCanopy.efi</string>
-                </dict>
-                <dict>
-                    <key>Arguments</key>
-                    <string></string>
-                    <key>Comment</key>
                     <string></string>
                     <key>Enabled</key>
                     <true/>
@@ -1692,6 +1872,18 @@
                     <key>Arguments</key>
                     <string></string>
                     <key>Comment</key>
+                    <string>By RapidEFI</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>LoadEarly</key>
+                    <false/>
+                    <key>Path</key>
+                    <string>OpenRuntime.efi</string>
+                </dict>
+                <dict>
+                    <key>Arguments</key>
+                    <string></string>
+                    <key>Comment</key>
                     <string></string>
                     <key>Enabled</key>
                     <true/>
@@ -1699,6 +1891,18 @@
                     <false/>
                     <key>Path</key>
                     <string>OpenLinuxBoot.efi</string>
+                </dict>
+                <dict>
+                    <key>Arguments</key>
+                    <string></string>
+                    <key>Comment</key>
+                    <string>By RapidEFI</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>LoadEarly</key>
+                    <false/>
+                    <key>Path</key>
+                    <string>OpenCanopy.efi</string>
                 </dict>
                 <dict>
                     <key>Arguments</key>
@@ -1814,7 +2018,7 @@
                 <key>AppleKeyMap</key>
                 <false/>
                 <key>AppleRtcRam</key>
-                <false/>
+                <true/>
                 <key>AppleSecureBoot</key>
                 <false/>
                 <key>AppleSmcIo</key>
