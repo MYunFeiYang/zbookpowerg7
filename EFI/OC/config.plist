@@ -14,6 +14,22 @@
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
+                    <string>SSDT-XOSI.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-GPRW.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
                     <string>SSDT-eGPU_OFF-AOAC.aml</string>
                 </dict>
                 <dict>
@@ -47,22 +63,6 @@
                     <true/>
                     <key>Path</key>
                     <string>SSDT-RTCAWAC.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-GPI0.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-GPRW.aml</string>
                 </dict>
                 <dict>
                     <key>Comment</key>
@@ -127,14 +127,6 @@
                     <true/>
                     <key>Path</key>
                     <string>SSDT-thunderbolt-disbale.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-XOSI.aml</string>
                 </dict>
             </array>
             <key>Delete</key>
@@ -334,7 +326,29 @@
         <dict>
             <key>Add</key>
             <dict>
-                <key>#PciRoot(0x0)/Pci(0x1,0x0)/Pci(0x0,0x0)</key>
+                <key>PciRoot(0x0)/Pci(0x0,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,0,0</string>
+                    <key>device_type</key>
+                    <string>Host bridge</string>
+                    <key>model</key>
+                    <string>10th Gen Core Processor Host Bridge/DRAM Registers</string>
+                    <key>pci-aspm-default</key>
+                    <data>AwAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,1,0</string>
+                    <key>device_type</key>
+                    <string>PCI bridge</string>
+                    <key>model</key>
+                    <string>Xeon E3-1200 v5/E3-1500 v5/6th Gen Core Processor PCIe Controller (x16)</string>
+                    <key>pci-aspm-default</key>
+                    <data>AwAAAA==</data>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1,0x0)/Pci(0x0,0x0)</key>
                 <dict>
                     <key>@0,compatible</key>
                     <string>NVDA,NVMac</string>
@@ -360,28 +374,6 @@
                     <data>AwAAAA==</data>
                     <key>rom-revision</key>
                     <string>Dortania</string>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x0,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,0,0</string>
-                    <key>device_type</key>
-                    <string>Host bridge</string>
-                    <key>model</key>
-                    <string>10th Gen Core Processor Host Bridge/DRAM Registers</string>
-                    <key>pci-aspm-default</key>
-                    <data>AwAAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x1,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,1,0</string>
-                    <key>device_type</key>
-                    <string>PCI bridge</string>
-                    <key>model</key>
-                    <string>Xeon E3-1200 v5/E3-1500 v5/6th Gen Core Processor PCIe Controller (x16)</string>
-                    <key>pci-aspm-default</key>
-                    <data>AwAAAA==</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x12,0x0)</key>
                 <dict>
@@ -792,7 +784,7 @@
                     <key>BundlePath</key>
                     <string>AppleALC.kext</string>
                     <key>Comment</key>
-                    <string>V1.9.3 | By RapidEFI</string>
+                    <string>V1.9.2 | By RapidEFI</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
@@ -828,7 +820,7 @@
                     <key>BundlePath</key>
                     <string>ECEnabler.kext</string>
                     <key>Comment</key>
-                    <string>V1.0.6 | By RapidEFI</string>
+                    <string>V1.0.5 | By RapidEFI</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
@@ -846,7 +838,7 @@
                     <key>BundlePath</key>
                     <string>IntelMausi.kext</string>
                     <key>Comment</key>
-                    <string>V1.0.8 | By RapidEFI</string>
+                    <string>V1.0.7 | By RapidEFI</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
@@ -900,7 +892,7 @@
                     <key>BundlePath</key>
                     <string>IntelBTPatcher.kext</string>
                     <key>Comment</key>
-                    <string>V2.5.0 | By RapidEFI</string>
+                    <string>V2.4.0 | By RapidEFI</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
@@ -918,7 +910,7 @@
                     <key>BundlePath</key>
                     <string>IntelBluetoothFirmware.kext</string>
                     <key>Comment</key>
-                    <string>V2.5.0 | By RapidEFI</string>
+                    <string>V2.4.0 | By RapidEFI</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
@@ -988,99 +980,9 @@
                     <key>Arch</key>
                     <string>Any</string>
                     <key>BundlePath</key>
-                    <string>VoodooI2C.kext/Contents/PlugIns/VoodooGPIO.kext</string>
-                    <key>Comment</key>
-                    <string>V1.1 | By RapidEFI</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>ExecutablePath</key>
-                    <string>Contents/MacOS/VoodooGPIO</string>
-                    <key>MaxKernel</key>
-                    <string></string>
-                    <key>MinKernel</key>
-                    <string></string>
-                    <key>PlistPath</key>
-                    <string>Contents/Info.plist</string>
-                </dict>
-                <dict>
-                    <key>Arch</key>
-                    <string>Any</string>
-                    <key>BundlePath</key>
-                    <string>VoodooI2C.kext/Contents/PlugIns/VoodooI2CServices.kext</string>
-                    <key>Comment</key>
-                    <string>V1 | By RapidEFI</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>ExecutablePath</key>
-                    <string>Contents/MacOS/VoodooI2CServices</string>
-                    <key>MaxKernel</key>
-                    <string></string>
-                    <key>MinKernel</key>
-                    <string></string>
-                    <key>PlistPath</key>
-                    <string>Contents/Info.plist</string>
-                </dict>
-                <dict>
-                    <key>Arch</key>
-                    <string>Any</string>
-                    <key>BundlePath</key>
-                    <string>VoodooI2C.kext/Contents/PlugIns/VoodooInput.kext</string>
-                    <key>Comment</key>
-                    <string>V1.1.4 | By RapidEFI</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>ExecutablePath</key>
-                    <string>Contents/MacOS/VoodooInput</string>
-                    <key>MaxKernel</key>
-                    <string></string>
-                    <key>MinKernel</key>
-                    <string></string>
-                    <key>PlistPath</key>
-                    <string>Contents/Info.plist</string>
-                </dict>
-                <dict>
-                    <key>Arch</key>
-                    <string>Any</string>
-                    <key>BundlePath</key>
-                    <string>VoodooI2C.kext</string>
-                    <key>Comment</key>
-                    <string>V2.8 | By RapidEFI</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>ExecutablePath</key>
-                    <string>Contents/MacOS/VoodooI2C</string>
-                    <key>MaxKernel</key>
-                    <string></string>
-                    <key>MinKernel</key>
-                    <string></string>
-                    <key>PlistPath</key>
-                    <string>Contents/Info.plist</string>
-                </dict>
-                <dict>
-                    <key>Arch</key>
-                    <string>Any</string>
-                    <key>BundlePath</key>
-                    <string>VoodooI2CHID.kext</string>
-                    <key>Comment</key>
-                    <string>V1 | By RapidEFI</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>ExecutablePath</key>
-                    <string>Contents/MacOS/VoodooI2CHID</string>
-                    <key>MaxKernel</key>
-                    <string></string>
-                    <key>MinKernel</key>
-                    <string></string>
-                    <key>PlistPath</key>
-                    <string>Contents/Info.plist</string>
-                </dict>
-                <dict>
-                    <key>Arch</key>
-                    <string>Any</string>
-                    <key>BundlePath</key>
                     <string>VoodooPS2Controller.kext</string>
                     <key>Comment</key>
-                    <string>V2.3.7 | By RapidEFI</string>
+                    <string>V2.3.6 | By RapidEFI</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
@@ -1098,7 +1000,7 @@
                     <key>BundlePath</key>
                     <string>VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Keyboard.kext</string>
                     <key>Comment</key>
-                    <string>V2.3.7 | By RapidEFI</string>
+                    <string>V2.3.6 | By RapidEFI</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
@@ -1116,7 +1018,7 @@
                     <key>BundlePath</key>
                     <string>BrightnessKeys.kext</string>
                     <key>Comment</key>
-                    <string>V1.0.4 | By RapidEFI</string>
+                    <string>V1.0.3 | By RapidEFI</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
@@ -1188,11 +1090,29 @@
                     <key>BundlePath</key>
                     <string>NVMeFix.kext</string>
                     <key>Comment</key>
-                    <string>V1.1.2</string>
+                    <string>V1.1.1</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
                     <string>Contents/MacOS/NVMeFix</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>AMFIPass.kext</string>
+                    <key>Comment</key>
+                    <string>V1.4.1</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/AMFIPass</string>
                     <key>MaxKernel</key>
                     <string></string>
                     <key>MinKernel</key>
@@ -1464,7 +1384,7 @@
                 <key>HibernateMode</key>
                 <string>None</string>
                 <key>HibernateSkipsPicker</key>
-                <false/>
+                <true/>
                 <key>HideAuxiliary</key>
                 <true/>
                 <key>InstanceIdentifier</key>
@@ -1519,7 +1439,7 @@
                     <key>Comment</key>
                     <string>Not signed for security reasons</string>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>Flavour</key>
                     <string>Kali:Kali</string>
                     <key>Name</key>
@@ -1629,15 +1549,15 @@
                     <key>Flavour</key>
                     <string>Auto</string>
                     <key>FullNvramAccess</key>
-                    <true/>
+                    <false/>
                     <key>Name</key>
                     <string>ControlMsrE2</string>
                     <key>Path</key>
                     <string>ControlMsrE2.efi</string>
                     <key>RealPath</key>
-                    <true/>
+                    <false/>
                     <key>TextMode</key>
-                    <true/>
+                    <false/>
                 </dict>
             </array>
         </dict>
@@ -1668,7 +1588,7 @@
                     <key>bluetoothInternalControllerInfo</key>
                     <data>AAAAAAAAAACJZTpVLv0=</data>
                     <key>boot-args</key>
-                    <string>revpatch=auto,sbvmm  keepsyms=1 swd_panic=1  -igfxblt</string>
+                    <string>-amfipassbeta revpatch=auto,sbvmm  keepsyms=1 swd_panic=1  -igfxblt -hbfx-dump-nvram</string>
                     <key>csr-active-config</key>
                     <data>AwgAAA==</data>
                     <key>prev-lang:kbd</key>
