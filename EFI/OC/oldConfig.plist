@@ -10,83 +10,11 @@
             <array>
                 <dict>
                     <key>Comment</key>
-                    <string>By RapidEFI</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-EC-USBX-LAPTOP.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string>By RapidEFI</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-AWAC.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string>By RapidEFI</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-PLUG.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string>By RapidEFI</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-XOSI.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string>By RapidEFI</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-PNLF-CFL.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string>By RapidEFI</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-PMC.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
                     <string></string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
-                    <string>SSDT-eGPU_OFF-AOAC.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-thunderbolt-disbale.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-SBUS.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-RHUB.aml</string>
+                    <string>SSDT-ALS0.aml</string>
                 </dict>
                 <dict>
                     <key>Comment</key>
@@ -102,7 +30,7 @@
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
-                    <string>SSDT-ARTC.aml</string>
+                    <string>SSDT-eGPU_OFF-AOAC.aml</string>
                 </dict>
                 <dict>
                     <key>Comment</key>
@@ -110,7 +38,31 @@
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
-                    <string>SSDT-ALS0.aml</string>
+                    <string>SSDT-PCI0.LPCB-Wake-AOAC.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-PMC.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-RHUB.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-thunderbolt-disbale.aml</string>
                 </dict>
                 <dict>
                     <key>Comment</key>
@@ -134,7 +86,71 @@
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
-                    <string>SSDT-PCI0.LPCB-Wake-AOAC.aml</string>
+                    <string>SSDT-PLUG.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-XOSI.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-PNLF.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-USBX.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>DMAR.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-RTCAWAC.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-SBUS-MCHC.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-TB3-HP.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-EC.aml</string>
                 </dict>
             </array>
             <key>Delete</key>
@@ -334,28 +350,6 @@
         <dict>
             <key>Add</key>
             <dict>
-                <key>PciRoot(0x0)/Pci(0x0,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,0,0</string>
-                    <key>device_type</key>
-                    <string>Host bridge</string>
-                    <key>model</key>
-                    <string>10th Gen Core Processor Host Bridge/DRAM Registers</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x1,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,1,0</string>
-                    <key>device_type</key>
-                    <string>PCI bridge</string>
-                    <key>model</key>
-                    <string>Xeon E3-1200 v5/E3-1500 v5/6th Gen Core Processor PCIe Controller (x16)</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
-                </dict>
                 <key>PciRoot(0x0)/Pci(0x1,0x0)/Pci(0x0,0x0)</key>
                 <dict>
                     <key>@0,compatible</key>
@@ -383,240 +377,12 @@
                     <key>rom-revision</key>
                     <string>Dortania</string>
                 </dict>
-                <key>PciRoot(0x0)/Pci(0x12,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,18,0</string>
-                    <key>device_type</key>
-                    <string>Signal processing controller</string>
-                    <key>model</key>
-                    <string>Comet Lake PCH Thermal Controller</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x14,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,20,0</string>
-                    <key>device_type</key>
-                    <string>USB controller</string>
-                    <key>model</key>
-                    <string>Comet Lake USB 3.1 xHCI Host Controller</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x14,0x2)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,20,2</string>
-                    <key>device_type</key>
-                    <string>RAM memory</string>
-                    <key>model</key>
-                    <string>Comet Lake PCH Shared SRAM</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x14,0x3)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,20,3</string>
-                    <key>device_type</key>
-                    <string>Network controller</string>
-                    <key>model</key>
-                    <string>Wi-Fi 6 AX201</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x15,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,21,0</string>
-                    <key>model</key>
-                    <string>Comet Lake PCH Serial IO I2C Controller #0</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x15,0x1)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,21,1</string>
-                    <key>model</key>
-                    <string>Comet Lake PCH Serial IO I2C Controller #1</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x16,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,22,0</string>
-                    <key>device_type</key>
-                    <string>Communication controller</string>
-                    <key>model</key>
-                    <string>Comet Lake HECI Controller</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x1B,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,27,0</string>
-                    <key>device_type</key>
-                    <string>PCI bridge</string>
-                    <key>model</key>
-                    <string>Comet Lake PCI Express Root Port #17</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x1B,0x0)/Pci(0x0,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,27,0/0,0</string>
-                    <key>device_type</key>
-                    <string>Non-Volatile memory controller</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgEAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x1C,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,28,0</string>
-                    <key>device_type</key>
-                    <string>PCI bridge</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,28,0/0,0</string>
-                    <key>device_type</key>
-                    <string>PCI bridge</string>
-                    <key>model</key>
-                    <string>JHL7540 Thunderbolt 3 Bridge [Titan Ridge 2C 2018]</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgEAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x0,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,28,0/0,0/0,0</string>
-                    <key>device_type</key>
-                    <string>PCI bridge</string>
-                    <key>model</key>
-                    <string>JHL7540 Thunderbolt 3 Bridge [Titan Ridge 2C 2018]</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgEAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x0,0x0)/Pci(0x0,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,28,0/0,0/0,0/0,0</string>
-                    <key>device_type</key>
-                    <string>System peripheral</string>
-                    <key>model</key>
-                    <string>JHL7540 Thunderbolt 3 NHI [Titan Ridge 2C 2018]</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgEAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x1,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,28,0/0,0/1,0</string>
-                    <key>device_type</key>
-                    <string>PCI bridge</string>
-                    <key>model</key>
-                    <string>JHL7540 Thunderbolt 3 Bridge [Titan Ridge 2C 2018]</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgEAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x2,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,28,0/0,0/2,0</string>
-                    <key>device_type</key>
-                    <string>PCI bridge</string>
-                    <key>model</key>
-                    <string>JHL7540 Thunderbolt 3 Bridge [Titan Ridge 2C 2018]</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgEAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x2,0x0)/Pci(0x0,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,28,0/0,0/2,0/0,0</string>
-                    <key>device_type</key>
-                    <string>USB controller</string>
-                    <key>model</key>
-                    <string>JHL7540 Thunderbolt 3 USB Controller [Titan Ridge 2C 2018]</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgEAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x1D,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,29,0</string>
-                    <key>device_type</key>
-                    <string>PCI bridge</string>
-                    <key>model</key>
-                    <string>Comet Lake PCI Express Root Port #9</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x1D,0x0)/Pci(0x0,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,29,0/0,0</string>
-                    <key>device_type</key>
-                    <string>Non-Volatile memory controller</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgEAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x1F,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,31,0</string>
-                    <key>device_type</key>
-                    <string>ISA bridge</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
-                </dict>
                 <key>PciRoot(0x0)/Pci(0x1F,0x3)</key>
                 <dict>
                     <key>hda-gfx</key>
                     <string>onboard-1</string>
                     <key>layout-id</key>
                     <integer>3</integer>
-                    <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x1F,0x4)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,31,4</string>
-                    <key>device_type</key>
-                    <string>SMBus</string>
-                    <key>model</key>
-                    <string>Comet Lake PCH SMBus Controller</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x1F,0x5)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,31,5</string>
-                    <key>model</key>
-                    <string>Comet Lake PCH SPI Controller</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x1F,0x6)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,31,6</string>
-                    <key>device_type</key>
-                    <string>Ethernet controller</string>
-                    <key>model</key>
-                    <string>Ethernet Connection (10) I219-LM</string>
                     <key>pci-aspm-default</key>
                     <data>AgAAAA==</data>
                 </dict>
@@ -656,17 +422,6 @@
                     <data>AAAAgA==</data>
                     <key>hda-gfx</key>
                     <string>onboard-1</string>
-                    <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x4,0x0)</key>
-                <dict>
-                    <key>AAPL,slot-name</key>
-                    <string>Internal@0,4,0</string>
-                    <key>device_type</key>
-                    <string>Signal processing controller</string>
-                    <key>model</key>
-                    <string>Xeon E3-1200 v5/E3-1500 v5/6th Gen Core Processor Thermal Subsystem</string>
                     <key>pci-aspm-default</key>
                     <data>AgAAAA==</data>
                 </dict>
