@@ -42,15 +42,31 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string></string>
+                    <string>HPET _CRS (Needs _CRS to XCRS Rename)</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
-                    <string>SSDT-EC-USBX-LAPTOP.aml</string>
+                    <string>SSDT-HPET.aml</string>
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string></string>
+                    <string>Faked Embedded Controller (Laptop)</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-EC.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string>Generic USBX device for USB power properties</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-USBX.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string>Sets plugin-type to 1 on first Processor object</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
@@ -58,15 +74,7 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-AWAC.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
+                    <string>PMCR for native 300-series NVRAM</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
@@ -74,7 +82,31 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string></string>
+                    <string>Incompatible AWAC Fix</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-RTCAWAC.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string>SSDT to disable USB RHUB/HUBN/URTH and rename devices</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-USB-Reset.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string>Defines PNLF device with a _UID of 19 for backlight control - requires PNLF to XNLF rename</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-PNLF.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string>_OSI override to return true through Windows 10, version 1703 - requires _OSI to XOSI rename</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
@@ -82,11 +114,27 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string></string>
+                    <string>Replacement DMAR table with Reserved Memory Regions stripped - requires DMAR table be dropped</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
-                    <string>SSDT-PNLF-CFL.aml</string>
+                    <string>DMAR.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string>Defines an MCHC and BUS0 device for SMBus compatibility</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-SBUS-MCHC.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string>Faked Ambient Light Sensor</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-ALS0.aml</string>
                 </dict>
                 <dict>
                     <key>Comment</key>
@@ -112,11 +160,214 @@
                     <key>Path</key>
                     <string>SSDT-PCI0.LPCB-Wake-AOAC.aml</string>
                 </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-ELAN073D.aml</string>
+                </dict>
             </array>
             <key>Delete</key>
-            <array/>
+            <array>
+                <dict>
+                    <key>All</key>
+                    <false/>
+                    <key>Comment</key>
+                    <string>Drop DMAR Table</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>OemTableId</key>
+                    <data>AAAAAAAAAAA=</data>
+                    <key>TableLength</key>
+                    <integer>0</integer>
+                    <key>TableSignature</key>
+                    <data>RE1BUg==</data>
+                </dict>
+            </array>
             <key>Patch</key>
             <array>
+                <dict>
+                    <key>Base</key>
+                    <string></string>
+                    <key>BaseSkip</key>
+                    <integer>0</integer>
+                    <key>Comment</key>
+                    <string>HPET _STA to XSTA Rename</string>
+                    <key>Count</key>
+                    <integer>0</integer>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Find</key>
+                    <data>ABQRX1NUQQ==</data>
+                    <key>Limit</key>
+                    <integer>0</integer>
+                    <key>Mask</key>
+                    <data></data>
+                    <key>OemTableId</key>
+                    <data>AAAAAAAAAAA=</data>
+                    <key>Replace</key>
+                    <data>ABQRWFNUQQ==</data>
+                    <key>ReplaceMask</key>
+                    <data></data>
+                    <key>Skip</key>
+                    <integer>0</integer>
+                    <key>TableLength</key>
+                    <integer>0</integer>
+                    <key>TableSignature</key>
+                    <data>AAA=</data>
+                </dict>
+                <dict>
+                    <key>Base</key>
+                    <string></string>
+                    <key>BaseSkip</key>
+                    <integer>0</integer>
+                    <key>Comment</key>
+                    <string>HPET _CRS to XCRS Rename</string>
+                    <key>Count</key>
+                    <integer>0</integer>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Find</key>
+                    <data>JV9DUlM=</data>
+                    <key>Limit</key>
+                    <integer>0</integer>
+                    <key>Mask</key>
+                    <data></data>
+                    <key>OemTableId</key>
+                    <data>AAAAAAAAAAA=</data>
+                    <key>Replace</key>
+                    <data>JVhDUlM=</data>
+                    <key>ReplaceMask</key>
+                    <data></data>
+                    <key>Skip</key>
+                    <integer>0</integer>
+                    <key>TableLength</key>
+                    <integer>0</integer>
+                    <key>TableSignature</key>
+                    <data>AAA=</data>
+                </dict>
+                <dict>
+                    <key>Base</key>
+                    <string></string>
+                    <key>BaseSkip</key>
+                    <integer>0</integer>
+                    <key>Comment</key>
+                    <string>IPIC IRQ 2 Patch</string>
+                    <key>Count</key>
+                    <integer>0</integer>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Find</key>
+                    <data>IgQAeQA=</data>
+                    <key>Limit</key>
+                    <integer>0</integer>
+                    <key>Mask</key>
+                    <data></data>
+                    <key>OemTableId</key>
+                    <data>AAAAAAAAAAA=</data>
+                    <key>Replace</key>
+                    <data>IgAAeQA=</data>
+                    <key>ReplaceMask</key>
+                    <data></data>
+                    <key>Skip</key>
+                    <integer>0</integer>
+                    <key>TableLength</key>
+                    <integer>0</integer>
+                    <key>TableSignature</key>
+                    <data>AAA=</data>
+                </dict>
+                <dict>
+                    <key>Base</key>
+                    <string></string>
+                    <key>BaseSkip</key>
+                    <integer>0</integer>
+                    <key>Comment</key>
+                    <string>RTC IRQ 8 Patch</string>
+                    <key>Count</key>
+                    <integer>0</integer>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Find</key>
+                    <data>IgABeQA=</data>
+                    <key>Limit</key>
+                    <integer>0</integer>
+                    <key>Mask</key>
+                    <data></data>
+                    <key>OemTableId</key>
+                    <data>AAAAAAAAAAA=</data>
+                    <key>Replace</key>
+                    <data>IgAAeQA=</data>
+                    <key>ReplaceMask</key>
+                    <data></data>
+                    <key>Skip</key>
+                    <integer>0</integer>
+                    <key>TableLength</key>
+                    <integer>0</integer>
+                    <key>TableSignature</key>
+                    <data>AAA=</data>
+                </dict>
+                <dict>
+                    <key>Base</key>
+                    <string></string>
+                    <key>BaseSkip</key>
+                    <integer>0</integer>
+                    <key>Comment</key>
+                    <string>TIMR IRQ 0 Patch</string>
+                    <key>Count</key>
+                    <integer>0</integer>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Find</key>
+                    <data>IgEAeQA=</data>
+                    <key>Limit</key>
+                    <integer>0</integer>
+                    <key>Mask</key>
+                    <data></data>
+                    <key>OemTableId</key>
+                    <data>AAAAAAAAAAA=</data>
+                    <key>Replace</key>
+                    <data>IgAAeQA=</data>
+                    <key>ReplaceMask</key>
+                    <data></data>
+                    <key>Skip</key>
+                    <integer>0</integer>
+                    <key>TableLength</key>
+                    <integer>0</integer>
+                    <key>TableSignature</key>
+                    <data>AAA=</data>
+                </dict>
+                <dict>
+                    <key>Base</key>
+                    <string></string>
+                    <key>BaseSkip</key>
+                    <integer>0</integer>
+                    <key>Comment</key>
+                    <string>PNLF to XNLF Rename</string>
+                    <key>Count</key>
+                    <integer>0</integer>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Find</key>
+                    <data>UE5MRg==</data>
+                    <key>Limit</key>
+                    <integer>0</integer>
+                    <key>Mask</key>
+                    <data></data>
+                    <key>OemTableId</key>
+                    <data>AAAAAAAAAAA=</data>
+                    <key>Replace</key>
+                    <data>WE5MRg==</data>
+                    <key>ReplaceMask</key>
+                    <data></data>
+                    <key>Skip</key>
+                    <integer>0</integer>
+                    <key>TableLength</key>
+                    <integer>0</integer>
+                    <key>TableSignature</key>
+                    <data>AAA=</data>
+                </dict>
                 <dict>
                     <key>Base</key>
                     <string></string>
@@ -135,7 +386,7 @@
                     <key>Mask</key>
                     <data></data>
                     <key>OemTableId</key>
-                    <data></data>
+                    <data>AAAAAAAAAAA=</data>
                     <key>Replace</key>
                     <data>WE9TSQ==</data>
                     <key>ReplaceMask</key>
@@ -145,7 +396,7 @@
                     <key>TableLength</key>
                     <integer>0</integer>
                     <key>TableSignature</key>
-                    <data></data>
+                    <data>AAA=</data>
                 </dict>
             </array>
             <key>Quirks</key>
@@ -153,7 +404,7 @@
                 <key>EnableForAll</key>
                 <false/>
                 <key>FadtEnableReset</key>
-                <false/>
+                <true/>
                 <key>NormalizeHeaders</key>
                 <false/>
                 <key>RebaseRegions</key>
@@ -252,6 +503,23 @@
                     <data>AgEAAA==</data>
                     <key>rom-revision</key>
                     <string>Dortania</string>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x15,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,21,0</string>
+                    <key>elan-device-id</key>
+                    <data>AKqqAA==</data>
+                    <key>force-elan073d</key>
+                    <data>CqqqAA==</data>
+                    <key>gpio-pin</key>
+                    <data>CqqqAA==</data>
+                    <key>model</key>
+                    <string>Comet Lake PCH Serial IO I2C Controller #0</string>
+                    <key>nterrupt-type</key>
+                    <data>qgCqCg==</data>
+                    <key>report-descriptor</key>
+                    <data>C66qALquqgALCqoACwqqAAwKqsoLCqrKCwqqygsKqsoLCqoAC6+qAAuvqgC6rqoACq2qAAqsqgAKrKrqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoKq6rqCquq6gqrquoK</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1F,0x3)</key>
                 <dict>
@@ -767,42 +1035,6 @@
                     <key>Arch</key>
                     <string>Any</string>
                     <key>BundlePath</key>
-                    <string>VoodooPS2Controller.kext</string>
-                    <key>Comment</key>
-                    <string>V2.3.8 | By RapidEFI</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>ExecutablePath</key>
-                    <string>Contents/MacOS/VoodooPS2Controller</string>
-                    <key>MaxKernel</key>
-                    <string></string>
-                    <key>MinKernel</key>
-                    <string></string>
-                    <key>PlistPath</key>
-                    <string>Contents/Info.plist</string>
-                </dict>
-                <dict>
-                    <key>Arch</key>
-                    <string>Any</string>
-                    <key>BundlePath</key>
-                    <string>VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Keyboard.kext</string>
-                    <key>Comment</key>
-                    <string>V2.3.8 | By RapidEFI</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>ExecutablePath</key>
-                    <string>Contents/MacOS/VoodooPS2Keyboard</string>
-                    <key>MaxKernel</key>
-                    <string></string>
-                    <key>MinKernel</key>
-                    <string></string>
-                    <key>PlistPath</key>
-                    <string>Contents/Info.plist</string>
-                </dict>
-                <dict>
-                    <key>Arch</key>
-                    <string>Any</string>
-                    <key>BundlePath</key>
                     <string>BrightnessKeys.kext</string>
                     <key>Comment</key>
                     <string>V1.0.4</string>
@@ -828,6 +1060,132 @@
                     <true/>
                     <key>ExecutablePath</key>
                     <string>Contents/MacOS/IOElectrify</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>VoodooPS2Controller.kext</string>
+                    <key>Comment</key>
+                    <string>V2.3.8</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/VoodooPS2Controller</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Keyboard.kext</string>
+                    <key>Comment</key>
+                    <string>V2.3.8</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/VoodooPS2Keyboard</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>VoodooI2C.kext/Contents/PlugIns/VoodooInput.kext</string>
+                    <key>Comment</key>
+                    <string>V1.1.6</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/VoodooInput</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>VoodooI2C.kext/Contents/PlugIns/VoodooI2CServices.kext</string>
+                    <key>Comment</key>
+                    <string>V1</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/VoodooI2CServices</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>VoodooI2C.kext/Contents/PlugIns/VoodooGPIO.kext</string>
+                    <key>Comment</key>
+                    <string>V1.1</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/VoodooGPIO</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>VoodooI2C.kext</string>
+                    <key>Comment</key>
+                    <string>V2.9.1</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/VoodooI2C</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>VoodooI2CHID.kext</string>
+                    <key>Comment</key>
+                    <string>V1</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/VoodooI2CHID</string>
                     <key>MaxKernel</key>
                     <string></string>
                     <key>MinKernel</key>
@@ -927,6 +1285,66 @@
                     <string></string>
                     <key>Replace</key>
                     <data>AAAAAAAAAAAAAAA=</data>
+                    <key>ReplaceMask</key>
+                    <data></data>
+                    <key>Skip</key>
+                    <integer>0</integer>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>Base</key>
+                    <string></string>
+                    <key>Comment</key>
+                    <string>Enable PCI power management if there is no such code in DSDT, 10.9.*, 10.10.* (credit Zenith432)</string>
+                    <key>Count</key>
+                    <integer>0</integer>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Find</key>
+                    <data>dU1Ii7voAQAA</data>
+                    <key>Identifier</key>
+                    <string>com.apple.driver.AppleUSBXHCI</string>
+                    <key>Limit</key>
+                    <integer>0</integer>
+                    <key>Mask</key>
+                    <data></data>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>Replace</key>
+                    <data>601Ii7voAQAA</data>
+                    <key>ReplaceMask</key>
+                    <data></data>
+                    <key>Skip</key>
+                    <integer>0</integer>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>Base</key>
+                    <string></string>
+                    <key>Comment</key>
+                    <string>Enable HWP for Comet Lake</string>
+                    <key>Count</key>
+                    <integer>1</integer>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Find</key>
+                    <data>Z2ZsU3FnQT0=</data>
+                    <key>Identifier</key>
+                    <string>kernel</string>
+                    <key>Limit</key>
+                    <integer>0</integer>
+                    <key>Mask</key>
+                    <data></data>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>Replace</key>
+                    <data>Z2ZsL0R3QT0=</data>
                     <key>ReplaceMask</key>
                     <data></data>
                     <key>Skip</key>
@@ -1207,7 +1625,7 @@
                     <key>bluetoothInternalControllerInfo</key>
                     <data>AAAAAAAAAAAAAAAAAAA=</data>
                     <key>boot-args</key>
-                    <string>debug=0x100 igfxonln=1 -noDC9 -hbfx-patch=auto -hbfx-dumpnvm -hbfx-dmarb -igfxblt revpatch=auto,sbvmm,cpuname -lilubetaall -ecebeta alcverbs=1</string>
+                    <string>-enable_hwp debug=0x100 igfxonln=1 -noDC9 -hbfx-patch=auto -hbfx-dumpnvm -hbfx-dmarb -igfxblt revpatch=auto,sbvmm,cpuname -lilubetaall -ecebeta alcverbs=1 npci=0x2000 voodooi2c.override=0x073D voodooi2c_interrupt=2</string>
                     <key>csr-active-config</key>
                     <data>/w8AAA==</data>
                     <key>prev-lang:kbd</key>
