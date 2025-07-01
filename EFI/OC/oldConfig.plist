@@ -94,6 +94,14 @@
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
+                    <string>SSDT-ELAN073D.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
                     <string>SSDT-NameS3-disable.aml</string>
                 </dict>
                 <dict>
@@ -111,14 +119,6 @@
                     <true/>
                     <key>Path</key>
                     <string>SSDT-PCI0.LPCB-Wake-AOAC.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-ELAN073D.aml</string>
                 </dict>
             </array>
             <key>Delete</key>
@@ -153,7 +153,7 @@
                     <key>TableLength</key>
                     <integer>0</integer>
                     <key>TableSignature</key>
-                    <data>AA==</data>
+                    <data></data>
                 </dict>
                 <dict>
                     <key>Base</key>
@@ -183,7 +183,7 @@
                     <key>TableLength</key>
                     <integer>0</integer>
                     <key>TableSignature</key>
-                    <data>AA==</data>
+                    <data></data>
                 </dict>
                 <dict>
                     <key>Base</key>
@@ -294,6 +294,28 @@
         <dict>
             <key>Add</key>
             <dict>
+                <key>PciRoot(0x0)/Pci(0x0,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,0,0</string>
+                    <key>device_type</key>
+                    <string>Host bridge</string>
+                    <key>model</key>
+                    <string>10th Gen Core Processor Host Bridge/DRAM Registers</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,1,0</string>
+                    <key>device_type</key>
+                    <string>PCI bridge</string>
+                    <key>model</key>
+                    <string>Xeon E3-1200 v5/E3-1500 v5/6th Gen Core Processor PCIe Controller (x16)</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
                 <key>PciRoot(0x0)/Pci(0x1,0x0)/Pci(0x0,0x0)</key>
                 <dict>
                     <key>@0,compatible</key>
@@ -317,9 +339,136 @@
                     <key>model</key>
                     <string>GP107GLM [Quadro P620]</string>
                     <key>pci-aspm-default</key>
-                    <data>AgEAAA==</data>
+                    <integer>3</integer>
                     <key>rom-revision</key>
                     <string>Dortania</string>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x12,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,18,0</string>
+                    <key>device_type</key>
+                    <string>Signal processing controller</string>
+                    <key>model</key>
+                    <string>Comet Lake PCH Thermal Controller</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x14,0x0)</key>
+                <dict>
+                    <key>enable-l1-aspm</key>
+                    <integer>1</integer>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x14,0x2)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,20,2</string>
+                    <key>device_type</key>
+                    <string>RAM memory</string>
+                    <key>model</key>
+                    <string>Comet Lake PCH Shared SRAM</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x14,0x3)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,20,3</string>
+                    <key>device_type</key>
+                    <string>Network controller</string>
+                    <key>model</key>
+                    <string>Wi-Fi 6 AX201</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x15,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,21,0</string>
+                    <key>model</key>
+                    <string>Comet Lake PCH Serial IO I2C Controller #0</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x15,0x1)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,21,1</string>
+                    <key>model</key>
+                    <string>Comet Lake PCH Serial IO I2C Controller #1</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x16,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,22,0</string>
+                    <key>device_type</key>
+                    <string>Communication controller</string>
+                    <key>model</key>
+                    <string>Comet Lake HECI Controller</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1B,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,27,0</string>
+                    <key>device_type</key>
+                    <string>PCI bridge</string>
+                    <key>model</key>
+                    <string>Comet Lake PCI Express Root Port #17</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1B,0x0)/Pci(0x0,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,27,0/0,0</string>
+                    <key>device_type</key>
+                    <string>Non-Volatile memory controller</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1C,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,28,0</string>
+                    <key>device_type</key>
+                    <string>PCI bridge</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1D,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,29,0</string>
+                    <key>device_type</key>
+                    <string>PCI bridge</string>
+                    <key>model</key>
+                    <string>Comet Lake PCI Express Root Port #9</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1D,0x0)/Pci(0x0,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,29,0/0,0</string>
+                    <key>device_type</key>
+                    <string>Non-Volatile memory controller</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1F,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,31,0</string>
+                    <key>device_type</key>
+                    <string>ISA bridge</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1F,0x3)</key>
                 <dict>
@@ -332,7 +481,38 @@
                     <key>layout-id</key>
                     <integer>55</integer>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1F,0x4)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,31,4</string>
+                    <key>device_type</key>
+                    <string>SMBus</string>
+                    <key>model</key>
+                    <string>Comet Lake PCH SMBus Controller</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1F,0x5)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,31,5</string>
+                    <key>model</key>
+                    <string>Comet Lake PCH SPI Controller</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1F,0x6)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,31,6</string>
+                    <key>device_type</key>
+                    <string>Ethernet controller</string>
+                    <key>model</key>
+                    <string>Ethernet Connection (10) I219-LM</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x2,0x0)</key>
                 <dict>
@@ -371,7 +551,18 @@
                     <key>hda-gfx</key>
                     <string>onboard-1</string>
                     <key>pci-aspm-default</key>
-                    <data>AgAAAA==</data>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x4,0x0)</key>
+                <dict>
+                    <key>AAPL,slot-name</key>
+                    <string>Internal@0,4,0</string>
+                    <key>device_type</key>
+                    <string>Signal processing controller</string>
+                    <key>model</key>
+                    <string>Xeon E3-1200 v5/E3-1500 v5/6th Gen Core Processor Thermal Subsystem</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
                 </dict>
             </dict>
             <key>Delete</key>
@@ -403,6 +594,24 @@
                     <key>Arch</key>
                     <string>Any</string>
                     <key>BundlePath</key>
+                    <string>ECEnabler.kext</string>
+                    <key>Comment</key>
+                    <string>V1.0.6</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/ECEnabler</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
                     <string>VirtualSMC.kext</string>
                     <key>Comment</key>
                     <string>V1.3.7 | By RapidEFI</string>
@@ -421,13 +630,13 @@
                     <key>Arch</key>
                     <string>Any</string>
                     <key>BundlePath</key>
-                    <string>ECEnabler.kext</string>
+                    <string>SMCSuperIO.kext</string>
                     <key>Comment</key>
-                    <string>V1.0.6</string>
+                    <string>V1.3.7 | By RapidEFI</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
-                    <string>Contents/MacOS/ECEnabler</string>
+                    <string>Contents/MacOS/SMCSuperIO</string>
                     <key>MaxKernel</key>
                     <string></string>
                     <key>MinKernel</key>
@@ -464,24 +673,6 @@
                     <true/>
                     <key>ExecutablePath</key>
                     <string>Contents/MacOS/SMCProcessor</string>
-                    <key>MaxKernel</key>
-                    <string></string>
-                    <key>MinKernel</key>
-                    <string></string>
-                    <key>PlistPath</key>
-                    <string>Contents/Info.plist</string>
-                </dict>
-                <dict>
-                    <key>Arch</key>
-                    <string>Any</string>
-                    <key>BundlePath</key>
-                    <string>SMCSuperIO.kext</string>
-                    <key>Comment</key>
-                    <string>V1.3.7 | By RapidEFI</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>ExecutablePath</key>
-                    <string>Contents/MacOS/SMCSuperIO</string>
                     <key>MaxKernel</key>
                     <string></string>
                     <key>MinKernel</key>
@@ -1126,7 +1317,7 @@
                 <key>DisableRtcChecksum</key>
                 <true/>
                 <key>ExtendBTFeatureFlags</key>
-                <false/>
+                <true/>
                 <key>ExternalDiskIcons</key>
                 <false/>
                 <key>ForceAquantiaEthernet</key>
@@ -1377,7 +1568,7 @@
                     <key>bluetoothInternalControllerInfo</key>
                     <data>AAAAAAAAAAAAAAAAAAA=</data>
                     <key>boot-args</key>
-                    <string>-hbfx-patch=auto -igfxblt revpatch=auto,sbvmm,cpuname voodooi2c.override=0x073D voodooi2c_interrupt=2</string>
+                    <string>pcie_ports_aspm=force -hbfx-patch=auto -igfxblt revpatch=auto,sbvmm,cpuname  voodooi2c.override=0x073D voodooi2c_interrupt=2</string>
                     <key>csr-active-config</key>
                     <data>/w8AAA==</data>
                     <key>prev-lang:kbd</key>
