@@ -1,72 +1,65 @@
 # zbookpowerg7
 
-**HP ZBook Power G7** 移动工作站的 **OpenCore** EFI（Hackintosh / 黑苹果）。适用于基于该机型的 **macOS** 安装与日常驱动；含 **ACPI SSDT**、**kext**、**config.plist** 与可选 **合盖关机** 脚本。
+面向 **HP ZBook Power G7**（**Intel Comet Lake** / 10 代移动平台）的 **OpenCore** Hackintosh EFI。仓库内为当前在用的 **`EFI/oc/`** 配置：含 **`config.plist`**、**ACPI SSDT**（含 `.dsl`）、**Kernel 扩展**及 **`EFI/scripts/`** 合盖关机相关脚本；**`EFI/SysReport/`** 为同机型 ACPI 导出，便于对照修改。
 
-> **English:** OpenCore EFI for the **HP ZBook Power G7** mobile workstation — Hackintosh, macOS, Intel iGPU, `itlwm` Wi‑Fi, VoodooI2C trackpad, VirtualSMC, AppleALC. **NVIDIA dGPU not supported.** Sleep: **Deep Idle** + optional **lid shutdown**. **Thunderbolt** not fully tested.
+*OpenCore EFI for **HP ZBook Power G7**, Comet Lake, SMBIOS **MacBookPro16,1**. iGPU + **WhateverGreen**; dGPU suppressed (**`-wegnoegpu`**). Wi‑Fi **Intel AX201** via **AirportItlwm** (Sonoma/Sequoia) and **itlwm** (Darwin 25+); Ethernet **I219-LM** + **IntelMausi**. Trackpad **ELAN** on I²C + **VoodooI2C** / **VoodooI2CHID**, **`-vi2c-force-polling`**. Sleep: **SSDT-DeepIdle** + AOAC helpers; optional lid shutdown scripts. **Thunderbolt JHL7540** not fully tested.*
 
-## 关于本仓库
+## 与本项目配置对应的事实
 
-| 项目 | 说明 |
-|------|------|
-| **机型** | HP ZBook Power G7（移动工作站 / Mobile Workstation） |
-| **引导** | OpenCore，EFI 位于 `EFI/oc/` |
-| **验证盘** | 西数 WD Blue SN570（换盘请自测） |
-| **睡眠策略** | 无 S3 → Deep Idle；可配合 `EFI/scripts/` 合盖关机 |
-| **独显** | NVIDIA 在 macOS 下不可用（无驱动） |
-| **雷电** | Thunderbolt 未完整测试 |
+以下与当前 **`EFI/oc/config.plist`** 及 ACPI 目录一致，便于他人检索「同机型 / 同芯片组」时命中本仓库。
 
-## 已验证可用的功能
+| 项目 | 本项目中的情况 |
+|------|----------------|
+| 机型 | HP ZBook Power G7（移动工作站） |
+| 平台 | Intel **Comet Lake** PCH（配置内设备属性与 SSDT 注释一致） |
+| SMBIOS | **MacBookPro16,1**（`PlatformInfo` → `SystemProductName`） |
+| 核显 | Intel UHD，`WhateverGreen` + 定制 **DeviceProperties**（含 `ig-platform-id` 等） |
+| 独显 | NVIDIA 禁用（**`-wegnoegpu`** 等引导参数；**`SSDT-dGPU-PowerOff-Darwin`**） |
+| 有线网 | **Intel Ethernet I219-LM** → **`IntelMausi.kext`** |
+| 无线网 | **Intel Wi‑Fi 6 AX201** → **`AirportItlwm`**（按 **Sonoma / Sequoia** 分内核启用）+ 面向 **Darwin 25+** 的 **`itlwm.kext`**（以 `MinKernel`/`MaxKernel` 为准，勿重复启用冲突版本） |
+| 蓝牙 | **IntelBluetoothFirmware** + **BlueToolFixup** + **IntelBTPatcher** |
+| 声卡 | **AppleALC**（本机 **layout-id `55`** 等在 `config.plist` 的 `DeviceProperties` 中） |
+| 触控板 | **ELAN073D**（ACPI 中 **TPD3**；**`SSDT-TPD3-CRS` / `SSDT-TPD3-INI`**、**`SSDT-I2C0-GNVS`** 等）+ **VoodooI2C** 系 |
+| USB | **USBToolBox** + **UTBMap** |
+| 雷电 | 设备属性中含 **Intel JHL7540**（Titan Ridge）；**`SSDT-TB3HP-TITAN`**、**`SSDT-thunderbolt-disable`**、**`SSDT-RP01`** 在配置中为 **关闭**，需自行评估后开启 |
+| 验证存储 | **西数 WD Blue SN570**；换盘或升级系统后请自行回归测试 |
 
-在本机配置下，以下功能可正常使用（包括但不限于）：
+## 睡眠与节能（配置级说明）
 
-- **核显**（Intel UHD）、外接显示器、亮度与亮度快捷键  
-- **声卡**（AppleALC）、**有线网**（Intel）、**无线网**（`itlwm`）、**蓝牙**  
-- **键盘**（PS2）、**内置触控板**（I²C + VoodooI2C 等）  
-- **电池状态**、**SMC/传感器**（VirtualSMC 系）、**NVMe**（配合 `NVMeFix` 等）  
-- **USB**、**读卡器**等常规外设（按实际机型与 ACPI 为准）  
+- 启用 **Deep Idle** 路径：**`SSDT-DeepIdle`**、**`SSDT-PCI0.LPCB-Wake-AOAC`**，并与 **`SSDT-OCLT-S3Fix`**、**`SSDT-GPRW`** 等协同；**无传统 S3**，空闲仍可能有约 **5W** 级功耗（视外设与 `pmset` 而定）。  
+- **`HibernationFixup`**、**`hibernatemode=0`** 等与当前策略一致。  
+- 合盖即关机：**`EFI/scripts/`**（**`install-lid-shutdown.sh`** / **`uninstall-lid-shutdown.sh`**、**`lid-close-shutdown.sh`**、**`pmset-reduce-wake.sh`**、**`com.oc.lidshutdown.plist`**），按需部署。
 
-> 本仓库在 **西数 SN570** 上验证；更换硬盘时请自行核对兼容性与引导。
-
-## 仓库结构
+## 目录与安装
 
 | 路径 | 说明 |
 |------|------|
-| `EFI/oc/` | OpenCore：引导、驱动、kext、`config.plist`、ACPI（`.aml` / `.dsl` 源码） |
+| `EFI/oc/` | OpenCore **`OpenCore.efi`**、**Drivers**、**Kexts**、**`config.plist`**、**`ACPI/`**（`.aml` 与部分 **`.dsl`** 源码） |
 | `EFI/boot/` | 引导相关文件 |
-| `EFI/SysReport/` | 机器 ACPI 导出（便于对照与调试） |
-| `EFI/scripts/` | 合盖关机、`pmset` 降低唤醒等（与睡眠策略配合） |
+| `EFI/SysReport/` | 本机 ACPI 表导出 |
+| `EFI/scripts/` | 合盖关机与 **`pmset`** 辅助脚本 |
 
-将整棵 **`EFI`** 目录复制到 **EFI 系统分区** 根目录（与 `EFI/oc` 同级），按 OpenCore 常规方式使用。
+将整个 **`EFI`** 复制到 **ESP 分区根目录**（与 **`EFI/oc`** 同级），按 OpenCore 常规流程使用。
 
-## 不工作
+## 已知限制
 
-1. **独显**（NVIDIA，macOS 无可用驱动）
+- **独显**：NVIDIA 无 Apple 官方驱动，仅使用核显。  
+- **雷电**：硬件为 **JHL7540** 类 Titan Ridge，**本仓库未做完整外设与扩展坞验证**。  
+- **系统升级**：大版本升级后请核对 **AirportItlwm / itlwm** 与 **IOSkywalkFamily** 等是否需替换或调整启用范围（以 **`config.plist` → `Kernel` → `Add`** 为准）。
 
-## 睡眠与节能（当前方案）
+## 常见问题
 
-- 本机**无法使用传统 S3 睡眠**，采用 **Deep Idle** 降低空闲功耗；待机仍可能有约 **5W** 级别功耗（视外设与设置而定）。  
-- 与 **合盖关机** 配合使用：通过 `EFI/scripts/` 中的脚本实现合盖即关机，避免长时间合盖仍处于浅睡/空闲状态。按需安装，详见脚本内说明。
+**安装时要拷什么？**  
+复制整个 **`EFI`** 到 ESP 根目录；有效配置在 **`EFI/oc/`**。
 
-## 雷电（Thunderbolt）
+**无线用哪个驱动？**  
+本机 **AX201**：主要为 **AirportItlwm**（按 **macOS 14 / 15** 选择对应条目）及新系统下的 **itlwm**；具体以当前 **`config.plist`** 里各 kext 的 **`Enabled`** 与内核版本范围为准。
 
-**尚未在本配置下完整测试**；若后续验证电源或热插拔行为，再补充说明。
+**触控板为什么能工作？**  
+**I²C ELAN** + **VoodooI2C** / **VoodooI2CHID**，配合 **TPD3** 相关 **SSDT**；引导参数含 **`-vi2c-force-polling`**（见 **`boot-args`**）。
 
-## 常见问题（FAQ）
-
-**Q：这台机器用的是什么引导？**  
-A：OpenCore；配置文件与驱动在 `EFI/oc/`，请将整个 `EFI` 复制到 ESP 分区根目录。
-
-**Q：触控板、Wi‑Fi、蓝牙能正常用吗？**  
-A：在本仓库验证配置下，内置触控板、无线（`itlwm`）与蓝牙可正常使用；具体依赖当前 kext 与 ACPI，升级系统后请自行回归测试。
-
-**Q：为什么不能用独显？**  
-A：NVIDIA 独显在较新 macOS 上无官方驱动，Hackintosh 场景通常仅使用 Intel 核显。
-
-**Q：睡眠怎么配？**  
-A：使用 Deep Idle；若希望合盖即关机，可使用 `EFI/scripts/` 内脚本按说明安装。
-
-**Q：雷电和雷雳扩展坞能用吗？**  
-A：当前未做完整测试，兼容性请自行验证。
+**雷电扩展坞能用吗？**  
+未完整验证；若调试 TB，需结合 **`ACPI/`** 中可选表与 **`config.plist`** 中 **`ACPI` → `Add`** 的开关谨慎调整。
 
 ---
 
