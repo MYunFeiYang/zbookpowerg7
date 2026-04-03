@@ -2,15 +2,13 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
     <dict>
-        <key>#RapidEFI-v3.2.0</key>
-        <string>An excellent one-click EFI configuration tool based on OpenCore</string>
         <key>ACPI</key>
         <dict>
             <key>Add</key>
             <array>
                 <dict>
                     <key>Comment</key>
-                    <string>Custom GPRW patch for sleep fix</string>
+                    <string>GPRW to XPRW shim (SSDT-GPRW.dsl); instant-wake Arg2==0x03</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
@@ -26,11 +24,11 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string></string>
+                    <string>dGPU power-down on Darwin (renamed from SSDT-eGPU OFF-AOAC); keep enabled</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
-                    <string>SSDT-eGPU_OFF-AOAC.aml</string>
+                    <string>SSDT-dGPU-PowerOff-Darwin.aml</string>
                 </dict>
                 <dict>
                     <key>Comment</key>
@@ -66,35 +64,27 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string></string>
+                    <string>TB3 Titan Ridge hotplug - off (AML kept in ACPI/)</string>
                     <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-thunderbolt-disable.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>Path</key>
                     <string>SSDT-TB3HP-TITAN.aml</string>
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string></string>
+                    <string>Optional: hide RP01 _STA on Darwin (conflicts with TB3 hotplug if both on) - off, AML kept</string>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>Path</key>
-                    <string>SSDT-GPI0.aml</string>
+                    <string>SSDT-thunderbolt-disable.aml</string>
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string></string>
+                    <string>TPD3 (ELAN073D): _CRS = I2C + GpioInt; if GNUM(GPDI)==0 fallback pin 0x003D (see SSDT-TPD3-CRS.dsl)</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
-                    <string>SSDT-ELAN.aml</string>
+                    <string>SSDT-TPD3-CRS.aml</string>
                 </dict>
                 <dict>
                     <key>Comment</key>
@@ -122,23 +112,23 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string></string>
+                    <string>OCLT S3-Fix (was NameS3-disable): ACPI-side S3 shim. On; if sleep/boot regresses set Enabled false. AML in ACPI/</string>
                     <key>Enabled</key>
-                    <false/>
+                    <true/>
                     <key>Path</key>
-                    <string>SSDT-NameS3-disable.aml</string>
+                    <string>SSDT-OCLT-S3Fix.aml</string>
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string></string>
+                    <string>DeepIdle path: LPS0 / S0 deep idle (primary focus). AML in ACPI/</string>
                     <key>Enabled</key>
-                    <false/>
+                    <true/>
                     <key>Path</key>
                     <string>SSDT-DeepIdle.aml</string>
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string></string>
+                    <string>DeepIdle path: LPC wake helpers (AOAC-class); pair with DeepIdle. AML in ACPI/</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
@@ -146,11 +136,27 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
+                    <string>RP01 (often TB root port on this platform) - off (AML kept in ACPI/)</string>
+                    <key>Enabled</key>
+                    <false/>
+                    <key>Path</key>
+                    <string>SSDT-RP01.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
                     <string></string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
-                    <string>SSDT-RP01.aml</string>
+                    <string>SSDT-I2C0-GNVS.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string>TPD3 _INI: GNVS + OEM GNUM/SHPO after (see SSDT-TPD3-INI.dsl); load after I2C0-GNVS</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-TPD3-INI.aml</string>
                 </dict>
             </array>
             <key>Delete</key>
@@ -238,21 +244,21 @@
                     <key>BaseSkip</key>
                     <integer>0</integer>
                     <key>Comment</key>
-                    <string>GPRW to XPRW</string>
+                    <string>GPRW to XPRW (DSDT only; 4-byte NameSeg matches Method + calls)</string>
                     <key>Count</key>
                     <integer>0</integer>
                     <key>Enabled</key>
                     <true/>
                     <key>Find</key>
-                    <data>R1BSVwA=</data>
+                    <data>R1BSVw==</data>
                     <key>Limit</key>
                     <integer>0</integer>
                     <key>Mask</key>
                     <data></data>
                     <key>OemTableId</key>
-                    <data>AAAAAAAAAAA=</data>
+                    <data></data>
                     <key>Replace</key>
-                    <data>WFBSVwA=</data>
+                    <data>WFBSVw==</data>
                     <key>ReplaceMask</key>
                     <data></data>
                     <key>Skip</key>
@@ -260,7 +266,7 @@
                     <key>TableLength</key>
                     <integer>0</integer>
                     <key>TableSignature</key>
-                    <data></data>
+                    <data>RFNEVA==</data>
                 </dict>
             </array>
             <key>Quirks</key>
@@ -320,7 +326,7 @@
                 <key>ProtectSecureBoot</key>
                 <false/>
                 <key>ProtectUefiServices</key>
-                <true/>
+                <false/>
                 <key>ProvideCustomSlide</key>
                 <true/>
                 <key>ProvideMaxSlide</key>
@@ -434,8 +440,10 @@
                 <dict>
                     <key>AAPL,slot-name</key>
                     <string>Internal@0,21,0</string>
-                    <key>device-id</key>
-                    <data>AEqqAA==</data>
+                    <key>compatible</key>
+                    <string>VoodooI2C,PCI</string>
+                    <key>device-type</key>
+                    <string>Trackpad</string>
                     <key>model</key>
                     <string>Comet Lake PCH Serial IO I2C Controller #0</string>
                     <key>pci-aspm-default</key>
@@ -445,25 +453,10 @@
                 <dict>
                     <key>AAPL,slot-name</key>
                     <string>Internal@0,21,1</string>
-                    <key>compatible</key>
-                    <string>VoodooI2C,Elan</string>
-                    <key>device-type</key>
-                    <string>Trackpad</string>
                     <key>model</key>
                     <string>Comet Lake PCH Serial IO I2C Controller #1</string>
                     <key>pci-aspm-default</key>
                     <integer>3</integer>
-                </dict>
-                <key>PciRoot(0x0)/Pci(0x15,0x1)/ELAN073D</key>
-                <dict>
-                    <key>device-type</key>
-                    <string>elantech</string>
-                    <key>hid-descriptor-addr</key>
-                    <data>Dgo=</data>
-                    <key>oft-reset-on-resume</key>
-                    <data>CgA=</data>
-                    <key>report-map</key>
-                    <data>CgAKAAoA</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x16,0x0)</key>
                 <dict>
@@ -512,7 +505,54 @@
                     <key>drom</key>
                     <data>AACqva2qAL2u6gAArQAAAK2qAACtqgAArQAAAA==</data>
                     <key>force-power</key>
-                    <integer>1</integer>
+                    <integer>0</integer>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x0,0x0)</key>
+                <dict>
+                    <key>device_type</key>
+                    <string>PCI bridge</string>
+                    <key>model</key>
+                    <string>Intel JHL7540 Thunderbolt 3 Bridge</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x0,0x0)/Pci(0x0,0x0)</key>
+                <dict>
+                    <key>device_type</key>
+                    <string>Thunderbolt host interface</string>
+                    <key>model</key>
+                    <string>Intel JHL7540 Thunderbolt 3 NHI</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x1,0x0)</key>
+                <dict>
+                    <key>device_type</key>
+                    <string>PCI bridge</string>
+                    <key>model</key>
+                    <string>Intel JHL7540 Thunderbolt 3 Bridge (port 1)</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x2,0x0)</key>
+                <dict>
+                    <key>device_type</key>
+                    <string>PCI bridge</string>
+                    <key>model</key>
+                    <string>Intel JHL7540 Thunderbolt 3 Bridge (port 2)</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
+                </dict>
+                <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x2,0x0)/Pci(0x0,0x0)</key>
+                <dict>
+                    <key>device_type</key>
+                    <string>USB controller</string>
+                    <key>model</key>
+                    <string>Intel JHL7540 Thunderbolt 3 USB Controller</string>
+                    <key>pci-aspm-default</key>
+                    <integer>3</integer>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1D,0x0)</key>
                 <dict>
@@ -589,10 +629,6 @@
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x2,0x0)</key>
                 <dict>
-                    <key>#AAPL00,override-no-connect</key>
-                    <data>AP///////wANrhIVAAAAABUdAQSVIhN4Ayhll1lUjiceUFQAAAABAQEBAQEBAQEBAQEBAQEBpDiA5nA4LEAwIGgAWMEQAAAawyWA5nA4LEAwIGgAWMEQAAAaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAMPf8NPH0TECJ9AAAAANA=</data>
-                    <key>#framebuffer-con1-flags</key>
-                    <data>hwAAAA==</data>
                     <key>@0,backlight-control</key>
                     <data>AQAAAA==</data>
                     <key>AAPL,backlight-control</key>
@@ -601,13 +637,21 @@
                     <data>CQClPg==</data>
                     <key>AAPL00,backlight-control</key>
                     <data>AQAAAA==</data>
+                    <key>AAPL01,override-no-connect</key>
+                    <data>AP///////wBBDCkJ8SsAAB8fAQOANR54IqYxqFVRnSUPUFS/7wDRwLMAlQCBgIFAgcABAQEBAjqAGHE4LUBYLEUADyghAAAeAAAA/wBaVjAyMTMxMDExMjQ5AAAA/ABQSEwgMjQxQjhRCiAgAAAA/QAwTB5VEgAKICAgICAgACA=</data>
                     <key>applbkl</key>
+                    <data>AQAAAA==</data>
+                    <key>complete-modeset</key>
                     <data>AQAAAA==</data>
                     <key>device-id</key>
                     <data>mz4AAA==</data>
+                    <key>disable-agdc</key>
+                    <data>AQAAAA==</data>
                     <key>enable-hdmi20</key>
                     <data>AQAAAA==</data>
                     <key>enable-lspcon-support</key>
+                    <data>AQAAAA==</data>
+                    <key>force-online</key>
                     <data>AQAAAA==</data>
                     <key>framebuffer-con1-enable</key>
                     <data>AQAAAA==</data>
@@ -616,7 +660,7 @@
                     <key>framebuffer-con1-index</key>
                     <integer>3</integer>
                     <key>framebuffer-con3-flags</key>
-                    <data>BwQAAA==</data>
+                    <data>xwEAAA==</data>
                     <key>framebuffer-con3-type</key>
                     <data>AAgAAA==</data>
                     <key>framebuffer-fbmem</key>
@@ -657,7 +701,7 @@
                     <key>BundlePath</key>
                     <string>Lilu.kext</string>
                     <key>Comment</key>
-                    <string>V1.7.2 | By RapidEFI</string>
+                    <string>V1.7.3 | By RapidEFI</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
@@ -729,7 +773,7 @@
                     <key>BundlePath</key>
                     <string>SMCBatteryManager.kext</string>
                     <key>Comment</key>
-                    <string>V1.3.8 | By RapidEFI</string>
+                    <string>V1.3.8 | SMCBatteryManager on (ACPIBatteryManager conflict anecdotal; keep for battery status)</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
@@ -783,7 +827,7 @@
                     <key>BundlePath</key>
                     <string>AppleALC.kext</string>
                     <key>Comment</key>
-                    <string>V1.9.7 | By RapidEFI</string>
+                    <string>V1.9.8 | By RapidEFI</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
@@ -963,7 +1007,7 @@
                     <key>BundlePath</key>
                     <string>IOSkywalkFamily.kext</string>
                     <key>Comment</key>
-                    <string>V1.0 | By RapidEFI</string>
+                    <string>V1.0 | By RapidEFI - Sequoia (Darwin 24) + AirportItlwm only</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
@@ -981,7 +1025,7 @@
                     <key>BundlePath</key>
                     <string>IO80211FamilyLegacy.kext</string>
                     <key>Comment</key>
-                    <string>V1200.12.2b1 | By RapidEFI</string>
+                    <string>V1200.12.2b1 | By RapidEFI - Sequoia + AirportItlwm only</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
@@ -1044,6 +1088,24 @@
                     <string>23.3.99</string>
                     <key>MinKernel</key>
                     <string>23.0.0</string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>itlwm.kext</string>
+                    <key>Comment</key>
+                    <string>V2.3.0 | macOS 26 Tahoe only (Darwin 25.x) + HeliPort - does not load on Sonoma/Sequoia</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/itlwm</string>
+                    <key>MaxKernel</key>
+                    <string>25.99.99</string>
+                    <key>MinKernel</key>
+                    <string>25.0.0</string>
                     <key>PlistPath</key>
                     <string>Contents/Info.plist</string>
                 </dict>
@@ -1123,6 +1185,42 @@
                     <key>Arch</key>
                     <string>Any</string>
                     <key>BundlePath</key>
+                    <string>VoodooI2C.kext/Contents/PlugIns/VoodooI2CServices.kext</string>
+                    <key>Comment</key>
+                    <string>V1</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/VoodooI2CServices</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>VoodooI2C.kext/Contents/PlugIns/VoodooGPIO.kext</string>
+                    <key>Comment</key>
+                    <string>V1.1</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/VoodooGPIO</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
                     <string>VoodooI2C.kext</string>
                     <key>Comment</key>
                     <string>V2.9.1</string>
@@ -1141,13 +1239,13 @@
                     <key>Arch</key>
                     <string>Any</string>
                     <key>BundlePath</key>
-                    <string>VoodooI2CHID.kext</string>
+                    <string>VoodooI2C.kext/Contents/PlugIns/VoodooInput.kext</string>
                     <key>Comment</key>
-                    <string>V1</string>
+                    <string>V1.1.7 | After VoodooI2C core; explicit load helps gesture/input on some builds</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
-                    <string>Contents/MacOS/VoodooI2CHID</string>
+                    <string>Contents/MacOS/VoodooInput</string>
                     <key>MaxKernel</key>
                     <string></string>
                     <key>MinKernel</key>
@@ -1159,13 +1257,13 @@
                     <key>Arch</key>
                     <string>Any</string>
                     <key>BundlePath</key>
-                    <string>VoodooI2C.kext/Contents/PlugIns/VoodooInput.kext</string>
+                    <string>VoodooI2CHID.kext</string>
                     <key>Comment</key>
-                    <string>V1.1.7</string>
+                    <string>V1</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
-                    <string>Contents/MacOS/VoodooInput</string>
+                    <string>Contents/MacOS/VoodooI2CHID</string>
                     <key>MaxKernel</key>
                     <string></string>
                     <key>MinKernel</key>
@@ -1215,11 +1313,29 @@
                     <key>BundlePath</key>
                     <string>VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Mouse.kext</string>
                     <key>Comment</key>
-                    <string>V2.3.8</string>
+                    <string>V2.3.8 | Off: no physical trackpoint; avoid extra PS2 pointing path</string>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>ExecutablePath</key>
                     <string>Contents/MacOS/VoodooPS2Mouse</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Trackpad.kext</string>
+                    <key>Comment</key>
+                    <string>V2.3.8 | Off: I2C ELAN is primary; PS/2 trackpad fights VoodooI2C pointer path</string>
+                    <key>Enabled</key>
+                    <false/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/VoodooPS2Trackpad</string>
                     <key>MaxKernel</key>
                     <string></string>
                     <key>MinKernel</key>
@@ -1234,13 +1350,13 @@
                     <key>Arch</key>
                     <string>Any</string>
                     <key>Comment</key>
-                    <string>Fix Brcm&amp;Intel WiFi</string>
+                    <string>Sequoia + itlwm: block IOSkywalk on Darwin 24.x. Re-check MinKernel/MaxKernel when upgrading macOS major version.</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Identifier</key>
                     <string>com.apple.iokit.IOSkywalkFamily</string>
                     <key>MaxKernel</key>
-                    <string></string>
+                    <string>24.99.99</string>
                     <key>MinKernel</key>
                     <string>24.0.0</string>
                     <key>Strategy</key>
@@ -1330,11 +1446,11 @@
                     <key>Base</key>
                     <string></string>
                     <key>Comment</key>
-                    <string>Enable PCI power management if there is no such code in DSDT, 10.9.*, 10.10.* (credit Zenith432)</string>
+                    <string>Legacy USB XHCI power patch (Zenith432). Off: modern macOS usually OK without it; re-enable if USB sleep/wake issues.</string>
                     <key>Count</key>
                     <integer>0</integer>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>Find</key>
                     <data>dU1Ii7voAQAA</data>
                     <key>Identifier</key>
@@ -1432,7 +1548,7 @@
                 <key>ThirdPartyDrives</key>
                 <false/>
                 <key>XhciPortLimit</key>
-                <true/>
+                <false/>
             </dict>
             <key>Scheme</key>
             <dict>
@@ -1463,7 +1579,7 @@
                 <key>InstanceIdentifier</key>
                 <string></string>
                 <key>LauncherOption</key>
-                <string>Full</string>
+                <string>Short</string>
                 <key>LauncherPath</key>
                 <string>Default</string>
                 <key>PickerAttributes</key>
@@ -1483,7 +1599,7 @@
                 <key>TakeoffDelay</key>
                 <integer>0</integer>
                 <key>Timeout</key>
-                <integer>15</integer>
+                <integer>8</integer>
             </dict>
             <key>Debug</key>
             <dict>
@@ -1496,53 +1612,16 @@
                 <key>DisplayDelay</key>
                 <integer>0</integer>
                 <key>DisplayLevel</key>
-                <integer>2147483650</integer>
+                <integer>2147483648</integer>
                 <key>LogModules</key>
-                <string>*</string>
+                <string></string>
                 <key>SysReport</key>
                 <false/>
                 <key>Target</key>
-                <integer>3</integer>
+                <integer>0</integer>
             </dict>
             <key>Entries</key>
-            <array>
-                <dict>
-                    <key>Arguments</key>
-                    <string></string>
-                    <key>Auxiliary</key>
-                    <false/>
-                    <key>Comment</key>
-                    <string>Not signed for security reasons</string>
-                    <key>Enabled</key>
-                    <false/>
-                    <key>Flavour</key>
-                    <string>Auto</string>
-                    <key>Name</key>
-                    <string>CustomOS</string>
-                    <key>Path</key>
-                    <string>PciRoot(0x0)/Pci(0x1,0x1)/Pci(0x0,0x0)/NVMe(0x1,11-22-33-44-55-66-77-88)/HD(1,GPT,00000000-0000-0000-0000-000000000000,0x800,0x64000)/\EFI\BOOT\BOOTX64.EFI</string>
-                    <key>TextMode</key>
-                    <false/>
-                </dict>
-                <dict>
-                    <key>Arguments</key>
-                    <string></string>
-                    <key>Auxiliary</key>
-                    <false/>
-                    <key>Comment</key>
-                    <string>Not signed for security reasons</string>
-                    <key>Enabled</key>
-                    <false/>
-                    <key>Flavour</key>
-                    <string>Deepin:LInux</string>
-                    <key>Name</key>
-                    <string>Deepin</string>
-                    <key>Path</key>
-                    <string>PciRoot(0x0)/Pci(0x1B,0x0)/Pci(0x0,0x0)/NVMe(0x1,93-D8-C5-49-4A-44-1B-00)/HD(1,GPT,797F5603-2BC5-421C-BF9D-18016299DEFF,0x28,0x400000)/\EFI\deepin\grubX64.EFI</string>
-                    <key>TextMode</key>
-                    <false/>
-                </dict>
-            </array>
+            <array/>
             <key>Security</key>
             <dict>
                 <key>AllowSetDefault</key>
@@ -1558,7 +1637,7 @@
                 <key>EnablePassword</key>
                 <false/>
                 <key>ExposeSensitiveData</key>
-                <integer>6</integer>
+                <integer>2</integer>
                 <key>HaltLevel</key>
                 <integer>2147483648</integer>
                 <key>PasswordHash</key>
@@ -1659,7 +1738,7 @@
                     <key>bluetoothInternalControllerInfo</key>
                     <data>AAAAAAAAAAAAAAAAAAA=</data>
                     <key>boot-args</key>
-                    <string>darkwake=2 -hbfx-patch=auto -igfxblt revpatch=auto,sbvmm,cpuname debug=0x144</string>
+                    <string>darkwake=0 -hbfx-patch=auto -igfxblt -igfxhdmidivs revpatch=auto,sbvmm,cpuname hibernatemode=0 -wegnoegpu -vi2c-force-polling</string>
                     <key>csr-active-config</key>
                     <data>/w8AAA==</data>
                     <key>prev-lang:kbd</key>
@@ -1730,7 +1809,7 @@
                 <key>AdviseFeatures</key>
                 <false/>
                 <key>MLB</key>
-                <string>C02027303QXP8PGJC</string>
+                <string>C02941130CDN9PRUE</string>
                 <key>MaxBIOSVersion</key>
                 <false/>
                 <key>ProcessorType</key>
@@ -1742,11 +1821,11 @@
                 <key>SystemMemoryStatus</key>
                 <string>Auto</string>
                 <key>SystemProductName</key>
-                <string>MacBookPro16,2</string>
+                <string>MacBookPro16,1</string>
                 <key>SystemSerialNumber</key>
-                <string>C02D10BWML7H</string>
+                <string>C02ZJUYAMD6N</string>
                 <key>SystemUUID</key>
-                <string>3B9BB432-9572-424F-B5DC-066303E71266</string>
+                <string>66FCC640-BAC8-488D-B3C8-24E7DDF9FA98</string>
             </dict>
             <key>UpdateDataHub</key>
             <true/>
@@ -1874,9 +1953,9 @@
                     <key>Arguments</key>
                     <string></string>
                     <key>Comment</key>
-                    <string></string>
+                    <string>Disabled: duplicate ext4; Ext4Dxe.efi is enough for OpenLinuxBoot. Enable if ext4 Linux volume fails to load.</string>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>LoadEarly</key>
                     <false/>
                     <key>Path</key>
