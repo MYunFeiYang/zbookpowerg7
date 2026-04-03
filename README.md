@@ -37,7 +37,7 @@
 | `EFI/oc/` | OpenCore **`OpenCore.efi`**、**Drivers**、**Kexts**、**`config.plist`**、**`ACPI/`**（`.aml` 与部分 **`.dsl`** 源码） |
 | `EFI/boot/` | 引导相关文件 |
 | `EFI/SysReport/` | 本机 ACPI 表导出 |
-| `EFI/scripts/` | 合盖关机与 **`pmset`** 辅助脚本 |
+| `EFI/scripts/` | 合盖关机、**`pmset`** 辅助脚本；**`install-mount-esp.sh`** 安装后可在开机时自动挂载本机 ESP（**`com.oc.mountesp`**） |
 
 将整个 **`EFI`** 复制到 **ESP 分区根目录**（与 **`EFI/oc`** 同级），按 OpenCore 常规流程使用。
 
