@@ -5,6 +5,9 @@
 #
 set -euo pipefail
 
+# 固定英文输出，避免「设备标识符」等非英文关键字导致解析失败
+export LC_ALL=C
+
 log() { printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >&2; }
 
 find_whole_disk_for_root() {
@@ -31,12 +34,26 @@ find_whole_disk_for_root() {
   printf '%s\n' "$dev"
 }
 
+# 用 plist 的 Content==EFI 识别 ESP，不依赖 diskutil list 的文本格式/语言
+partition_content() {
+  local part="$1"
+  diskutil info -plist "$part" 2>/dev/null | plutil -extract Content raw - 2>/dev/null || true
+}
+
 find_efi_on_disk() {
   local whole="$1"
-  local line
-  line=$(diskutil list "$whole" | grep -E 'EFI EFI|EFI System Partition' | head -1) || true
-  [[ -n "$line" ]] || return 1
-  awk '{print $NF}' <<<"$line"
+  local part content
+
+  while read -r part; do
+    [[ "$part" =~ ^${whole}s[0-9]+$ ]] || continue
+    content=$(partition_content "$part")
+    if [[ "$content" == "EFI" ]]; then
+      printf '%s\n' "$part"
+      return 0
+    fi
+  done < <(diskutil list "$whole" | awk '/disk[0-9]+s[0-9]+$/ {print $NF}')
+
+  return 1
 }
 
 main() {
@@ -45,11 +62,13 @@ main() {
     log "Could not resolve whole disk for /"
     exit 1
   }
+  log "Resolved whole disk: ${whole}"
 
   efi=$(find_efi_on_disk "$whole") || {
-    log "No EFI partition found on ${whole}"
+    log "No EFI partition (Content=EFI) found on ${whole}. Try: diskutil list ${whole}"
     exit 1
   }
+  log "ESP partition: ${efi}"
 
   mp=$(diskutil info "$efi" 2>/dev/null | awk -F': ' '/Mount Point/ {print $2}' | sed 's/^ *//')
   if [[ -n "$mp" && "$mp" != "Not applicable" && "$mp" != "(null)" ]]; then
