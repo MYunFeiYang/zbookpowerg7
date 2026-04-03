@@ -1,6 +1,7 @@
 #!/bin/bash
 #
 # 挂载当前系统启动盘上的 EFI System Partition（ESP）。
+# 仅在「尚未挂载」时用 diskutil mount（默认挂载，不使用 readOnly）；不尝试对已存在的只读挂载做 remount。
 # 适用于根卷在 APFS/HFS+ 上的常见单盘布局；多系统或外置系统请自行核对 diskutil。
 #
 set -euo pipefail
@@ -9,6 +10,10 @@ set -euo pipefail
 export LC_ALL=C
 
 log() { printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >&2; }
+
+mount_point_for() {
+  diskutil info "$1" 2>/dev/null | awk -F': ' '/Mount Point/ {print $2}' | sed 's/^ *//'
+}
 
 find_whole_disk_for_root() {
   local dev
@@ -70,18 +75,14 @@ main() {
   }
   log "ESP partition: ${efi}"
 
-  mp=$(diskutil info "$efi" 2>/dev/null | awk -F': ' '/Mount Point/ {print $2}' | sed 's/^ *//')
+  mp=$(mount_point_for "$efi")
   if [[ -n "$mp" && "$mp" != "Not applicable" && "$mp" != "(null)" ]]; then
-    log "ESP ${efi} already mounted at ${mp}"
+    log "ESP ${efi} already mounted at ${mp} (left unchanged)"
     exit 0
   fi
 
-  if diskutil mount readOnly "$efi" 2>/dev/null; then
-    log "Mounted ${efi} read-only"
-    exit 0
-  fi
   if diskutil mount "$efi"; then
-    log "Mounted ${efi}"
+    log "Mounted ${efi} (diskutil mount, not readOnly)"
     exit 0
   fi
   log "Failed to mount ${efi}"
