@@ -281,7 +281,7 @@
 			<key>IOClass</key>
 			<string>VoodooI2CMultitouchHIDEventDriver</string>
 			<key>IOProbeScore</key>
-			<integer>100</integer>
+			<integer>200</integer>
 			<key>IOProviderClass</key>
 			<string>IOHIDInterface</string>
 		</dict>
@@ -301,7 +301,7 @@
 			<key>IOClass</key>
 			<string>VoodooI2CPrecisionTouchpadHIDEventDriver</string>
 			<key>IOProbeScore</key>
-			<integer>3000</integer>
+			<integer>300</integer>
 			<key>IOProviderClass</key>
 			<string>IOHIDInterface</string>
 			<key>ProcessBluetoothMouseStopsTrackpad</key>
@@ -329,7 +329,7 @@
 			<key>IOClass</key>
 			<string>VoodooI2CStylusHIDEventDriver</string>
 			<key>IOProbeScore</key>
-			<integer>50</integer>
+			<integer>300</integer>
 			<key>IOProviderClass</key>
 			<string>IOHIDInterface</string>
 		</dict>

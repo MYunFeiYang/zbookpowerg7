@@ -64,6 +64,30 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
+                    <string>I2C0 GNVS for trackpad; load before TPD3-CRS/INI</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-I2C0-GNVS.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string>TPD3 (ELAN073D): _CRS = I2C + GpioInt; if GNUM(GPDI)==0 fallback pin 0x003D (see SSDT-TPD3-CRS.dsl)</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-TPD3-CRS.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string>TPD3 _INI after I2C0-GNVS (see SSDT-TPD3-INI.dsl)</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-TPD3-INI.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
                     <string>TB3 Titan Ridge hotplug - off (AML kept in ACPI/)</string>
                     <key>Enabled</key>
                     <false/>
@@ -74,17 +98,9 @@
                     <key>Comment</key>
                     <string>Optional: hide RP01 _STA on Darwin (conflicts with TB3 hotplug if both on) - off, AML kept</string>
                     <key>Enabled</key>
-                    <false/>
-                    <key>Path</key>
-                    <string>SSDT-thunderbolt-disable.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string>TPD3 (ELAN073D): _CRS = I2C + GpioInt; if GNUM(GPDI)==0 fallback pin 0x003D (see SSDT-TPD3-CRS.dsl)</string>
-                    <key>Enabled</key>
                     <true/>
                     <key>Path</key>
-                    <string>SSDT-TPD3-CRS.aml</string>
+                    <string>SSDT-thunderbolt-disable.aml</string>
                 </dict>
                 <dict>
                     <key>Comment</key>
@@ -141,22 +157,6 @@
                     <false/>
                     <key>Path</key>
                     <string>SSDT-RP01.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string></string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-I2C0-GNVS.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string>TPD3 _INI: GNVS + OEM GNUM/SHPO after (see SSDT-TPD3-INI.dsl); load after I2C0-GNVS</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Path</key>
-                    <string>SSDT-TPD3-INI.aml</string>
                 </dict>
             </array>
             <key>Delete</key>
@@ -995,9 +995,27 @@
                     <key>ExecutablePath</key>
                     <string></string>
                     <key>MaxKernel</key>
-                    <string></string>
+                    <string>25.99.99</string>
                     <key>MinKernel</key>
                     <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>UTBMap_tahoe.kext</string>
+                    <key>Comment</key>
+                    <string>V1.1</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string></string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string>26.0.0</string>
                     <key>PlistPath</key>
                     <string>Contents/Info.plist</string>
                 </dict>
@@ -1621,7 +1639,26 @@
                 <integer>0</integer>
             </dict>
             <key>Entries</key>
-            <array/>
+            <array>
+                <dict>
+                    <key>Arguments</key>
+                    <string></string>
+                    <key>Auxiliary</key>
+                    <false/>
+                    <key>Comment</key>
+                    <string>Full UEFI device path. If needed, verify with OpenShell map/dh. Misc Entries have no Type or Volume keys.</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Flavour</key>
+                    <string>Linux</string>
+                    <key>Name</key>
+                    <string>KaihongOS</string>
+                    <key>Path</key>
+                    <string>PciRoot(0x0)/Pci(0x1B,0x0)/Pci(0x0,0x0)/NVMe(0x1,93-D8-C5-49-4A-44-1B-00)/HD(1,GPT,797F5603-2BC5-421C-BF9D-18016299DEFF,0x28,0x400000)/\EFI\KaihongOS\grubx64.efi</string>
+                    <key>TextMode</key>
+                    <false/>
+                </dict>
+            </array>
             <key>Security</key>
             <dict>
                 <key>AllowSetDefault</key>
@@ -1738,7 +1775,7 @@
                     <key>bluetoothInternalControllerInfo</key>
                     <data>AAAAAAAAAAAAAAAAAAA=</data>
                     <key>boot-args</key>
-                    <string>darkwake=0 -hbfx-patch=auto -igfxblt -igfxhdmidivs revpatch=auto,sbvmm,cpuname hibernatemode=0 -wegnoegpu -vi2c-force-polling</string>
+                    <string>darkwake=0 -hbfx-patch=auto -igfxblt -igfxhdmidivs -igfxonln=1 revpatch=auto,sbvmm,cpuname hibernatemode=0 -wegnoegpu -amfipassbeta -vi2c-force-polling -lilubetaall keepsyms=1 debug=0x100</string>
                     <key>csr-active-config</key>
                     <data>/w8AAA==</data>
                     <key>prev-lang:kbd</key>
@@ -1809,7 +1846,7 @@
                 <key>AdviseFeatures</key>
                 <false/>
                 <key>MLB</key>
-                <string>C02941130CDN9PRUE</string>
+                <string>C02136104J90000UE</string>
                 <key>MaxBIOSVersion</key>
                 <false/>
                 <key>ProcessorType</key>
@@ -1821,11 +1858,11 @@
                 <key>SystemMemoryStatus</key>
                 <string>Auto</string>
                 <key>SystemProductName</key>
-                <string>MacBookPro16,1</string>
+                <string>MacBookPro16,4</string>
                 <key>SystemSerialNumber</key>
-                <string>C02ZJUYAMD6N</string>
+                <string>C02GC2YFMD6T</string>
                 <key>SystemUUID</key>
-                <string>66FCC640-BAC8-488D-B3C8-24E7DDF9FA98</string>
+                <string>5FF2FE55-82A2-48E6-998E-A9A853D27CE7</string>
             </dict>
             <key>UpdateDataHub</key>
             <true/>
@@ -1843,7 +1880,7 @@
             <key>APFS</key>
             <dict>
                 <key>EnableJumpstart</key>
-                <true/>
+                <false/>
                 <key>GlobalConnect</key>
                 <false/>
                 <key>HideVerbose</key>
@@ -2020,6 +2057,18 @@
                     <false/>
                     <key>Path</key>
                     <string>Ext4Dxe.efi</string>
+                </dict>
+                <dict>
+                    <key>Arguments</key>
+                    <string></string>
+                    <key>Comment</key>
+                    <string></string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>LoadEarly</key>
+                    <false/>
+                    <key>Path</key>
+                    <string>apfs_aligned.efi</string>
                 </dict>
             </array>
             <key>Input</key>
