@@ -1648,7 +1648,7 @@
                     <key>Comment</key>
                     <string>Full UEFI device path. If needed, verify with OpenShell map/dh. Misc Entries have no Type or Volume keys.</string>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>Flavour</key>
                     <string>Linux</string>
                     <key>Name</key>
@@ -1880,7 +1880,7 @@
             <key>APFS</key>
             <dict>
                 <key>EnableJumpstart</key>
-                <false/>
+                <true/>
                 <key>GlobalConnect</key>
                 <false/>
                 <key>HideVerbose</key>
