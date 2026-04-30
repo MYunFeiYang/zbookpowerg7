@@ -154,7 +154,7 @@
                     <key>Comment</key>
                     <string>RP01 (often TB root port on this platform) - off (AML kept in ACPI/)</string>
                     <key>Enabled</key>
-                    <false/>
+                    <true/>
                     <key>Path</key>
                     <string>SSDT-RP01.aml</string>
                 </dict>
@@ -1468,7 +1468,7 @@
                     <key>Count</key>
                     <integer>0</integer>
                     <key>Enabled</key>
-                    <false/>
+                    <true/>
                     <key>Find</key>
                     <data>dU1Ii7voAQAA</data>
                     <key>Identifier</key>
