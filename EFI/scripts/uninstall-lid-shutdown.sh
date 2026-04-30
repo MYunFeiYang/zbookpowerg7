@@ -42,11 +42,7 @@ if [[ -f "$DEST_SH" ]]; then
   rm -f "$DEST_SH"
 fi
 
-if [[ "$RESTORE_PMSET" -eq 1 ]]; then
-  echo "==> pmset: disablesleep 0 (restore default sleep behavior)"
-  pmset -a disablesleep 0
-else
-  echo "==> pmset unchanged. To allow sleep again: sudo pmset -a disablesleep 0"
-fi
+echo "==> pmset: disablesleep 0 (restore default sleep behavior)"
+pmset -a disablesleep 0
 
 echo "==> Uninstall complete."
