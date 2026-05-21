@@ -995,7 +995,7 @@
                     <key>ExecutablePath</key>
                     <string></string>
                     <key>MaxKernel</key>
-                    <string>25.99.99</string>
+                    <string>24.99.99</string>
                     <key>MinKernel</key>
                     <string></string>
                     <key>PlistPath</key>
@@ -1015,7 +1015,7 @@
                     <key>MaxKernel</key>
                     <string></string>
                     <key>MinKernel</key>
-                    <string>26.0.0</string>
+                    <string>25.0.0</string>
                     <key>PlistPath</key>
                     <string>Contents/Info.plist</string>
                 </dict>
@@ -1766,8 +1766,6 @@
                 </dict>
                 <key>7C436110-AB2A-4BBB-A880-FE41995C9F82</key>
                 <dict>
-                    <key>#csr-active-config</key>
-                    <data>/w8AAA==</data>
                     <key>ForceDisplayRotationInEFI</key>
                     <integer>0</integer>
                     <key>SystemAudioVolume</key>
@@ -1778,6 +1776,8 @@
                     <data>AAAAAAAAAAAAAAAAAAA=</data>
                     <key>boot-args</key>
                     <string>darkwake=0 -hbfx-patch=auto -igfxblt -igfxhdmidivs revpatch=auto,sbvmm,cpuname hibernatemode=0 -wegnoegpu -amfipassbeta -vi2c-force-polling -lilubetaall apfs.repair=yes apfs.snapshot=0</string>
+                    <key>csr-active-config</key>
+                    <data>/w8AAA==</data>
                     <key>prev-lang:kbd</key>
                     <data>emgtSGFuczoyNTI=</data>
                     <key>run-efi-updater</key>
