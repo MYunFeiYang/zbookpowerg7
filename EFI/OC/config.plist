@@ -1031,7 +1031,7 @@
                     <key>ExecutablePath</key>
                     <string>Contents/MacOS/IOSkywalkFamily</string>
                     <key>MaxKernel</key>
-                    <string>24.99.99</string>
+                    <string>25.99.99</string>
                     <key>MinKernel</key>
                     <string>24.0.0</string>
                     <key>PlistPath</key>
@@ -1049,7 +1049,7 @@
                     <key>ExecutablePath</key>
                     <string>Contents/MacOS/IO80211FamilyLegacy</string>
                     <key>MaxKernel</key>
-                    <string>24.99.99</string>
+                    <string>25.99.99</string>
                     <key>MinKernel</key>
                     <string>24.0.0</string>
                     <key>PlistPath</key>
@@ -1067,7 +1067,7 @@
                     <key>ExecutablePath</key>
                     <string>Contents/MacOS/AirportItlwm</string>
                     <key>MaxKernel</key>
-                    <string>24.99.99</string>
+                    <string>25.99.99</string>
                     <key>MinKernel</key>
                     <string>24.0.0</string>
                     <key>PlistPath</key>
@@ -1117,7 +1117,7 @@
                     <key>Comment</key>
                     <string>V2.3.0 | macOS 26 Tahoe only (Darwin 25.x) + HeliPort - does not load on Sonoma/Sequoia</string>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>ExecutablePath</key>
                     <string>Contents/MacOS/itlwm</string>
                     <key>MaxKernel</key>
@@ -1374,7 +1374,7 @@
                     <key>Identifier</key>
                     <string>com.apple.iokit.IOSkywalkFamily</string>
                     <key>MaxKernel</key>
-                    <string>24.99.99</string>
+                    <string>25.99.99</string>
                     <key>MinKernel</key>
                     <string>24.0.0</string>
                     <key>Strategy</key>
