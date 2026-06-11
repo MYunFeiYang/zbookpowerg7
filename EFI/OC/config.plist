@@ -16,7 +16,7 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string>Disable Intel SNDW on Darwin so internal mic can use ALC236 analog path</string>
+                    <string>Hide HDAS.SNDW on Darwin (built-in digital mic unsupported; does not fix internal mic)</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
