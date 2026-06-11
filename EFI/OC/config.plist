@@ -588,7 +588,7 @@
                     <key>hda-gfx</key>
                     <string>onboard-1</string>
                     <key>layout-id</key>
-                    <integer>21</integer>
+                    <integer>13</integer>
                     <key>pci-aspm-default</key>
                     <integer>3</integer>
                 </dict>
