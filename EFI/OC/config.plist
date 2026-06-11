@@ -16,6 +16,14 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
+                    <string>Disable Intel SNDW on Darwin so internal mic can use ALC236 analog path</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Path</key>
+                    <string>SSDT-SNDW-off.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
                     <string></string>
                     <key>Enabled</key>
                     <true/>
@@ -588,7 +596,7 @@
                     <key>hda-gfx</key>
                     <string>onboard-1</string>
                     <key>layout-id</key>
-                    <integer>13</integer>
+                    <integer>55</integer>
                     <key>pci-aspm-default</key>
                     <integer>3</integer>
                 </dict>

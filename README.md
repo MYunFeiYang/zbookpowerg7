@@ -18,7 +18,8 @@
 | 有线网 | **Intel Ethernet I219-LM** → **`IntelMausi.kext`** |
 | 无线网 | **Intel Wi‑Fi 6 AX201** → **`AirportItlwm`**（按 **Sonoma / Sequoia** 分内核启用）+ 面向 **Darwin 25+** 的 **`itlwm.kext`**（以 `MinKernel`/`MaxKernel` 为准，勿重复启用冲突版本） |
 | 蓝牙 | **IntelBluetoothFirmware** + **BlueToolFixup** + **IntelBTPatcher** |
-| 声卡 | **AppleALC**（本机 **layout-id `55`** 等在 `config.plist` 的 `DeviceProperties` 中） |
+| 声卡 | **AppleALC** + **Realtek ALC236**（`layout-id` **`55`**，见 `config.plist` → `Pci(0x1F,0x3)`） |
+| 内置麦克风 | **大概率不可用**（Intel SST/SoundWire；见 [`docs/macos-mic-troubleshooting.md`](docs/macos-mic-troubleshooting.md)） |
 | 触控板 | **ELAN073D**（ACPI 中 **TPD3**；**`SSDT-TPD3-CRS` / `SSDT-TPD3-INI`**、**`SSDT-I2C0-GNVS`** 等）+ **VoodooI2C** 系 |
 | USB | **USBToolBox** + **UTBMap** |
 | 雷电 | 设备属性中含 **Intel JHL7540**（Titan Ridge）；**`SSDT-TB3HP-TITAN`**、**`SSDT-thunderbolt-disable`**、**`SSDT-RP01`** 在配置中为 **关闭**，需自行评估后开启 |
@@ -34,6 +35,7 @@
 
 | 路径 | 说明 |
 |------|------|
+| `docs/macos-mic-troubleshooting.md` | 内置麦硬件结论、当前 EFI 设置、**macOS 排查清单** |
 | `EFI/oc/` | OpenCore **`OpenCore.efi`**、**Drivers**、**Kexts**、**`config.plist`**、**`ACPI/`**（`.aml` 与部分 **`.dsl`** 源码） |
 | `EFI/boot/` | 引导相关文件 |
 | `EFI/SysReport/` | 本机 ACPI 表导出 |
