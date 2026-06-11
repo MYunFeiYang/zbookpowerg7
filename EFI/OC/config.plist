@@ -585,7 +585,6 @@
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1F,0x3)</key>
                 <dict>
-    
                     <key>hda-gfx</key>
                     <string>onboard-1</string>
                     <key>layout-id</key>
