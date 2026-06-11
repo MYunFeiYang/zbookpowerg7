@@ -18,7 +18,7 @@
 | 有线网 | **Intel Ethernet I219-LM** → **`IntelMausi.kext`** |
 | 无线网 | **Intel Wi‑Fi 6 AX201** → **`AirportItlwm`**（按 **Sonoma / Sequoia** 分内核启用）+ 面向 **Darwin 25+** 的 **`itlwm.kext`**（以 `MinKernel`/`MaxKernel` 为准，勿重复启用冲突版本） |
 | 蓝牙 | **IntelBluetoothFirmware** + **BlueToolFixup** + **IntelBTPatcher** |
-| 声卡 | **AppleALC** + **Realtek ALC236**（`layout-id` **`55`**，仅 **播放 / 3.5mm**；见 `config.plist` → `Pci(0x1F,0x3)`） |
+| 声卡 | **AppleALC** + **Realtek ALC236**（`layout-id` **`55`** + **`alctcsel=1`**；见 `config.plist` → `Pci(0x1F,0x3)`） |
 | 内置麦克风 | **不支持**（Intel SST/SoundWire **数字麦**；macOS 已实测无输入电平；详见 [`docs/macos-mic-troubleshooting.md`](docs/macos-mic-troubleshooting.md)） |
 | 触控板 | **ELAN073D**（ACPI 中 **TPD3**；**`SSDT-TPD3-CRS` / `SSDT-TPD3-INI`**、**`SSDT-I2C0-GNVS`** 等）+ **VoodooI2C** 系 |
 | USB | **USBToolBox** + **UTBMap** |
@@ -45,7 +45,8 @@
 
 ## 已知限制
 
-- **内置麦克风**：**不支持**。本机内置麦走 **Intel SST / SoundWire 数字通路**，不经 ALC236 模拟输入；macOS 无对应驱动。系统设置里可能出现「内置麦克风」，但**输入电平无信号**（2026-06-11 已验证）。**勿再**为内置麦更换 AppleALC `layout-id` 或追加 ACPI。实用方案：**USB 麦**、**蓝牙麦**；可另试 **3.5mm 耳麦 → 线路输入**（与内置麦无关）。  
+- **内置麦克风**：**不支持**（Intel SST / SoundWire 数字麦；2026-06-11 已验证无电平）。**勿再**为内置麦改 layout。  
+- **耳机孔麦克风**：**可用**（`layout 55`，插耳麦后手动选 **「线路输入」**）。输出可自动切耳机，**输入不会自动切换**；可装 **[MicFix](https://github.com/WingLim/MicFix)**（需 `alcverbs=1`，已在 `boot-args`）或每次手动改输入。  
 - **独显**：NVIDIA 无 Apple 官方驱动，仅使用核显。  
 - **雷电**：硬件为 **JHL7540** 类 Titan Ridge，**本仓库未做完整外设与扩展坞验证**。  
 - **系统升级**：大版本升级后请核对 **AirportItlwm / itlwm** 与 **IOSkywalkFamily** 等是否需替换或调整启用范围（以 **`config.plist` → `Kernel` → `Add`** 为准）。
