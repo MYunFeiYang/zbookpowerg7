@@ -585,14 +585,11 @@
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1F,0x3)</key>
                 <dict>
-                    <key>alc-verbs</key>
-                    <data>CgqrAKoKq8oPqqsAAAqqqg==</data>
-                    <key>gain</key>
-                    <data>D6qqAA==</data>
+    
                     <key>hda-gfx</key>
                     <string>onboard-1</string>
                     <key>layout-id</key>
-                    <integer>55</integer>
+                    <integer>21</integer>
                     <key>pci-aspm-default</key>
                     <integer>3</integer>
                 </dict>
