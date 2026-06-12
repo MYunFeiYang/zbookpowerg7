@@ -29,8 +29,8 @@
 ## 睡眠与节能（配置级说明）
 
 - 启用 **Deep Idle** 路径：**`SSDT-DeepIdle`**、**`SSDT-PCI0.LPCB-Wake-AOAC`**，并与 **`SSDT-OCLT-S3Fix`**、**`SSDT-GPRW`** 等协同；**无传统 S3**，空闲仍可能有约 **5W** 级功耗（视外设与 `pmset` 而定）。  
-- **`HibernationFixup`** 与当前策略一致；休眠模式请用 `sudo pmset -a hibernatemode 0` 设置（`hibernatemode` 不是 boot-arg，已从 `boot-args` 移除）。  
-- 合盖即关机：**`EFI/scripts/`**（**`install-lid-shutdown.sh`** / **`uninstall-lid-shutdown.sh`**、**`lid-close-shutdown.sh`**、**`pmset-reduce-wake.sh`**、**`com.oc.lidshutdown.plist`**），按需部署。
+- **`HibernationFixup`** 与当前策略一致；睡眠省电：`sudo sh EFI/scripts/pmset-reduce-wake.sh`（系统更新后可重跑）。  
+- 合盖即关机：**`EFI/scripts/`**（**`install-lid-shutdown.sh`** / **`uninstall-lid-shutdown.sh`**、**`lid-close-shutdown.sh`**、**`com.oc.lidshutdown.plist`**），按需部署。
 
 ## 目录与安装
 

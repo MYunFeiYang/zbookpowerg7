@@ -1,24 +1,47 @@
-#!/bin/sh
-# 在 macOS 本机执行（需管理员密码）。收紧「被网络/TCP/接近传感器等唤醒」的策略。
-# 说明：USB 设备唤醒没有单一 pmset 总开关，仍靠拔线或 USB 映射/机型对照；
-# OpenCore 的 config.plist 里也没有等价于「禁用全部 USB 唤醒」的一项。
+#!/bin/bash
+#
+# 睡眠功耗优化：收紧 pmset，减少 Deep Idle 期间被网络/维护任务唤醒。
+# 用法: ./pmset-reduce-wake.sh        （非 root 时自动 sudo）
+# 系统大版本更新后可能被还原，可重跑。
+# 脚本外：长期睡眠可拔 USB 外设、关 Handoff/蓝牙，进一步省电。
+#
 
-set -e
-sudo pmset -a womp 0
-sudo pmset -a powernap 0
-sudo pmset -a tcpkeepalive 0
-sudo pmset -a proximitywake 0
-echo "Done. Current settings:"
-pmset -g
+set -euo pipefail
 
-# --- DeepIdle / S0 省电（可选，按需取消注释执行）---
-# 目标：关屏后更多停留在 S0 + LPS0，而不是立刻进传统睡眠（与 SSDT-DeepIdle 思路一致）。
-# 数值请按习惯改；sleep=0 表示「不设系统睡眠定时」，仅显示器睡眠（耗电仍高于真 S3）。
-# sudo pmset -a displaysleep 10
-# sudo pmset -a sleep 0
-# sudo pmset -a lessbright 1
-# sudo pmset -a lowpowermode 1
+case "${1:-}" in
+  -h|--help)
+    echo "Usage: $0"
+    echo "  配置 pmset，降低睡眠平均功耗（需 macOS）。"
+    exit 0
+    ;;
+esac
 
-# --- 合盖关机（睡眠不可靠时可选）---
-# 同目录：./install-lid-shutdown.sh  或  ./install-lid-shutdown.sh --skip-pmset
-# 卸载：./uninstall-lid-shutdown.sh [--restore-sleep]
+if [[ "$(uname -s)" != "Darwin" ]]; then
+  echo "This script must run on macOS." >&2
+  exit 1
+fi
+
+if [[ "$(id -u)" -ne 0 ]]; then
+  echo "Re-running with sudo..."
+  exec sudo "$0" "$@"
+fi
+
+echo "==> Applying sleep power settings..."
+
+# 全电源：关网络唤醒；hibernatemode=0 时 standby/autopoweroff 无意义
+pmset -a \
+  womp 0 \
+  powernap 0 \
+  tcpkeepalive 0 \
+  proximitywake 0 \
+  standby 0 \
+  autopoweroff 0 \
+  hibernatemode 0 \
+  disablesleep 0 \
+  networkoversleep 0
+
+# 电池：低电量模式 + 关 Power Nap（AC 侧 lowpowermode 保持系统默认）
+pmset -b lowpowermode 1 powernap 0
+
+echo "==> Done. Key settings:"
+pmset -g custom | grep -E 'womp|powernap|tcpkeepalive|standby|autopoweroff|hibernatemode|disablesleep|networkoversleep|lowpowermode' || true
