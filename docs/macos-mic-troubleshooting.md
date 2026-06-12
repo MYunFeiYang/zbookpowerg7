@@ -103,9 +103,10 @@ macOS 在真机上插耳麦会同时切 **输出 → 耳机**、**输入 → 外
 
 | 方案 | 说明 |
 |------|------|
+| **一键自动切换**（推荐） | `sh EFI/scripts/install-mic-auto-switch.sh` — **MicFix**（HDA verb）+ **MicInputSwitch**（切系统输入）；本机 layout 55 已验证。卸载：`uninstall-mic-auto-switch.sh` |
 | **手动** | 插耳麦后：**系统设置 → 声音 → 输入 → 线路输入** |
-| **[MicFix](https://github.com/WingLim/MicFix)**（推荐） | 支持 **ALC236**；插拔耳麦时发 HDA verb。需 `alcverbs=1`（已加入 `boot-args`）。安装：`brew tap winglim/taps && brew install micfix && brew services start micfix` |
-| **[ComboJack](https://github.com/macos86/ComboJack)** | 文档写明 **ALC236 layout 68**；插孔时弹窗选耳机类型。若 MicFix 无效可试 |
+| **[MicFix](https://github.com/WingLim/MicFix)** 单独使用 | 只发 verb，**不会**自动切系统输入设备；需配合 MicInputSwitch 或手动选输入。`brew install micfix` 当前可能失败，请用安装脚本 |
+| **[ComboJack](https://github.com/macos86/ComboJack)** | 面向 **ALC236 layout 68**；本机 layout 68 无线路输入电平，**不建议** |
 
 ### layout-id 变更史（归档）
 
@@ -146,4 +147,4 @@ cd EFI/oc/ACPI && ./compile-ssdt.sh
 
 ## 7. 一句话
 
-**内置麦 = Intel 数字麦 → 不支持。耳机孔麦 = `layout 55` + 手动「线路输入」→ 有电平；自动切换输入需 MicFix 或手动。**
+**内置麦 = Intel 数字麦 → 不支持。耳机孔麦 = `layout 55` + `install-mic-auto-switch.sh` → 自动切「线路输入」；或手动选输入。**
