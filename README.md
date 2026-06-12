@@ -22,7 +22,7 @@
 | 内置麦克风 | **不支持**（Intel SST/SoundWire **数字麦**；macOS 已实测无输入电平；详见 [`docs/macos-mic-troubleshooting.md`](docs/macos-mic-troubleshooting.md)） |
 | 触控板 | **ELAN073D**（ACPI 中 **TPD3**；**`SSDT-TPD3-CRS` / `SSDT-TPD3-INI`**、**`SSDT-I2C0-GNVS`** 等）+ **VoodooI2C** 系 |
 | USB | **USBToolBox** + **UTBMap** |
-| 雷电 | 设备属性中含 **Intel JHL7540**（Titan Ridge）；**`SSDT-TB3HP-TITAN`**、**`SSDT-thunderbolt-disable`**、**`SSDT-RP01`** 在配置中为 **关闭**，需自行评估后开启 |
+| 雷电 | **Intel JHL7540**（Titan Ridge）**已启用**：`SSDT-TB3HP-TITAN` 开、`SSDT-thunderbolt-disable`/`SSDT-RP01` 关；NHI 驱动已挂载，USB-C 口可用；详见「已知限制 → 雷电」 |
 | 验证存储 | **西数 WD Blue SN570**；换盘或升级系统后请自行回归测试 |
 
 ## 睡眠与节能（配置级说明）
@@ -48,7 +48,7 @@
 - **内置麦克风**：**不支持**（Intel SST / SoundWire 数字麦；2026-06-11 已验证无电平）。**勿再**为内置麦改 layout。  
 - **耳机孔麦克风**：**可用**（`layout 55`，插耳麦后手动选 **「线路输入」**）。输出可自动切耳机，**输入不会自动切换**；可装 **[MicFix](https://github.com/WingLim/MicFix)**（需 `alcverbs=1`，已在 `boot-args`）或每次手动改输入。  
 - **独显**：**不支持，且无解**。Quadro P620（Pascal）的 NVIDIA 驱动止步于 macOS 10.13；当前经 `-wegnoegpu` + `SSDT-dGPU-PowerOff-Darwin` 屏蔽并断电（已验证 IOReg 中无 NVIDIA 设备），仅使用核显。这是最优状态，勿再尝试驱动。  
-- **雷电**：**本仓库策略为整体隐藏**（`SSDT-thunderbolt-disable` + `SSDT-RP01` 启用、`SSDT-TB3HP-TITAN` 关闭；macOS 中 Thunderbolt 显示 "No hardware was found"）。**同类机型有不刷固件的成功先例**：[ZBook 17 G5](https://github.com/theroadw/Zbook-G5-17-WX-4170)（同 HP + Titan Ridge）实现了 TB3 数据/视频/热插拔，要点为 ① HP BIOS 把 TB 安全级别切 **Legacy** 重启后会出现 **No Security**，选中再切回 **Native + Low Power**；② 按本机 IOReg 路径（`RP01/UPSB/DSB…`）定制 SSDT-TB3。如需启用：关 `SSDT-thunderbolt-disable`/`SSDT-RP01`、开 TB3HP 并校对路径，逐项验证睡眠回归；不用雷雳则维持现状（如 BIOS 可关 TB 控制器更省电）。  
+- **雷电**：**已启用，部分验证**（2026-06-12）。当前 `SSDT-TB3HP-TITAN` 开启、`SSDT-thunderbolt-disable` 与 `SSDT-RP01` 关闭（后者的 `RP01._DSM` 与 TB3HP 冲突，二者**不可同开**）。实测：控制器枚举正常（`RP01/PXSX` 下 NHI `8086:15e8` 挂载 `AppleThunderboltNHI`，`IOThunderboltController` 活动），Titan Ridge 的 **USB-C 口（TXHC）可用**。系统信息显示「**未载入驱动程序**」为 **DROM 缺失**的表现（信息页读不到厂商描述块），**不代表驱动未挂载**，不影响 PCIe 隧道与 USB。**待验证**：真实 TB 设备的隧道与热插拔（暂无设备）。**勿加 `power-save=1`**：2026-06-12 实测在 `PciRoot(0x0)/Pci(0x1C,0x0)` 注入后**睡眠无法唤醒**（pmset 日志 `Failure during wake: IGPU(): Some drivers failed to handle setPowerState`），已移除。**回退 TB**：TB3HP 关、`thunderbolt-disable`/`RP01` 开。同类成功先例：[ZBook 17 G5](https://github.com/theroadw/Zbook-G5-17-WX-4170)（BIOS 安全级别 Legacy → No Security → Native + Low Power；本机 BIOS 未见这些选项，可在 Windows 用 HP BiosConfigUtility 查全量固件设置）。  
 - **系统升级**：大版本升级后请核对 **AirportItlwm / itlwm** 与 **IOSkywalkFamily** 等是否需替换或调整启用范围（以 **`config.plist` → `Kernel` → `Add`** 为准）。**注意**：当前 Wi‑Fi 相关 kext 的 `MaxKernel` 均为 `25.99.99`（即 macOS 26.x）；**升级 macOS 27 前必须先取得支持 Darwin 26 的版本并调整内核范围，否则升级后无 Wi‑Fi**。
 
 ## 常见问题
@@ -63,7 +63,7 @@
 **I²C ELAN** + **VoodooI2C** / **VoodooI2CHID**，配合 **TPD3** 相关 **SSDT**；引导参数含 **`-vi2c-force-polling`**（见 **`boot-args`**）。
 
 **雷电扩展坞能用吗？**  
-当前配置下**不能**（TB 被整体隐藏）。同类 HP + Titan Ridge 机型有**不刷固件**启用 TB3 热插拔的成功案例（见「已知限制 → 雷电」），需 BIOS 调安全级别 + 定制 SSDT-TB3 并自行验证睡眠；调试时结合 **`ACPI/`** 中可选表与 **`config.plist` → `ACPI` → `Add`** 的开关逐项进行。
+**未知，但基础已就绪**：TB 控制器与 NHI 驱动已挂载，USB-C 口已验证；PCIe 隧道/热插拔**尚无设备实测**（见「已知限制 → 雷电」）。拿到 TB 设备后建议先**开机前插好**测试，再试热插拔；不行再考虑 DROM 注入或 BIOS 安全级别（BiosConfigUtility）。
 
 **内置麦克风为什么不能用？**  
 内置麦是 **Intel 数字麦克风**（SoundWire），不是 Realtek ALC236 模拟麦；Hackintosh 上 **无驱动**，已实测无效。扬声器/耳机仍由 **AppleALC** 驱动。完整说明见 [`docs/macos-mic-troubleshooting.md`](docs/macos-mic-troubleshooting.md)。

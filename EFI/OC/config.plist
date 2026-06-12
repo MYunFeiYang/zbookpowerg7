@@ -96,17 +96,17 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string>TB3 Titan Ridge hotplug - off (AML kept in ACPI/)</string>
+                    <string>TB3 Titan Ridge hotplug on RP01/PXSX - ON (testing); requires BIOS TB security=No Security, Native+Low Power</string>
                     <key>Enabled</key>
-                    <false/>
+                    <true/>
                     <key>Path</key>
                     <string>SSDT-TB3HP-TITAN.aml</string>
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string>Hide RP01 _STA on Darwin (conflicts with TB3 hotplug if both on) - ON; TB3HP-TITAN must stay off</string>
+                    <string>Hide RP01 _STA on Darwin - off while testing TB3 (re-enable to hide TB again)</string>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>Path</key>
                     <string>SSDT-thunderbolt-disable.aml</string>
                 </dict>
@@ -160,9 +160,9 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string>RP01 (often TB root port on this platform) - ON</string>
+                    <string>RP01 TB3 props (force-power) - off: its RP01._DSM conflicts with SSDT-TB3HP-TITAN (AE_ALREADY_EXISTS)</string>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>Path</key>
                     <string>SSDT-RP01.aml</string>
                 </dict>
