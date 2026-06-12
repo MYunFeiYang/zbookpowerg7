@@ -22,6 +22,7 @@
 | 内置麦克风 | **不支持**（Intel SST/SoundWire **数字麦**；macOS 已实测无输入电平；详见 [`docs/macos-mic-troubleshooting.md`](docs/macos-mic-troubleshooting.md)） |
 | 触控板 | **ELAN073D**（ACPI 中 **TPD3**；**`SSDT-TPD3-CRS` / `SSDT-TPD3-INI`**、**`SSDT-I2C0-GNVS`** 等）+ **VoodooI2C** 系 |
 | USB | **USBToolBox** + **UTBMap** |
+| 风扇转速 | **可读**（EC 自主控速，macOS 不干预）。`SMCSuperIO` EC 模式：`Pci(0x1F,0x0)` 注入 `ec-device=generic` + `fan0-addr=0x2E`（DSDT `FRDC` 寄存器，参数同 ZBook 17 G5），监控软件（如 Stats）可显示 RPM |
 | 雷电 | **Intel JHL7540**（Titan Ridge）**已启用**：`SSDT-TB3HP-TITAN` 开、`SSDT-thunderbolt-disable`/`SSDT-RP01` 关；NHI 驱动已挂载，USB-C 口可用；详见「已知限制 → 雷电」 |
 | 验证存储 | **西数 WD Blue SN570**；换盘或升级系统后请自行回归测试 |
 
