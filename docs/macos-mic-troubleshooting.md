@@ -103,7 +103,7 @@ macOS 在真机上插耳麦会同时切 **输出 → 耳机**、**输入 → 外
 
 | 方案 | 说明 |
 |------|------|
-| **一键自动切换**（推荐） | `sh EFI/scripts/install-mic-auto-switch.sh` — **MicFix**（HDA verb）+ **MicInputSwitch**（切系统输入）；本机 layout 55 已验证。卸载：`uninstall-mic-auto-switch.sh` |
+| **一键自动切换**（推荐） | `sh EFI/scripts/install-mic-auto-switch.sh` — **MicFix**（有线 HDA verb）+ **MicInputSwitch**（切系统输入，优先级：**蓝牙 > 有线 > 内置麦**）。卸载：`uninstall-mic-auto-switch.sh` |
 | **手动** | 插耳麦后：**系统设置 → 声音 → 输入 → 线路输入** |
 | **[MicFix](https://github.com/WingLim/MicFix)** 单独使用 | 只发 verb，**不会**自动切系统输入设备；需配合 MicInputSwitch 或手动选输入。`brew install micfix` 当前可能失败，请用安装脚本 |
 | **[ComboJack](https://github.com/macos86/ComboJack)** | 面向 **ALC236 layout 68**；本机 layout 68 无线路输入电平，**不建议** |
