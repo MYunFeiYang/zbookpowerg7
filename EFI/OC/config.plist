@@ -128,9 +128,9 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string>Faked Ambient Light Sensor</string>
+                    <string>Faked Ambient Light Sensor - off: no real ALS on this machine (no ACPI0008 in DSDT), no SMCLightSensor kext; dead weight</string>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>Path</key>
                     <string>SSDT-ALS0.aml</string>
                 </dict>
