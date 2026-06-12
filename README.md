@@ -47,8 +47,8 @@
 
 - **内置麦克风**：**不支持**（Intel SST / SoundWire 数字麦；2026-06-11 已验证无电平）。**勿再**为内置麦改 layout。  
 - **耳机孔麦克风**：**可用**（`layout 55`，插耳麦后手动选 **「线路输入」**）。输出可自动切耳机，**输入不会自动切换**；可装 **[MicFix](https://github.com/WingLim/MicFix)**（需 `alcverbs=1`，已在 `boot-args`）或每次手动改输入。  
-- **独显**：NVIDIA 无 Apple 官方驱动，仅使用核显。  
-- **雷电**：硬件为 **JHL7540** 类 Titan Ridge，**本仓库未做完整外设与扩展坞验证**。  
+- **独显**：**不支持，且无解**。Quadro P620（Pascal）的 NVIDIA 驱动止步于 macOS 10.13；当前经 `-wegnoegpu` + `SSDT-dGPU-PowerOff-Darwin` 屏蔽并断电（已验证 IOReg 中无 NVIDIA 设备），仅使用核显。这是最优状态，勿再尝试驱动。  
+- **雷电**：**本仓库策略为整体隐藏**（`SSDT-thunderbolt-disable` + `SSDT-RP01` 启用、`SSDT-TB3HP-TITAN` 关闭；macOS 中 Thunderbolt 显示 "No hardware was found"）。**同类机型有不刷固件的成功先例**：[ZBook 17 G5](https://github.com/theroadw/Zbook-G5-17-WX-4170)（同 HP + Titan Ridge）实现了 TB3 数据/视频/热插拔，要点为 ① HP BIOS 把 TB 安全级别切 **Legacy** 重启后会出现 **No Security**，选中再切回 **Native + Low Power**；② 按本机 IOReg 路径（`RP01/UPSB/DSB…`）定制 SSDT-TB3。如需启用：关 `SSDT-thunderbolt-disable`/`SSDT-RP01`、开 TB3HP 并校对路径，逐项验证睡眠回归；不用雷雳则维持现状（如 BIOS 可关 TB 控制器更省电）。  
 - **系统升级**：大版本升级后请核对 **AirportItlwm / itlwm** 与 **IOSkywalkFamily** 等是否需替换或调整启用范围（以 **`config.plist` → `Kernel` → `Add`** 为准）。**注意**：当前 Wi‑Fi 相关 kext 的 `MaxKernel` 均为 `25.99.99`（即 macOS 26.x）；**升级 macOS 27 前必须先取得支持 Darwin 26 的版本并调整内核范围，否则升级后无 Wi‑Fi**。
 
 ## 常见问题
@@ -63,7 +63,7 @@
 **I²C ELAN** + **VoodooI2C** / **VoodooI2CHID**，配合 **TPD3** 相关 **SSDT**；引导参数含 **`-vi2c-force-polling`**（见 **`boot-args`**）。
 
 **雷电扩展坞能用吗？**  
-未完整验证；若调试 TB，需结合 **`ACPI/`** 中可选表与 **`config.plist`** 中 **`ACPI` → `Add`** 的开关谨慎调整。
+当前配置下**不能**（TB 被整体隐藏）。同类 HP + Titan Ridge 机型有**不刷固件**启用 TB3 热插拔的成功案例（见「已知限制 → 雷电」），需 BIOS 调安全级别 + 定制 SSDT-TB3 并自行验证睡眠；调试时结合 **`ACPI/`** 中可选表与 **`config.plist` → `ACPI` → `Add`** 的开关逐项进行。
 
 **内置麦克风为什么不能用？**  
 内置麦是 **Intel 数字麦克风**（SoundWire），不是 Realtek ALC236 模拟麦；Hackintosh 上 **无驱动**，已实测无效。扬声器/耳机仍由 **AppleALC** 驱动。完整说明见 [`docs/macos-mic-troubleshooting.md`](docs/macos-mic-troubleshooting.md)。
