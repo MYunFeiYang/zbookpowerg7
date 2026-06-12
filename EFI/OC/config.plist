@@ -104,7 +104,7 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string>Optional: hide RP01 _STA on Darwin (conflicts with TB3 hotplug if both on) - off, AML kept</string>
+                    <string>Hide RP01 _STA on Darwin (conflicts with TB3 hotplug if both on) - ON; TB3HP-TITAN must stay off</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
@@ -160,7 +160,7 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string>RP01 (often TB root port on this platform) - off (AML kept in ACPI/)</string>
+                    <string>RP01 (often TB root port on this platform) - ON</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
@@ -1779,7 +1779,7 @@
                     <key>bluetoothInternalControllerInfo</key>
                     <data>AAAAAAAAAAAAAAAAAAA=</data>
                     <key>boot-args</key>
-                    <string>darkwake=0 -hbfx-patch=auto -igfxblt -igfxhdmidivs revpatch=auto,sbvmm,cpuname hibernatemode=0 -wegnoegpu -amfipassbeta -vi2c-force-polling -lilubetaall apfs.repair=yes apfs.snapshot=0 alctcsel=1 alcverbs=1</string>
+                    <string>darkwake=0 -hbfx-patch=auto -igfxblt -igfxhdmidivs revpatch=auto,sbvmm,cpuname -wegnoegpu -amfipassbeta -vi2c-force-polling -lilubetaall alctcsel=1 alcverbs=1</string>
                     <key>csr-active-config</key>
                     <data>/w8AAA==</data>
                     <key>prev-lang:kbd</key>

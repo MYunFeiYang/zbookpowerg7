@@ -2,7 +2,7 @@
 
 面向 **HP ZBook Power G7**（**Intel Comet Lake** / 10 代移动平台）的 **OpenCore** Hackintosh EFI。仓库内为当前在用的 **`EFI/oc/`** 配置：含 **`config.plist`**、**ACPI SSDT**（含 `.dsl`）、**Kernel 扩展**及 **`EFI/scripts/`** 合盖关机相关脚本；**`EFI/SysReport/`** 为同机型 ACPI 导出，便于对照修改。
 
-*OpenCore EFI for **HP ZBook Power G7**, Comet Lake, SMBIOS **MacBookPro16,1**. iGPU + **WhateverGreen**; dGPU suppressed (**`-wegnoegpu`**). Wi‑Fi **Intel AX201** via **AirportItlwm** (Sonoma/Sequoia) and **itlwm** (Darwin 25+); Ethernet **I219-LM** + **IntelMausi**. Trackpad **ELAN** on I²C + **VoodooI2C** / **VoodooI2CHID**, **`-vi2c-force-polling`**. Sleep: **SSDT-DeepIdle** + AOAC helpers; optional lid shutdown scripts. **Thunderbolt JHL7540** not fully tested.*
+*OpenCore EFI for **HP ZBook Power G7**, Comet Lake, SMBIOS **MacBookPro16,4**. iGPU + **WhateverGreen**; dGPU suppressed (**`-wegnoegpu`**). Wi‑Fi **Intel AX201** via **AirportItlwm** (Sonoma/Sequoia) and **itlwm** (Darwin 25+); Ethernet **I219-LM** + **IntelMausi**. Trackpad **ELAN** on I²C + **VoodooI2C** / **VoodooI2CHID**, **`-vi2c-force-polling`**. Sleep: **SSDT-DeepIdle** + AOAC helpers; optional lid shutdown scripts. **Thunderbolt JHL7540** not fully tested.*
 
 ## 与本项目配置对应的事实
 
@@ -12,7 +12,7 @@
 |------|----------------|
 | 机型 | HP ZBook Power G7（移动工作站） |
 | 平台 | Intel **Comet Lake** PCH（配置内设备属性与 SSDT 注释一致） |
-| SMBIOS | **MacBookPro16,1**（`PlatformInfo` → `SystemProductName`） |
+| SMBIOS | **MacBookPro16,4**（`PlatformInfo` → `SystemProductName`） |
 | 核显 | Intel UHD，`WhateverGreen` + 定制 **DeviceProperties**（含 `ig-platform-id` 等） |
 | 独显 | NVIDIA 禁用（**`-wegnoegpu`** 等引导参数；**`SSDT-dGPU-PowerOff-Darwin`**） |
 | 有线网 | **Intel Ethernet I219-LM** → **`IntelMausi.kext`** |
@@ -28,7 +28,7 @@
 ## 睡眠与节能（配置级说明）
 
 - 启用 **Deep Idle** 路径：**`SSDT-DeepIdle`**、**`SSDT-PCI0.LPCB-Wake-AOAC`**，并与 **`SSDT-OCLT-S3Fix`**、**`SSDT-GPRW`** 等协同；**无传统 S3**，空闲仍可能有约 **5W** 级功耗（视外设与 `pmset` 而定）。  
-- **`HibernationFixup`**、**`hibernatemode=0`** 等与当前策略一致。  
+- **`HibernationFixup`** 与当前策略一致；休眠模式请用 `sudo pmset -a hibernatemode 0` 设置（`hibernatemode` 不是 boot-arg，已从 `boot-args` 移除）。  
 - 合盖即关机：**`EFI/scripts/`**（**`install-lid-shutdown.sh`** / **`uninstall-lid-shutdown.sh`**、**`lid-close-shutdown.sh`**、**`pmset-reduce-wake.sh`**、**`com.oc.lidshutdown.plist`**），按需部署。
 
 ## 目录与安装
@@ -49,7 +49,7 @@
 - **耳机孔麦克风**：**可用**（`layout 55`，插耳麦后手动选 **「线路输入」**）。输出可自动切耳机，**输入不会自动切换**；可装 **[MicFix](https://github.com/WingLim/MicFix)**（需 `alcverbs=1`，已在 `boot-args`）或每次手动改输入。  
 - **独显**：NVIDIA 无 Apple 官方驱动，仅使用核显。  
 - **雷电**：硬件为 **JHL7540** 类 Titan Ridge，**本仓库未做完整外设与扩展坞验证**。  
-- **系统升级**：大版本升级后请核对 **AirportItlwm / itlwm** 与 **IOSkywalkFamily** 等是否需替换或调整启用范围（以 **`config.plist` → `Kernel` → `Add`** 为准）。
+- **系统升级**：大版本升级后请核对 **AirportItlwm / itlwm** 与 **IOSkywalkFamily** 等是否需替换或调整启用范围（以 **`config.plist` → `Kernel` → `Add`** 为准）。**注意**：当前 Wi‑Fi 相关 kext 的 `MaxKernel` 均为 `25.99.99`（即 macOS 26.x）；**升级 macOS 27 前必须先取得支持 Darwin 26 的版本并调整内核范围，否则升级后无 Wi‑Fi**。
 
 ## 常见问题
 
