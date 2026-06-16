@@ -44,7 +44,8 @@ Write-Host '==> Disable telemetry / bloat services...' -ForegroundColor Cyan
 $services = @(
     'AndrowsSvr',
     'HpTouchpointAnalyticsService', 'HPAudioAnalytics', 'HPAppHelperCap',
-    'HPDiagsCap', 'HPNetworkCap', 'HPSysInfoCap', 'hptpsmarthealthservice',
+    # Keep HP Support Assistant dependencies enabled (driver/BIOS updates)
+    # 'HPDiagsCap', 'HPNetworkCap', 'HPSysInfoCap', 'hptpsmarthealthservice',
     'DiagTrack', 'SangforPromoteService',
     'aTrustService'   # Manual: start aTrust app when VPN needed
 )
@@ -62,10 +63,11 @@ foreach ($svcName in $services) {
 Write-Host '==> Disable WPS / HP / Google junk scheduled tasks...' -ForegroundColor Cyan
 $tasks = @(
     '\WpsUpdateLogonTask_27283', '\WpsUpdateTask_27283', '\WpsWakeWnsLogonTask',
-    '\Hewlett-Packard\HP Support Assistant\HP Support Assistant Update Notice',
-    '\Hewlett-Packard\HP Support Assistant\HPPrinterLowInk',
-    '\Hewlett-Packard\HP Support Assistant\WarrantyChecker',
-    '\Hewlett-Packard\HP Support Assistant\WarrantyChecker_DeviceScan'
+    # Keep HP Support Assistant scheduled tasks enabled
+    # '\Hewlett-Packard\HP Support Assistant\HP Support Assistant Update Notice',
+    # '\Hewlett-Packard\HP Support Assistant\HPPrinterLowInk',
+    # '\Hewlett-Packard\HP Support Assistant\WarrantyChecker',
+    # '\Hewlett-Packard\HP Support Assistant\WarrantyChecker_DeviceScan'
 )
 foreach ($t in $tasks) {
     schtasks /Change /TN $t /DISABLE 2>$null | Out-Null
@@ -78,8 +80,17 @@ $hybrid = 'HKLM:\SOFTWARE\NVIDIA Corporation\Global\Hybrid'
 if (-not (Test-Path $hybrid)) { New-Item -Path $hybrid -Force | Out-Null }
 New-ItemProperty -Path $hybrid -Name 'SHIM_MCCOMPAT' -Value 0x00000001 -PropertyType DWord -Force | Out-Null
 
-Write-Host '==> Power plan: Balanced...' -ForegroundColor Cyan
-powercfg /setactive 381b4222-f694-41f0-9685-ff5bb260df2e | Out-Null
+Write-Host '==> Conservative power scheduling...' -ForegroundColor Cyan
+& "$PSScriptRoot\windows-power-conservative.ps1"
+if ($LASTEXITCODE -ne 0 -and -not $?) {
+    Write-Warning 'Conservative power script may need a separate admin run.'
+}
+
+Write-Host '==> Disable Fast Startup (true shutdown, less fan/disk on power-off)...' -ForegroundColor Cyan
+$powerKey = 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power'
+Set-ItemProperty -Path $powerKey -Name 'HiberbootEnabled' -Value 0 -Type DWord -Force
+powercfg /hibernate off 2>$null | Out-Null
+Write-Host '    HiberbootEnabled=0'
 
 Write-Host ''
 Write-Host 'Persistent settings applied. Reboot recommended.' -ForegroundColor Green
