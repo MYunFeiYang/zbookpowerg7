@@ -60,8 +60,8 @@ WIFI_DEV="$(wifi_device || true)"
 if [[ -n "$WIFI_DEV" ]]; then
   if wifi_is_on "$WIFI_DEV"; then
     echo 1 >"$WIFI_STATE"
-    CURRENT_SSID="$(networksetup -getairportnetwork "$WIFI_DEV" 2>/dev/null | sed 's/^Current Wi-Fi Network: //')"
-    if [[ -n "$CURRENT_SSID" ]] && [[ "$CURRENT_SSID" != "You are not associated with an AirPort network." ]]; then
+    CURRENT_SSID="$(networksetup -getairportnetwork "$WIFI_DEV" 2>/dev/null | sed -e 's/^Current Wi-Fi Network: //' -e 's/^You are not associated with an AirPort network\.$//' -e 's/^You are not associated with a Wi-Fi network\.$//')"
+    if [[ -n "$CURRENT_SSID" ]]; then
       printf '%s' "$CURRENT_SSID" >"$WIFI_SSID_STATE"
     else
       rm -f "$WIFI_SSID_STATE"

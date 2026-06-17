@@ -23,7 +23,7 @@
 | 触控板 | **ELAN073D**（ACPI 中 **TPD3**；**`SSDT-TPD3-CRS` / `SSDT-TPD3-INI`**、**`SSDT-I2C0-GNVS`** 等）+ **VoodooI2C** 系 |
 | USB | **USBToolBox** + **UTBMap** |
 | 风扇转速 | **可读**（EC 自主控速，macOS 不干预）。`SMCSuperIO` EC 模式：`Pci(0x1F,0x0)` 注入 `ec-device=generic` + `fan0-addr=0x2E`（DSDT `FRDC` 寄存器，参数同 ZBook 17 G5），监控软件（如 Stats）可显示 RPM |
-| 雷电 | **Intel JHL7540**（Titan Ridge）**已启用**：`SSDT-TB3HP-TITAN` 开、`SSDT-thunderbolt-disable`/`SSDT-RP01` 关；NHI 驱动已挂载，USB-C 口可用；详见「已知限制 → 雷电」 |
+| 雷电 | **Intel JHL7540**（Titan Ridge）：**`SSDT-TB3HP-ZBook`**；详见「已知限制 → 雷电」 |
 | 验证存储 | **西数 WD Blue SN570**；换盘或升级系统后请自行回归测试 |
 
 ## 睡眠与节能（配置级说明）
@@ -51,7 +51,7 @@ macOS 辅助脚本统一入口：**`sh EFI/scripts/oc-setup.sh`**（`install-all
 - **内置麦克风**：**不支持**（Intel SST / SoundWire 数字麦；2026-06-11 已验证无电平）。**勿再**为内置麦改 layout。  
 - **耳机孔麦克风**：**可用**（`layout 55`）。**自动切换**：`sh EFI/scripts/oc-setup.sh mic install`（优先级：**蓝牙 > 有线 > 内置麦**）；或手动选输入设备。  
 - **独显**：**不支持，且无解**。Quadro P620（Pascal）的 NVIDIA 驱动止步于 macOS 10.13；当前经 `-wegnoegpu` + `SSDT-dGPU-PowerOff-Darwin` 屏蔽并断电（已验证 IOReg 中无 NVIDIA 设备），仅使用核显。这是最优状态，勿再尝试驱动。  
-- **雷电**：**已启用，部分验证**（2026-06-12）。当前 `SSDT-TB3HP-TITAN` 开启、`SSDT-thunderbolt-disable` 与 `SSDT-RP01` 关闭（后者的 `RP01._DSM` 与 TB3HP 冲突，二者**不可同开**）。实测：控制器枚举正常（`RP01/PXSX` 下 NHI `8086:15e8` 挂载 `AppleThunderboltNHI`，`IOThunderboltController` 活动），Titan Ridge 的 **USB-C 口（TXHC）可用**。系统信息显示「**未载入驱动程序**」为 **DROM 缺失**的表现（信息页读不到厂商描述块），**不代表驱动未挂载**，不影响 PCIe 隧道与 USB。**待验证**：真实 TB 设备的隧道与热插拔（暂无设备）。**勿加 `power-save=1`**：2026-06-12 实测在 `PciRoot(0x0)/Pci(0x1C,0x0)` 注入后**睡眠无法唤醒**（pmset 日志 `Failure during wake: IGPU(): Some drivers failed to handle setPowerState`），已移除。**回退 TB**：TB3HP 关、`thunderbolt-disable`/`RP01` 开。同类成功先例：[ZBook 17 G5](https://github.com/theroadw/Zbook-G5-17-WX-4170)（BIOS 安全级别 Legacy → No Security → Native + Low Power；本机 BIOS 未见这些选项，可在 Windows 用 HP BiosConfigUtility 查全量固件设置）。  
+- **雷电**：**`SSDT-TB3HP-ZBook`**（合并热插拔 + `force-power`，唤醒 `_DSW`；**勿** `power-save=1`）。2026-06-12 曾验证 USB-C（TXHC）可用；2026-06-17 前 `IOThunderboltFamily` 唤醒 panic，已用合并 SSDT 尝试修复。**待验证**：睡眠唤醒稳定性、真实 TB 设备。**回退**：关 `SSDT-TB3HP-ZBook`，在 `config.plist` 启用 **`SSDT-thunderbolt-disable`**（`ACPI/` 内保留该 aml）。同类参考：[ZBook 17 G5](https://github.com/theroadw/Zbook-G5-17-WX-4170)。  
 - **系统升级**：大版本升级后请核对 **AirportItlwm / itlwm** 与 **IOSkywalkFamily** 等是否需替换或调整启用范围（以 **`config.plist` → `Kernel` → `Add`** 为准）。**注意**：当前 Wi‑Fi 相关 kext 的 `MaxKernel` 均为 `25.99.99`（即 macOS 26.x）；**升级 macOS 27 前必须先取得支持 Darwin 26 的版本并调整内核范围，否则升级后无 Wi‑Fi**。
 
 ## 常见问题
