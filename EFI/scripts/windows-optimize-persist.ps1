@@ -43,9 +43,9 @@ Set-ItemProperty -Path $edgeKey -Name 'RestoreOnStartup' -Value 5 -Type DWord
 Write-Host '==> Disable telemetry / bloat services...' -ForegroundColor Cyan
 $services = @(
     'AndrowsSvr',
-    'HpTouchpointAnalyticsService', 'HPAudioAnalytics', 'HPAppHelperCap',
+    'HpTouchpointAnalyticsService', 'HPAudioAnalytics',
     # Keep HP Support Assistant dependencies enabled (driver/BIOS updates)
-    # 'HPDiagsCap', 'HPNetworkCap', 'HPSysInfoCap', 'hptpsmarthealthservice',
+    # 'HPAppHelperCap', 'HPDiagsCap', 'HPNetworkCap', 'HPSysInfoCap', 'hptpsmarthealthservice',
     'DiagTrack', 'SangforPromoteService',
     'aTrustService'   # Manual: start aTrust app when VPN needed
 )

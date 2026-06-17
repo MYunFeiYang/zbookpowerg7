@@ -24,7 +24,7 @@ foreach ($name in $tasks) {
 }
 
 Write-Host '==> Ensuring HP Support Assistant services are Automatic...' -ForegroundColor Cyan
-foreach ($svcName in @('HPDiagsCap', 'HPNetworkCap', 'HPSysInfoCap', 'hptpsmarthealthservice')) {
+foreach ($svcName in @('HPAppHelperCap', 'HPDiagsCap', 'HPNetworkCap', 'HPSysInfoCap', 'hptpsmarthealthservice')) {
     $svc = Get-Service -Name $svcName -ErrorAction SilentlyContinue
     if (-not $svc) { continue }
     Set-Service -Name $svcName -StartupType Automatic
