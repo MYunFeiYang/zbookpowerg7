@@ -7,6 +7,7 @@ set -euo pipefail
 STATE_DIR="${HOME}/.local/state"
 BT_STATE="${STATE_DIR}/oc-sleep-bt.state"
 WIFI_STATE="${STATE_DIR}/oc-sleep-wifi.state"
+WIFI_SSID_STATE="${STATE_DIR}/oc-sleep-wifi-ssid.state"
 DISPLAY_STATE="${STATE_DIR}/oc-sleep-display.state"
 LOG_FILE="${HOME}/Library/Logs/oc-sleep-hooks.log"
 
@@ -59,8 +60,14 @@ WIFI_DEV="$(wifi_device || true)"
 if [[ -n "$WIFI_DEV" ]]; then
   if wifi_is_on "$WIFI_DEV"; then
     echo 1 >"$WIFI_STATE"
+    CURRENT_SSID="$(networksetup -getairportnetwork "$WIFI_DEV" 2>/dev/null | sed 's/^Current Wi-Fi Network: //')"
+    if [[ -n "$CURRENT_SSID" ]] && [[ "$CURRENT_SSID" != "You are not associated with an AirPort network." ]]; then
+      printf '%s' "$CURRENT_SSID" >"$WIFI_SSID_STATE"
+    else
+      rm -f "$WIFI_SSID_STATE"
+    fi
     networksetup -setairportpower "$WIFI_DEV" off
-    log "wifi off on ${WIFI_DEV} (was on)"
+    log "wifi off on ${WIFI_DEV} (was on${CURRENT_SSID:+, ssid=${CURRENT_SSID}})"
   else
     echo 0 >"$WIFI_STATE"
     log "wifi already off on ${WIFI_DEV}"

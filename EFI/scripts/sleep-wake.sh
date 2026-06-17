@@ -7,6 +7,7 @@ set -euo pipefail
 STATE_DIR="${HOME}/.local/state"
 BT_STATE="${STATE_DIR}/oc-sleep-bt.state"
 WIFI_STATE="${STATE_DIR}/oc-sleep-wifi.state"
+WIFI_SSID_STATE="${STATE_DIR}/oc-sleep-wifi-ssid.state"
 LOG_FILE="${HOME}/Library/Logs/oc-sleep-hooks.log"
 
 log() {
@@ -43,10 +44,24 @@ else
 fi
 
 # --- Wi-Fi ---
+# AirportItlwm on Tahoe often stays "Not Associated" after only turning power on;
+# cycle the radio and re-join the SSID saved in sleep-pre (keychain password).
 WIFI_DEV="$(wifi_device || true)"
 if [[ -n "$WIFI_DEV" ]] && [[ -f "$WIFI_STATE" ]] && [[ "$(cat "$WIFI_STATE")" == "1" ]]; then
+  networksetup -setairportpower "$WIFI_DEV" off
+  sleep 2
   networksetup -setairportpower "$WIFI_DEV" on
-  log "wifi restored on ${WIFI_DEV}"
+  sleep 4
+  if [[ -f "$WIFI_SSID_STATE" ]]; then
+    SAVED_SSID="$(cat "$WIFI_SSID_STATE")"
+    if networksetup -setairportnetwork "$WIFI_DEV" "$SAVED_SSID" 2>/dev/null; then
+      log "wifi restored on ${WIFI_DEV}, joined ${SAVED_SSID}"
+    else
+      log "wifi power on ${WIFI_DEV}, join failed for ${SAVED_SSID}"
+    fi
+  else
+    log "wifi restored on ${WIFI_DEV} (no saved ssid)"
+  fi
 elif [[ -n "$WIFI_DEV" ]]; then
   log "wifi left off on ${WIFI_DEV}"
 else
