@@ -140,7 +140,7 @@ cd EFI/oc/ACPI && ./compile-ssdt.sh
 | `EFI/oc/config.plist` | `layout-id`、`ACPI → Add` |
 | `EFI/oc/ACPI/SSDT-SNDW-off.dsl` | SNDW 补丁源码 |
 | `EFI/oc/ACPI/compile-ssdt.sh` | 编译 SSDT（需 `iasl`） |
-| `EFI/oc/SysReport/ACPI/DSDT.dsl` | 本机 ACPI（`HDAS` / `SNDW`） |
+| `EFI/SysReport/ACPI/DSDT.dsl` | 本机 ACPI（`HDAS` / `SNDW`） |
 | `README.md` | 机型总览与已知限制 |
 
 ---
