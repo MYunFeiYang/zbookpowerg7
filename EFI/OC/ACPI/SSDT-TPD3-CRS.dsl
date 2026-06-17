@@ -44,16 +44,19 @@ DefinitionBlock ("", "SSDT", 2, "HPTPD3", "CRSfix", 0x00000001)
 
         CreateWordField (SBFG, 0x17, GPIN)
 
-        Method (_CRS, 0, NotSerialized)  // _CRS: Current Resource Settings
+        If (_OSI ("Darwin"))
         {
-            Local0 = \_SB.GNUM (GPDI)
-            If ((Local0 == Zero))
+            Method (_CRS, 0, NotSerialized)  // _CRS: Current Resource Settings
             {
-                Local0 = 0x003D
-            }
+                Local0 = \_SB.GNUM (GPDI)
+                If ((Local0 == Zero))
+                {
+                    Local0 = 0x003D
+                }
 
-            GPIN = Local0
-            Return (ConcatenateResTemplate (SBFX, SBFG))
+                GPIN = Local0
+                Return (ConcatenateResTemplate (SBFX, SBFG))
+            }
         }
     }
 }

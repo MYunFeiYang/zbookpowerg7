@@ -26,6 +26,10 @@ DefinitionBlock ("", "SSDT", 2, "ACDT", "CLWAKE", 0x00001000)
     {
         Method (_DSW, 3, NotSerialized)  // _DSW: Device Sleep Wake
         {
+            If (!_OSI ("Darwin"))
+            {
+                Return (Zero)
+            }
             If ((Arg0 == 0x03))
             {
                 OperationRegion (AOWR, SystemIO, 0x1800, 0x02)
@@ -39,11 +43,15 @@ DefinitionBlock ("", "SSDT", 2, "ACDT", "CLWAKE", 0x00001000)
             }
         }
 
-        Name (_PRW, Package (0x02)  // _PRW: Power Resources for Wake
+        Method (_PRW, 0, NotSerialized)  // _PRW: Power Resources for Wake
         {
-            0x6D, 
-            0x04
-        })
+            If (_OSI ("Darwin"))
+            {
+                Return (Package (0x02) { 0x6D, 0x04 })
+            }
+
+            Return (Package (0x02) { Zero, Zero })
+        }
     }
 }
 

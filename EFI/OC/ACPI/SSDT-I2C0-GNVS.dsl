@@ -29,12 +29,15 @@ DefinitionBlock ("", "SSDT", 2, "HPI2C0", "GNVSfix", 0x00000001)
 
     Scope (_SB.PCI0.I2C0)
     {
-        Method (_INI, 0, NotSerialized)  // replaces DSDT — keep OEM assignments
+        If (_OSI ("Darwin"))
         {
-            TPOX = 0x07DF
-            TPSD = Zero
-            I2CN = SDS0 /* \SDS0 */
-            I2CX = Zero
+            Method (_INI, 0, NotSerialized)  // replaces DSDT — keep OEM assignments
+            {
+                TPOX = 0x07DF
+                TPSD = Zero
+                I2CN = SDS0 /* \SDS0 */
+                I2CX = Zero
+            }
         }
     }
 }

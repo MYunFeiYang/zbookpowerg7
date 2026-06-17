@@ -32,25 +32,28 @@ DefinitionBlock ("", "SSDT", 2, "HPTPD3", "INIfix", 0x00000002)
         External (BADR, FieldUnitObj)
         External (SPED, FieldUnitObj)
 
-        Method (_INI, 0, NotSerialized)
+        If (_OSI ("Darwin"))
         {
-            TPNX = 0x07DF
-            TPNS = Zero
-            If ((OSYS < 0x07DC))
+            Method (_INI, 0, NotSerialized)
             {
-                \_SB.SRXO (GPDI, One)
-            }
+                TPNX = 0x07DF
+                TPNS = Zero
+                If ((OSYS < 0x07DC))
+                {
+                    \_SB.SRXO (GPDI, One)
+                }
 
-            INT1 = \_SB.GNUM (GPDI)
-            INT2 = \_SB.INUM (GPDI)
-            If ((SDM1 == Zero))
-            {
-                \_SB.SHPO (GPDI, One)
-            }
+                INT1 = \_SB.GNUM (GPDI)
+                INT2 = \_SB.INUM (GPDI)
+                If ((SDM1 == Zero))
+                {
+                    \_SB.SHPO (GPDI, One)
+                }
 
-            HID2 = 0x20
-            BADR = 0x2C
-            SPED = 0x00061A80
+                HID2 = 0x20
+                BADR = 0x2C
+                SPED = 0x00061A80
+            }
         }
     }
 }

@@ -27,6 +27,10 @@ DefinitionBlock ("", "SSDT", 2, "ACDT", "LIDG7", 0x00000000)
         Name (_CID, "PNP0C0D" /* Lid Device */)  // _CID: Compatible ID
         Method (_STA, 0, NotSerialized)  // _STA: Status
         {
+            If (!_OSI ("Darwin"))
+            {
+                Return (Zero)
+            }
             Return (0x0B)
         }
 
@@ -40,6 +44,10 @@ DefinitionBlock ("", "SSDT", 2, "ACDT", "LIDG7", 0x00000000)
     {
         Method (_L00, 0, NotSerialized)  // _Lxx: Level-Triggered GPE, xx=0x00-0xFF
         {
+            If (!_OSI ("Darwin"))
+            {
+                Return (Zero)
+            }
             Local0 = ^^EC0.LIDS /* \EC0_.LIDS */
             If ((Local0 == Zero))
             {

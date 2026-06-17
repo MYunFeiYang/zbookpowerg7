@@ -6,9 +6,12 @@ DefinitionBlock ("", "SSDT", 2, "OCGPRW", "GPRW", 0x00000000)
 
     Method (GPRW, 4, NotSerialized)
     {
-        If ((Arg2 == 0x03))
+        If (_OSI ("Darwin"))
         {
-            Arg3 = Zero
+            If ((Arg2 == 0x03))
+            {
+                Arg3 = Zero
+            }
         }
 
         Return (XPRW (Arg0, Arg1, Arg2, Arg3))
