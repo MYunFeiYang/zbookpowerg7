@@ -31,6 +31,12 @@ if [[ "$(uname -s)" != "Darwin" ]]; then
   exit 1
 fi
 
+if [[ "$(id -u)" -eq 0 ]]; then
+  echo "ERROR: 不要用 sudo 运行此脚本（LaunchAgent 需装到登录用户）。" >&2
+  echo "  请用: ${SCRIPT_DIR}/oc-setup.sh sleep install" >&2
+  exit 1
+fi
+
 echo "==> Checking Homebrew dependencies..."
 if ! command -v brew >/dev/null 2>&1; then
   echo "Homebrew not found. Install from https://brew.sh" >&2
