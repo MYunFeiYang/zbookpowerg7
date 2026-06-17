@@ -10,7 +10,7 @@
                     <key>Comment</key>
                     <string>GPRW to XPRW shim (SSDT-GPRW.dsl); instant-wake Arg2==0x03</string>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>Path</key>
                     <string>SSDT-GPRW.aml</string>
                 </dict>
