@@ -128,14 +128,6 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>Faked Ambient Light Sensor - off: no real ALS on this machine (no ACPI0008 in DSDT), no SMCLightSensor kext; dead weight</string>
-				<key>Enabled</key>
-				<false/>
-				<key>Path</key>
-				<string>SSDT-ALS0.aml</string>
-			</dict>
-			<dict>
-				<key>Comment</key>
 				<string>OCLT S3-Fix (was NameS3-disable): ACPI-side S3 shim. On; if sleep/boot regresses set Enabled false. AML in ACPI/</string>
 				<key>Enabled</key>
 				<true/>
@@ -2136,20 +2128,6 @@
 				<key>Arguments</key>
 				<string></string>
 				<key>Comment</key>
-				<string>Disabled: duplicate ext4; Ext4Dxe.efi is enough for OpenLinuxBoot. Enable if ext4 Linux volume fails to load.</string>
-				<key>Enabled</key>
-				<false/>
-				<key>HideVerbose</key>
-				<false/>
-				<key>LoadEarly</key>
-				<false/>
-				<key>Path</key>
-				<string>ext4_x64.efi</string>
-			</dict>
-			<dict>
-				<key>Arguments</key>
-				<string></string>
-				<key>Comment</key>
 				<string></string>
 				<key>Enabled</key>
 				<true/>
@@ -2215,20 +2193,6 @@
 				<false/>
 				<key>Path</key>
 				<string>Ext4Dxe.efi</string>
-			</dict>
-			<dict>
-				<key>Arguments</key>
-				<string></string>
-				<key>Comment</key>
-				<string></string>
-				<key>Enabled</key>
-				<false/>
-				<key>HideVerbose</key>
-				<false/>
-				<key>LoadEarly</key>
-				<false/>
-				<key>Path</key>
-				<string>apfs_aligned.efi</string>
 			</dict>
 		</array>
 		<key>Input</key>

@@ -14,7 +14,7 @@
  *
  * Note: If GNVS / GPDI is uninitialized on some boots, GNUM(GPDI) can return 0
  * and the GPIO word stays 0 — no IRQ. Fallback 0x003D matches this machine’s
- * OEM pin (see SSDT-ELAN disassembly / disabled SSDT-GPI0 pin list).
+ * OEM pin fallback: GPIO pin 0x003D when GNUM(GPDI)==0.
  */
 DefinitionBlock ("", "SSDT", 2, "HPTPD3", "CRSfix", 0x00000001)
 {
