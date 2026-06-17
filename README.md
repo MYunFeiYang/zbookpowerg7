@@ -28,9 +28,11 @@
 
 ## 睡眠与节能（配置级说明）
 
+macOS 辅助脚本统一入口：**`sh EFI/scripts/oc-setup.sh`**（`install-all` / `status` / 各子命令）。
+
 - 启用 **Deep Idle** 路径：**`SSDT-DeepIdle`**、**`SSDT-PCI0.LPCB-Wake-AOAC`**，并与 **`SSDT-OCLT-S3Fix`**、**`SSDT-GPRW`** 等协同；**无传统 S3**，空闲仍可能有约 **5W** 级功耗（视外设与 `pmset` 而定）。  
-- **`HibernationFixup`** 与当前策略一致；睡眠省电：`sudo sh EFI/scripts/pmset-reduce-wake.sh`（系统更新后可重跑）。  
-- 合盖即关机：**`EFI/scripts/`**（**`install-lid-shutdown.sh`** / **`uninstall-lid-shutdown.sh`**、**`lid-close-shutdown.sh`**、**`com.oc.lidshutdown.plist`**），按需部署。
+- **`HibernationFixup`** 与当前策略一致。推荐一次执行 **`oc-setup.sh install-all`**（含 pmset 收紧、耳麦自动切换、睡眠 hook）；系统更新后 **`oc-setup.sh pmset`** 可重跑。  
+- 合盖即关机（可选）：**`oc-setup.sh lid install`**。
 
 ## 目录与安装
 
@@ -40,14 +42,14 @@
 | `EFI/oc/` | OpenCore **`OpenCore.efi`**、**Drivers**、**Kexts**、**`config.plist`**、**`ACPI/`**（`.aml` 与部分 **`.dsl`** 源码） |
 | `EFI/boot/` | 引导相关文件 |
 | `EFI/SysReport/` | 本机 ACPI 表导出 |
-| `EFI/scripts/` | 合盖关机、**`pmset`**、**`install-mic-auto-switch.sh`**（耳麦输入自动切换）；**`install-mount-esp.sh`** 安装后可在开机时自动挂载本机 ESP（**`com.oc.mountesp`**） |
+| `EFI/scripts/` | **`oc-setup.sh`** 统一入口；含 pmset、耳麦切换、睡眠 hook、合盖关机、ESP 挂载等 |
 
 将整个 **`EFI`** 复制到 **ESP 分区根目录**（与 **`EFI/oc`** 同级），按 OpenCore 常规流程使用。
 
 ## 已知限制
 
 - **内置麦克风**：**不支持**（Intel SST / SoundWire 数字麦；2026-06-11 已验证无电平）。**勿再**为内置麦改 layout。  
-- **耳机孔麦克风**：**可用**（`layout 55`）。**自动切换**：`sh EFI/scripts/install-mic-auto-switch.sh`（优先级：**蓝牙 > 有线 > 内置麦**）；或手动选输入设备。  
+- **耳机孔麦克风**：**可用**（`layout 55`）。**自动切换**：`sh EFI/scripts/oc-setup.sh mic install`（优先级：**蓝牙 > 有线 > 内置麦**）；或手动选输入设备。  
 - **独显**：**不支持，且无解**。Quadro P620（Pascal）的 NVIDIA 驱动止步于 macOS 10.13；当前经 `-wegnoegpu` + `SSDT-dGPU-PowerOff-Darwin` 屏蔽并断电（已验证 IOReg 中无 NVIDIA 设备），仅使用核显。这是最优状态，勿再尝试驱动。  
 - **雷电**：**已启用，部分验证**（2026-06-12）。当前 `SSDT-TB3HP-TITAN` 开启、`SSDT-thunderbolt-disable` 与 `SSDT-RP01` 关闭（后者的 `RP01._DSM` 与 TB3HP 冲突，二者**不可同开**）。实测：控制器枚举正常（`RP01/PXSX` 下 NHI `8086:15e8` 挂载 `AppleThunderboltNHI`，`IOThunderboltController` 活动），Titan Ridge 的 **USB-C 口（TXHC）可用**。系统信息显示「**未载入驱动程序**」为 **DROM 缺失**的表现（信息页读不到厂商描述块），**不代表驱动未挂载**，不影响 PCIe 隧道与 USB。**待验证**：真实 TB 设备的隧道与热插拔（暂无设备）。**勿加 `power-save=1`**：2026-06-12 实测在 `PciRoot(0x0)/Pci(0x1C,0x0)` 注入后**睡眠无法唤醒**（pmset 日志 `Failure during wake: IGPU(): Some drivers failed to handle setPowerState`），已移除。**回退 TB**：TB3HP 关、`thunderbolt-disable`/`RP01` 开。同类成功先例：[ZBook 17 G5](https://github.com/theroadw/Zbook-G5-17-WX-4170)（BIOS 安全级别 Legacy → No Security → Native + Low Power；本机 BIOS 未见这些选项，可在 Windows 用 HP BiosConfigUtility 查全量固件设置）。  
 - **系统升级**：大版本升级后请核对 **AirportItlwm / itlwm** 与 **IOSkywalkFamily** 等是否需替换或调整启用范围（以 **`config.plist` → `Kernel` → `Add`** 为准）。**注意**：当前 Wi‑Fi 相关 kext 的 `MaxKernel` 均为 `25.99.99`（即 macOS 26.x）；**升级 macOS 27 前必须先取得支持 Darwin 26 的版本并调整内核范围，否则升级后无 Wi‑Fi**。

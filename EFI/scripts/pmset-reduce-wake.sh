@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # 睡眠功耗优化：收紧 pmset，减少 Deep Idle 期间被网络/维护任务唤醒。
-# 用法: ./pmset-reduce-wake.sh        （非 root 时自动 sudo）
+# 推荐入口: ./oc-setup.sh pmset
 # 系统大版本更新后可能被还原，可重跑。
 # 脚本外：长期睡眠可拔 USB 外设、关 Handoff/蓝牙，进一步省电。
 #

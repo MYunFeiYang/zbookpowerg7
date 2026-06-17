@@ -1,8 +1,7 @@
 #!/bin/bash
 #
 # 一键安装：耳麦输入自动切换（MicFix + MicInputSwitch）
-# 用法:
-#   ./install-mic-auto-switch.sh
+# 推荐入口: ./oc-setup.sh mic install
 # 卸载:
 #   ./uninstall-mic-auto-switch.sh
 #
