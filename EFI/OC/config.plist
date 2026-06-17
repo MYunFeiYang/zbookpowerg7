@@ -180,7 +180,7 @@
                     <key>Count</key>
                     <integer>0</integer>
                     <key>Enabled</key>
-                    <false/>
+                    <true/>
                     <key>Find</key>
                     <data>UE5MRg==</data>
                     <key>Limit</key>
