@@ -36,6 +36,24 @@ wifi_is_on() {
   networksetup -getairportpower "$dev" 2>/dev/null | grep -qi ': on$'
 }
 
+current_wifi_ssid() {
+  local dev="$1"
+  local ssid=""
+
+  ssid="$(networksetup -getairportnetwork "$dev" 2>/dev/null | sed -n 's/^Current Wi-Fi Network: //p')"
+  if [[ -z "$ssid" ]] && [[ -x /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport ]]; then
+    ssid="$(/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I 2>/dev/null | awk -F': ' '/ SSID/ {print $2; exit}')"
+  fi
+
+  case "$ssid" in
+    ""|"You are not associated with an AirPort network."|"You are not associated with a Wi-Fi network.")
+      return 1
+      ;;
+  esac
+
+  printf '%s' "$ssid"
+}
+
 external_display_connected() {
   system_profiler SPDisplaysDataType 2>/dev/null | grep -q 'Display Type: External'
 }
@@ -60,11 +78,11 @@ WIFI_DEV="$(wifi_device || true)"
 if [[ -n "$WIFI_DEV" ]]; then
   if wifi_is_on "$WIFI_DEV"; then
     echo 1 >"$WIFI_STATE"
-    CURRENT_SSID="$(networksetup -getairportnetwork "$WIFI_DEV" 2>/dev/null | sed -e 's/^Current Wi-Fi Network: //' -e 's/^You are not associated with an AirPort network\.$//' -e 's/^You are not associated with a Wi-Fi network\.$//')"
-    if [[ -n "$CURRENT_SSID" ]]; then
+    if CURRENT_SSID="$(current_wifi_ssid "$WIFI_DEV")"; then
       printf '%s' "$CURRENT_SSID" >"$WIFI_SSID_STATE"
     else
       rm -f "$WIFI_SSID_STATE"
+      CURRENT_SSID=""
     fi
     networksetup -setairportpower "$WIFI_DEV" off
     log "wifi off on ${WIFI_DEV} (was on${CURRENT_SSID:+, ssid=${CURRENT_SSID}})"

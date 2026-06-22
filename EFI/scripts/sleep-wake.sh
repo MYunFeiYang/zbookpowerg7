@@ -28,44 +28,92 @@ wifi_device() {
   '
 }
 
-sleep 2
+wifi_is_on() {
+  local dev="$1"
+  networksetup -getairportpower "$dev" 2>/dev/null | grep -qi ': on$'
+}
 
-# --- 蓝牙 ---
-BLUEUTIL="$(find_blueutil || true)"
-if [[ -n "$BLUEUTIL" ]]; then
+wifi_associated() {
+  local dev="$1"
+  networksetup -getairportnetwork "$dev" 2>/dev/null | grep -q '^Current Wi-Fi Network: '
+}
+
+join_saved_wifi() {
+  local dev="$1"
+  local ssid="$2"
+  networksetup -setairportnetwork "$dev" "$ssid" 2>/dev/null
+}
+
+restore_bluetooth() {
+  local blueutil="$1"
   if [[ -f "$BT_STATE" ]] && [[ "$(cat "$BT_STATE")" == "1" ]]; then
-    "$BLUEUTIL" -p 1
+    "$blueutil" -p 1
     log "bluetooth restored"
   else
     log "bluetooth left off"
   fi
-else
-  log "blueutil not found, skip bluetooth"
-fi
+}
 
-# --- Wi-Fi ---
-# AirportItlwm on Tahoe often stays "Not Associated" after only turning power on;
-# cycle the radio and re-join the SSID saved in sleep-pre (keychain password).
+restore_wifi() {
+  local dev="$1"
+  local saved_ssid=""
+
+  networksetup -setairportpower "$dev" on
+  sleep 2
+
+  if wifi_associated "$dev"; then
+    log "wifi restored on ${dev} (already associated)"
+    return 0
+  fi
+
+  if [[ -f "$WIFI_SSID_STATE" ]]; then
+    saved_ssid="$(cat "$WIFI_SSID_STATE")"
+    if [[ -n "$saved_ssid" ]] && join_saved_wifi "$dev" "$saved_ssid"; then
+      log "wifi restored on ${dev}, joined ${saved_ssid}"
+      return 0
+    fi
+  fi
+
+  # AirportItlwm on Tahoe may need a radio cycle; only do this after soft restore fails.
+  log "wifi soft restore incomplete on ${dev}, cycling radio"
+  networksetup -setairportpower "$dev" off
+  sleep 1
+  networksetup -setairportpower "$dev" on
+  sleep 3
+
+  if [[ -n "$saved_ssid" ]] && join_saved_wifi "$dev" "$saved_ssid"; then
+    log "wifi restored on ${dev}, joined ${saved_ssid} after cycle"
+    return 0
+  fi
+
+  if wifi_associated "$dev"; then
+    log "wifi restored on ${dev} (associated after cycle)"
+    return 0
+  fi
+
+  if [[ -n "$saved_ssid" ]]; then
+    log "wifi power on ${dev}, join failed for ${saved_ssid}"
+  else
+    log "wifi restored on ${dev} (no saved ssid)"
+  fi
+}
+
+# --- Wi-Fi first (lighter wake burst than simultaneous BT + radio cycle) ---
 WIFI_DEV="$(wifi_device || true)"
 if [[ -n "$WIFI_DEV" ]] && [[ -f "$WIFI_STATE" ]] && [[ "$(cat "$WIFI_STATE")" == "1" ]]; then
-  networksetup -setairportpower "$WIFI_DEV" off
-  sleep 2
-  networksetup -setairportpower "$WIFI_DEV" on
-  sleep 4
-  if [[ -f "$WIFI_SSID_STATE" ]]; then
-    SAVED_SSID="$(cat "$WIFI_SSID_STATE")"
-    if networksetup -setairportnetwork "$WIFI_DEV" "$SAVED_SSID" 2>/dev/null; then
-      log "wifi restored on ${WIFI_DEV}, joined ${SAVED_SSID}"
-    else
-      log "wifi power on ${WIFI_DEV}, join failed for ${SAVED_SSID}"
-    fi
-  else
-    log "wifi restored on ${WIFI_DEV} (no saved ssid)"
-  fi
+  restore_wifi "$WIFI_DEV"
 elif [[ -n "$WIFI_DEV" ]]; then
   log "wifi left off on ${WIFI_DEV}"
 else
   log "wifi device not found, skip"
+fi
+
+# --- Bluetooth after Wi-Fi (or in parallel only if Wi-Fi was left off) ---
+BLUEUTIL="$(find_blueutil || true)"
+if [[ -n "$BLUEUTIL" ]]; then
+  restore_bluetooth "$BLUEUTIL"
+else
+  log "blueutil not found, skip bluetooth"
 fi
 
 # HDMI/外接屏随系统唤醒自动亮屏，无需额外操作
