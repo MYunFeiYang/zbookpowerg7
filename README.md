@@ -30,8 +30,8 @@
 
 macOS 辅助脚本统一入口：**`sh EFI/scripts/oc-setup.sh`**（`install-all` / `status` / 各子命令）。
 
-- 启用 **Deep Idle** 路径：**`SSDT-DeepIdle`**、**`SSDT-PCI0.LPCB-Wake-AOAC`**，并与 **`SSDT-OCLT-S3Fix`**、**`SSDT-GPRW`** 等协同；**无传统 S3**，空闲仍可能有约 **5W** 级功耗（视外设与 `pmset` 而定）。  
-- **`HibernationFixup`** 与当前策略一致。推荐一次执行 **`oc-setup.sh install-all`**（含 pmset 收紧、耳麦自动切换、睡眠 hook）；系统更新后 **`oc-setup.sh pmset`** 可重跑。  
+- 启用 **Deep Idle** 路径：**`SSDT-DeepIdle`**、**`SSDT-PCI0.LPCB-Wake-AOAC`**，并与 **`SSDT-OCLT-S3Fix`** 等协同；**无传统 S3**，空闲仍可能有约 **5W** 级功耗（视外设与 `pmset` 而定）。  
+- **`HibernationFixup`** 与当前策略一致。推荐一次执行 **`oc-setup.sh install-all`**（含 pmset 收紧、耳麦自动切换）；系统更新后 **`oc-setup.sh pmset`** 可重跑。  
 - 合盖即关机（可选）：**`oc-setup.sh lid install`**。
 
 ## 目录与安装
@@ -42,7 +42,7 @@ macOS 辅助脚本统一入口：**`sh EFI/scripts/oc-setup.sh`**（`install-all
 | `EFI/oc/` | OpenCore **`OpenCore.efi`**、**Drivers**、**Kexts**、**`config.plist`**、**`ACPI/`**（`.aml` 与部分 **`.dsl`** 源码） |
 | `EFI/boot/` | 引导相关文件 |
 | `EFI/SysReport/` | 本机 ACPI 表导出 |
-| `EFI/scripts/` | **`oc-setup.sh`** 统一入口；含 pmset、耳麦切换、睡眠 hook、合盖关机、ESP 挂载等 |
+| `EFI/scripts/` | **`oc-setup.sh`** 统一入口；含 pmset、耳麦切换、合盖关机、ESP 挂载等 |
 
 将整个 **`EFI`** 复制到 **ESP 分区根目录**（与 **`EFI/oc`** 同级），按 OpenCore 常规流程使用。
 
