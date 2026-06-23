@@ -90,7 +90,7 @@
                     <key>Comment</key>
                     <string>TB3 JHL7540: hotplug + force-power + wake _DSW (_SB.PCI0.RP01.PXSX)</string>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>Path</key>
                     <string>SSDT-TB3HP-ZBook.aml</string>
                 </dict>
@@ -98,7 +98,7 @@
                     <key>Comment</key>
                     <string>Hide RP01 on Darwin - rollback if TB panic: enable this, disable SSDT-TB3HP-ZBook</string>
                     <key>Enabled</key>
-                    <false/>
+                    <true/>
                     <key>Path</key>
                     <string>SSDT-thunderbolt-disable.aml</string>
                 </dict>
@@ -421,8 +421,6 @@
                 <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)</key>
                 <dict>
                     <key>built-in</key>
-                    <integer>1</integer>
-                    <key>force-power</key>
                     <integer>1</integer>
                     <key>pci-aspm-default</key>
                     <integer>3</integer>
@@ -1422,11 +1420,11 @@
                     <key>Base</key>
                     <string>__ZN22AppleThunderboltNHIUser10initializeEP9IOService</string>
                     <key>Comment</key>
-                    <string>Bypass firmware check</string>
+                    <string>Bypass firmware check (disabled with SSDT-thunderbolt-disable)</string>
                     <key>Count</key>
                     <integer>1</integer>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>Find</key>
                     <data>idLrqAAAAA==</data>
                     <key>Identifier</key>
