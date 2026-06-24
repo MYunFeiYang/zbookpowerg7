@@ -11,6 +11,7 @@
 #   ./oc-setup.sh pmset                # 仅收紧 pmset
 #   ./oc-setup.sh mic install
 #   ./oc-setup.sh lid install
+#   ./oc-setup.sh tb lite             # 雷电实验档（无 force-power）
 #   ./oc-setup.sh esp install          # 开机挂载 ESP（需 sudo）
 
 set -euo pipefail
@@ -44,6 +45,7 @@ Commands:
   status                   显示各组件安装/配置状态
 
   mic install|uninstall    耳麦输入自动切换（MicFix + MicInputSwitch）
+  tb off|on|lite|status  雷电档位（改 config.plist，需同步 ESP 并重启）
   lid install|uninstall    合盖延迟关机（install 支持 --skip-pmset）
   esp install|uninstall    开机自动挂载 ESP（需 sudo）
 
@@ -53,6 +55,7 @@ Commands:
   $0 install-all
   $0 pmset
   $0 mic install
+  $0 tb lite
   $0 lid install --skip-pmset
 EOF
 }
@@ -94,6 +97,11 @@ cmd_status() {
       echo "  $label  not installed"
     fi
   done
+  echo ""
+
+  echo "[tb] 雷电档位"
+  bash "${SCRIPT_DIR}/tb-thunderbolt-profile.sh" status | sed 's/^/  /'
+  echo "  切换: $0 tb off|on|lite（改后同步 ESP 并重启）"
   echo ""
 
   echo "[lid] 合盖关机"
@@ -165,6 +173,9 @@ main() {
         uninstall) exec bash "${SCRIPT_DIR}/uninstall-mic-auto-switch.sh" "$@" ;;
         *) echo "Usage: $0 mic install|uninstall" >&2; exit 1 ;;
       esac
+      ;;
+    tb)
+      exec bash "${SCRIPT_DIR}/tb-thunderbolt-profile.sh" "$@"
       ;;
     lid)
       need_macos

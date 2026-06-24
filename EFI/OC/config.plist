@@ -96,9 +96,17 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string>Hide RP01 on Darwin - rollback if TB panic: enable this, disable SSDT-TB3HP-ZBook</string>
+                    <string>TB3 lite (experimental): hotplug + wake _DSW, no force-power</string>
                     <key>Enabled</key>
                     <true/>
+                    <key>Path</key>
+                    <string>SSDT-TB3HP-ZBook-lite.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string>Hide RP01 on Darwin - rollback if TB panic: enable this, disable SSDT-TB3HP-ZBook</string>
+                    <key>Enabled</key>
+                    <false/>
                     <key>Path</key>
                     <string>SSDT-thunderbolt-disable.aml</string>
                 </dict>
@@ -1420,11 +1428,11 @@
                     <key>Base</key>
                     <string>__ZN22AppleThunderboltNHIUser10initializeEP9IOService</string>
                     <key>Comment</key>
-                    <string>Bypass firmware check (disabled with SSDT-thunderbolt-disable)</string>
+                    <string>Bypass firmware check (enabled for TB on/lite profiles)</string>
                     <key>Count</key>
                     <integer>1</integer>
                     <key>Enabled</key>
-                    <false/>
+                    <true/>
                     <key>Find</key>
                     <data>idLrqAAAAA==</data>
                     <key>Identifier</key>
