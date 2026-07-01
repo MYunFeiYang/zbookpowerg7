@@ -86,11 +86,11 @@ if ($LASTEXITCODE -ne 0 -and -not $?) {
     Write-Warning 'Conservative power script may need a separate admin run.'
 }
 
-Write-Host '==> Disable Fast Startup (true shutdown, less fan/disk on power-off)...' -ForegroundColor Cyan
-$powerKey = 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power'
-Set-ItemProperty -Path $powerKey -Name 'HiberbootEnabled' -Value 0 -Type DWord -Force
-powercfg /hibernate off 2>$null | Out-Null
-Write-Host '    HiberbootEnabled=0'
+Write-Host '==> Lid close -> hibernate (avoid hot Modern Standby)...' -ForegroundColor Cyan
+& "$PSScriptRoot\windows-sleep-lid-fix.ps1"
+if ($LASTEXITCODE -ne 0 -and -not $?) {
+    Write-Warning 'Sleep/lid fix script may need a separate admin run.'
+}
 
 Write-Host ''
 Write-Host 'Persistent settings applied. Reboot recommended.' -ForegroundColor Green
