@@ -410,14 +410,12 @@
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1B,0x0)/Pci(0x0,0x0)</key>
                 <dict>
+                    <key>#pci-aspm-default</key>
+                    <integer>3</integer>
                     <key>AAPL,slot-name</key>
                     <string>Internal@0,27,0/0,0</string>
                     <key>device_type</key>
                     <string>Non-Volatile memory controller</string>
-                    <key>pci-aspm-default</key>
-                    <integer>3</integer>
-                    <key>ps-max-latency-us</key>
-                    <data>AAAAAAAAAAA=</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1C,0x0)</key>
                 <dict>
@@ -493,14 +491,12 @@
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1D,0x0)/Pci(0x0,0x0)</key>
                 <dict>
+                    <key>#pci-aspm-default</key>
+                    <integer>3</integer>
                     <key>AAPL,slot-name</key>
                     <string>Internal@0,29,0/0,0</string>
                     <key>device_type</key>
                     <string>Non-Volatile memory controller</string>
-                    <key>pci-aspm-default</key>
-                    <integer>3</integer>
-                    <key>ps-max-latency-us</key>
-                    <data>AAAAAAAAAAA=</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1F,0x0)</key>
                 <dict>
