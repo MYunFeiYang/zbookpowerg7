@@ -37,6 +37,7 @@ pmset -a \
   standby 0 \
   autopoweroff 0 \
   hibernatemode 0 \
+  disksleep 0 \
   disablesleep 0 \
   networkoversleep 0
 
