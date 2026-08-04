@@ -842,9 +842,9 @@
                     <key>BundlePath</key>
                     <string>RTCMemoryFixup.kext</string>
                     <key>Comment</key>
-                    <string>V1.0.8 | By RapidEFI</string>
+                    <string>V1.0.8 | By RapidEFI - disabled: empty rtc-blacklist</string>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>ExecutablePath</key>
                     <string>Contents/MacOS/RTCMemoryFixup</string>
                     <key>MaxKernel</key>
@@ -1375,7 +1375,7 @@
                 <key>IncreasePciBarSize</key>
                 <false/>
                 <key>LapicKernelPanic</key>
-                <true/>
+                <false/>
                 <key>LegacyCommpage</key>
                 <false/>
                 <key>PanicNoKextDump</key>
@@ -1424,7 +1424,7 @@
                 <key>LauncherPath</key>
                 <string>Default</string>
                 <key>PickerAttributes</key>
-                <integer>145</integer>
+                <integer>129</integer>
                 <key>PickerAudioAssist</key>
                 <false/>
                 <key>PickerMode</key>
@@ -1543,7 +1543,7 @@
                     <key>bluetoothInternalControllerInfo</key>
                     <data>AAAAAAAAAAAAAAAAAAA=</data>
                     <key>boot-args</key>
-                    <string>-hbfx-patch=auto -igfxblt -igfxhdmidivs igfxonln=1 revpatch=auto,sbvmm,cpuname -wegnoegpu -amfipassbeta -lilubetaall alctcsel=1 alcverbs=1 -vi2c-force-polling</string>
+                    <string>-hbfx-patch=auto -igfxblt -igfxhdmidivs igfxonln=1 revpatch=auto,sbvmm,cpuname -wegnoegpu -amfipassbeta -lilubetaall alctcsel=1 -vi2c-force-polling</string>
                     <key>csr-active-config</key>
                     <data>/w8AAA==</data>
                     <key>prev-lang:kbd</key>
@@ -1694,7 +1694,7 @@
                 <key>AudioCodec</key>
                 <integer>0</integer>
                 <key>AudioDevice</key>
-                <string>PciRoot(0x0)/Pci(0x1b,0x0)</string>
+                <string>PciRoot(0x0)/Pci(0x1F,0x3)</string>
                 <key>AudioOutMask</key>
                 <integer>1</integer>
                 <key>AudioSupport</key>
