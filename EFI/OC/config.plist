@@ -536,18 +536,12 @@
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x2,0x0)</key>
                 <dict>
-                    <key>@0,backlight-control</key>
-                    <data>AQAAAA==</data>
                     <key>AAPL,backlight-control</key>
                     <data>AQAAAA==</data>
                     <key>AAPL,ig-platform-id</key>
                     <data>CQClPg==</data>
-                    <key>AAPL00,backlight-control</key>
-                    <data>AQAAAA==</data>
                     <key>AAPL01,override-no-connect</key>
                     <data>AP///////wBBDCkJ8SsAAB8fAQOANR54IqYxqFVRnSUPUFS/7wDRwLMAlQCBgIFAgcABAQEBAjqAGHE4LUBYLEUADyghAAAeAAAA/wBaVjAyMTMxMDExMjQ5AAAA/ABQSEwgMjQxQjhRCiAgAAAA/QAwTB5VEgAKICAgICAgACA=</data>
-                    <key>applbkl</key>
-                    <data>AQAAAA==</data>
                     <key>complete-modeset</key>
                     <data>AQAAAA==</data>
                     <key>device-id</key>
@@ -642,24 +636,6 @@
                     <key>Arch</key>
                     <string>Any</string>
                     <key>BundlePath</key>
-                    <string>ECEnabler.kext</string>
-                    <key>Comment</key>
-                    <string>V1.0.6</string>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>ExecutablePath</key>
-                    <string>Contents/MacOS/ECEnabler</string>
-                    <key>MaxKernel</key>
-                    <string></string>
-                    <key>MinKernel</key>
-                    <string></string>
-                    <key>PlistPath</key>
-                    <string>Contents/Info.plist</string>
-                </dict>
-                <dict>
-                    <key>Arch</key>
-                    <string>Any</string>
-                    <key>BundlePath</key>
                     <string>SMCSuperIO.kext</string>
                     <key>Comment</key>
                     <string>V1.3.8 | By RapidEFI</string>
@@ -703,6 +679,24 @@
                     <true/>
                     <key>ExecutablePath</key>
                     <string>Contents/MacOS/SMCProcessor</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>ECEnabler.kext</string>
+                    <key>Comment</key>
+                    <string>V1.0.6</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string>Contents/MacOS/ECEnabler</string>
                     <key>MaxKernel</key>
                     <string></string>
                     <key>MinKernel</key>
@@ -1436,7 +1430,7 @@
                 <key>ShowPicker</key>
                 <true/>
                 <key>TakeoffDelay</key>
-                <integer>0</integer>
+                <integer>500</integer>
                 <key>Timeout</key>
                 <integer>8</integer>
             </dict>
