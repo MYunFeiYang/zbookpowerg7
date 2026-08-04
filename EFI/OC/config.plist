@@ -297,33 +297,6 @@
                     <key>pci-aspm-default</key>
                     <integer>3</integer>
                 </dict>
-                <key>PciRoot(0x0)/Pci(0x1,0x0)/Pci(0x0,0x0)</key>
-                <dict>
-                    <key>@0,compatible</key>
-                    <string>NVDA,NVMac</string>
-                    <key>@0,device_type</key>
-                    <string>display</string>
-                    <key>@0,name</key>
-                    <string>NVDA,Display-A</string>
-                    <key>@1,compatible</key>
-                    <string>NVDA,NVMac</string>
-                    <key>@1,device_type</key>
-                    <string>display</string>
-                    <key>@1,name</key>
-                    <string>NVDA,Display-B</string>
-                    <key>NVCAP</key>
-                    <data>BQEBAAAAAAAAAAAAAAAAABAPAAAAAA==</data>
-                    <key>VRAM,totalsize</key>
-                    <data>AAAA8AAAAAA=</data>
-                    <key>device_type</key>
-                    <string>NVDA,Parent</string>
-                    <key>model</key>
-                    <string>GP107GLM [Quadro P620]</string>
-                    <key>pci-aspm-default</key>
-                    <integer>3</integer>
-                    <key>rom-revision</key>
-                    <string>Dortania</string>
-                </dict>
                 <key>PciRoot(0x0)/Pci(0x12,0x0)</key>
                 <dict>
                     <key>AAPL,slot-name</key>
@@ -1314,36 +1287,6 @@
                     <key>Base</key>
                     <string></string>
                     <key>Comment</key>
-                    <string>Enable TRIM for SSD</string>
-                    <key>Count</key>
-                    <integer>0</integer>
-                    <key>Enabled</key>
-                    <true/>
-                    <key>Find</key>
-                    <data>AEFQUExFIFNTRAA=</data>
-                    <key>Identifier</key>
-                    <string>com.apple.iokit.IOAHCIBlockStorage</string>
-                    <key>Limit</key>
-                    <integer>0</integer>
-                    <key>Mask</key>
-                    <data></data>
-                    <key>MaxKernel</key>
-                    <string></string>
-                    <key>MinKernel</key>
-                    <string></string>
-                    <key>Replace</key>
-                    <data>AAAAAAAAAAAAAAA=</data>
-                    <key>ReplaceMask</key>
-                    <data></data>
-                    <key>Skip</key>
-                    <integer>0</integer>
-                </dict>
-                <dict>
-                    <key>Arch</key>
-                    <string>Any</string>
-                    <key>Base</key>
-                    <string></string>
-                    <key>Comment</key>
                     <string>Legacy USB XHCI power patch (Zenith432). Off: modern macOS usually OK without it; re-enable if USB sleep/wake issues.</string>
                     <key>Count</key>
                     <integer>0</integer>
@@ -1402,7 +1345,7 @@
             <key>Quirks</key>
             <dict>
                 <key>AppleCpuPmCfgLock</key>
-                <true/>
+                <false/>
                 <key>AppleXcpmCfgLock</key>
                 <true/>
                 <key>AppleXcpmExtraMsrs</key>
@@ -1517,26 +1460,7 @@
                 <integer>0</integer>
             </dict>
             <key>Entries</key>
-            <array>
-                <dict>
-                    <key>Arguments</key>
-                    <string></string>
-                    <key>Auxiliary</key>
-                    <false/>
-                    <key>Comment</key>
-                    <string>Full UEFI device path. If needed, verify with OpenShell map/dh. Misc Entries have no Type or Volume keys.</string>
-                    <key>Enabled</key>
-                    <false/>
-                    <key>Flavour</key>
-                    <string>Linux</string>
-                    <key>Name</key>
-                    <string>KaihongOS</string>
-                    <key>Path</key>
-                    <string>PciRoot(0x0)/Pci(0x1B,0x0)/Pci(0x0,0x0)/NVMe(0x1,93-D8-C5-49-4A-44-1B-00)/HD(1,GPT,797F5603-2BC5-421C-BF9D-18016299DEFF,0x28,0x400000)/\EFI\KaihongOS\grubx64.efi</string>
-                    <key>TextMode</key>
-                    <false/>
-                </dict>
-            </array>
+            <array/>
             <key>Security</key>
             <dict>
                 <key>AllowSetDefault</key>
