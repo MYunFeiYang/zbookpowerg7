@@ -1469,7 +1469,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>-hbfx-patch=auto -igfxblt -igfxhdmidivs igfxonln=1 revpatch=auto,sbvmm,cpuname -wegnoegpu -amfipassbeta -lilubetaall alctcsel=1 -vi2c-force-polling</string>
+				<string>-hbfx-patch=auto -igfxblt -igfxhdmidivs igfxonln=1 revpatch=sbvmm,cpuname -wegnoegpu -amfipassbeta -lilubetaall alctcsel=1 -vi2c-force-polling</string>
 				<key>csr-active-config</key>
 				<data>
 				/w8AAA==
