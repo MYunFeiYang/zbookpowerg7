@@ -1405,7 +1405,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>-igfxblt -igfxhdmidivs igfxonln=1 -wegnoegpu -amfipassbeta -lilubetaall alctcsel=1 -vi2c-force-polling</string>
+				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -wegnoegpu -amfipassbeta -lilubetaall alctcsel=1 -vi2c-force-polling</string>
 				<key>csr-active-config</key>
 				<data>
 				/w8AAA==
