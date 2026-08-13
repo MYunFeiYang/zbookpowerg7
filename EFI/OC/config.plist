@@ -1283,8 +1283,8 @@
 			<true/>
 			<key>TakeoffDelay</key>
 			<integer>500</integer>
-			<key>Timeout</key>
-			<integer>8</integer>
+		<key>Timeout</key>
+		<integer>5</integer>
 		</dict>
 		<key>Debug</key>
 		<dict>
