@@ -98,7 +98,7 @@
 				<key>Comment</key>
 				<string>TB3 lite (experimental): hotplug + wake _DSW, no force-power</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>Path</key>
 				<string>SSDT-TB3HP-ZBook-lite.aml</string>
 			</dict>
@@ -106,7 +106,7 @@
 				<key>Comment</key>
 				<string>Hide RP01 on Darwin - rollback if TB panic: enable this, disable SSDT-TB3HP-ZBook</string>
 				<key>Enabled</key>
-				<false/>
+				<true/>
 				<key>Path</key>
 				<string>SSDT-thunderbolt-disable.aml</string>
 			</dict>
