@@ -1077,6 +1077,24 @@
 				<key>PlistPath</key>
 				<string>Contents/Info.plist</string>
 			</dict>
+			<dict>
+				<key>Arch</key>
+				<string>Any</string>
+				<key>BundlePath</key>
+				<string>RestrictEvents.kext</string>
+				<key>Comment</key>
+				<string>RestrictEvents 1.1.6 for OTA (revpatch=sbvmm), Acidanthera</string>
+				<key>Enabled</key>
+				<true/>
+				<key>ExecutablePath</key>
+				<string>Contents/MacOS/RestrictEvents</string>
+				<key>MaxKernel</key>
+				<string></string>
+				<key>MinKernel</key>
+				<string>18.0.0</string>
+				<key>PlistPath</key>
+				<string>Contents/Info.plist</string>
+			</dict>
 		</array>
 		<key>Block</key>
 		<array>
@@ -1283,8 +1301,8 @@
 			<true/>
 			<key>TakeoffDelay</key>
 			<integer>500</integer>
-		<key>Timeout</key>
-		<integer>5</integer>
+			<key>Timeout</key>
+			<integer>5</integer>
 		</dict>
 		<key>Debug</key>
 		<dict>
@@ -1405,7 +1423,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -wegnoegpu -amfipassbeta -lilubetaall alctcsel=1 -vi2c-force-polling</string>
+				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -wegnoegpu -amfipassbeta -lilubetaall alctcsel=1 -vi2c-force-polling revpatch=sbvmm</string>
 				<key>csr-active-config</key>
 				<data>
 				/w8AAA==
