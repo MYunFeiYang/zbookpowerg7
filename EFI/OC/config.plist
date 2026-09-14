@@ -96,6 +96,14 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
+				<string>TB3 JHL7540: downstream device tree (DSB0/NHI0, DSB1, DSB2/XHC5) on RP01.PXSX - enables IOThunderboltController LocalNode/Port registration</string>
+				<key>Enabled</key>
+				<true/>
+				<key>Path</key>
+				<string>SSDT-TB3NHI-ZBook.aml</string>
+			</dict>
+			<dict>
+				<key>Comment</key>
 				<string>TB3 lite (experimental): hotplug + wake _DSW, no force-power</string>
 				<key>Enabled</key>
 				<false/>
