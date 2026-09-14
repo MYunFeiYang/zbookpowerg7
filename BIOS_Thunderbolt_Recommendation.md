@@ -1,8 +1,9 @@
 # HP ZBook Power G7 — 雷电 BIOS 配置（实机核验版）
 
 > **2026-09-14 20:41 实机截图核验**：选项**确实存在**，位于 `F10 → Advanced → Thunderbolt Options`。
-> ⚠️ **但本机下拉只有 SL1–SL4 四档，没有黑苹果唯一需要的 SL0（No Security）。**
-> ✅ **2026-09-14 20:43 用户二次确认：列表就是这四档，滚不出第 5 项 → BIOS 变量正式排除。**
+> ⚠️ **但本机下拉只有 SL1–SL4 四档，没有黑苹果社区点名的 SL0（No Security）。**
+> ✅ 2026-09-14 20:43 用户二次确认：列表就是这四档，滚不出第 5 项。
+> 🔄 2026-09-14 20:5x **社区查证后修正**：SL0 缺失 **不等于** 无解 —— 社区有"Windows warm up"替代路径，详见文末「结论（修正）」。**BIOS 无需任何改动。**
 >
 > 适用场景：已切到 OpenCore `on` 档（force-power + DROM 注入，git `2ae4799`），想在 macOS 下启用 USB-C / 雷电。
 
@@ -60,13 +61,56 @@ HP 官方对 SL0 的定义：**"Any Thunderbolt device attached is accessible wi
 | **本机最宽松可选档** | ✅ **SL1 `User Authorization`（= 出厂默认，无需改动）** | HP 官方档位表 + 实机 |
 | **改 BIOS 能否改善 macOS 26 半初始化** | ❌ **已无档可调** | 无更宽松档可选；SL 档管的是**外部设备准入**，与**主机内部 root switch 建立**的关系亦未验证 |
 
-## 结论：BIOS 变量已排除 —— 雷电一线正式封板
+## 结论（2026-09-14 20:5x 社区查证后**修正**）
 
-- **本机无 SL0**（20:43 确认），SL1 是可选最宽松档且**就是出厂默认** → **BIOS 里没有任何可调的旋钮**。用户**不需要改任何设置**，保持现状退出即可。
-- 与 20:23 实测合并看：ACPI 锚点（DSB0/NHI0 已补、NHI0 成功绑定真实 15e8）+ ICM（1 实例在跑）+ kext（`IOThunderboltFamily` 9.3.3 已加载）+ BIOS（无更宽松档）—— **四层全部到位，`IOThunderboltSwitch` 依然 = 0**。
-- **判定**：卡点在驱动 / ICM 固件层，**非 BIOS / EFI 可修**。JHL7540 + macOS 26 无成功先例 → **雷电（DP / 雷雳设备）一线封板**，不再投入。
-- 唯一剩下的变量是"外接真实雷雳设备硬扭一次"（理论上可能逼出 Switch）——代价是 panic 风险，**不建议**。
-- ⛔ **警告**：不要试图选 SL2 / SL3 / SL4 —— SL2/SL4 更严，SL3 直接**禁死**雷电功能。**保持默认 SL1 即可。**
+**上一版（20:43）结论"BIOS 无更宽松档 → 变量排除 → 雷电封板"作废。** 那个推理**只基于 HP 官方 BIOS 文档，没查黑苹果社区实证**。查证后结论如下。
+
+### 实证 1（最关键）：症状一字不差的案例 + 解法
+tonymacx86 论坛（Mojave + GC-Titan Ridge）用户报告：系统信息里 Thunderbolt 显示 **"no driver loaded"**、PCI 区什么都没有 —— **与我们 `Thunderbolt/USB4: No drivers are loaded.` 完全同一个症状**。
+
+社区给的解法是 **"Windows warm up"**（原文）：
+> "you need to **install Windows, load the drivers, update the firmware and then go back to Mojave** and you should see it. **Windows warm up is only required once for 'activation'.**"
+> "**plug in a TB3 device to 'wake up' the card in Windows** ... I honestly think this is a **critical step** & many people don't test TB under Windows before switching over to macOS. ... you should see a new Windows dialog box that will ask you **if you want to approve the connection for the newly discovered TB device**. Make sure to connect & then accept this choice."
+
+**含义**：SL1 的"用户授权"可以**在 Windows 侧完成一次**，授权信息（设备 GUID + 密钥）写入**雷电控制器 NVM**；之后进 macOS，控制器以"已授权"状态启动。**这就是没有 SL0 时的替代路径** —— 也解释了为什么有些机器不设 No Security 也能用。
+
+### 实证 2：HP 同代商务本在 macOS 下 TB3 可用
+`kecinzer/hpelitebook850g5-opencore`（**HP EliteBook 850 G5**，i5-8350U，macOS 11 Big Sur）明确列出：
+- 使用 **i-tec TB3 坞站（JHL7440 芯片）+ TB3→双 DP 适配器**，"connects to my laptop only over TB3 port that also powers it"
+- BIOS 只写了一条 TB 相关设置：**`Thunderbolt PCIe Hot plug Mode = Native + Power saving`**，**全文未提 Security Level**
+→ **"没有 No Security" 不必然是致命伤**（但注意：该机 BIOS 比我们多一个 `PCIe Hot plug Mode` 选项，本机没有）。
+
+### 实证 3：SL0 的厂商别名对照（elitemacx86 权威指南）
+> "For some motherboards, you may not have option of 'No Security' in such case, **use this option [Legacy Mode] which is similar to 'No Security'**."
+
+| Intel 等级 | 常见 BIOS 叫法 |
+|---|---|
+| SL0 | `No Security` / **`Legacy Mode`** / `Normal Mode w/o NHI` |
+| SL1 | `Unique ID` / `User Authorization` |
+| SL2 | `One time saved key` / `Secure Connect` |
+| SL3 | `DP++ only` / `DisplayPort and USB` |
+| SL4 | `Daisy Chaining Disabled` |
+
+**HP 这套四档里确实没有 SL0 的对应物**（这点上一版没说错），但 HP 体系里也**没有** `Legacy Mode` 可选。
+
+### 实证 4：Titan Ridge 的 NVM 固件版本是变量（AIC 插卡领域）
+- imacpc.net 中文教程：Titan Ridge 卡出厂 `nvm43`，**降级到 `nvm23` + 配 SSDT** 才能让 macOS 完整识别
+- `liuxu623/ASUS-X299-Hackintosh`：Titan Ridge 需 `SSDT-TB3HP.aml` + `SSDT-DTPG.aml`，BIOS 设 `Security Level = SL0-No Security`、`GPIO3 Force Pwr = On`、`Skip PCI OptionRom = Enabled`
+⚠️ 这些全是 **AIC 插卡**的操作。本机是 **onboard 焊死** 的 JHL7540 —— 刷 NVM 风险极高，**不建议**。
+
+---
+
+## 修正后的可选路径
+
+| 路径 | 可行性 | 成本 / 风险 |
+|---|---|---|
+| **A. Windows warm up**：进 Windows 装 TB 驱动 → 插 TB3 设备 → 弹窗批准授权 → 重启回 macOS | ⭐ **社区对同症状的推荐解法**；本机双系统具备条件 | 需重启进 Windows；**前提是有真实 TB3 设备**；macOS 26 无先例，成功率未验证 |
+| B. BIOS 设 SL0 | ❌ 本机无此档 | — |
+| C. 刷雷电控制器 NVM 固件 | ⚠️ 理论可行（NVM 版本确会影响识别） | onboard 焊死，**变砖风险极高**，不建议 |
+| D. 外接真实雷电设备硬试 | ⚠️ 可能逼出 Switch | panic 风险 |
+
+**BIOS 不需要改任何设置** —— 保持默认 `User Authorization` 即可。
+⛔ 仍**不要**选 SL2 / SL3 / SL4（SL2/SL4 更严，SL3 直接禁死雷电功能）。
 
 ## 重启后验证命令
 
@@ -90,4 +134,5 @@ system_profiler SPThunderboltDataType                                        # m
 | 2026-09-14 18:0x | 推荐 `No Security` + `PCIe Hot plug = Legacy`，路径写 `Advanced → Port Options` | ⚠️ 推导值，措辞混淆（把 Security Level 和 Hot plug Mode 混为一谈） |
 | 2026-09-14 20:2x | 用户首次进 BIOS 未找到 → 判定"本机不可达"、雷电封板 | ❌ **此判定已作废** |
 | 2026-09-14 20:41 | **用户实机找到**（`Advanced → Thunderbolt Options`）。真因：① 路径应为 Thunderbolt Options 非 Port Options ② 本机该项**不在 Port Options 下**。且**本机无 `PCIe Hot plug Mode` 项**（推荐表中那条也一并作废） | ✅ 现行 |
-| 2026-09-14 20:43 | 用户二次确认：下拉**只有 SL1–SL4，无 SL0** → BIOS 无更宽松档可调 → **BIOS 变量排除，雷电封板** | ✅ 现行（终版） |
+| 2026-09-14 20:43 | 用户二次确认：下拉**只有 SL1–SL4，无 SL0** → 当时判定"BIOS 变量排除，雷电封板" | ❌ **已被下一行修正** |
+| 2026-09-14 20:5x | **社区查证后修正**：① tonymacx86 有"**no driver loaded**"同症状案例，解法=**Windows warm up**（Windows 侧授权一次写入控制器 NVM）② HP EliteBook 850 G5（同代）在 Big Sur 下 TB3 坞站可用且未设 No Security ③ elitemacx86 确认 SL0 无 HP 别名。→ **"无 SL0 = 无解"不成立**，存在 Windows warm up 路径 | ✅ 现行（终版） |
