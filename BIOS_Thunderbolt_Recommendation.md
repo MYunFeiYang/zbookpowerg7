@@ -2,6 +2,7 @@
 
 > **2026-09-14 20:41 实机截图核验**：选项**确实存在**，位于 `F10 → Advanced → Thunderbolt Options`。
 > ⚠️ **但本机下拉只有 SL1–SL4 四档，没有黑苹果唯一需要的 SL0（No Security）。**
+> ✅ **2026-09-14 20:43 用户二次确认：列表就是这四档，滚不出第 5 项 → BIOS 变量正式排除。**
 >
 > 适用场景：已切到 OpenCore `on` 档（force-power + DROM 注入，git `2ae4799`），想在 macOS 下启用 USB-C / 雷电。
 
@@ -21,7 +22,7 @@
 3. `DisplayPort and USB`
 4. `Daisy Chaining Disabled`
 
-⚠️ **待确认**：下拉是否还能向上滚动（第 5 项 `No Security` 是否藏在列表上方）。截图看起来列表从第 1 项开始、到第 4 项结束，但需实机按 ↑/Home 键确认。
+✅ **已确认（2026-09-14 20:43 用户二次确认）**：列表就是这四档，滚不出第 5 项。本机 BIOS **不提供 SL0（No Security）**。
 
 ## 选项官方含义（HP 官方文档，非推断）
 
@@ -42,7 +43,7 @@
 
 HP 官方对 SL0 的定义：**"Any Thunderbolt device attached is accessible without approval. No dialog boxes, prompts, or user interaction required."** —— 这是黑苹果社区唯一推荐的档（Gigabyte/ASUS/elitemacx86 多源一致），原因正是 **SL1/SL2 的授权客户端是 Windows 侧的 Intel Thunderbolt Software，macOS 没有这个客户端**，没人批准。
 
-**关键不确定点**：本机下拉中 SL0 不可见。要么是 HP 在新版 BIOS 里移除了该档（有先例：HP Z6 G5 A 的用户反馈 BIOS 更新后 TB 安全设置直接消失），要么是列表可滚动。**须实机确认。**
+**已确认（20:43）**：本机下拉中**确实没有 SL0**。HP 在新版 BIOS / 合规要求下移除了该档（有先例：HP Z6 G5 A 用户反馈 BIOS 更新后 TB 安全设置直接消失）。**本机可选的最宽松档 = SL1 `User Authorization`，也就是当前默认值 —— 不需要改动任何设置。**
 
 ## 实操注意：可能改不动
 
@@ -55,14 +56,17 @@ HP 官方对 SL0 的定义：**"Any Thunderbolt device attached is accessible wi
 |---|---|---|
 | **选项存在性** | ✅ **确定存在**（此前"本机不可达"结论**已作废**） | 用户 20:41 实机截图 |
 | **菜单路径** | ✅ **确定为 `Advanced → Thunderbolt Options`** | 同上。此前文档写的 `Port Options` 是旧版组织方式（HP 手册注："previously located in the Port Options menu. This menu organization is new in 2019"）→ 这正是 20:2x 没找到的原因 |
-| **本机有无 SL0** | ❓ **待确认** | 截图下拉未见，需实机滚一下 |
-| **调了能否改善 macOS 26 半初始化** | ❓ **不确定** | 无社区实证。且 20:23 实测已证明：补 ACPI 锚点后 `Switch` 仍 = 0。SL 档管的是**外部设备准入**，与**主机内部 root switch 建立**是否相关，**未经验证** |
+| **本机有无 SL0** | ✅ **确定没有**（20:43 二次确认，下拉到底） | 用户实机核验 |
+| **本机最宽松可选档** | ✅ **SL1 `User Authorization`（= 出厂默认，无需改动）** | HP 官方档位表 + 实机 |
+| **改 BIOS 能否改善 macOS 26 半初始化** | ❌ **已无档可调** | 无更宽松档可选；SL 档管的是**外部设备准入**，与**主机内部 root switch 建立**的关系亦未验证 |
 
-## 结论：BIOS 变量尚未排除完
+## 结论：BIOS 变量已排除 —— 雷电一线正式封板
 
-- **若有 SL0** → 设 `No Security` 是本机唯一还没试的、有理论依据的旋钮 → 值得重启验证一次
-- **若无 SL0**（SL1 已是最宽松） → BIOS 变量**排除** → 结合 20:23 实测（`Switch` = 0 且 ACPI/ICM/kext 三层已到位），**雷电一线正式封板**
-- **无论哪种**，都**不要**选 SL3 / SL2（更严，只会更糟）
+- **本机无 SL0**（20:43 确认），SL1 是可选最宽松档且**就是出厂默认** → **BIOS 里没有任何可调的旋钮**。用户**不需要改任何设置**，保持现状退出即可。
+- 与 20:23 实测合并看：ACPI 锚点（DSB0/NHI0 已补、NHI0 成功绑定真实 15e8）+ ICM（1 实例在跑）+ kext（`IOThunderboltFamily` 9.3.3 已加载）+ BIOS（无更宽松档）—— **四层全部到位，`IOThunderboltSwitch` 依然 = 0**。
+- **判定**：卡点在驱动 / ICM 固件层，**非 BIOS / EFI 可修**。JHL7540 + macOS 26 无成功先例 → **雷电（DP / 雷雳设备）一线封板**，不再投入。
+- 唯一剩下的变量是"外接真实雷雳设备硬扭一次"（理论上可能逼出 Switch）——代价是 panic 风险，**不建议**。
+- ⛔ **警告**：不要试图选 SL2 / SL3 / SL4 —— SL2/SL4 更严，SL3 直接**禁死**雷电功能。**保持默认 SL1 即可。**
 
 ## 重启后验证命令
 
@@ -86,3 +90,4 @@ system_profiler SPThunderboltDataType                                        # m
 | 2026-09-14 18:0x | 推荐 `No Security` + `PCIe Hot plug = Legacy`，路径写 `Advanced → Port Options` | ⚠️ 推导值，措辞混淆（把 Security Level 和 Hot plug Mode 混为一谈） |
 | 2026-09-14 20:2x | 用户首次进 BIOS 未找到 → 判定"本机不可达"、雷电封板 | ❌ **此判定已作废** |
 | 2026-09-14 20:41 | **用户实机找到**（`Advanced → Thunderbolt Options`）。真因：① 路径应为 Thunderbolt Options 非 Port Options ② 本机该项**不在 Port Options 下**。且**本机无 `PCIe Hot plug Mode` 项**（推荐表中那条也一并作废） | ✅ 现行 |
+| 2026-09-14 20:43 | 用户二次确认：下拉**只有 SL1–SL4，无 SL0** → BIOS 无更宽松档可调 → **BIOS 变量排除，雷电封板** | ✅ 现行（终版） |
