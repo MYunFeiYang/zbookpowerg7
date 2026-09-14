@@ -1,80 +1,88 @@
-# HP ZBook Power G7 — 黑苹果雷电 BIOS 推荐配置
+# HP ZBook Power G7 — 雷电 BIOS 配置（实机核验版）
 
-> ⚠️ **2026-09-14 实机核验结果：本机 BIOS 中未找到本文件所述的 Thunderbolt 选项。** 下文推荐值仅作"若你的 BIOS 有此菜单时"的参考，**请先读文末「实机核验」一节**。
+> **2026-09-14 20:41 实机截图核验**：选项**确实存在**，位于 `F10 → Advanced → Thunderbolt Options`。
+> ⚠️ **但本机下拉只有 SL1–SL4 四档，没有黑苹果唯一需要的 SL0（No Security）。**
 >
 > 适用场景：已切到 OpenCore `on` 档（force-power + DROM 注入，git `2ae4799`），想在 macOS 下启用 USB-C / 雷电。
-> 这些值是「黑苹果社区共识 + HP 平台文档」推导的推荐，**不是 macOS 26 + 本机 JHL7540 的专门实测**，需重启后验证。
 
-## 进 BIOS 路径
-开机按 **F10** → **Advanced** → **Port Options** → 找到以下两项。
+## 实机菜单（2026-09-14 20:41 用户截图，本文件唯一权威依据）
 
-## 推荐值
+`Main | Security | Advanced | UEFI Drivers` → **Advanced → Thunderbolt Options**：
 
-| 项目 | 推荐值 | 理由 / 来源 |
+| 控件 | 状态 |
+|---|---|
+| ☑ **Thunderbolt Mode** | 已勾选（= 启用 Type-C 口的雷电连接，正确） |
+| ☑ **Require BIOS PW to change Thunderbolt Security Level** | 已勾选（= 改动安全等级需先设 BIOS 管理员密码，**实操障碍**） |
+| **Thunderbolt Security Level** | 下拉展开，见下表 |
+
+下拉可见项（自上而下）：
+1. `PCIe and DisplayPort - User Authorization`
+2. `PCIe and DisplayPort - Secure Connect`
+3. `DisplayPort and USB`
+4. `Daisy Chaining Disabled`
+
+⚠️ **待确认**：下拉是否还能向上滚动（第 5 项 `No Security` 是否藏在列表上方）。截图看起来列表从第 1 项开始、到第 4 项结束，但需实机按 ↑/Home 键确认。
+
+## 选项官方含义（HP 官方文档，非推断）
+
+来源：HP 支持文档 `ish_12912068-12912121-16`、`ish_10066670-9875691-16`；HP 白皮书 `4AA7-3384ENW` / `4AA6-5088ENW`；ZBook Studio G5 BIOS 手册 `919946-004`。
+
+| 截图选项 | HP 等级 | 官方含义（原文摘要） |
 |---|---|---|
-| **Thunderbolt Security Level** | **No Security (SL0)** | 黑苹果社区硬共识：macOS 需 No Security 才能检测并初始化 TB 设备。Gigabyte/ASUS/elitemacx86 多源一致（"For most motherboards and Laptops, this option is preferred"）。HP ZBook 手册确认档位含 No Security / User Authorization(默认) / Secure Connect / DisplayPort only。 |
-| **Thunderbolt PCIe Hot plug Mode** | **Legacy Mode (disables RTD3)** | HP 白皮书 + ZBook 14u G5 社区实证：设为 Legacy 禁用 RTD3 深度电源管理，可修复睡眠/唤醒后 TB 设备断连。正好对症我们担心的「睡眠带设备 panic / 唤醒冻结」。 |
-| Wake from Thunderbolt Devices | **Disabled**（建议） | 避免 TB 设备随意唤醒导致不稳定。 |
+| `PCIe and DisplayPort - User Authorization` | **SL1** | **默认策略**。功能同 SL0，但需用户在 **Windows 环境**里通过 Thunderbolt 软件逐个批准新设备（批准后可记住 GUID 免提示） |
+| `PCIe and DisplayPort - Secure Connect` | **SL2** | 需设备含安全证书/芯片；除批准外增加"预置密钥 + 挑战-响应"认证，验证不通过则接口不启用 |
+| `DisplayPort and USB` | **SL3** | ⛔ **禁用全部雷电功能**（含 PCIe 隧道），仅保留原生 USB-C / DP-Alt 模式。HP 原文："All Thunderbolt functionality of the USB Type-C connectors on the notebook is disabled." |
+| `Daisy Chaining Disabled` | **SL4** | 认证流程同 SL1，唯一区别是禁止从端口 B 菊花链 |
 
-## 关键澄清（纠正 18:0x 的旧措辞）
-- HP BIOS 里**有两个独立项**，之前我把它们混了：
-  1. **Thunderbolt Security Level** —— 档位是 `No Security / User Authorization / Secure Connect / DisplayPort only`，**没有叫 "Legacy" 的档**。
-  2. **Thunderbolt PCIe Hot plug Mode** —— 档位是 `Native + Low Power / Legacy Mode`，**"Legacy" 是这一项的真实叫法**（不是 Security Level 的档）。
-- 之前说的「改成 Legacy」指的就是第②项的 **Legacy Mode**，措辞让人误以为是第①项的档位名，已纠正。
+## ⛔ 危险项：绝对不要选 `DisplayPort and USB`（SL3）
 
-## 为什么这两个要配合 on 档
-- OpenCore 的 `SSDT-TB3HP-ZBook.aml`（force-power + DROM）在软件层强制上电、注入 DROM；
-- BIOS `No Security` 让控制器在 macOS 下不被安全层卡住、能完整枚举；
-- BIOS `Legacy Mode`（禁 RTD3）让睡眠/唤醒时 TB 控制器不被深度电源管理搞死。
-- 三者方向一致，目的都是"让 JHL7540 在 macOS 下尽量完整初始化 + 睡眠稳"。
+它会把雷电 PCIe 功能**彻底关死**，比现在的"半初始化"**更糟**。选了之后 USB-C 只剩原生 USB/DP，雷电永无可能。
 
-## 风险与边界（诚实标注）
-- **No Security 降低物理 DMA 防护**（任何人物理接触 USB-C 口可 DMA 攻击）。黑苹果普遍接受此代价；若介意，至少在开机密码 + 物理看护下使用。
-- 调 BIOS **不破坏系统密封**、不碰 EFI，可随时改回，比改 EFI 安全。
-- 即便两项都设对，**无社区实证保证 macOS 26 + 本机 JHL7540 完美**——仍可能面对热插拔冻结 / 关闭卡 panic。设完务必实测。
+## 缺的那个档：SL0（No Security）
+
+HP 官方对 SL0 的定义：**"Any Thunderbolt device attached is accessible without approval. No dialog boxes, prompts, or user interaction required."** —— 这是黑苹果社区唯一推荐的档（Gigabyte/ASUS/elitemacx86 多源一致），原因正是 **SL1/SL2 的授权客户端是 Windows 侧的 Intel Thunderbolt Software，macOS 没有这个客户端**，没人批准。
+
+**关键不确定点**：本机下拉中 SL0 不可见。要么是 HP 在新版 BIOS 里移除了该档（有先例：HP Z6 G5 A 的用户反馈 BIOS 更新后 TB 安全设置直接消失），要么是列表可滚动。**须实机确认。**
+
+## 实操注意：可能改不动
+
+`Require BIOS PW to change Thunderbolt Security Level` 已勾选。HP 官方手册原文：*"When checked, Thunderbolt Security Level cannot be changed unless a BIOS administrator password has been created."*
+→ 若改动被灰掉/无法保存，需先在 `Security → BIOS Administrator Password` 设一个密码。**本机是否已设未知。**
+
+## 确定性分级
+
+| 维度 | 结论 | 依据 |
+|---|---|---|
+| **选项存在性** | ✅ **确定存在**（此前"本机不可达"结论**已作废**） | 用户 20:41 实机截图 |
+| **菜单路径** | ✅ **确定为 `Advanced → Thunderbolt Options`** | 同上。此前文档写的 `Port Options` 是旧版组织方式（HP 手册注："previously located in the Port Options menu. This menu organization is new in 2019"）→ 这正是 20:2x 没找到的原因 |
+| **本机有无 SL0** | ❓ **待确认** | 截图下拉未见，需实机滚一下 |
+| **调了能否改善 macOS 26 半初始化** | ❓ **不确定** | 无社区实证。且 20:23 实测已证明：补 ACPI 锚点后 `Switch` 仍 = 0。SL 档管的是**外部设备准入**，与**主机内部 root switch 建立**是否相关，**未经验证** |
+
+## 结论：BIOS 变量尚未排除完
+
+- **若有 SL0** → 设 `No Security` 是本机唯一还没试的、有理论依据的旋钮 → 值得重启验证一次
+- **若无 SL0**（SL1 已是最宽松） → BIOS 变量**排除** → 结合 20:23 实测（`Switch` = 0 且 ACPI/ICM/kext 三层已到位），**雷电一线正式封板**
+- **无论哪种**，都**不要**选 SL3 / SL2（更严，只会更糟）
 
 ## 重启后验证命令
+
 ```
-system_profiler SPThunderboltDataType        # 看 Thunderbolt 树是否完整(应有 NHI/Port/LocalNode)
-ioreg -n RP01                                 # 应存在 RP01 节点
-ioreg -n AppleThunderboltNHIType3             # 看控制器状态
-log show --predicate 'eventMessage CONTAINS "Thunderbolt"' --last boot   # 看 TB 初始化日志
+ioreg -l -w0 | grep -oE "<class IOThunderbolt[A-Za-z_]+" | sort | uniq -c   # 权威实例计数（看 Switch）
+ioreg -c IOThunderboltController -r                                          # LocalNode/Port 是否 registered
+system_profiler SPThunderboltDataType                                        # macOS 26 此命令不可靠，仅参考
 ```
 
 ## 回滚
-- BIOS 改坏 → F10 里 Load Setup Defaults 或改回 User Authorization / Native + Low Power。
-- EFI 想退回无 USB-C 稳态 → `bash EFI/scripts/tb-thunderbolt-profile.sh off`（回到藏 RP01 态）。
 
-## 确定性分级（你问的「确定是我们这台吗」）
-
-| 维度 | 确定 / 不确定 | 依据 |
-|---|---|---|
-| **机型归属**：HP ZBook Power G7 属该 BIOS 家族、该家族 BIOS 确有 Thunderbolt 配置项 | ✅ **确定** | HP 官方白皮书 + ZBook Studio/Fury/Firefly 同系手册 + 社区三源证实；本机真实机型由你自述 + SysReport 抓的本机固件表确认（⚠️ `system_profiler` 现在显示的 `MacBookPro16,4` 是 OC 伪装的 SMBIOS，**不能当真实机型证据**） |
-| **菜单逐字路径**：`F10 → Advanced → Port Options → …` 的精确位置 / 选项拼写 | ❓ **不确定，需进 BIOS 眼见** | 我进不了 BIOS、也没 dump 本机 IFR 固件；当前路径 / 选项名是从 HP 通用文档 + 同系机型**推导**的，非从你实机读出。进 BIOS 时若名字 / 位置有出入，以实机为准 |
-| **调了能否改善 macOS 26 下 JHL7540 半初始化** | ❓ **不确定，可能无用** | 18:0x 已自我纠正：HP Security Level 管的是设备认证 / DMA 防护（安全层），**无社区实证**证明它能让 JHL7540 在 macOS 26 完整初始化。属「可试但无把握」旋钮，优先级低于 on 档 EFI 实测 + 使用纪律 |
-
-**一句话**：配置「适配这台机器家族」是确定的；「菜单逐字路径」与「调了有用」两点**无法从 macOS 侧坐实**，须你进 BIOS 实拍 + 重启实测 `system_profiler SPThunderboltDataType` 验证。
+- BIOS 改坏 → F10 里 `Load Setup Defaults`，或改回 `User Authorization`
+- EFI 想退回无 USB-C 稳态 → `bash EFI/scripts/tb-thunderbolt-profile.sh off`
 
 ---
 
-## 实机核验（2026-09-14 20:2x，本文件确定性降级）
+## 变更史（保留纠错轨迹）
 
-**结果：用户进 BIOS（F10）后，未找到本文件所述的 Thunderbolt 选项。**
-
-| 原判定 | 实机核验后 |
-|---|---|
-| 菜单路径「不确定，需眼见」 | ❌ **已否证**：本机 F10 里找不到该菜单项 |
-| 「机型归属确定」（该 BIOS 家族有 TB 配置项） | ⚠️ **仍成立但无实际用途**：HP 官方文档确实记载此选项，但对本机不可达 |
-
-**HP 官方文档给出的路径（供再试一次；但已确认本机不可达）**
-- 路径 A：`F10 → Advanced（高级）→ Thunderbolt Options → Thunderbolt Security Level`（HP 支持文档 ish_11995055）
-- 路径 B：`F10 → Advanced（高级）→ Port Options（端口选项）→ Thunderbolt Security Level`（HP 官方使用指南 PDF）
-- 相关项：`Security → DMA Protection`（HP 文档提到与 TB 安全级别联动）
-
-**未找到的可能原因（未逐一验证，仅列举）**：① 本机 BIOS 版本未暴露该菜单；② 需先设 BIOS 管理员密码才显示高级项；③ 用户未在该机型的确切位置找到（HP 各机型菜单位置不一致）。
-
-**结论与建议**
-- **不再在 BIOS 上投入**。该项存在性在本机未证实、且即便设了也**无任何证据**能解决 macOS 26 下 JHL7540 的 `Switch = 0` 问题（见下）。
-- 20:23 实测已确认：**ACPI 锚点不是瓶颈** —— 补上 macOS 期望的 `DSB0/NHI0` 设备树、且 `NHI0` 成功绑定真实 15e8 之后，`IOThunderboltSwitch` 实例**依然为 0**，`LocalNode`/`Port` 依然 `!registered`。ICM（`IOThunderboltConnectionManager`）有 1 实例在跑、kext 全部加载。**卡点在驱动/ICM 固件层，非 BIOS 或 EFI 可修。**
-- 可选替代验证（若日后想 100% 确认 BIOS 有无该项）：Windows 侧跑 HP BIOS Configuration Utility (BCU) dump 全部 BIOS 设置项。**当前不认为值得为此折腾。**
-- 雷电一线**判定封板**；on 档去留只取决于一件事：**USB-C 的 USB 数据通道实测能否读写**。
+| 时间 | 结论 | 状态 |
+|---|---|---|
+| 2026-09-14 18:0x | 推荐 `No Security` + `PCIe Hot plug = Legacy`，路径写 `Advanced → Port Options` | ⚠️ 推导值，措辞混淆（把 Security Level 和 Hot plug Mode 混为一谈） |
+| 2026-09-14 20:2x | 用户首次进 BIOS 未找到 → 判定"本机不可达"、雷电封板 | ❌ **此判定已作废** |
+| 2026-09-14 20:41 | **用户实机找到**（`Advanced → Thunderbolt Options`）。真因：① 路径应为 Thunderbolt Options 非 Port Options ② 本机该项**不在 Port Options 下**。且**本机无 `PCIe Hot plug Mode` 项**（推荐表中那条也一并作废） | ✅ 现行 |
