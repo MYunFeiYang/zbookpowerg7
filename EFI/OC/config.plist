@@ -90,7 +90,7 @@
 				<key>Comment</key>
 				<string>TB3 JHL7540: hotplug + force-power + wake _DSW (_SB.PCI0.RP01.PXSX)</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>Path</key>
 				<string>SSDT-TB3HP-ZBook.aml</string>
 			</dict>
@@ -98,7 +98,7 @@
 				<key>Comment</key>
 				<string>TB3 JHL7540: downstream device tree (DSB0/NHI0, DSB1, DSB2/XHC5) on RP01.PXSX - enables IOThunderboltController LocalNode/Port registration</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>Path</key>
 				<string>SSDT-TB3NHI-ZBook.aml</string>
 			</dict>
@@ -114,7 +114,7 @@
 				<key>Comment</key>
 				<string>Hide RP01 on Darwin - rollback if TB panic: enable this, disable SSDT-TB3HP-ZBook</string>
 				<key>Enabled</key>
-				<false/>
+				<true/>
 				<key>Path</key>
 				<string>SSDT-thunderbolt-disable.aml</string>
 			</dict>
@@ -1191,7 +1191,7 @@
 				<key>Count</key>
 				<integer>1</integer>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>Find</key>
 				<data>
 				idLrqAAAAA==
