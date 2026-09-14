@@ -1,5 +1,7 @@
 # HP ZBook Power G7 — 黑苹果雷电 BIOS 推荐配置
 
+> ⚠️ **2026-09-14 实机核验结果：本机 BIOS 中未找到本文件所述的 Thunderbolt 选项。** 下文推荐值仅作"若你的 BIOS 有此菜单时"的参考，**请先读文末「实机核验」一节**。
+>
 > 适用场景：已切到 OpenCore `on` 档（force-power + DROM 注入，git `2ae4799`），想在 macOS 下启用 USB-C / 雷电。
 > 这些值是「黑苹果社区共识 + HP 平台文档」推导的推荐，**不是 macOS 26 + 本机 JHL7540 的专门实测**，需重启后验证。
 
@@ -52,3 +54,27 @@ log show --predicate 'eventMessage CONTAINS "Thunderbolt"' --last boot   # 看 T
 | **调了能否改善 macOS 26 下 JHL7540 半初始化** | ❓ **不确定，可能无用** | 18:0x 已自我纠正：HP Security Level 管的是设备认证 / DMA 防护（安全层），**无社区实证**证明它能让 JHL7540 在 macOS 26 完整初始化。属「可试但无把握」旋钮，优先级低于 on 档 EFI 实测 + 使用纪律 |
 
 **一句话**：配置「适配这台机器家族」是确定的；「菜单逐字路径」与「调了有用」两点**无法从 macOS 侧坐实**，须你进 BIOS 实拍 + 重启实测 `system_profiler SPThunderboltDataType` 验证。
+
+---
+
+## 实机核验（2026-09-14 20:2x，本文件确定性降级）
+
+**结果：用户进 BIOS（F10）后，未找到本文件所述的 Thunderbolt 选项。**
+
+| 原判定 | 实机核验后 |
+|---|---|
+| 菜单路径「不确定，需眼见」 | ❌ **已否证**：本机 F10 里找不到该菜单项 |
+| 「机型归属确定」（该 BIOS 家族有 TB 配置项） | ⚠️ **仍成立但无实际用途**：HP 官方文档确实记载此选项，但对本机不可达 |
+
+**HP 官方文档给出的路径（供再试一次；但已确认本机不可达）**
+- 路径 A：`F10 → Advanced（高级）→ Thunderbolt Options → Thunderbolt Security Level`（HP 支持文档 ish_11995055）
+- 路径 B：`F10 → Advanced（高级）→ Port Options（端口选项）→ Thunderbolt Security Level`（HP 官方使用指南 PDF）
+- 相关项：`Security → DMA Protection`（HP 文档提到与 TB 安全级别联动）
+
+**未找到的可能原因（未逐一验证，仅列举）**：① 本机 BIOS 版本未暴露该菜单；② 需先设 BIOS 管理员密码才显示高级项；③ 用户未在该机型的确切位置找到（HP 各机型菜单位置不一致）。
+
+**结论与建议**
+- **不再在 BIOS 上投入**。该项存在性在本机未证实、且即便设了也**无任何证据**能解决 macOS 26 下 JHL7540 的 `Switch = 0` 问题（见下）。
+- 20:23 实测已确认：**ACPI 锚点不是瓶颈** —— 补上 macOS 期望的 `DSB0/NHI0` 设备树、且 `NHI0` 成功绑定真实 15e8 之后，`IOThunderboltSwitch` 实例**依然为 0**，`LocalNode`/`Port` 依然 `!registered`。ICM（`IOThunderboltConnectionManager`）有 1 实例在跑、kext 全部加载。**卡点在驱动/ICM 固件层，非 BIOS 或 EFI 可修。**
+- 可选替代验证（若日后想 100% 确认 BIOS 有无该项）：Windows 侧跑 HP BIOS Configuration Utility (BCU) dump 全部 BIOS 设置项。**当前不认为值得为此折腾。**
+- 雷电一线**判定封板**；on 档去留只取决于一件事：**USB-C 的 USB 数据通道实测能否读写**。
