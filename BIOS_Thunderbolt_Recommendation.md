@@ -4,6 +4,7 @@
 > ⚠️ **但本机下拉只有 SL1–SL4 四档，没有黑苹果社区点名的 SL0（No Security）。**
 > ✅ 2026-09-14 20:43 用户二次确认：列表就是这四档，滚不出第 5 项。
 > 🔄 2026-09-14 20:5x **社区查证后修正**：SL0 缺失 **不等于** 无解 —— 社区有"Windows warm up"替代路径，详见文末「结论（修正）」。**BIOS 无需任何改动。**
+> 🔴 2026-09-14 20:47 **终局**：用户确认**手头无真实雷电（TB3/4）设备** → warm up 的硬前提（必须插真设备触发授权）不成立 → **雷电一线正式封板**，本文件转为归档。
 >
 > 适用场景：已切到 OpenCore `on` 档（force-power + DROM 注入，git `2ae4799`），想在 macOS 下启用 USB-C / 雷电。
 
@@ -104,13 +105,58 @@ tonymacx86 论坛（Mojave + GC-Titan Ridge）用户报告：系统信息里 Thu
 
 | 路径 | 可行性 | 成本 / 风险 |
 |---|---|---|
-| **A. Windows warm up**：进 Windows 装 TB 驱动 → 插 TB3 设备 → 弹窗批准授权 → 重启回 macOS | ⭐ **社区对同症状的推荐解法**；本机双系统具备条件 | 需重启进 Windows；**前提是有真实 TB3 设备**；macOS 26 无先例，成功率未验证 |
+| **A. Windows warm up**：进 Windows 装 TB 驱动 → 插 TB3 设备 → 弹窗批准授权 → 重启回 macOS | ❌ **不可达** —— 2026-09-14 20:47 用户确认**手头无真实雷电设备**，硬前提不成立 | 需真实 TB3 设备；macOS 26 无先例 |
 | B. BIOS 设 SL0 | ❌ 本机无此档 | — |
 | C. 刷雷电控制器 NVM 固件 | ⚠️ 理论可行（NVM 版本确会影响识别） | onboard 焊死，**变砖风险极高**，不建议 |
 | D. 外接真实雷电设备硬试 | ⚠️ 可能逼出 Switch | panic 风险 |
 
 **BIOS 不需要改任何设置** —— 保持默认 `User Authorization` 即可。
 ⛔ 仍**不要**选 SL2 / SL3 / SL4（SL2/SL4 更严，SL3 直接禁死雷电功能）。
+
+### 🔴 终局（2026-09-14 20:47）：雷电一线封板
+
+用户确认**手头无真实雷电设备** → 路径 A 的硬前提（必须插真设备触发授权弹窗）不成立；B/C/D 本就不通或风险过高 → **四条路全部封闭**。
+
+四层排查汇总（全部排除完毕）：
+
+| 层级 | 状态 |
+|---|---|
+| ACPI 锚点 | ✅ DSB0/NHI0 已补，NHI0 成功绑定真实 `15e8` |
+| ICM 固件 | ✅ `IOThunderboltConnectionManager` 1 实例在跑 |
+| 驱动 kext | ✅ `IOThunderboltFamily 9.3.3` + `AppleThunderboltNHI 7.2.81` |
+| BIOS 旋钮 | ✅ 无 SL0，SL1 已是最宽松档（= 出厂默认） |
+| Windows warm up | ❌ 无雷电设备，无法触发授权 |
+| **结果** | ❌ **`IOThunderboltSwitch` = 0** —— 卡在驱动 / ICM 固件层 |
+
+**结论：雷电（DP / 雷雳设备）一线正式封板，不再投入。** 本机 BIOS **无需任何改动**。JHL7540 + macOS 26 无成功先例；这不是 BIOS 或 EFI 能修的东西。
+
+---
+
+## ★ USB-C 双通道拓扑（2026-09-14 20:47 实测，与 on/off 档取舍直接相关）
+
+本机物理口（HP 官方规格核实）：**3×USB-A（5Gbps）+ 1×USB-C（雷电3 40Gbps + USB3.1 Gen2 10Gbps + DP1.2）**，USB-C 是**唯一**的 C 口。
+
+USB-C 的**数据**分两路、挂在**两个不同控制器**上：
+
+| USB-C 功能 | 控制器 | 端口 | ACPI 路径 | off 档（藏 RP01）下 |
+|---|---|---|---|---|
+| **USB 2.0**（480Mbps） | 主板原生 `XHC` | `HS05`（`port-type=9`） | `PCI0/XHC@14000000` | ✅ **不受影响** |
+| **USB 3.1 Gen2**（10Gbps） | 雷电 `TXHC` | `SS01`（`port-type=9`） | `PCI0/RP01@1c0000/PXSX@0/EP02@20000/TXHC@0` | ❌ 消失 |
+
+**依据**：`port-type=9` = USB-C 标记。XHC 的 9 个端口里**唯一** `port-type=9` 的是 `HS05`，恰与 TXHC 的 `SS01` 配对 —— Titan Ridge 的典型设计（USB2 引脚走 PCH，USB3 引脚走雷电控制器 xHCI）。
+
+**⚠️ 高置信推论（尚待实测坐实）**：**off 档藏 RP01 只切断 TXHC → USB-C 的 USB2 应仍然可用**（插 U 盘 / 鼠标能读，但只有 480Mbps）→ 旧说法"off 档 = USB-C 全废"**需修正为"丢 USB3 速度、保 USB2"**。
+
+**对 on/off 档取舍的含义**：
+
+| 对比项 | off 档 | on 档 |
+|---|---|---|
+| USB-C 数据 | USB2 480Mbps（推断，待实测） | USB3 10Gbps |
+| DP / 雷雳设备 | ❌ | ❌（已封板） |
+| panic 风险 | **零** | **3 个确定**（关闭卡必炸 / 睡眠带设备 / 热插拔）+ 守纪律 |
+| 替代 | 另有 3 个 USB-A 5Gbps | 同 |
+
+→ **on 档的全部增量收益 = USB-C 从 480Mbps 提到 10Gbps**，代价是 **3 个确定的 panic 风险**。**技术专家建议：回滚 off 档**（并实测 off 档下 USB-C 的 USB2 是否真在）。
 
 ## 重启后验证命令
 
@@ -135,4 +181,5 @@ system_profiler SPThunderboltDataType                                        # m
 | 2026-09-14 20:2x | 用户首次进 BIOS 未找到 → 判定"本机不可达"、雷电封板 | ❌ **此判定已作废** |
 | 2026-09-14 20:41 | **用户实机找到**（`Advanced → Thunderbolt Options`）。真因：① 路径应为 Thunderbolt Options 非 Port Options ② 本机该项**不在 Port Options 下**。且**本机无 `PCIe Hot plug Mode` 项**（推荐表中那条也一并作废） | ✅ 现行 |
 | 2026-09-14 20:43 | 用户二次确认：下拉**只有 SL1–SL4，无 SL0** → 当时判定"BIOS 变量排除，雷电封板" | ❌ **已被下一行修正** |
-| 2026-09-14 20:5x | **社区查证后修正**：① tonymacx86 有"**no driver loaded**"同症状案例，解法=**Windows warm up**（Windows 侧授权一次写入控制器 NVM）② HP EliteBook 850 G5（同代）在 Big Sur 下 TB3 坞站可用且未设 No Security ③ elitemacx86 确认 SL0 无 HP 别名。→ **"无 SL0 = 无解"不成立**，存在 Windows warm up 路径 | ✅ 现行（终版） |
+| 2026-09-14 20:5x | **社区查证后修正**：① tonymacx86 有"**no driver loaded**"同症状案例，解法=**Windows warm up**（Windows 侧授权一次写入控制器 NVM）② HP EliteBook 850 G5（同代）在 Big Sur 下 TB3 坞站可用且未设 No Security ③ elitemacx86 确认 SL0 无 HP 别名。→ **"无 SL0 = 无解"不成立**，存在 Windows warm up 路径 | ✅ 现行 |
+| 2026-09-14 20:47 | **终局**：用户确认**手头无真实雷电设备** → warm up 硬前提不成立 → 连同「BIOS 无 SL0 / NVM onboard 焊死 / panic 风险」，**四路全封 → 雷电一线正式封板**。同日另发现 **USB-C 双通道拓扑**（USB2 走主板 `XHC` 的 `HS05`、USB3 走雷电 `TXHC` 的 `SS01`）→ 推论 off 档仍保 USB2 | ✅ **现行（最终）** |
