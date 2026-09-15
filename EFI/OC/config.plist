@@ -72,7 +72,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>TPD3 (ELAN073D): _CRS = I2C + GpioInt; if GNUM(GPDI)==0 fallback pin 0x003D (see SSDT-TPD3-CRS.dsl)</string>
+				<string>TPD3 (ELAN073D) _CRS = I2C + GpioInt (NOTE: bypassed - VoodooI2C reads _DSM/TP7D, not _CRS)</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -80,7 +80,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>TPD3 _INI after I2C0-GNVS (see SSDT-TPD3-INI.dsl)</string>
+				<string>TPD3 _INI: SBFG/INT1 pin hardcoded = 0x0102 (GPP_E2). This is the pin VoodooI2C actually reads (via _DSM). Replaces broken GNUM(GPDI). Rollback: revert this commit.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -1454,7 +1454,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -wegnoegpu -amfipassbeta -lilubetaall alctcsel=1 -vi2c-force-polling revpatch=sbvmm</string>
+				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -wegnoegpu -amfipassbeta -lilubetaall alctcsel=1 revpatch=sbvmm</string>
 				<key>csr-active-config</key>
 				<data>
 				/w8AAA==
