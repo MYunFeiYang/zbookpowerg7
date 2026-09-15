@@ -72,7 +72,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>TPD3 (ELAN073D): _CRS = I2C + GpioInt; pin hardcoded 0x0102 (GPP_E2, verified 2026-09-15 via Win registry + DSDT GPCH)</string>
+				<string>TPD3 (ELAN073D): _CRS = I2C + GpioInt; if GNUM(GPDI)==0 fallback pin 0x003D (see SSDT-TPD3-CRS.dsl)</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -1454,7 +1454,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -wegnoegpu -amfipassbeta -lilubetaall alctcsel=1 revpatch=sbvmm</string>
+				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -wegnoegpu -amfipassbeta -lilubetaall alctcsel=1 -vi2c-force-polling revpatch=sbvmm</string>
 				<key>csr-active-config</key>
 				<data>
 				/w8AAA==
