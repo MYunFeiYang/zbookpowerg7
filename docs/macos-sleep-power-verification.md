@@ -8,7 +8,9 @@
 > （09-15 21:49:10 → 09-16 08:52:37 = **11h03m27s 单次**），并由此发现
 > **「5W」的测量口径存在算术矛盾**（详见第七节第 2 点）：它极可能是**墙插功率**，
 > 而非电池掉电率 → **电池模式的真实睡眠功耗至今仍是空白，必须补测**。
-> 同时纠正旧说法：**ESP 并无自动同步任务**（见第六节第 0 步）。
+> 并纠正**三轮前的一个错误结论**：上一轮我写「ESP 并无自动同步任务」——**错**。
+> ESP 确有自动同步（RealTimeSync + FreeFileSync 镜像，见第六节第 0 步），
+> 但实测**会漏/滞后**，所以「改完必须核对 sha256」这条铁律依然要守。
 
 ---
 
@@ -153,12 +155,18 @@ commit `2f5c047`：`EFI/OC/config.plist`
 ## 六、操作步骤
 
 ```bash
-cd EFI/scripts
+cd /Volumes/Common/workplace/zbookpowerg7
 
-# 0. 确认前置已同步到 ESP —— ⚠️ 本机【没有自动同步任务】，必须手动核对/推送
-#    （09-16 查证：com.oc.mountesp 只挂载 ESP，不做复制；launchd/cron 全无同步项）
+# 0. 确认前置已同步到 ESP —— ⚠️ **有自动同步，但实测会漏/滞后，必须手动核对**
+#    机制（09-16 查实）：RealTimeSync 14.9 常驻（空闲 3s）→ 触发 FreeFileSync 批处理
+#      /Volumes/Common/FreeFileSync/BatchRun.ffs_batch
+#      镜像(左→右) EFI/oc → /Volumes/ESP/EFI/oc，TimeAndSize，DeletionPolicy=Permanent（带删除）
+#    实测滞后：09-16 09:02:29 改完 config.plist，直到 09:31:14 用户手点「开始」才推过去
+#    同步日志：~/Library/Application Support/FreeFileSync/Logs/BatchRun*.html
 shasum -a 256 EFI/OC/config.plist /Volumes/ESP/EFI/OC/config.plist   # 两边一致才重启
-#    实测差异：HibernateMode=NVRAM 已到 ESP，但 AllowNvramReset 未到（ESP 缺该键）
+#    不放心就打开 RealTimeSync 点一次「开始」强制同步
+#    ⚠️ 同步范围**只有 EFI/oc**：EFI/boot(BOOTx64.efi) 与 EFI/scripts/ 都不在同步内
+cd EFI/scripts
 
 # 1. 先看能力与现状（只读，不需要 root）
 ./pmset-hibernate.sh status
@@ -184,7 +192,7 @@ shasum -a 256 EFI/OC/config.plist /Volumes/ESP/EFI/OC/config.plist   # 两边一
 | 功率计 5W → ~0.2W，开盖回到原会话 | ✅ 成功 | 保留 |
 | 断电了，但开盖是冷启动 | 半成功 —— `HibernateMode` 值不对 | 试 `Auto` |
 | 断电后起不来 | 失败 | 长按电源；进系统后 `./pmset-hibernate.sh off` |
-| macOS 也起不来 | 失败 | ① OpenCore 菜单 → **Reset NVRAM**（⚠️ 该入口需 `AllowNvramReset=true`，而**当前 ESP 尚未同步该键**，见下）② 或进恢复环境/macOS 执行 `sudo nvram -c` —— `WriteFlash=True` + `NVRAM/Delete` 含 `boot-args`，OC 下次启动会重写 `boot-args`/`csr-active-config`，**不依赖 `AllowNvramReset`** |
+| macOS 也起不来 | 失败 | ① OpenCore 菜单 → **Reset NVRAM**（该入口需 `AllowNvramReset=true`，已由 `2f5c047` 补上，09-16 复核**两侧一致**）② 或进恢复环境/macOS 执行 `sudo nvram -c` —— `WriteFlash=True` + `NVRAM/Delete` 含 `boot-args`，OC 下次启动会重写 `boot-args`/`csr-active-config`，**不依赖 `AllowNvramReset`** |
 
 **睡前务必拔掉外接 USB 鼠标** —— 它在 `pmset -g assertions` 里挂着 `0x4=USB` 断言，
 包里被蹭到就会唤醒整机。这是技能里点名的头号外因。
