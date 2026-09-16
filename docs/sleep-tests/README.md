@@ -6,10 +6,10 @@
 > 与 `round2-plan.md`。
 
 ## 为什么必须先重启
-`Misc/Boot/HibernateMode` 是 **OpenCore 在启动时读取**的配置项。
-当前运行的 macOS 会话由旧配置引导 —— 此时若休眠，
-下次开机 OC 不认休眠镜像 → 冷启动（会话丢失，系统不坏）。
-故任何休眠测试前，必须先重启一次让 OC 加载 `NVRAM` 值。
+`Misc/Boot/HibernateMode` 与 `Kernel/Add`（kext 清单）都是 **OpenCore 在启动时读取**的。
+当前运行的会话由旧配置引导 —— 此时若休眠，OC 不认识休眠镜像 →
+冷启动（会话丢失，系统不坏）。
+故任何休眠测试前，必须先重启一次让 OC 加载新配置（`HibernateMode=NVRAM` + `HibernationFixup.kext`）。
 
 ## 关键前提（2026-09-16 两次修正）
 
@@ -48,10 +48,12 @@
 
 ## 缺失的前置件
 
-**`HibernationFixup.kext`（最新 1.5.4，2025-07-07，支持 macOS 26）未安装。**
+**~~`HibernationFixup.kext` 未安装~~ → ✅ 已于 2026-09-16 安装（commit `85888f6`）。**
+
 它负责把内核的 `IOHibernateRTCVariables`（加密密钥）写进 NVRAM，
 而 `HibernateMode=NVRAM` 让 OC 从 NVRAM 读 —— **只有读端、没有写端 = 空转**。
-→ 装它之前，任何档位都不该期望成功。
+现在**写端已补齐**（1.5.4，`Kernel/Add` index 1 紧挂 Lilu，依赖 Lilu ≥1.2.4 / 本机 1.7.3）。
+→ 在此之前，任何档位都不该期望成功；**现在可以真正开始测了**。
 
 ## 判据（醒来后立刻跑）
 
