@@ -1,0 +1,221 @@
+# 睡眠功耗复核报告（2026-09-15）
+
+> 起因：用户问「再确认一下吧？」，并授权「不局限于某一种睡眠方式，只要硬件支持都可以尝试」。
+> 结论先行：**上一轮「档内已穷尽、没法优化」的结论需要收窄**——档内确实穷尽了，
+> 但**深睡档本身是被我们自己的脚本主动关掉的**，而不是硬件不支持。现有 3 条可试路径。
+
+---
+
+## 一、结论摘要
+
+| 项 | 结论 |
+|---|---|
+| 5W 是故障吗 | **不是**。5W ≈ 7.8%/h（按当前满充 63.9Wh），落在 OC-little 记录的 AOAC 区间（5%~10%/h）内 |
+| 是被反复唤醒吗 | **不是**。942 次睡眠里 931 次集中在 09-08/09（OTA+OCLP 窗口），09-10 之后每天仅 3~4 次 |
+| 为什么只能到 Deep Idle | FADT `Flags=0x002384A5`，bit21 `LOW_POWER_S0_IDLE_CAPABLE` = **SET** → macOS 选 S0ix |
+| 硬件支持更深档吗 | **支持**。`pmset -g cap` 明确列出 `standby / standbydelayhigh / standbydelaylow / highstandbythreshold / hibernatemode / hibernatefile` |
+| 那为什么没生效 | `hibernatemode 0` + `standby 0` + `standbydelayhigh 86400` —— **三档全部由 `pmset-reduce-wake.sh` 主动关闭** |
+| 曾真的休眠过吗 | **从未**。`kern.hibernatecount = 0`，pmset log 中 standby/hibernate 事件 0 条 |
+| 硬件上 S3 存在吗 | **存在**。DSDT 根作用域 `\SS3 = One`，所以 `\_S3` 被真实暴露（详见第四节） |
+
+**一句话**：不是「不能优化」，是「深睡档从没开过」。这是一次**未做过的实验**，不是一条死路。
+
+---
+
+## 二、本轮实测事实（全部可复现）
+
+| 判据 | 实测值 | 命令 / 来源 |
+|---|---|---|
+| FADT Flags | `0x002384A5`，bit21 = SET | `xxd -s 112 -l 4 FACP-1.aml` |
+| 平台类型 | 完整 AOAC/LPI（另有 `LPIT-1.aml`） | `docs/SysReport/ACPI/` |
+| `standby` 支持 | ✅ 受支持（当前 0） | `pmset -g cap` |
+| `autopoweroff` 支持 | ❌ 不在 cap 列表中 | `pmset -g cap` |
+| 历史休眠次数 | `0` | `sysctl kern.hibernatecount` |
+| standby/hibernate 日志 | 0 条 | `pmset -g log \| grep -E "Entering Standby\|Hibernate"` |
+| 本次启动睡眠次数 | 0（19:23 与 20:06 两次启动） | `pmset -g log` |
+| 电池健康 | **5533 / 7170 mAh = 77.2%**，131 循环 | `ioreg -rn AppleSmartBattery` |
+| 外接设备 | `USB Optical Mouse` 挂 `0x4=USB` 唤醒断言 | `pmset -g assertions` |
+| 空闲睡眠阻止者 | `pid 675(Electron)` 持 `NoIdleSleepAssertion` | `pmset -g assertions` |
+| 唤醒源 GPE 归属 | `0x6D` = GLAN + XDCI + HDAS + CNVW **四设备共享**；`0x69` = PXSX（PCIe/雷电）；`0x72` = AWAC | DSDT 逐处回溯 |
+
+### 睡眠次数按天分布（关键：排除唤醒风暴）
+
+| 日期 | 睡眠次数 | DarkWake |
+|---|---|---|
+| 2026-09-08 | 174 | 174 |
+| 2026-09-09 | **757** | **756** |
+| 2026-09-10 | 4 | 0 |
+| 2026-09-11 | 4 | 0 |
+| 2026-09-14 | 3 | 0 |
+
+→ 09-09 那次 756 次 DarkWake 是历史（升级+OCLP 窗口），**当前已自愈**，不构成 5W 的原因。
+此判据印证了技能里的警告：**必须先按天分组**，否则会把历史窗口当成当前状态。
+
+---
+
+## 三、可用档位矩阵
+
+| 档 | 设置 | 功耗 | 唤醒速度 | 支持性 | 先例 |
+|---|---|---|---|---|---|
+| **Deep Idle**（现状） | `hibernatemode 0` + `standby 0` | ~5 W | 瞬时 | ✅ 当前档 | 本机实测 |
+| **A. Standby 延迟断电** | `hibernatemode 3` + `standby 1` + `standbydelay*` 缩短 | ~0.2 W | 短睡瞬时 / 长睡读镜像 | ✅ cap 支持 | 通用做法 |
+| **B. Hibernate 立即断电** | `hibernatemode 25` + `standby 1` | ~0.2 W | 每次读镜像（慢） | ✅ cap 支持 | ThinkPad E480、Surface Laptop 3、Fujitsu Q958 |
+| **C. 强制 S3**（实验） | 清 FADT bit21 + 禁 `SSDT-DeepIdle` | ~0.5 W | 瞬时 | ⚠️ ACPI 存在，macOS 侧零先例 | **无** |
+
+### 档 A / B 的机制（`man pmset` 原文，非推断）
+
+- `hibernatemode 3`：写内存副本到磁盘，**但仍给内存供电** → 唤醒从内存。**只设 3 不省电**。
+- `standby`：让内核在睡够一段时间后**自动 hibernate** —— 这才是「摘掉内存电」的那个动作。
+- `standbydelayhigh/low`：**写镜像并断内存电**的延迟秒数。
+  按剩余电量 vs `highstandbythreshold`(50%) 选 high/low，**与插不插电无关**。
+- `highstandbythreshold` 默认 50%；`standbydelayhigh` 默认 **86400（24 小时）** → 不显式设短 = 永不触发。
+- `hibernatemode 25`：写镜像 + **移除内存电**，必定从镜像恢复。不依赖 standby。
+
+---
+
+## 四、S3 专项：为什么上一轮判死，现在可以说「能试」
+
+### 上一轮的判死理由（现在看是不完整的）
+
+1. OC-little 明文「Deep Idle 与 S3 严重冲突」，且它专门提供**禁用** S3 的 SSDT；
+2. Windows 侧微软声明 Modern Standby 与 S3 互斥；
+3. 社区零先例。
+
+这些仍然成立 —— **但漏掉了一个前提检查：本机的 `_S3` 到底在不在。**
+
+### 本轮新增的两个硬证据
+
+**(1) 本机 ACPI 层确实暴露了 S3**
+
+```
+DSDT.dsl L5706-5709（根作用域，indent=4）：
+    Name (SS1, Zero)
+    Name (SS2, Zero)
+    Name (SS3, One)      ← SS3 = One
+    Name (SS4, One)
+
+DSDT.dsl L38257（根作用域）：
+    If (SS3)
+    {
+        Name (_S3, Package (0x04) { 0x05, Zero, Zero, Zero })
+    }
+```
+
+→ `\SS3 = One` 使 `\_S3` 条件成立，**S3 对象真实存在于根命名空间**。
+真正拦住 S3 的是 **FADT bit21**，不是 `_S3` 缺失。
+
+> ⚠️ 排查过程本身有教训：先用「向上找最近 `Scope (`」的粗筛，得出 `_S3` 在 `\_GPE`
+> 里的错误结论；用**缩进 + 括号归属**重新校验才纠正过来。作用域这类承重事实必须交叉验证。
+
+**(2) 补丁点是干净的**
+
+```
+FACP 中 Find <A5 84 23 00>（= 0x002384A5 小端）出现位置：[112]，共 1 处
+→ offset 112 正是 Flags 字段本身，ACPI/Patch 可安全使用
+```
+
+**(3) 外部同类机器的反例（重要）**
+
+Surface IceLake 修复仓库遇到了**结构完全同构**的 DSDT（同样 `If (SS3)` 包 `_S3 = {0x05,...}`，
+同样是 Intel 参考实现），他们改 `SS3 → One` 后：
+
+- 内核日志由 `(AppleACPIPlatform) ACPI: sleep states S4 S5` 变为 `S3 S4 S5` ✅
+- **但 S3 睡眠本身依然不可用** ❌ —— 他们最终靠 `hibernatemode 25` 解决
+
+→ 所以 **C 档排在 A/B 之后**，只能当实验，不能当方案。
+
+---
+
+## 五、前置改动（已完成）
+
+commit `2f5c047`：`EFI/OC/config.plist`
+
+| 键 | 旧 | 新 | 理由 |
+|---|---|---|---|
+| `Misc/Boot/HibernateMode` | `None` | `NVRAM` | OC 手册取值仅 `None/Auto/RTC/NVRAM`，Failsafe 默认即 `None`。`None` = 忽略休眠状态 → 断电后不恢复镜像，开盖只会冷启动 |
+| `Misc/Security/AllowNvramReset` | **缺失**（= Failsafe `false`） | `true` | 补上 Reset NVRAM 逃生口 |
+
+**这两项在改 `pmset` 之前是惰性的**：当前仍是 `hibernatemode 0` + `standby 0`，不写镜像，行为不变。
+
+回滚：`git revert 2f5c047`
+
+> ⚠️ 用 `PlistBuddy` 会顺手重排无关区块的 `<data>`（实测产生 13 行噪音 diff），
+> 已改用**外科式精确编辑**，最终 diff 仅 3 insertions / 1 deletion。
+
+---
+
+## 六、操作步骤
+
+```bash
+cd EFI/scripts
+
+# 0. 确认前置已同步到 ESP（该文件被用户的定时任务镜像，带删除）
+shasum -a 256 EFI/OC/config.plist /Volumes/ESP/EFI/OC/config.plist   # 两边一致才重启
+
+# 1. 先看能力与现状（只读，不需要 root）
+./pmset-hibernate.sh status
+
+# 2. 重启一次让 config.plist 生效
+
+# 3. 受控试验（档 A）：合盖 5 分钟后断电
+./pmset-hibernate.sh test
+
+# 4. 试验通过后落到日常档
+./pmset-hibernate.sh on       # >50% 电量 60 分钟，<50% 电量 30 分钟
+# 或直接选档 B
+./pmset-hibernate.sh instant  # hibernatemode 25，合盖即断电
+
+# 回滚
+./pmset-hibernate.sh off
+```
+
+### 判据
+
+| 结果 | 含义 | 处理 |
+|---|---|---|
+| 功率计 5W → ~0.2W，开盖回到原会话 | ✅ 成功 | 保留 |
+| 断电了，但开盖是冷启动 | 半成功 —— `HibernateMode` 值不对 | 试 `Auto` |
+| 断电后起不来 | 失败 | 长按电源；进系统后 `./pmset-hibernate.sh off` |
+| macOS 也起不来 | 失败 | OpenCore 界面进菜单 → **Reset NVRAM**（逃生口已由 `2f5c047` 打开） |
+
+**睡前务必拔掉外接 USB 鼠标** —— 它在 `pmset -g assertions` 里挂着 `0x4=USB` 断言，
+包里被蹭到就会唤醒整机。这是技能里点名的头号外因。
+
+---
+
+## 七、两个容易被误读的点
+
+### 1. 电池已经掉到 77%，它放大了「掉电快」的体感
+
+| 项 | 值 |
+|---|---|
+| 设计容量 | 7170 mAh ≈ 82.8 Wh |
+| 当前满充 | 5533 mAh ≈ 63.9 Wh |
+| 健康度 | **77.2%**（131 循环） |
+
+同样 5W 放电：
+- 满血电池 → 5 / 82.8 = **6.0 %/h**
+- 当前电池 → 5 / 63.9 = **7.8 %/h**
+
+→ **功率没变，是分母小了 23%。** 这条与睡眠档位无关，是独立结论。
+
+### 2. 需要确认「5W」的测量姿势
+
+`pmset -g assertions` 显示 `pid 675(Electron)` 长期持有 `NoIdleSleepAssertion`。
+**它会阻止空闲自动睡眠**（不阻止合盖睡眠）。因此：
+
+- 若当时是**合盖 / 手动睡眠**测的 → 5W 是真实睡眠功耗 ✅
+- 若当时是**开盖放着**测的 → 系统根本没睡，5W 是「关屏空闲」功耗，结论要重做 ❌
+
+---
+
+## 八、未闭环的风险
+
+1. **OCLP 根补丁的 Wi-Fi 在休眠恢复后能否加载** —— 零先例，必须实测。
+   本机 Wi-Fi 依赖 OCLP 把 `IO80211.framework` 合并进系统卷，不是纯 EFI kext。
+2. **S3 若真走通，EC query 类功能可能在唤醒后失效**（ThinkPad E480 明确记录：
+   睡眠唤醒后 Fn 快捷键、合盖事件、电池状态更新失效）。
+3. **SSV seal 已损坏**，休眠镜像写入与恢复是否受「认证根」逻辑影响未验证。
+4. 双 LID 设备（DSDT `\_SB.LID` 真 + `SSDT-LID-G7` 恒返回 1）导致
+   `AppleClamshellCausesSleep=No`（正常 Mac 为 Yes）→ **合盖不直接睡，靠空闲计时器兜底**。
+   收益小，未修。
