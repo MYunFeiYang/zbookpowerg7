@@ -1100,3 +1100,116 @@ sudo pmset -b disksleep 10            # 消 pmset 告警：sleep≠0 而 disksle
 - 插电档 `hibernatemode 0` 是**主动选择**、不是缺陷：插电省电收益 ≈ 0、唤醒慢 10~30 s，且每次睡眠都走"想写休眠镜像"那条会碰 RTC 的路。**AC 侧的最优点就是"不折腾"。**
 - 电池档**这次才第一次真正具备"能到休眠"的前提**（此前 standby=0 空转）。能否落地要等一次**真实的电池睡眠** —— 拔电出门点一次睡眠即可，零额外成本。
 - 仍未解：`HibernateStats` 计数 vs `lastSleepType='Deep Idle'` 的历史矛盾（§十九）。
+
+---
+
+## 二十二、撤回「插电侧不追」：AC 侧 `standby` **是受支持的**，且原论证**无效**（2026-09-16 17:14–17:30）
+
+> 触发：用户质问「**为什么插电侧不追？你确定不支持？**」
+
+### 1. 结论先行
+
+| 我上一轮的说法 | 判定 | 依据 |
+|---|---|---|
+| 「插电省电收益 ≈ 0」 | ✅ **成立**（是权衡，不是能力） | 插电吃市电，省的是电费；但**长睡发热是真实成本**，且此条**不能推出"做不到"** |
+| 「AC 侧不支持深睡」 | 🔴 **撤回** | 四条证据见下 —— **AC 侧 `standby` 受支持** |
+| 「14:39 实测 = AC 走不通」 | 🔴 **撤回（无效论证）** | 那次睡眠 **152 s**，距触发阈值 **10800 s 差 71 倍**，根本没到点 |
+
+### 2. 四条查证证据（全部本机实测 / 官方原文）
+
+**① `pmset -g cap` 不区分电源源 —— 我原来的表述框架就是错的**
+
+```
+$ diff <(pmset -g cap -b) <(pmset -g cap -c)
+（无输出 —— 逐行完全相同，两者标题都写 "Capabilities for AC Power:"）
+```
+
+⇒ 能力是**机型级**的。说"AC 侧 cap 里没有 X"这种话本身就不成立 —— `-b`/`-c` 从来没差别。
+
+**② AC 侧 `standby` 受支持：cap 列出 + `pmset -g custom` 可见（man 的官方判据）**
+
+```
+$ pmset -g cap | sed 's/^ *//' | grep -xE "standby|standbydelaylow|standbydelayhigh|highstandbythreshold|hibernatemode"
+standby ✓  standbydelayhigh ✓  standbydelaylow ✓  highstandbythreshold ✓  hibernatemode ✓
+$ pmset -g custom        # AC 段里 standby 这一行【存在】（原值 0）
+```
+
+本机 `man pmset` 原文：
+> `standby causes kernel power management to automatically hibernate a machine after it has slept for a specified time period. … **The setting standby will be visible in pmset -g if the feature is supported on this machine.**`
+
+⇒ AC 段 `standby` **可见** ⇒ 按官方判据，**功能受支持**。
+
+**③ 真正不受支持的只有 `autopoweroff`，且这是「机型级」限制**
+
+```
+$ pmset -g cap | grep -x autopoweroff     →  ❌ 无
+$ strings /usr/bin/pmset | grep -i autopoweroff  →  "AutoPowerOff Enabled" / "autopoweroffdelay" ✓
+```
+
+⇒ pmset **认识**这个词（二进制里有），只是**本机平台不提供**。
+`man pmset` 原文：`autopoweroff is enabled by default **on supported platforms**` + 社区口径「**并不是全部设备都有这个设定，需要通过 `pmset -g cap` 查看**」。
+⚠️ 关键修正：**这是机型级限制，不是 AC 特有** —— 因为 ① 已证明 cap 不分电源源。
+
+**④ 反证（社区实操）：AC 侧 `standby` 本来就会生效**
+
+有教程专门教在插电时**关掉**它：
+
+> `sudo pmset -c standby 0` … 问题："`standby 1` + `hibernatemode 3` —— 这是 macOS 的'安全睡眠'组合，**合盖后即使插电**，一段时间后也会把内存写入磁盘并进入低功耗状态，网络必然中断"
+
+⇒ 若 AC 侧 standby 本不生效，就**不需要"关"这一步**。（出处：blog.bonza.cn 2026-02，`macOS 设置合盖不睡眠` 一文的排障段落）
+
+### 3. 撤回「14:39 实测」这条论证 —— 它是无效的
+
+| 项 | 值 |
+|---|---|
+| 14:39 那次实际睡眠时长 | 14:39:31 → 14:42:03 = **152 秒** |
+| 当时 AC 的 `standbydelaylow` | **10800 秒**（3 小时） |
+| 比值 | **71 倍** |
+| 当时 AC 的 `standby` | **0**（从未配置过触发） |
+
+⇒ 那次是**没到触发点就被按电源键唤醒**了，看不到 `Entering Hibernate` 是**必然结果**，不携带任何信息。
+⇒ `PMRD: hibernateMode 0x0` 同理 —— 与"路径断了"无关，它只是**本次选择了走普通 sleep**。
+⇒ **"AC 侧没进休眠"从头到尾是「我没配」，不是「它不能」。**
+
+### 4. 已执行（AC 侧首次真正配齐触发条件）
+
+```bash
+sudo pmset -c hibernatemode 25
+sudo pmset -c standby 1
+sudo pmset -c highstandbythreshold 50
+sudo pmset -c standbydelaylow 3600     # 电量<50% → 1 h 后落盘断电
+sudo pmset -c standbydelayhigh 7200    # 电量≥50% → 2 h
+```
+
+结果（`pmset -g custom` + `ioreg` 双向确认）：
+
+| | hibernatemode | standby | sleep | disksleep | standbydelay(low/high) |
+|---|---|---|---|---|---|
+| **AC**（新） | 25 | **1** | 0 | 0 | **3600 / 7200** |
+| **电池** | 25 | 1 | 15 | 10 | 600 / 1800 |
+
+`ioreg` 侧（生效态）：**`Hibernate Mode = 25`、`Standby Enabled = Yes`、`Standby Delay = 3600`**
+⇒ 此前 `Standby Enabled` 是 **No**。**AC 侧的休眠路径现在是"活"的。**
+
+⚠️ 延迟取长（1 h / 2 h）是有意为之：**日常短睡仍从内存秒醒**（体验不变），只有长时间合盖才落盘断内存电。
+⚠️ 想回到原方案（插电永不写盘、恒 ~5 W）：`EFI/scripts/pmset-hibernate.sh acfast`
+
+### 5. 顺带闭环：`sleepimage` 管理机制**完整证实**
+
+| 时刻 | 动作 | 结果 |
+|---|---|---|
+| 15:22 | `pmset -c hibernatemode 0` | 文件**被删**（`/var/vm` 变 `total 0`） |
+| 16:45 | `pmset -b hibernatemode 25`（活动源仍是 AC） | **不重建**，仍为空 |
+| **17:25** | **`pmset -c hibernatemode 25`**（活动源 = AC） | **立即重建**：手动预置的 8 GiB 稀疏文件 → **1 GiB**（`Hibernate File Min` = 1073741824），mtime 变新，权限变 `-rw------T` |
+
+⇒ **只有「当前活动电源源」的 `hibernatemode` 才会驱动这个文件。** 机制三条实测齐全。
+⇒ 尺寸线仍**已排除**（第 3 次失败时 16 GiB 实分配仍失败）⇒ 不为尺寸做任何处理。
+
+### 6. 口径
+
+- **"插电不支持"：撤回。** 现在的准确表述是「**AC 侧原先没配触发条件；配了之后能否落地，待一次长睡实测**」。
+- **只有 `autopoweroff` 确证不受支持**，且是**机型级**（非 AC 特有）。
+- **"值不值"依然另说**：插电省电收益 ≈ 0 成立；但**收益不是零成本** —— 长睡落盘会让唤醒慢 10~30 s。
+  所以 AC 侧用**长延迟**折中：日常无感、长睡才落盘。
+- **验证点**：任何一次「插电 + 无外接显示器 + 合盖 ≥2 h」都是天然验证点；或显式点睡眠后放着不动。
+- 仍未解：`HibernateStats` 计数 vs `lastSleepType` 的历史矛盾（§十九）。

@@ -18,22 +18,30 @@
 | `standby` | 电池供电 + **无外接设备** + 无网络活动 + **无外接显示器** | AC 下未证实；**且本机常态接着外接显示器 + USB 鼠标，前提被破坏** |
 | `autopoweroff` | 外部电源供电 + 无外接设备 + 无网络活动 | ❌ `pmset -g cap` **无此项** |
 
-→ ⚠️ 「`standby` 在 AC 下永远走不通」这句**已撤回过头表述**：
-`pmset -g cap` 的标题就是「**Capabilities for AC Power**」，其中**列出了 `standby`** ——
-它只证明**可设置**，不证明**会生效**。**仍属未知**。
-→ ★ **第 1 轮不触发的主因很可能是外设**：本机接着 **外接显示器 PHL 241B8Q（HDMI）**
-与 **USB 光电鼠标**，「无外接设备 / 无外接显示器」两条前提均不满足。
-→ 顺序改为：**S0 先摘外设（保持插电）→ S1 再拔电**，一次只动一个变量。
-→ 插电想深睡，还有**不依赖计时器**的路：`hibernatemode 25` 或 `hbfx-ahbm`。
+→ ✅ **2026-09-16 17:2x 已查明 —— 「AC 下走不通」撤回**：`pmset -g cap` 的 `-b` 与 `-c` 输出
+**逐行完全相同** ⇒ 能力是**机型级**（说"AC 侧 cap 没有 X"这种框架本身就是错的）；cap **列出了
+`standby`**，且 `pmset -g custom` 的 **AC 段可见 `standby`** ⇒ 按 man 判据
+（"visible in `pmset -g` if the feature is supported"）**AC 侧 `standby` 受支持**。
+真正不受支持的只有 `autopoweroff`/`autopoweroffdelay`（**机型级**）。详见 `round2-tierB-result.md` §二十二。
+→ ★ **第 1 轮不触发的真实原因**：AC 侧当时 `standby = 0` 且 `standbydelay` 为默认 3h/24h
+（10800/86400）⇒ **从未配置过触发条件**；而实测那次只睡了 **152 s**（距 10800 s 阈值**差 71 倍**）
+⇒ **无效测试**，不构成"AC 走不通"的证据。
+⚠️ 「外接显示器 / USB 鼠标破坏 standby 前提」那条是**社区总结** —— 本机 `man pmset` 的 standby 段
+**通篇未提**外接设备条件 ⇒ 降级为**待验证假设**，不再当结论用。
+→ 插电深睡**已配好**（§二十二 §4）：`hibernatemode 25 + standby 1`，长延迟 1 h / 2 h
+（日常短睡无感、长睡才落盘）；回原方案 `pmset-hibernate.sh acfast`。
 
 ## 档位与安排
 
 | 档 | 配置 | 睡眠行为 | 状态 |
 |---|---|---|---|
-| 基线 | `hibernatemode 0` `standby 0` `standbydelayhigh 86400` | 永不落盘，内存全程带电（≈5W 墙插） | 原状 |
-| A | `hibernatemode 3` `standby 1` `standbydelay* 300` | 先内存睡眠 → 到点转落盘断电 | **待 S0 复测（需先拔外接显示器 + 鼠标）** |
-| B | `hibernatemode 25` | 每次睡眠立即写镜像 + 断电 | **当前已设置，未测（S2）** |
-| C | 清 FADT bit21 / BIOS 关 AOAC → 传统 S3 | 实验级；**代价是放弃 Deep Idle** | 排最后，不建议 |
+| Deep Idle | `hibernatemode 0` `standby 0` | 永不落盘，内存全程带电（≈5 W 墙插） | 基线；现由 `pmset-hibernate.sh acfast` 提供 |
+| **A 惰性深睡（当前 AC）** | `hibernatemode 25` `standby 1` `standbydelay* 3600/7200` | 短睡内存秒醒 → 1~2 h 后落盘断电 | **2026-09-16 17:25 已配齐，未实测** |
+| **B 真休眠（当前电池）** | `hibernatemode 25` `standby 1` `standbydelay* 600/1800` | 短睡内存秒醒 → 10~30 min 后落盘断电 | **已配齐，未实测** |
+| C 传统 S3 | 清 FADT bit21 / BIOS 关 AOAC | 实验级；**代价是放弃 Deep Idle** | 排最后，不建议 |
+
+> ⚠️ 「档 B = 每次睡眠立即写镜像 + 断电」这条**原表述已修正**：`hibernatemode 25` **单独设了不生效**，
+> 必须配 `standby 1` 作为**触发计时器**（本机无 `autopoweroff` 可用）。缺了它 ⇒ 全程 Deep Idle（14:39 实测）。
 
 ## S1 / S2 的差别（一句话）
 
