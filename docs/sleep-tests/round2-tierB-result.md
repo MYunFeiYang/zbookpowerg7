@@ -818,4 +818,213 @@ ioreg -d 0 -l -w0 > /tmp/ioreg-root.txt     # 只需根节点（-d 0）
 上轮四项：`hibernatecount` 0→1 ／ `sleepimage` mtime 变新 ／ NVRAM 出现 `IOHibernateRTCVariables` ／ 日志有 `Wake from`。
 本轮新增：**⑥ 是否出现 `Entering Hibernate`**（三次失败全都**没走到**这一步）；**⑦ 时钟是否存活 + 有无 HP POST 005**（RTC 是否再被写坏的最直接判据）。
 
+---
+
+## 十七、失败窗日志复扫 + 本次启动第 4 条证据（09-16 14:25）
+
+**A. 三失败窗复扫**（提权 `log show --start/--end --info --debug`，逐窗 2 min 切片，pattern 含 `hibernat|Entering Sleep|Wake from|ShutdownCause|fixup|hookProvider`）：
+
+| 窗口 | 命中情况 |
+|---|---|
+| 11:15:30–11:17:30 | 只有 3 条 keychain `locked (hibernation?)` + WiFiManager 行；**无** `Entering Hibernate` / `Wake from` / `ShutdownCause` |
+| 12:03:30–12:06:00 | 只有 1 条 `Setting Hibernate mode to 25`（时间戳 **14:19:37**，见注） |
+| 13:10:30–13:13:00 | 只有 DarkWake / loginwindow 休眠预览 / keychain 行；**无** `Entering Hibernate` / `Wake from` / `ShutdownCause` |
+
+> 注①：12:04 窗口返回的唯一条目时间戳为 14:19:37（= 本次 mode 25 生效、`sleepimage` 重建时刻），疑为 `log show` 与 RTC 跳变交互的产物，**不计入证据**。
+> 注②：各窗"总行数"报出 8,255,365 / 428,422 / 2,711,559，量级异常（疑 `--start/--end` 解析后实际覆盖范围偏大），故**行数不作为证据**，只用 pattern 命中。
+
+**B. 日志通道可用性已坐实 ⇒ 排除"读不到"这一解释。** 提权日志里确有：
+- `kernel: (AppleRTC) RTC: getGMTTimeOfDay 1789538371/383`、`RTC: setGMTTimeOfDay 1789538393`（13:59:32 / 13:59:43 / 13:59:52）
+- `kernel: (AppleACPIPlatform) ACPI: sleep states S0 S3 S4 S5`
+- `kernel:` 行 **259,512** 条
+
+⇒ 内核 `IOLog` **确实进统一日志**，故失败窗里没有 `Entering Hibernate` 是**"真没发生"，不是通道问题**。
+（对照：Lilu 系 kext 的 `": @ "` SYSLOG 签名 **24 h 内 0 条** —— 那是另一套 sink，与 Apple 内核日志无关，两者不矛盾。）
+
+**C. ★ 新线索（定级：线索，非结论）**
+- 入睡阶段：`loginwindow -[LWDefaultScreenLockUI …] set_hibernation_preview error: … Invalid argument`（`hibernation_ui_sequence.h:220`）+ `CoreGraphicsErrorDomain Code=1011` —— **休眠预览流程被调用且失败**；sleep1(11:15:57) 与 sleep3(13:11:17) 均出现。
+- 失败后那次启动：`secd … ks_crypt: e00002e2 failed to 'oe' item (class 10, bag: -3) Access to item attempted while keychain is locked (hibernation?)` —— **钥匙串已切成"休眠锁"状态**。
+- 失败后启动的 WiFi 记录亦带 `trigger=power_on`、`addedAt=2019-01-01 08:01:24` ⇒ 再次坐实"RTC 归零 + 按电源开机"。
+
+⇒ 合并读数：**mode 25 的休眠写盘流程确实被启动过**（钥匙串切休眠锁 + 调休眠预览），但内核从未打印 `Entering Hibernate` ⇒ **死于"写入休眠状态（含本次的 RTC 写）"这一步的中途**，与"RTC 被写坏"是同一处。
+⚠️ 本条**修正**本文档早先"从未走到休眠那一刻"的措辞——更准确是 **"入睡 → 休眠写盘启动 → 中途断气"**。定论仍留待第 4 次的 `Entering Hibernate` / `Wake from` 判据。
+
+**D. 本次启动（13:59）第 4 条独立证据**：`kernelmanagerd: Received kext load notification: as.lvs1974.RTCMemoryFixup`（13:59:51.039）⇒ 与 ①`kmutil showloaded` ②内核 `Boot args:` ③`IOKitDiagnostics.Classes` 计数=1 **四条独立证据同指"补丁已挂"**。
+伴生噪声：`kernelmanager_helper: Could not process load notification … Did not find identifier` —— userspace helper 无该 kext 元数据的**正常报错**（`HibernationFixup` / `BlueToolFixup` 同样报），**非故障**。
+
+**E. 现状 / 待测**：boot = **13:59**；`hibernatemode = 25`（14:19 设）；`sleepimage = 8 GiB`（mtime 14:19:37）；`pmset -g` → `sleep 1 (sleep prevented by Electron)` ⇒ 空闲定时器被断言挡着、**不会无人看管自动睡**，而**显式点"睡眠"不受该断言限制**。⇒ **直接测，无需再重启。**
+
+---
+
+## 十八、第 4 次睡眠实测（14:39:31 → 14:42:03）：**没崩，但没进休眠** ⇒ 修复未被验证
+
+### 1. 事实（提权 `log show` + `pmset -g log`，同一窗口 14:38–14:44）
+
+| 判据 | 实测 |
+|---|---|
+| 入睡 / 唤醒 | 14:39:31 `Entering Sleep state due to 'Software Sleep pid=1973'` → 14:42:03 唤醒，**152 s** |
+| 唤醒类型 | `Wake from Deep Idle [CDNVA] : due to PWRB/Lid Open`，`kern.wakereason['PWRB']`，`WakeTime 2.430 sec` |
+| 有没有崩/重启 | **没有**：`who -b` 仍 `Sep 16 13:59`，uptime 连续；**无 HP POST 005** |
+| 时钟 | 正常（14:43:15 CST）⇒ 无时钟丢失 |
+| **睡眠类型** | **`lastSleepType[0x00000007]/'Deep Idle'`（S0ix），不是 Hibernate** |
+| `Entering Hibernate` | **无** |
+| `sleepimage` | mtime **仍 14:19:37** ⇒ **本次未写盘** |
+| RTC 访问 | 窗口内 `(AppleRTC)` 只有 `RTC: getGMTTimeOfDay`（14:39:31/33、14:42:01）；唯一 `setGMTTimeOfDay` 在 **14:39:02（睡前）**写时钟区 ⇒ **睡眠期间没有写 RTC** |
+| `HibernateStats` | `hibmode=25 standbydelaylow=10800 standbydelayhigh=86400` 计数 **1 → 2**（**与"Deep Idle"矛盾，见 §3**） |
+
+### 2. 关键内核行（新证据）
+
+```
+PMRD: phase 0, standby 0 delay 10800 timer 0/86400, poweroff 0 delay 0 timer 0, hibernate 0x19
+PMRD: sleep factors 0x2b00d4 / 0x2b08c4: ACPower, StandbyNoDelay→StandbyDisabled,
+      USBExternalDevice, HibernateForced, AutoPowerOffDisabled, ExternalDisplay, LocalUserActivity
+PMRD: hibernateMode 0x0                      ← 配的是 25，实际解析成 0（不休眠）
+powerd: chooseStandbyDelay(): lowBattery=false, battery powered=false, capacity=100 …; chosen delay=86400
+powerd: Eligible for Standby: 0
+PMRD: Clamshell closed / clamshell closed 1, disabled 0/0, desktopMode 1, ac 1   ← 见 §十三 第 3 次
+```
+
+⇒ **AC 下 standby/hibernate 判定为不可达**（`battery powered=false`）。这与"档 B 插电净负收益、只该在出差用电池"的旧结论方向一致，但**与 `EFI/scripts/pmset-hibernate.sh` 注释中"mode 25 不依赖 standby、必定断电"直接冲突**——该注释已就地标注为**待复验**。
+
+### 3. 未解冲突（必须诚实标出）
+
+- `HibernateStats` 计数 1→2 提示"发生过一次休眠"，但 `lastSleepType='Deep Idle'`、无 `Entering Hibernate`、`sleepimage` mtime 未变三条独立证据都说"没休眠"。**先不定论**；`HibernateStats` 尾数字段的确切语义（每次休眠 vs 每次"带镜像模式"的睡眠）本研究未坐实。
+- 结论口径：**"没崩"属实；"修复确效"未获验证** —— 会写坏 CMOS 的那条路（写 RTC `0x80-0xFF`）本次**未被触发**。
+
+### 4. 三处方法与结论纠正（其中一条取消上一节的线索）
+
+1. **`log show --start/--end` 查旧窗口不可靠**：本次复跑 `sleep1-11:16` 窗口（11:16:00–11:17:30），返回的却是 **14:39** 的行；`sleep3-13:11` 窗口则正常返回 13:11 的行。⇒ §十七 A 中"三窗复扫"的**部分结论证据强度下降**，不可再当硬证据。
+2. **`set_hibernation_preview error: EINVAL / CG 1011` 不是失败标记**：14:39:02（**今天这次正常睡眠的睡前**）同样照报。⇒ §十七 C 中"休眠写盘流程确实被启动过"的**线索撤销**。
+3. **变量未隔离**：第 3 次（13:11）由**合盖**触发（`PMRD: Clamshell closed`、`desktopMode 1, ac 1`），本次由**软件睡眠**触发（`Software Sleep`）。⇒ "这次没炸"至少存在"合盖 vs 软睡"这个混杂变量，**补丁是否起作用尚未隔离出来**。
+
+### 5. 下一步（三选一）
+
+- **A（最小改动，先排除合盖变量）**：合盖睡 **≥10 分钟**别动，看风扇/电源灯是否真灭、`sleepimage` mtime 是否变新、有无 `Entering Hibernate`。
+- **B（逼出断电）**：`sudo pmset -a standby 1 standbydelaylow 180 standbydelayhigh 180` 后合盖 5–10 分钟（回滚 `standby 0` / `10800` / `86400`）。
+- **C（收手）**：承认插电不可达 ⇒ 档 B 仅出差电池场景用，立即 `pmset-hibernate.sh off` 关回档 0。
+
+---
+
+## 十九、查证「AC 到底能不能进休眠」：**撤回上一节的 AC 归因** + 找到真正的阻塞候选（2026-09-16 14:51–15:05）
+
+> 触发：用户质问「在社区和硬件确定过了？不要猜测哈」。
+
+### 1. 🔴 撤回：§十八 把「没进休眠」归因于「AC 供电」是**推断，且无依据**
+
+- **官方文档不支持**：本机 `man pmset` 第 152 行只说 `hibernatemode = 25 ... The system will store a copy of memory to persistent storage, and will remove power to memory`，**通篇没有"AC 下不可用"**。
+- **社区反而有 AC 上成功的报告**：Apple StackExchange 长答给出 AC 侧配方 `pmset -c sleep 0 / standby 0 / standbydelay 5 / hibernatemode 25`，作者称唤醒时出现进度条＝确实休眠了（同答同时抱怨"Yosemite 之后单靠 mode 25 不再够用"）。
+- Chrultrabook（hackintosh 权威文档，`docs/installing/macos-hibernation`）：`sudo pmset -a hibernatemode 25` → "**will force macOS to hibernate immediately whenever the lid is closed or Sleep is selected**"，**未限定电池**。
+- ⇒ **正确口径**：AC 上「本次未休眠」是事实，但「AC 不可达」是**未经证实的推断**，已从结论中删除。
+
+### 2. ✅ 真正有证据的阻塞候选（官方原文 + 本机实测交叉）
+
+| # | 证据 | 来源 | 本机实测 |
+|---|---|---|---|
+| ① | `Whether or not a hibernation image gets written is also dependent on the values of **standby** and **autopoweroff**` | **本机 `man pmset` L133–139**（Apple 官方，非二手转述） | `standby 0`（三电源源全 0）＋ **`pmset -g cap` 的 AC 支持列表里根本没有 `autopoweroff`** ⇒ 两条触发/计时路径**全断**，与同页 `hibernatemode 0x0` 的解析结果吻合 |
+| ② | `ExternalDisplay` / `USBExternalDevice` 出现在内核 sleep factors | 本机内核日志 14:39:31 | **外接显示器确实在线**：`system_profiler` → `PHL 241B8Q`，`Connection Type: DVI or HDMI`，`Online: Yes`。Apple 官方 standby / autopoweroff 条件均要求「无外接显示器」⇒ **本次测试被污染** |
+
+> **② 的出处 + 边界（2026-09-16 15:01 用户追问「为什么拔 HDMI」时补查）**
+> - **出处**：Apple 支持文档「关于 Mac 上的待机模式」https://support.apple.com/zh-cn/ht202124 （en: `/101363`）原文：
+>   > Mac 笔记本电脑**必须由电池供电运行，并且必须断开**与以太网、USB、Thunderbolt、SD 卡、**显示器**、
+>   > 蓝牙或任何其他外部外接的连接。（才会进入待机模式）
+> - ⚠️ **边界**：这是**待机（standby）**的前提，**不是 `hibernatemode 25` 的前提**。本机 `man pmset` 对 mode 25
+>   **没有任何外接设备条件**（通篇仅"写盘 + 摘内存电"）。⇒ 「接着外接显示器 ⇒ mode 25 失效」**不是有文档支撑的结论**；
+>   可确证的只是"外接显示器是内核判定链里的一个因子"（sleep factors 原文）。
+> - ⇒ **拔 HDMI 的性质 = 隔离变量的测试设计，不是已确认的修复动作。**
+
+### 3. ❌ 查证过但**本机不成立**的社区说法（避免误采信）
+
+- Chrultrabook：「Some models have drives **not marked as internal**, which prevents macOS from entering hibernation（解法：给 PCI 设备加 `built-in`）」
+  → 本机 **不成立**：`ioreg -rc IONVMeController` 明示 `"Physical Interconnect Location" = "Internal"`、`IOMediaIcon = Internal.icns`；`diskutil info /` → 启动卷 `Device Location: Internal, Removable Media: Fixed`。⇒ **不列入原因**。
+
+### 4. ⚠️ 仍未定论、明确不猜的两点
+
+1. **`PMRD: hibernateMode 0x0`（内核把 25 解析成 0）的确切判定逻辑没有公开源码**。上表 ① 是与之最吻合、且有本机官方 man 原文支撑的解释，**属"最强解释"而非"已证明"**。
+2. **`USBExternalDevice` 具体是哪个设备未知**：`system_profiler SPUSBDataType` 在本机返回**空**（hackintosh 上报不全），无证据即不下结论。
+3. `HibernateStats` 计数 1→2 与 `lastSleepType='Deep Idle'` 的矛盾（§十八 §3）**仍未解**。
+
+### 5. 顺带核实的 EFI 现状（与社区完整配方的差异，未改动）
+
+| 项 | 本机 | 社区配方（5T33Z0 Lenovo-T530 issue #48） |
+|---|---|---|
+| `HibernationFixup` | ✅ 1.5.4（index 56） | ✅ |
+| `RTCMemoryFixup` + `rtcfx_exclude` | ✅ 1.0.7（index 78）/ `80-FF` | ✅ `80-AB` |
+| `Misc/Boot/HibernateMode` | ✅ `NVRAM` | ✅ |
+| `Misc/Boot/HibernateSkipsPicker` | ✅ `True` | 可选 ✅ |
+| `Booter/Quirks/RebuildAppleMemoryMap` | ❌ `True` | **建议 `False`** |
+| `UEFI/ReservedMemory` | ❌ 0 条 | 有 1 条（569344/4096/RuntimeCode） |
+| `Booter/Quirks/DiscardHibernateMap` | ❌ `False` | 二次休眠需 `True` |
+
+### 6. 下一步：先做**零 EFI 改动**的干净复测（把 ② 的污染排除掉）
+
+- **T1（推荐，不动 EFI、不动优先级）**：**拔 HDMI 外接显示器**（PHL 241B8Q）→ 保持插电 → 点睡眠 → 看是否出现 `Entering Hibernate` / `sleepimage` mtime 变新 / `hibernateMode` 非 0。**本次唯一变量 = 外接显示器**，能直接判定 ② 是否就是阻塞。
+- **T2**：若 T1 仍不进休眠 ⇒ 再试 `sudo pmset -a standby 1 standbydelaylow 120 standbydelayhigh 120`（验证 ① 的 standby 路径；回滚 `standby 0` / `10800` / `86400`）。
+- **T3（重，有风险）**：按社区完整配方改 EFI（`RebuildAppleMemoryMap=False` + ReservedMemory + `DiscardHibernateMap=True`）→ **必须重启**。
+- **收手线**：若 T1/T2 都不通，则接受「插电进不了真休眠」，档 B 只留出差电池场景。
+
+
+
+
+---
+
+## 二十、方案转向：**不改使用习惯** ⇒ 按电源源分档（2026-09-16 15:10–15:30）
+
+> 触发：用户「**我日常就这么用的啊，肯定是要在不改变我使用习惯的前提下优化啊**」。
+
+### 1. 撤回：把「拔 HDMI 复测」当**方案**是错的
+
+拔 HDMI 只能当**一次性诊断变量隔离**，绝不能当修复方案 —— 用户的日常就是插电 + 外接显示器（PHL 241B8Q/HDMI）+ USB 鼠标。凡要求拔外设的方案，方向本身就不成立。
+
+### 2. ★ 关键新证据：四次失败的供电状态（`pmset -g log`，跨启动持久）
+
+| 时刻 | 触发 | 原文 |
+|---|---|---|
+| 11:16:24 | `Software Sleep pid=1915` | `Entering Sleep state due to 'Software Sleep' … **Using AC (Charge:100%)**` |
+| 12:04:17 | `Software Sleep pid=2439` | 同上，**Using AC (Charge:100%)** |
+| 13:11:46 | `Software Sleep pid=1981` | 同上，**Using AC (Charge:100%)** |
+| 14:39:31 | `Software Sleep`（第 4 次） | 同上，**AC** |
+
+⇒ **四次全部发生在插电状态；电池场景（拔电 + 无外设）从来一次都没测过。**
+
+⚠️ 方法学附注：`log show --start/--end` 查 11:16 / 12:04 两个旧窗**又翻车**（返回的是当日 14:39 的行，与 §十八 §4-1 记录一致）。**凡旧窗口一律改用 `pmset -g log`**（该日志跨启动保留，且带供电状态）。
+
+### 3. 决策依据：**日常办公场景本就不该用档 B**
+
+- 插电时省电收益 ≈ 0（本来吃市电）；唤醒还慢 10~30 s；
+- 每次睡眠都会走"想写休眠镜像"那条**会碰 RTC** 的路 —— 三次 HP POST 005 全部发生在该配置下；
+- 而档 B 的真实场景是**拔电出门**，那时**天然**拔掉了电源/显示器/USB ⇒ `standby` 前提自足。
+
+### 4. 已执行（**零使用习惯改动**，拔插电源自动切档）
+
+| 电源源 | `hibernatemode` | `sleep` | 效果 |
+|---|---|---|---|
+| **插电 AC** | **0** | **0**（永不自动睡） | 不写盘、**不碰 RTC**、唤醒最快 —— 日常办公档 |
+| **电池** | **25** | **15** min | 真休眠，落盘并断内存供电 —— 出差/通勤档 |
+
+```bash
+# 等价命令（已执行；回滚：pmset-hibernate.sh off）
+sudo pmset -c hibernatemode 0 && sudo pmset -c sleep 0
+sudo pmset -b hibernatemode 25 && sudo pmset -b sleep 15
+```
+
+⚠️ 同时必须修 `sleep` 计时器：测试期把**两档都设成了 1 分钟**，配上"电池=25"就变成「空闲 1 分钟即休眠」⇒ 反复写 RTC（正是 005 的成因）。已归一化为 AC 0 / 电池 15。
+
+`EFI/scripts/pmset-hibernate.sh` 新增 **`auto`** 子命令封装上式；`status` 新增按电源源显示 `hibernatemode`。
+
+### 5. ★ 两个新事实（都在应用 `auto` 时被抓到）
+
+1. **`/var/vm/sleepimage` 被删了**：AC 档改成 `hibernatemode 0` 后 `/var/vm/` 实测 `total 0`。
+   ⚠️ **未验证**：macOS 是否会在我拔电/入睡时自动重建它。⇒ **拔电后先 `ls -la /var/vm/` 确认**，否则电池档没有镜像可用。
+2. **"拔掉所有外接 USB 设备"在本机做不到**：`pmset -g assertions` 的 kernel `0x4=USB` 断言显示被算作外部设备的是
+   `HP HD Camera`（**内置**摄像头）、`Bluetooth USB Host Controller`（**内置**蓝牙）、`USB Optical Mouse`（外接）。
+   前两个焊死在机器上 ⇒ **§十九 里"靠拔外设满足 standby 前提"这条路彻底作废**。
+   ❓ 未定论：`UTBMap_tahoe.kext` 仅把 3 个端口声明为 Internal（XHC/HS04、XHC/HS06、XHC2/SS01）；
+   但端口节点实测是 `USBPortType = 0`，与映射表的 255 对不上 —— **证据不足，不下结论**。
+   验证法：拔掉鼠标后睡一次，看 `sleep factors` 里 `USBExternalDevice` 是否消失。
+
+### 6. 现在的口径
+
+- **不定论谁说"mode 25 在 AC 上不可用"**（§十九 已撤回该归因）；
+- **不做任何要求改习惯的验证**；出差/带机出门时点一次睡眠即为天然验证点，零额外成本；
+- 若那次仍不进休眠，再看 §十九 的两条候选（`standby 0` + 无 `autopoweroff`；以及 USB 端口是否被误标外部）。
 
