@@ -1,4 +1,4 @@
-# 睡眠功耗复核报告（2026-09-15 首轮 / 2026-09-16 二轮）
+# 睡眠功耗复核报告（2026-09-15 首轮 / 09-16 二轮 / **09-16 三轮修正**）
 
 > 起因：用户问「再确认一下吧？」，并授权「不局限于某一种睡眠方式，只要硬件支持都可以尝试」。
 > 结论先行：**上一轮「档内已穷尽、没法优化」的结论需要收窄**——档内确实穷尽了，
@@ -11,6 +11,22 @@
 > 并纠正**三轮前的一个错误结论**：上一轮我写「ESP 并无自动同步任务」——**错**。
 > ESP 确有自动同步（RealTimeSync + FreeFileSync 镜像，见第六节第 0 步），
 > 但实测**会漏/滞后**，所以「改完必须核对 sha256」这条铁律依然要守。
+>
+> ## ★ 09-16 三轮修正（用户质疑「为什么 A 判死了？不用再确认一下？」）
+>
+> 复查证实：**第 1 轮的"档 A 判死"结论错误，测试条件本身不成立。** 三条错误：
+>
+> | # | 原说法 | 更正 |
+> |---|---|---|
+> | 1 | 「`standbydelay*` 与插不插电无关」 | ❌ **错**。`standby` 是**电池侧**计时器；AC 侧是 `autopoweroff`，而本机 `pmset -g cap` **无此项** → 插电时无深睡计时器 |
+> | 2 | 「已超出 `standbydelay` 300 s」 | ⚠️ 实际只超 **38 秒**，而写 16 GB 镜像需 30~90 s → 不足以判定 |
+> | 3 | （未考虑） | EFI **缺 `HibernationFixup.kext`** —— 缺了它，`HibernateMode=NVRAM` 只有读端没有写端，**空转** |
+>
+> 另有一条**同平台先例**：Dell Latitude 5410（i5-10310U + AX201 + `MacBookPro16,x`）
+> 明确记录 **AOAC（`Low Power S0 Idle`）与 S4 休眠冲突**，其方案是
+> `HibernationFixup.kext` + `hbfx-ahbm=129`（本机 FADT bit21 = SET，正处冲突侧）。
+>
+> → 复测路线见 `sleep-tests/round2-plan.md`；第 1 轮档案已加撤回声明。
 
 ---
 
@@ -70,14 +86,37 @@
 | **B. Hibernate 立即断电** | `hibernatemode 25` + `standby 1` | ~0.2 W | 每次读镜像（慢） | ✅ cap 支持 | ThinkPad E480、Surface Laptop 3、Fujitsu Q958 |
 | **C. 强制 S3**（实验） | 清 FADT bit21 + 禁 `SSDT-DeepIdle` | ~0.5 W | 瞬时 | ⚠️ ACPI 存在，macOS 侧零先例 | **无** |
 
-### 档 A / B 的机制（`man pmset` 原文，非推断）
+### 档 A / B 的机制（`man pmset` 原文 + 09-16 三度修正，非推断）
 
 - `hibernatemode 3`：写内存副本到磁盘，**但仍给内存供电** → 唤醒从内存。**只设 3 不省电**。
 - `standby`：让内核在睡够一段时间后**自动 hibernate** —— 这才是「摘掉内存电」的那个动作。
 - `standbydelayhigh/low`：**写镜像并断内存电**的延迟秒数。
-  按剩余电量 vs `highstandbythreshold`(50%) 选 high/low，**与插不插电无关**。
+  按剩余电量 vs `highstandbythreshold`(50%) 选 high/low。
 - `highstandbythreshold` 默认 50%；`standbydelayhigh` 默认 **86400（24 小时）** → 不显式设短 = 永不触发。
 - `hibernatemode 25`：写镜像 + **移除内存电**，必定从镜像恢复。不依赖 standby。
+
+> ### ⚠️ 09-16 关键更正：`standby` 与 `autopoweroff` 是**按供电条件二选一**的两个计时器
+>
+> | 计时器 | 生效前提 | 本机 |
+> |---|---|---|
+> | `standby` | **电池供电** + 无外接设备 + 无网络活动 + 无外接显示器 | 电池下未测 |
+> | `autopoweroff` | **外部电源供电** + 无外接设备 + 无网络活动 | ❌ `pmset -g cap` **无此项** |
+>
+> **本报告先前的表述「`standbydelay*` 与插不插电无关」是错的**，已更正。
+> 正确结论：**插电时 `standby` 永远不会触发**（不是失效，是没有计时器在跑），
+> 因为 AC 侧本该由 `autopoweroff` 接管，而本机固件未提供。
+> → **插电场景想深睡，只能走不依赖计时器的 `hibernatemode 25`（或 `hbfx-ahbm`）。**
+>
+> 附带更正：`pmset -g cap` 列出 `standby` 只代表**该参数可设置**，
+> 不代表**在 AC 下会生效** —— 这是先前误读的根源。
+
+### 前置件缺口：`HibernationFixup.kext` 未安装
+
+黑苹果休眠需要它：内核加密 `sleepimage` 后把密钥放 `IOHibernateRTCVariables`（`PMRootDomain`），
+但黑苹果的 RTC 通常只有 1 bank（128 B）写不进；HibernationFixup 负责**把密钥写进 NVRAM**，
+再由 `Misc/Boot/HibernateMode = NVRAM` 让 OpenCore 读出。
+**当前只有"读端"没有"写端" → 设置空转。** 最新 1.5.4（2025-07-07，支持 macOS 26）。
+详见 `sleep-tests/round2-plan.md`。
 
 ---
 
@@ -264,8 +303,14 @@ cd EFI/scripts
 → **「省电」的收益必须先说清是省什么**：不是省电费，而是**降低合盖发热**，
   以及**万一拔电时不掉那么快**。拿一个插电读数去解释「掉电快」是错位的。
 
-→ **换档在插电时照样生效**：`standbydelay*` 由**剩余电量 vs `highstandbythreshold`(50%)** 决定
-  （`man pmset` 原文：与插不插电无关）→ 插电睡眠也能把 5W 压到 ~0.2 W，**发热同步降下来**。
+→ ~~**换档在插电时照样生效**：`standbydelay*` 由**剩余电量 vs `highstandbythreshold`(50%)** 决定
+  （`man pmset` 原文：与插不插电无关）→ 插电睡眠也能把 5W 压到 ~0.2 W，**发热同步降下来**。~~
+
+> ⚠️ **上述结论已于 09-16 撤回（错误）**。`standby` 要求**电池供电**；
+> 插电时对应的是 `autopoweroff`，而本机不支持它。
+> → **插电时想让 5W 降下来，只能靠 `hibernatemode 25`**（每次睡眠立即写镜像断电，
+> 不依赖任何计时器）。这反而让档 B 从"备用"变成了**插电场景的首选**。
+> 详细的复测路线见 `sleep-tests/round2-plan.md`。
 
 > 所以「能优化」依然成立（第三节档位矩阵不变），只是目标从"省电费"
 > 改成 **"降合盖发热 + 拔电时更耐久"**。
