@@ -2,6 +2,34 @@
 #
 # 睡眠功耗：Deep Idle（~5W） -> 断电档（~0.2W）
 #
+# ⛔⛔⛔ 【2026-09-16 18:30 结案：本机"真休眠"已证伪 —— 不要再用 auto / instant / on / test】⛔⛔⛔
+#   5 次真休眠尝试（11:16 / 12:04 / 13:11 / 14:39 / **18:09**）**全部失败**，
+#   其中 **2 次把 RTC/CMOS 写坏**：入睡后几分钟内**直接断气**
+#   （无 `Wake from`、无 `Entering Hibernate`、无 `ShutdownCause`），
+#   重启后 POST 报 **HP 005 Real-Time Clock Power Loss** ＋ 时钟回 `2019-01-01`。
+#
+#   三条硬证据（都实测，非推断）：
+#     ① `RTCMemoryFixup 1.0.7` + `rtcfx_exclude=80-FF` **装对了但没挡住** ——
+#        上游 README 语法 = `hex,hex,hex-hex`（**无 `0x` 前缀**），本机写法正确；
+#        `strings` 含 `rtcfx_exclude`、`IOKitDiagnostics` 类实例计数 = 1。
+#     ② `HibernationFixup` **从未触发** —— 失败后 `nvram -p` 里**没有任何**休眠变量
+#        ⇒ 机器死在「进入 hibernate 电源态」**之前**，NVRAM 兜底**来不及生效**。
+#     ③ ★ 上游 RTCMemoryFixup README 原文：`0x80–0xAB` 存放 `IOHibernateRTCVariables`，
+#        「**If any offset in this range causes a conflict, you can exclude it,
+#        but hibernation won't work.**」
+#        ⇒ **"不坏 RTC" 与 "真休眠" 在这类硬件上互斥。**
+#
+#   ⇒ **结论：不要在真机上再启用休眠档。**
+#      出差/带机出门用**关机**替代 —— 0 W（比休眠 0.2 W 更低）＋ 零 RTC 风险
+#      ＋ 开机 30–40 s 与休眠唤醒基本相当。目标 100% 达成，且不再冒硬件风险。
+#   ⇒ 真要再试只剩"偏移二分实测"（`0E-7F` / `AC-FF`，上游说冲突偏移逐机不同），
+#      **每轮 = 一次重启 + 一次可能再坏 RTC**；且即便找到偏移，排除它同样等于放弃休眠。
+#      **值博率为负。**
+#   ⇒ 完整取证：docs/sleep-tests/round2-tierB-result.md §二十三。
+#
+# ⚠️ 因此下面 `auto / instant / on / test` 四个子命令**已加硬闸**：默认拒绝执行，
+#    必须 `FORCE_HIBERNATE=1` 才放行（仅当你在**明知会坏 RTC** 的前提下还想做实验）。
+#
 # 背景：本机 FADT Flags=0x002384A5，bit21 LOW_POWER_S0_IDLE_CAPABLE = SET，
 #   故 macOS 走 Deep Idle（S0ix）而非 S3。Deep Idle 下 CPU 停在 C10 但 SoC
 #   部分带电 —— 实测睡眠恒约 5W（落在 OC-little 记录的 AOAC 5%~10%/h 区间）。
@@ -88,16 +116,14 @@
 #
 # 用法：
 #   ./pmset-hibernate.sh status    # 打印本机能力 + 当前状态
-#   ./pmset-hibernate.sh auto      # ★ 推荐：按电源源分档 —— **两档都深睡**，靠延迟区分激进程度：
-#                                  #            插电 hibernatemode 25 + standby 1 + 1h/2h
-#                                  #            电池 hibernatemode 25 + standby 1 + 10/30min
-#                                  #            拔插电源自动切，**不需要改变任何使用习惯**。
-#                                  #            同时归一化 sleep / disksleep 计时器 + 预置休眠镜像。
+#   ./pmset-hibernate.sh off       # ★ 现状（安全档）：两电源源 hibernatemode 0 + standby 0，纯 Deep Idle
 #   ./pmset-hibernate.sh acfast    # 只让插电侧回到「永不写盘」（不碰 RTC / 最快醒 / 恒 ~5W）
-#   ./pmset-hibernate.sh test      # 受控试验：合盖 5 分钟后断电（先跑这个）
-#   ./pmset-hibernate.sh on        # 延迟断电：电量>50% 走 60 分钟，<50% 走 30 分钟
-#   ./pmset-hibernate.sh instant   # 合盖即断电（hibernatemode 25，同 Win 侧做法；**全电源源**，慎用）
-#   ./pmset-hibernate.sh off       # 回滚到现状（纯 Deep Idle，不写镜像）
+#
+#   ⛔ 以下四个已停用（需 FORCE_HIBERNATE=1 才放行，且明知会坏 RTC）：
+#   ./pmset-hibernate.sh auto      # ✗ 已证伪：两档都深睡（AC 1h/2h ｜ BAT 10/30min）
+#   ./pmset-hibernate.sh test      # ✗ 已证伪：受控试验（合盖 5 分钟后断电）
+#   ./pmset-hibernate.sh on        # ✗ 已证伪：延迟断电
+#   ./pmset-hibernate.sh instant   # ✗ 已证伪：合盖即断电（全电源源）
 #
 # 判据 / 回滚：
 #   成功   = 功率计 5W -> ~0.2W，开盖能回到原会话
@@ -105,6 +131,8 @@
 #   失败   = 断电后起不来 -> 长按电源；能进系统就跑 ./pmset-hibernate.sh off
 #            （若 macOS 也起不来：OpenCore 界面 Enter 进菜单 -> Reset NVRAM，
 #              逃生口已由 2f5c047 打开）
+#   ⚠️ 实测失败面：断电后重启 POST 报 HP 005 + 时钟回 2019-01-01（RTC/CMOS 被写坏）。
+#      已实测 2 次。**这就是停用休眠档的直接原因。**
 #   ⚠️ 未验证风险：OCLP 根补丁注入的 Wi-Fi（IO80211 合并 + AirportItlwm）在
 #      休眠恢复后能否起不来 —— 零先例，须实测。
 #   ⚠️ 睡前**拔掉外接 USB 鼠标**：pmset -g assertions 里它有 0x4=USB 断言，
@@ -121,12 +149,46 @@ if [[ "$(uname -s)" != "Darwin" ]]; then
   exit 1
 fi
 
+# ⛔ 硬闸（见文件头 ⛔⛔⛔ 段）：休眠档在本机已证伪，默认拒绝执行。
+#    必须显式 FORCE_HIBERNATE=1 才放行（仅当你明知会写坏 RTC/CMOS 仍要做实验）。
+case "${1:-}" in
+  auto|test|on|instant)
+    if [[ "${FORCE_HIBERNATE:-0}" != "1" ]]; then
+      cat >&2 <<'WARN'
+
+⛔ 已停用该子命令。
+
+   本机 hibernatemode 25「真休眠」5 次尝试（11:16 / 12:04 / 13:11 / 14:39 / 18:09）
+   全部失败，其中 2 次把 RTC/CMOS 写坏 —— 重启后 POST 报 HP 005
+   "Real-Time Clock Power Loss" ＋ 系统时钟回落到 2019-01-01。
+
+   RTCMemoryFixup（rtcfx_exclude=80-FF，语法已核正确）装上了也没挡住；
+   HibernationFixup 的 NVRAM 兜底根本没来得及触发（nvram 里无休眠变量）。
+   上游 README 原文：0x80–0xAB 存 IOHibernateRTCVariables，
+   「If any offset in this range causes a conflict, you can exclude it,
+   but hibernation won't work.」⇒ 保 CMOS 与 保休眠 二者不可兼得。
+
+   ⇒ 出差 / 带机出门请用「关机」替代休眠：0 W、零风险、开机时长基本相当。
+
+   仍要实验：FORCE_HIBERNATE=1 $0 <auto|test|on|instant>
+   完整取证：docs/sleep-tests/round2-tierB-result.md §二十三
+
+WARN
+      exit 2
+    fi
+    ;;
+esac
+
 # status 是纯只读的，不需要 root；只有改系统电源设置的子命令才提权
 case "${1:-}" in
   auto|acfast|test|on|instant|off)
     if [[ "$(id -u)" -ne 0 ]]; then
       echo "Re-running with sudo..."
-      exec sudo "$0" "$@"
+      if [[ "${FORCE_HIBERNATE:-0}" == "1" ]]; then
+        exec sudo FORCE_HIBERNATE=1 "$0" "$@"
+      else
+        exec sudo "$0" "$@"
+      fi
     fi
     ;;
 esac

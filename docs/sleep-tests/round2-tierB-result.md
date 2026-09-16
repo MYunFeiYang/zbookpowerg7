@@ -1213,3 +1213,80 @@ sudo pmset -c standbydelayhigh 7200    # 电量≥50% → 2 h
   所以 AC 侧用**长延迟**折中：日常无感、长睡才落盘。
 - **验证点**：任何一次「插电 + 无外接显示器 + 合盖 ≥2 h」都是天然验证点；或显式点睡眠后放着不动。
 - 仍未解：`HibernateStats` 计数 vs `lastSleepType` 的历史矛盾（§十九）。
+
+---
+
+## 二十三、第 5 次失败 + 上游原文判死刑：**"不坏 RTC" 与 "真休眠" 在这台机器上互斥**（2026-09-16 18:09–18:30）
+
+> 触发：用户按 §二十二 的方案点了"睡眠"，随即 HP POST 005 复现（`@image#1`）。
+
+### 1. 事件时间线（三条独立证据，全部实测）
+
+| 时刻 | 事件 | 来源 |
+|---|---|---|
+| **18:09:57** | `Entering Sleep state due to 'Software Sleep pid=174':TCPKeepAlive=disabled **Using AC (Charge:100%)**` | `pmset -g log`（跨启动持久） |
+| 此后 | **无 `Wake from`、无 `Entering Hibernate`、无任何电源事件** —— 直接断气 | `pmset -g log` |
+| **18:22:25** | 重启（**epoch 1789554145** 换算，不受时钟错乱影响） | `sysctl kern.boottime` |
+| 重启后 | HP POST **005**（用户照片）＋ 时钟回 `2019-01-01` | 屏幕 / `who -b` = `Jan 1 08:07` |
+| 18:22:45 | `(AppleRTC) RTC: setGMTTimeOfDay 1789554164` —— macOS 把正确时间**写回** RTC | 提权 `log show` |
+| 18:22:45 | `hibernatemode 25`（配置值，重启后生效） | `powerd: Setting Hibernate mode to 25` |
+| **18:27:27** | 已回滚 `hibernatemode 0` + `standby 0`（两电源源） | `powerd: Setting Hibernate mode to 0` |
+
+**签名与第 1–3 次完全一致**：睡眠 → 断气 → 无 Wake → POST 005 → 时钟丢。**5 次真休眠尝试，0 成功，2 次损坏 RTC。**
+
+### 2. 🔴 关键证据：`HibernationFixup` **从未触发**
+
+上游 README 原文：
+> This kext **detects entering into "hibernate" power state**, reads variable `IOHibernateRTCVariables` from the system registry and **writes it to NVRAM**.
+
+实测：失败后 `nvram -p | grep -i hiber` = **空**；`kern.hibernatecount = 0`。
+⇒ **机器根本没走到"进入 hibernate 电源态"那一步**，是在**转换途中**死掉的。
+⇒ 那条"NVRAM 兜底"的保险**来不及生效** —— 它不是被绕过，是**根本没轮到它**。
+
+### 3. 🔴 上游原文判死刑：两个目标是**互斥**的
+
+`RTCMemoryFixup` README（Acidanthera 官方）原文：
+> Offsets from **0x80 to 0xAB are used to store some hibernation information (`IOHibernateRTCVariables`)**.
+> **If any offset in this range causes a conflict, you can exclude it, but hibernation won't work.**
+
+以及它的调试方法论（说明冲突偏移是**逐机不同、必须二分实测**）：
+> It can also help you to find out **at which offsets you have a conflict**. In most cases it is enough to
+> boot with some offsets in boot-args, **perform sleep, wake and reboot**. If you don't see any CMOS
+> errors or some unexpected reboots, it means you have managed to exclude conflicted CMOS offsets.
+> **In my case it was only the one offset: B2.**
+
+### 4. 已排除"语法写错"这个可能
+
+`strings RTCMemoryFixup`（1.0.7 二进制）→ `rtcfx_exclude`；`Info.plist` → `IONameMatch=PNP0B00`。
+对照 README 的 `rtcfx_exclude=offset1,offset2,start_offset-end_offset`（**十六进制、无 `0x` 前缀**）
+⇒ **本机 `rtcfx_exclude=80-FF` 语法正确**，不是解析失败。**补丁是"装对了但没挡住"**，不是"没装上"。
+
+### 5. 结论（口径收紧）
+
+1. **内核层这条路已经试完并失败**：语法正确、类实例计数 = 1、boot-args 生效 —— 三重"已装"证据齐全，**但 CMOS 照样被写坏**。
+   剩余可能：冲突偏移不在 `80-FF`（可能在 `0E-7F` / `AC-FF`），或根本不是"软件写 RTC"而是**异常下电导致 RTC 掉电**。
+   ⚠️ **两者都无法在不冒"再坏一次 RTC"风险的前提下判定。**
+2. **"既要真休眠、又要不坏 RTC"，按上游原文在这类硬件上互斥**（排除 0x80–0xAB ⇒ 休眠报废；不排除 ⇒ CMOS 报废）。
+3. 🔴 **撤回一条早前的表述**：我曾说 HP POST 005 会"载入出厂默认"。**屏幕原文没有这句** —— 它只说
+   `The system time is invalid. This may be a result of a loss in battery power.` ＋ `Real-Time Clock Power Loss (005)`。
+   "载入出厂默认"是**我的推断，无证据支撑，撤回**。（但 CMOS 被写坏后固件**可能**对校验不过的项回默认值 —— 建议进 BIOS 核对一遍。）
+
+### 6. ★ 已排除的"地雷"（本次最重要的止损）
+
+回滚前，**电池档 = `hibernatemode 25` + `standby 1` + 10/30 min 延迟** —— 而电池档的 `standby` 四前提
+**恰好天然满足**（拔电 + 无外接显示器）⇒ **用户下次带机出门合盖，必然触发同一条死亡路径**。
+已在 **18:27** 全部回滚（`-a hibernatemode 0` + `-a standby 0`）⇒ **地雷已拆**。
+
+### 7. 现在的状态与建议
+
+| 项 | 值 |
+|---|---|
+| AC | `hibernatemode 0` / `standby 0` / `sleep 0` |
+| 电池 | `hibernatemode 0` / `standby 0` / `sleep 15` / `disksleep 10` |
+| EFI | 未改动（`RTCMemoryFixup` + `rtcfx_exclude=80-FF` 保留 —— 保持"挡写"是纯保护、无副作用） |
+
+- **路线 P（推荐）：收手，出差用"关机"替代休眠。**
+  关机 = **0 W**（比休眠的 ~0.2 W 更低）＋ **零 RTC 风险** ＋ 恢复代价与休眠唤醒基本相当（开机 30–40 s vs 唤醒 ~30 s）。
+  **目标（拔电放包里不掉电）100% 达成，且不需要再冒任何硬件风险。**
+- **路线 Q（不推荐）：继续攻。** 代价 = 对 `0E–7F` / `AC–FF` 做偏移二分实测（上游说冲突偏移逐机不同），
+  **每轮 = 一次重启 + 一次"可能再坏 RTC / 再报 005"**；且**即便找到偏移，排除它也就等于放弃休眠**。值博率明确为负。
