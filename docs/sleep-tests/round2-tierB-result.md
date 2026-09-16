@@ -249,7 +249,9 @@ kern.hibernatecount: 0     ← 同上
 stat -f "%z" /var/vm/sleepimage ; sysctl -n hw.memsize
 ```
 - 仍 ≈ `17179869184` ⇒ 尺寸修复稳固，**开测**。
-- 被打回 `1073741824` ⇒ **说明 macOS 认为 1 GiB 就是它要的尺寸** ⇒ 尺寸很可能不是真根因，立刻转 AOAC(Deep Idle)/S4 冲突那条线，**别再重复测**。
+- **被打回 `1073741824` —— 已实际发生（09-16 12:57:05）**。
+  ⚠️ **但本条判据已于 09-16 13:05 被推翻**，理由见 **§十一**：打回 1 GiB **不等于**"macOS 认为 1 GiB 够用"，而是 macOS **只认 `Hibernate File Min`**（= 1 GiB，XNU 默认值 —— 因为 `Hibernate File Max` 在本机**根本不存在**）。
+- **修正后的做法**：先按 §十一 把文件扩回 16 GiB，再测 —— 这一次测试即可**二分定论**（成功 ⇒ 尺寸确为根因；失败 ⇒ 尺寸线彻底排除，转 AOAC/S4）。
 
 **测试动作**：点睡眠按钮 → **等它自己彻底断电**（成功的样子 = 像关机一样：屏幕黑、风扇停、指示灯变化，约 30–90 s）→ 按**电源键**唤醒。
 **若超过 ~2 分钟仍不断电** ⇒ 判定失败，长按电源关机（每次失败都会付 §九 那次"时钟回 2019"的代价）。
@@ -264,3 +266,86 @@ stat -f "%z" /var/vm/sleepimage ; sysctl -n hw.memsize
 | ④ 恢复了 | `pmset -g log \| grep "Wake from"` | 有 `Wake from Hibernate`/`Wake from S4` |
 
 **回滚**：`EFI/scripts/pmset-hibernate.sh off`（回 `hibernatemode 0`，即纯 Deep Idle，~5 W 合盖发热）。
+
+---
+
+## 十一、重启后核对：文件被打回 1 GiB —— 一次实验推翻原判据（2026-09-16 13:02–13:12）
+
+### 1. 核对结果
+
+```
+kern.boottime = 2026-09-16 12:56:43
+sleepimage    = 1073741824 B   mtime 12:57:05   ← 启动后 22 秒
+/var/vm/ 目录 mtime = 09:56（未变）              ← 文件是被【原地截断】，不是删除重建
+```
+启动后 22 秒，文件被从 16 GiB **原地截断回 1 GiB**。
+
+### 2. 决定性实验：到底是谁在管这个尺寸？
+
+| 操作 | 结果 |
+|---|---|
+| `pmset -a hibernatemode 0` | **文件被删除**（`stat`: No such file） |
+| `pmset -a hibernatemode 25` | **文件被重建** = `1073741824`（mtime 13:02） |
+
+⇒ **结论：`sleepimage` 的大小由 macOS 主动、可重复地管理**，"mode 0 → 删 / mode 25 → 建 1 GiB" 是稳定行为。
+
+**这推翻了 §三 里"文件是 09:56 在 `hibernatemode 0` 期间建成、已存在所以不再调尺寸"的解释** —— 真实机制是：**每次 mode 25 生效时，macOS 都会（重新）把它定成 1 GiB**。
+
+### 3. 相关属性（`ioreg -c IOPMrootDomain`）
+
+```
+"Hibernate File Min" = 1073741824     ← 1 GiB
+"Hibernate File Max" = （不存在）
+"Hibernate Mode"     = 25
+```
+`Hibernate File Min/Max` 这对键的本意是**尺寸的上下界**（尺寸在其间取值）。本机 **Max 缺失**，只剩下界。
+
+### 4. 为什么"1 GiB 是被 macOS 主动设定的"**不等于**"1 GiB 够用"
+
+关键在 `hibernatemode 25` 的语义 = **写镜像到磁盘 + 切断内存供电**：
+
+> 写盘失败时内存电已经断了 ⇒ **不是优雅回退，而是整机死亡**。
+
+这与两次观察到的现象**完全吻合**：睡下去 4 分钟内彻底断气、无 `Wake from`、无 `ShutdownCause`、无 panic、fsck 全绿（文件系统没坏）。而"写盘失败后继续普通睡眠"这种优雅回退**不存在于 mode 25**。
+
+⇒ 所以 **1 GiB 仍然高度可疑**，只是"嫌疑"的机制从"文件建早了"变成了"**macOS 算出的目标尺寸本身就偏小**"。
+
+### 5. 二手资料**互相冲突**，因此不作为判据
+
+| 来源 | 说法 |
+|---|---|
+| MacRumors 2017（帖名就叫 *"sleepimage just 1 GB in size by 16 GB RAM?"*） | "1 GB 是常态，**SSD 优化**后机制变了，会被扩" |
+| MacRumors 2026-08 | "mode **3 或 25**，16 GB 内存 ⇒ sleepimage **永远是 16 GB**，**not dynamic**" |
+
+两说直接矛盾，**无法据二手资料定论**。`man pmset`（本机只 327 行）未收录 `hibernatefreeratio/freetime` 条目，XNU 公开头文件里也没查到 `Hibernate File Min/Max` 的键定义（`IOKitKeys.h` / `IOPM.h` / `IOHibernatePrivate.h` 均无）。
+⇒ **因此用一次实测来二分定论，而不是继续选边。**
+
+### 6. 本轮动作
+
+把文件扩回 **16 GiB 且实分配**（`mkfile 17179869184`，约需 1–2 分钟；`truncate` 只能改尺寸、是稀疏文件，不用）：
+
+```bash
+osascript -e 'do shell script "mkfile 17179869184 /var/vm/sleepimage" with administrator privileges'
+```
+> ⚠️ 不要用 `rm` —— 本机被 WorkBuddy 安全删除守卫拦死（见 §七）。
+
+**扩完后 macOS 不会在系统运行中自行改回**（resize 只在启动时 / `pmset` 变更时发生）。**所以同一次开机内可以直接测。**
+
+### 7. 这次测试的二分含义
+
+| 结果 | 含义 | 下一步 |
+|---|---|---|
+| **成功**（四项判据全中） | **尺寸确为根因**，机制 = "macOS 目标尺寸算错" | 每次重启后需补扩 → 找根治（DT/NVRAM 提供 `Hibernate File Max`，或封装进脚本） |
+| **失败**（又死透） | **尺寸线排除** | 转 AOAC(`Low Power S0 Idle`) / S4 结构冲突（同平台先例 Dell 5410：`hbfx-ahbm`），**别再扩文件** |
+
+### 8. 务实提醒：插电场景下档 B 是**净负收益**
+
+| 项 | 代价 / 收益 |
+|---|---|
+| 每次睡眠写盘 | 16 GiB 写入 SSD |
+| 每次唤醒 | 从磁盘读 16 GiB + 解压 ⇒ 比从内存唤醒慢 10–30 s |
+| 省电 | ≈ 5 W（**用户长期插电**，年化 ≈ 26 元） |
+
+⇒ **办公室（插电 + 外接显示器）场景建议不要长期挂档 B**。它真正的用武之地只有一个：**出差（电池 + 无外接设备/网络/显示器）** —— 而那恰好也是档 A 的 `standby` 四前提全部满足的场景。**用完即 `pmset-hibernate.sh off` 回滚。**
+
+
