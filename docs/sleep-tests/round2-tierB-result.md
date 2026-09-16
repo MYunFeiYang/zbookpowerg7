@@ -669,4 +669,82 @@ IOHibernateRTCVariables from the system registry and writes it to NVRAM.
 - 固件阶段（boot.efi 写 RTC）⇒ 上 `AppleRtcRam=true` + `rtc-blacklist`（GUID `4D1FDA02-…`，本机 `NVRAM/Delete` 已含该 GUID）
 - 或硬件侧（CMOS 纽扣电池）⇒ 纯正常关机数日观察 005 是否复发
 
+---
+
+## 十五、唯一残留风险的静态消除：`RTCMemoryFixup` 的硬编码虚表索引是有效的（2026-09-16 13:43）
+
+### 1. 这个风险是什么
+
+复核 `RTCMemoryFixup` 源码时发现它的 hook 用的是**硬编码虚表索引**：
+
+```cpp
+struct IOPortAccessOffset {
+    enum : size_t {
+        ioRead8  = 0x978/8,   // = 索引 303
+        ioWrite8 = 0x960/8,   // = 索引 300
+    };
+};
+KernelPatcher::routeVirtual(provider, IOPortAccessOffset::ioRead8, ioRead8, &orgIoRead8);
+```
+
+而 Lilu 的 `routeVirtual` **不做任何地址合法性校验**：
+
+```cpp
+auto vt = obj ? reinterpret_cast<T **>(obj)[0] : nullptr;
+if (vt) {
+    if (vt[off] == func) return false;
+    if (orgFunc) *orgFunc = vt[off];
+    vt[off] = func;          // ← 直接写第 off 项
+    return true;
+}
+```
+
+⇒ **若 macOS 26 改变了 `IOACPIPlatformDevice` 的虚表布局，它不是"干净地失败"，而是"替换错函数"** → 被调用时参数不匹配 → 可能崩溃或数据损坏。这是 1.0.7（2020-10-05）的二进制，且**该 kext 已 5 年无实质更新**。
+
+对比之下，同批改动里 `HibernationFixup` 1.5.4 的发布说明就是 **"Added constants for macOS 26 support"**（2025-07-07）⇒ 那个 kext 对 macOS 26 有官方支持；**只有 RTCMemoryFixup 这一环是"老二进制 + 无版本检查"**。
+
+### 2. 验证方法（可复用）
+
+`provider` 来自 `IONameMatch = PNP0B00` / `IOProviderClass = IOACPIPlatformDevice`，所以偏移是相对 **`IOACPIPlatformDevice` 对象 vptr** 的。该类的实现与 vtable 都在 **`IOACPIFamily.kext`**（`AppleACPIPlatform.kext` 里只有 `U` 未定义引用）。
+
+```bash
+K=/System/Library/Extensions/IOACPIFamily.kext/Contents/MacOS/IOACPIFamily
+nm -a "$K" | grep -E "ZTV20IOACPIPlatformDevice"      # vtable 地址 = 0x2060
+nm -a "$K" | grep -E "io(Read|Write)(8|16|32)E"        # 6 个 I/O 函数真实地址
+```
+
+再按 Itanium C++ ABI 读取 vtable 内容（**对象 vptr = `__ZTV + 16`**，即跳过 offset-to-top 与 typeinfo 两个槽）：
+
+```python
+# 解析 Mach-O section，rdptr(va) 读 8 字节指针
+vptr = 0x2060 + 16
+for idx in range(296, 304):
+    print(idx, hex(rdptr(vptr + idx*8)))
+```
+
+### 3. 结果：**6/6 全部命中，零偏差**
+
+| 虚表槽 | 实测值 | 对应函数 | RTCMemoryFixup 的索引 |
+|---|---|---|---|
+| 298 | `0x012f6` | `ioWrite32` ✓ | |
+| 299 | `0x01322` | `ioWrite16` ✓ | |
+| **300** | **`0x0134e`** | **`ioWrite8`** ✓ | ★ `ioWrite8 = 0x960/8` |
+| 301 | `0x0127c` | `ioRead32` ✓ | |
+| 302 | `0x012a2` | `ioRead16` ✓ | |
+| **303** | **`0x012cc`** | **`ioRead8`** ✓ | ★ `ioRead8 = 0x978/8` |
+
+⇒ **`IOACPIPlatformDevice` 的 I/O 虚表布局从 2020 到 macOS 26 完全一致**（`ioWrite{8,16,32}` 在前、`ioRead{8,16,32}` 在后，各组降序）。**不是巧合，是结构性未变。**
+
+### 4. 结论
+
+- **残余不确定点已消除**：hook 会精准命中目标函数，不会替换错函数。
+- 这是"本机实测 + 符号级证据"，非推断；方法本身可复用于**任何硬编码 hook 偏移的第三方 kext**。
+- 附带确认：`ioRead8`/`ioWrite8` **确实是 `IOACPIPlatformDevice` 的成员虚函数**（签名 `ioWrite8(UInt16, UInt8, IOMemoryMap*)`），hook 目标选得对。
+
+### 5. 顺带补的验证性改动
+
+boot-args 追加 **`-rtcfxdbg`**（已同步 ESP）。原因：RTCMemoryFixup 的**失败**日志是 `SYSLOG`（无条件输出），而**成功**日志是 `DBGLOG`（默认不输出）⇒ 不加参数时只能靠"没报错"反推。加了之后重启即可用 `dmesg | grep RTCFX` 直接看到 `was successful` / `was failed`。
+
+> ⚠️ 读内核日志的两个坑（本机实测）：`/var/log/system.log` **不含内核日志**（只有 syslogd/用户进程，且只有几百字节）；`log show` 被沙箱禁。**唯一可用通道 = 提权跑 `dmesg`**（`osascript … with administrator privileges`），而内核环缓冲很小 ⇒ **重启后要尽快查**。
+
 
