@@ -43,16 +43,27 @@
 #
 # ⚠️⚠️ 【2026-09-16 15:0x 应用 auto 档后发现的两件事，务必先读】
 #   1) **`/var/vm/sleepimage` 会被删掉**：AC 档改成 `hibernatemode 0` 后，实测 `/var/vm/` 变空
-#      （`total 0`）。⇒ **拔电后必须确认它被重建**（`ls -la /var/vm/`），否则电池档要休眠时没有
-#      镜像文件可用，可能直接给个 Deep Idle 了事。**未验证：macOS 是否会在拔电/入睡时自动重建。**
-#   2) **"拔掉所有外接 USB 设备"在本机做不到**：`pmset -g assertions` 的 kernel `0x4=USB` 断言
-#      显示被算作外部设备的是 —— `HP HD Camera`（**内置**摄像头）、`Bluetooth USB Host Controller`
-#      （**内置**蓝牙）、`USB Optical Mouse`（外接）。前两个是焊死在机器上的，**拔不掉**。
-#      ⇒ **不要走"靠拔外设去满足 standby 前提"这条路**，方向本身就不成立。
-#      ❓ 未定论：`UTBMap_tahoe.kext` 只把 3 个端口声明为 Internal（XHC/HS04、XHC/HS06、XHC2/SS01），
-#         其余非 Internal；但端口节点上实测到的是 `USBPortType = 0`，与映射表里的 255 对不上
-#         —— 可能是 macOS 26 暴露的属性名/取值不同，**证据不足，不下结论**。
-#         验证法：拔掉鼠标后睡一次，看 `PMRD: sleep factors` 里 `USBExternalDevice` 是否消失。
+#      （`total 0`）。macOS 是按**当前活动电源源**管理这个文件的：改 `-c hibernatemode 0` 即删，
+#      而**重新下发 `-b hibernatemode 25` 并不会让它重建**（16:45 实测复设后仍为空）。
+#      ⇒ **已手动预置**：`mkfile -n 8g /var/vm/sleepimage`
+#         （稀疏分配：`ls -ls` 实占 8 块 ≈ 32 KB，逻辑 8 GiB = mode 25 下的 `Hibernate File Min`；
+#           AC 下静置 30 s 实测未被 macOS 删除。）
+#      ⚠️ 仍未验证：下次启动 / 拔电瞬间 macOS 会不会重建或回收它。**拔电后先 `ls -la /var/vm/`。**
+#   2) **`pmset -g assertions` 里那两个"内置设备"其实是误读 —— 悬案已结（2026-09-16 16:50）**
+#      现象：kernel `0x4=USB` 断言列了 `HP HD Camera`、`Bluetooth USB Host Controller`、`USB Optical Mouse`。
+#      ✅ **查清（16:50）**：`UTBMap_tahoe.kext` **注入成功** —— `ioreg -rc AppleUSBHostController`
+#         的控制器节点上确有注入的 `ports` 字典：
+#           `HS04 → port#7  usb-port-type=255 ★Internal` ← `HP HD Camera`（locationID 0x14400000）
+#           `HS06 → port#14 usb-port-type=255 ★Internal` ← `Bluetooth USB Host Controller`（0x14600000）
+#         其余 7 端口为 type 3/9（Type-A / Type-C）。⇒ **内置摄像头与蓝牙已按规范标为 255**，
+#         与真机一致（社区口径：`macOS always expects Bluetooth as Internal`，标错会**反过来
+#         影响 Sleep/Wake**）。此前看到的 `USBPortType = 0` 是 Apple 自产的另一条属性，与
+#         USBToolBox 注入的 `usb-port-type` **不是同一个键** ⇒ 原"对不上"的判据作废。
+#      ⚠️ **但不能据此断言** `USBExternalDevice` 因子一定来自谁：`pmset -g assertions` 里那四项
+#         的断言名都是 `com.apple.usb.externaldevice.*`，那是 **USB 设备的通用断言名**（真机上
+#         内置蓝牙同样用它），**不能**据此判定被误标。唯一确证的外设 = `USB Optical Mouse`
+#         ＋ `HONOR DVD-AN80`（`pmset -g assertions` 实测在列）。
+#      ⇒ 结论：**无需任何 EFI 改动**；本机 USB 映射与真机等价，standby 前提不被内部设备破坏。
 #
 # 前置（test/on/instant 都需要）—— ✅ 均已于 commit 2f5c047 完成：
 #   1) Misc/Boot/HibernateMode: None -> NVRAM
@@ -63,9 +74,12 @@
 #
 # 用法：
 #   ./pmset-hibernate.sh status    # 打印本机能力 + 当前状态
-#   ./pmset-hibernate.sh auto      # ★ 推荐：按电源源分档 —— 插电 hibernatemode 0（不写盘/不碰 RTC）
-#                                  #            电池 hibernatemode 25（真休眠）。拔插电源自动切，
+#   ./pmset-hibernate.sh auto      # ★ 推荐：按电源源分档 —— 插电 hibernatemode 0 + standby 0
+#                                  #            （不写盘 / 不碰 RTC / 唤醒最快）
+#                                  #            电池 hibernatemode 25 + **standby 1** + 短延迟
+#                                  #            （真休眠：落盘后断内存供电）。拔插电源自动切，
 #                                  #            **不需要改变任何使用习惯**。
+#                                  #            同时归一化 sleep / disksleep 计时器 + 预置休眠镜像。
 #   ./pmset-hibernate.sh test      # 受控试验：合盖 5 分钟后断电（先跑这个）
 #   ./pmset-hibernate.sh on        # 延迟断电：电量>50% 走 60 分钟，<50% 走 30 分钟
 #   ./pmset-hibernate.sh instant   # 合盖即断电（hibernatemode 25，同 Win 侧做法；**全电源源**，慎用）
@@ -129,10 +143,16 @@ show_status() {
   fi
   echo "  hibernatecount: $($SYSCTL -n kern.hibernatecount 2>/dev/null || echo '?')（历史真实休眠次数）"
   echo
-  echo "==> hibernatemode 按电源源（拔插电源自动切换）"
-  echo "    插电(AC Power)    : $(per_source 'AC Power' hibernatemode)"
-  echo "    电池(Battery Power): $(per_source 'Battery Power' hibernatemode)"
-  echo "    （0=不写盘仅内存供电 / 3=safe sleep / 25=真休眠落盘断电）"
+  echo "==> 按电源源（拔插电源自动切换）"
+  printf "    %-16s %-14s %-9s %-7s %-9s %s\n" "电源源" "hibernatemode" "standby" "sleep" "disksleep" "standbydelay(low/high)"
+  for sec in 'AC Power' 'Battery Power'; do
+    printf "    %-16s %-14s %-9s %-7s %-9s %s/%s\n" "$sec" \
+      "$(per_source "$sec" hibernatemode)" "$(per_source "$sec" standby)" \
+      "$(per_source "$sec" sleep)" "$(per_source "$sec" disksleep)" \
+      "$(per_source "$sec" standbydelaylow)" "$(per_source "$sec" standbydelayhigh)"
+  done
+  echo "    （hibernatemode: 0=不写盘仅内存供电 / 3=safe sleep / 25=真休眠落盘断电）"
+  echo "    （standby 才是「摘内存电」那个动作；=0 时 hibernatemode 25 也到不了休眠 —— 见 man pmset）"
   echo
   echo "==> 当前 pmset 关键项"
   $PMSET -g custom | grep -E 'hibernatemode|standby|standbydelay|powernap|womp|tcpkeepalive' || true
@@ -158,14 +178,39 @@ case "${1:-}" in
 
   auto)
     echo "==> 按电源源分档（推荐档；拔插电源自动切换，**不需要改变使用习惯**）"
+    # —— 插电档：不写盘、不碰 RTC、唤醒最快
     $PMSET -c hibernatemode 0
+    $PMSET -c standby 0
+    # —— 电池档：真休眠（落盘 → 断内存供电）
     $PMSET -b hibernatemode 25
-    # 空闲计时器：测试期曾把两档都设成 1 分钟，配上"电池=25"会变成"空闲 1 分钟即休眠"
-    #   ⇒ 反复写 RTC（正是 005 的成因）⇒ 必须同时归一化。AC 0 = 插电永不自动睡（≈苹果默认）。
+    # ★ standby 必须为 1 —— 这不是可选美化，是**触发前提**：
+    #   本机 man pmset 原文「Whether or not a hibernation image gets written is also
+    #   dependent on the values of standby and autopoweroff」；而本机 AC 侧**没有**
+    #   autopoweroff 能力（`pmset -g cap` 未列出）、电池侧 standby 原为 0 ⇒ 两条触发路径
+    #   全断，与 14:39 实测的 `PMRD: hibernateMode 0x0`（配 25 却解析成 0 = 不休眠）吻合。
+    $PMSET -b standby 1
+    $PMSET -b highstandbythreshold 50
+    #   延迟按剩余电量选：<50% 走 low、≥50% 走 high。默认 10800/86400（3h/24h）在真机上等于
+    #   **永不触发** ⇒ 必须显式设短，否则上面那条 standby 1 等于白设。
+    $PMSET -b standbydelaylow 600      # 电量低 → 10 min 后落盘断电
+    $PMSET -b standbydelayhigh 1800    # 电量足 → 30 min 后落盘断电（短睡仍可秒醒）
+    # 空闲计时器：测试期曾把两档都设成 1 分钟，配上「电池=25」会变成「空闲 1 分钟即休眠」
+    #   ⇒ 反复写 RTC（正是 005 的成因）⇒ 必须同时归一化。AC 0 = 插电永不自动睡。
     $PMSET -c sleep 0
     $PMSET -b sleep 15
-    echo "    插电(AC) : hibernatemode 0  —— 不写盘、**不碰 RTC**、唤醒最快；空闲不自动睡"
-    echo "    电池     : hibernatemode 25 —— 真休眠，落盘并断内存供电；空闲 15 min 后才睡"
+    # disksleep：sleep≠0 而 disksleep=0 时 pmset 会告警
+    #   （"Disk sleep should be non-zero whenever system sleep is non-zero"）⇒ 归一化。
+    $PMSET -b disksleep 10
+    # 休眠镜像：macOS 按**当前活动电源源**管理 /var/vm/sleepimage（AC 档为 0 时会把它删掉），
+    #   而重新下发 `-b hibernatemode 25` **不会**让它重建 ⇒ 预置一个稀疏文件顶上（不占实际空间）。
+    if [[ ! -e /var/vm/sleepimage ]]; then
+      /usr/sbin/mkfile -n 8g /var/vm/sleepimage
+      /usr/sbin/chown root:wheel /var/vm/sleepimage
+      /bin/chmod 600 /var/vm/sleepimage
+      echo "    已预置 /var/vm/sleepimage（稀疏 8 GiB，实占约 32 KB）"
+    fi
+    echo "    插电 : hibernatemode 0 / standby 0  —— 不写盘、**不碰 RTC**、唤醒最快；空闲不自动睡"
+    echo "    电池 : hibernatemode 25 / standby 1 —— 短睡秒醒，10~30 min 后落盘并断内存供电"
     echo
     echo "    依据："
     echo "      · 四次睡眠实测（11:16/12:04/13:11/14:39）**全在插电状态**（pmset -g log 原文"
@@ -173,6 +218,9 @@ case "${1:-}" in
     echo "      · 日常办公（插电 + 外接显示器 + USB）用档 B 本就无收益，且每次睡眠都会走"
     echo "        '想写休眠镜像'那条会碰 RTC 的路 —— 三次 HP POST 005 都发生在该配置下。"
     echo "      · 出差时天然拔掉电源/显示器/USB ⇒ standby 前提自足，才是档 B 的真实场景。"
+    echo "      · USB 端口映射**已查证生效**（16:50）：内置摄像头 HS04 / 蓝牙 HS06 在 UTBMap 里"
+    echo "        已是 Internal(255)，与真机一致 ⇒ 不再是备选原因，**无需任何 EFI 改动**。"
+    echo "        确证的外设只有 USB Optical Mouse 与 HONOR DVD-AN80，拔掉后本机与真机等价。"
     echo "    回滚：$0 off"
     show_status
     ;;
@@ -205,8 +253,10 @@ case "${1:-}" in
   off)
     echo "==> 回滚到纯 Deep Idle（当前基线）"
     $PMSET -a hibernatemode 0 standby 0 standbydelaylow 10800 standbydelayhigh 86400
+    $PMSET -a disksleep 0
     $PMSET -c sleep 0
     $PMSET -b sleep 15
+    echo "    注意：hibernatemode 全部归 0 后 macOS 会删掉 /var/vm/sleepimage（正常，基线行为）。"
     show_status
     ;;
 

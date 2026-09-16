@@ -1028,3 +1028,75 @@ sudo pmset -b hibernatemode 25 && sudo pmset -b sleep 15
 - **不做任何要求改习惯的验证**；出差/带机出门时点一次睡眠即为天然验证点，零额外成本；
 - 若那次仍不进休眠，再看 §十九 的两条候选（`standby 0` + 无 `autopoweroff`；以及 USB 端口是否被误标外部）。
 
+
+---
+
+## 二十一、补齐电池侧触发前提：**原来的 `auto` 档在电池上是空转**（2026-09-16 16:44–16:55）
+
+> 触发：用户「**别废话，能不能优化，能就优化**」。
+
+### 1. 发现的硬缺陷
+
+`pmset -g custom` 实测（16:44）：
+
+| 电源源 | hibernatemode | standby | sleep | disksleep | standbydelay(low/high) |
+|---|---|---|---|---|---|
+| AC | 0 | 0 | 0 | 0 | 10800 / 86400 |
+| **电池** | 25 | **0** | 15 | 0 | 10800 / 86400 |
+
+两条：
+
+1. 🔴 **电池 `standby = 0`** —— 本机 `man pmset` 原文：`Whether or not a hibernation image gets written is also dependent on the values of standby and autopoweroff`。而本机 **AC 侧 `pmset -g cap` 根本没有 `autopoweroff`**（§十九已核）⇒ **两条触发路径全断**，与 14:39 实测的 `PMRD: hibernateMode 0x0`（配了 25 却解析成 0 = 不休眠）吻合。⇒ **只设 `hibernatemode 25` 是空转**。
+2. 🔴 **延迟是出厂默认 10800 / 86400（3 h / 24 h）** ⇒ 即使把 standby 打开，实际也等于**永不触发**。
+
+### 2. 已执行（`pmset-hibernate.sh auto` 同步补齐）
+
+```bash
+sudo pmset -b standby 1
+sudo pmset -b highstandbythreshold 50
+sudo pmset -b standbydelaylow 600     # 电量 <50%  → 10 min 后落盘断电
+sudo pmset -b standbydelayhigh 1800   # 电量 ≥50% → 30 min（短睡仍可秒醒）
+sudo pmset -b disksleep 10            # 消 pmset 告警：sleep≠0 而 disksleep=0
+```
+
+实测确认：
+
+```
+    AC Power         0              0         0       0         10800/86400
+    Battery Power    25             1         15      10        600/1800
+```
+
+⚠️ 改 `-b` 参数**不影响当前 AC 会话**，无需重启（`pmset` 按电源源即时生效，拔电时切档）。
+
+### 3. `/var/vm/sleepimage` 缺失 —— 已预置
+
+- AC 档为 `hibernatemode 0` 时 macOS 会把该文件删掉（15:22 实测 `/var/vm` 变空）。
+- ★ **重新下发 `pmset -b hibernatemode 25` 并不会让它重建**（16:45 实测复设后仍为空）⇒ **macOS 是按「当前活动电源源」管理它的**，不是按"任一电源源是否启用休眠"。
+- 处理：`mkfile -n 8g /var/vm/sleepimage` + `chown root:wheel` + `chmod 600`
+  - 稀疏分配：`ls -ls` 第 1 列 = 8 块 ≈ 32 KB 实占；逻辑 8 GiB 对齐 mode 25 下的 `Hibernate File Min`。
+  - AC 下静置 30 s 与 7 min 两次复查均未被 macOS 删除。
+- ⚠️ **仍未验证**：下次启动 / 拔电瞬间 macOS 会不会重建或回收它。⇒ 拔电后先 `ls -la /var/vm/`。
+
+### 4. ★ 悬案结案：USB 端口映射**本来就是对的**，无需 EFI 改动
+
+§二十 留的"`UTBMap_tahoe.kext` 标 255 与 ioreg 实测 `USBPortType = 0` 对不上 ⇒ 证据不足"——16:50 查清：
+
+- ✅ **映射确实注入成功**：`ioreg -rc AppleUSBHostController` 的控制器节点上**存在注入的 `ports` 字典**：
+
+| 端口名 | port# | `usb-port-type` | 对应设备（locationID 高位） |
+|---|---|---|---|
+| **HS04** | 7 | **255 ★Internal** | `HP HD Camera`（`0x14400000`） |
+| **HS06** | 14 | **255 ★Internal** | `Bluetooth USB Host Controller`（`0x14600000`） |
+| HS01/HS02/HS03/HS05/SS01/SS02/SS03 | 1/4/5/11/17/19/20 | 3 / 9 | 空口（Type-A / Type-C） |
+
+- 🔴 **原判据作废**：`USBPortType` 是 **Apple 自产的另一条属性**，与 USBToolBox 注入的 `usb-port-type` **不是同一个键** —— 拿它去比对映射表是错的。
+- 📚 **社区口径佐证**（EliteMacx86「How to Map your USB Ports on macOS」）：`255 = Proprietary connector，For Internal USB Ports such as Bluetooth. **macOS always expects Bluetooth as Internal**`，且标错会**反过来影响 Sleep/Wake**。
+- ⚠️ **不越界断言**：`pmset -g assertions` 里四项（camera / BT / mouse / DVD-AN80）的断言名都是 `com.apple.usb.externaldevice.*` —— 那是 **USB 设备的通用断言名**（真机内置蓝牙同样用它），**不能**据此判定"被误标为外部"。
+  唯一**确证**的外设 = `USB Optical Mouse` ＋ `HONOR DVD-AN80`。
+- ⇒ **结论：本机 USB 映射与真机等价，不列入原因，不做任何 EFI 改动。**
+
+### 5. 口径
+
+- 插电档 `hibernatemode 0` 是**主动选择**、不是缺陷：插电省电收益 ≈ 0、唤醒慢 10~30 s，且每次睡眠都走"想写休眠镜像"那条会碰 RTC 的路。**AC 侧的最优点就是"不折腾"。**
+- 电池档**这次才第一次真正具备"能到休眠"的前提**（此前 standby=0 空转）。能否落地要等一次**真实的电池睡眠** —— 拔电出门点一次睡眠即可，零额外成本。
+- 仍未解：`HibernateStats` 计数 vs `lastSleepType='Deep Idle'` 的历史矛盾（§十九）。
