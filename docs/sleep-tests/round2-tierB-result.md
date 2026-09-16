@@ -348,4 +348,115 @@ osascript -e 'do shell script "mkfile 17179869184 /var/vm/sleepimage" with admin
 
 ⇒ **办公室（插电 + 外接显示器）场景建议不要长期挂档 B**。它真正的用武之地只有一个：**出差（电池 + 无外接设备/网络/显示器）** —— 而那恰好也是档 A 的 `standby` 四前提全部满足的场景。**用完即 `pmset-hibernate.sh off` 回滚。**
 
+---
+
+## 十二、第三次失败 + HP 固件报「RTC 掉电」 —— 尺寸线**正式排除**，档 B **停**（2026-09-16 13:11–13:20）
+
+> **本节取代 §十 与 §十一.7 的行动项。**
+
+### 1. 决定性结果：**16 GiB 实分配**条件下，仍然失败
+
+| # | 入睡（`Entering Sleep state due to 'Software Sleep'`） | 冷启动（`kern.boottime`） | `sleepimage` 条件 | 结果 |
+|---|---|---|---|---|
+| 1 | 11:16:24 | 11:26:26 | **1 GiB（异常）** | 失败 |
+| 2 | 12:04:17 | 12:28:04 | **1 GiB（异常）** | 失败 |
+| 3 | **13:11:46** | **13:15:57** | **16 GiB，且实分配（`alloc == size`，`mkfile` 写零过）** | **失败** |
+
+第三次判据逐项（全部来自实测命令，非推断）：
+
+| 判据 | 值 | 含义 |
+|---|---|---|
+| 之后有无 `Wake from` / `Wake from Hibernate` | 无（13:11:47 最后一次 `PM Client Acks`，此后日志空到 13:15:57 启动） | 睡下去就没回来 |
+| 有无 `ShutdownCause` | 无 | 不是正常关机 |
+| 有无 panic 报告 | 无 | 不是内核崩溃 |
+| `kern.hibernatecount` | `0` | 从未真正完成休眠 |
+| 全天 `pmset -g log` 里 `hibernate` 关键词 | **仅 1 条**（`10:15:17 HibernateStats hibmode=3 …`，即档 A 那次 Deep Idle 唤醒的统计） | **三次尝试都没走到"进入休眠"那一刻** |
+| 13:11 之后进程 PID 是否换代 | 是（192/171/113 → 189/283/726） | 全新会话 |
+
+⇒ 按 §十一.7 **预注册**的二分表，本次落在"失败"分支：**尺寸线排除**。
+⚠️ 但"'尺寸不是本机根因' **≠** '尺寸无所谓'"—— mode 25 下写不下确实会整机死，只是**本机不是这个原因**。别再往文件尺寸上投入。
+
+### 2. 新增硬证据：**HP 固件自己报了 RTC 掉电**
+
+第三次硬断电后冷启动，用户在 POST 阶段拍到（2026-09-16 13:19 提供）：
+
+```
+POST Error
+The system time is invalid. This may be a result of a loss in battery power.
+Set the correct time and date using your operating system. If this message persists,
+you may need to replace the onboard battery.
+
+Real-Time Clock Power Loss (005)
+
+ENTER-Reboot the System
+For more information, please visit: www.hp.com/go/techcenter/startup
+```
+
+HP 官方口径（support.hp.com 诊断错误表，cn-zh / hk-zh 两份同文）：
+
+> **实时时钟电源断开 (005)**：系统时间无效，未设置时间和日期。这可能是由电池电量损耗导致的结果。在操作系统中设置正确的时间和日期。**如果此消息持续出现，您可能需要更换 CMOS 或 RTC 电池。**
+
+**这条把"时钟丢失"从 macOS 侧推断（`who -b` / 早期进程 `lstart` / fsck 戳）升级为「固件层的独立判定」。**
+
+⚠️ 两条限定：
+- 005 只说"RTC 失效"，**不区分"电池没电"与"内容被写坏"** —— 别看到 005 就去拆机。
+- 它只在**固件做这项检查**时才出现；没拍到 ≠ 没问题。
+
+### 3. 机制：为什么"试休眠"会把 RTC 搞坏
+
+```
+hibernatemode 25（写镜像 + 断内存电）
+   └─ macOS 需把「休眠状态」写进 RTC 内存，供 booter 在下次启动识别"我是从休眠恢复"
+        └─ PC 上 RTC 内存 0x80–0xFF = 固件扩展 CMOS（BIOS 设置 + 校验和）
+             └─ 被写穿 ⇒ 下次 POST 时 HP 判定 RTC 无效
+                  └─ 报 005 + 载入出厂默认 ⇒ 时间被重置为出厂值
+                       └─ macOS 从错误 RTC 起算 ⇒ 2019-01-01 00:00:00 UTC（本地 08:00）
+                            └─ ~35 s 后网络时间校正、macOS 回写 RTC ⇒ 自愈
+```
+
+即：**"时钟丢失" 与 "HP 005" 是同一个事件的固件侧与 OS 侧两个表现**，不是两个独立故障。
+
+### 4. 两条假设，以及怎么分辨
+
+| 假设 | 内容 | 支持证据 | 反证 / 未决 |
+|---|---|---|---|
+| **H1 软件侧**（更受支持） | macOS 往 RTC 区写入破坏了 HP 固件区 → 005 + 时钟回默认 | ① 远景论坛 HP 同症专帖（症状一字不差，处方明确）② Dortania 官方《Fixing RTC write issues》讲的就是 AppleRTC 写坏 RTC 区 ③ 时间点**完全对应**三次休眠尝试 ④ **所有正常关机/重启从不丢** | 无法解释"为什么只在这三次"以外的部分——但三次恰好就是唯一触发条件，逻辑自洽 |
+| **H2 硬件侧** | CMOS / RTC 纽扣电池已弱，长按硬断电时整条供电轨被 EC 切断 ⇒ RTC 丢 | HP 官方把 005 归到电池；"若持续出现需更换" | `wtmp` 自 **09-15 20:07** 起，`last` 里所有正常关机（`ShutdownCause 5`：10:01 / 11:05 / 12:56）时钟**全部正确**，且主电池一直在位（会给 RTC 供电） |
+
+**分辨方法（零成本）**：接下来**完全不碰休眠**，正常使用（含档 A 睡眠）观察几天 ——
+- 005 不复发 ⇒ **H1 成立**（休眠路径写的），不用换电池；
+- 连"纯正常关机 + 长时断电"也复发 ⇒ **H2**，再考虑 CMOS 电池。
+
+### 5. 建议：**停档 B，回 `hibernatemode 0`**
+
+三条理由，每条都独立成立：
+
+1. **三次全失败，且尺寸已排除** ⇒ 档 B 在本机没有已证实的可行路径。
+2. **每次失败都留下固件级损伤**（RTC 被写坏 + HP 载入出厂默认）—— 这是**真实代价**，不是"反复试没损失"。三次已足以说明问题。
+3. **收益本来就 ≈ 0**：长期插电（年化 ≈ 26 元），出差场景由**档 A 的 `standby` 原生链路**覆盖（`standby` 四前提恰好就是出差场景）。
+
+回滚（`sudo` 无免密，须走 osascript 提权）：
+
+```bash
+osascript -e 'do shell script "bash /Volumes/Common/workplace/zbookpowerg7/EFI/scripts/pmset-hibernate.sh off" with administrator privileges'
+```
+效果：`hibernatemode 0` + `standby 0` ⇒ 纯 Deep Idle（~5 W），macOS 会自行删掉 `sleepimage`。
+
+### 6. 若将来仍要试档 B：**先装 `RTCMemoryFixup`，顺序不能反**
+
+零成本先例（三条独立来源，详见诊断技能）：
+- 远景论坛《关于HP电脑POST错误的问题解决方案》—— **HP 机、症状一字不差**，处方 = `RTCMemoryFixup.kext` + boot-arg **`rtcfx_exclude=00-FF`**。
+- Dortania《Fixing RTC write issues》—— 用 `rtcfx_exclude` 定位坏区（先 `00-FF` 证实，再二分缩小），最终用固件级 `AppleRtcRam=true` + `rtc-blacklist`（GUID `4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102`，Data 类型；**把起止地址逐字节写出**：范围 `85-89` ⇒ `85 86 87 88 89`）。
+- Lenovo T530 黑苹果休眠修复（5T33Z0 issue #48）—— **`HibernationFixup` + `RTCMemoryFixup` + `rtcfx_exclude=80-AB` 是休眠修好的必需项**。
+
+⇒ 在这三样到位之前再测档 B，**大概率还是白付一次固件损伤**。
+
+### 7. 本次附带须确认
+
+| 项 | 说明 |
+|---|---|
+| **BIOS 是否被载入出厂默认** | 005 常伴随 `Load Setup Defaults`。按 F10 核 `Advanced → Thunderbolt Options` 是否仍为 SL1（基线见 `BIOS_Thunderbolt_Recommendation.md`），启动顺序是否仍以 OpenCore 为先。本机 BIOS 本就应保持默认（雷电已封板）⇒ 预期影响有限 |
+| `sleepimage` | 已被本次启动截回 1 GiB（mtime `Jan 1 08:01:26 2019`）—— 既然回 mode 0，**无需处理**，macOS 会删 |
+| EFI | **一字未改**（本轮未动 `config.plist`）⇒ 无需同步 |
+
 
