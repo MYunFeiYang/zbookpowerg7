@@ -1,0 +1,72 @@
+# 档 B（hibernatemode 25）测试前基线 —— 2026-09-16
+# 生成时间: 2026-09-16 11:13:04 +0800
+
+## uptime
+11:13  up 8 mins, 2 users, load averages: 20.91 130.10 99.24
+
+## kext 加载
+   55   15 0xffffff80041a9000 0x30000    0x30000    as.vit9696.Lilu (1.7.3) 38ACFA46-F60C-3795-B868-EF32F98C78ED <9 7 6 3 2 1>
+   56    0 0xffffff80041d9000 0xf000     0xf000     as.lvs1974.HibernationFixup (1.5.4) 11763059-4512-3EC9-93B2-B65986BDDCFB <55 9 7 6 3 2 1>
+
+## pmset 关键项（custom，两段同值则单列）
+ standbydelayhigh     300
+ standby              1
+ standbydelaylow      300
+ hibernatemode        25
+ powernap             0
+ highstandbythreshold 50
+ tcpkeepalive         0
+ standbydelayhigh     300
+ standbydelaylow      300
+ standby              1
+ hibernatemode        25
+ powernap             0
+ highstandbythreshold 50
+ womp                 0
+ tcpkeepalive         0
+
+## 电源
+Now drawing from 'AC Power'
+ -InternalBattery-0 (id=7405667)	100%; charged; 0:00 remaining present: true
+
+## 休眠计数（历史真实次数）
+kern.hibernatecount = 0
+kern.standbycount   = 
+
+## sleepimage
+-rw------T  1 root  wheel  1073741824 Sep 16 11:05 /var/vm/sleepimage
+  大小=1073741824 字节  修改时间=2026-09-16 11:05:24
+  物理内存 = 17179869184 字节
+
+## NVRAM 休眠密钥（休眠前应为空，休眠后应出现）
+nvram: Error getting variable - '7C436110-AB2A-4BBB-A880-FE41995C9F82:IOHibernateRTCVariables': (iokit/common) data was not found
+
+## NVRAM 缓存文件
+  /nvram.plist 不存在
+
+## 谁在阻止睡眠（PreventSystemSleep 必须为 0）
+Assertion status system-wide:
+   BackgroundTask                 1
+   ApplePushServiceTask           0
+   UserIsActive                   1
+   PreventUserIdleDisplaySleep    0
+   SoftwareUpdateTask             0
+   PreventSystemSleep             0
+   ExternalMedia                  0
+   PreventUserIdleSystemSleep     1
+   NetworkClientActive            0
+Listed by owning process:
+
+## 近期 sleep/wake 事件（尾 12 行）
+2026-09-16 11:09:53 +0800 Assertions          	PID 186(coreaudiod) Released PreventUserIdleSystemSleep "com.apple.audio.context797.preventuseridlesleep" 00:01:38  id:0x0x100008604 [System: PrevIdle DeclUser BGTask kDisp]          
+2026-09-16 11:09:53 +0800 Assertions          	PID 186(coreaudiod) Released PreventUserIdleDisplaySleep "com.apple.audio.context798.preventuseridledisplaysleep" 00:01:38  id:0x0x500008607 [System: PrevIdle DeclUser BGTask kDisp]          
+2026-09-16 11:09:53 +0800 Assertions          	PID 186(coreaudiod) Released PreventUserIdleSystemSleep "com.apple.audio.context798.preventuseridlesleep" 00:01:38  id:0x0x100008606 [System: PrevIdle DeclUser BGTask kDisp]          
+2026-09-16 11:09:53 +0800 Assertions          	PID 186(coreaudiod) Released PreventUserIdleDisplaySleep "com.apple.audio.context799.preventuseridledisplaysleep" 00:01:38  id:0x0x500008609 [System: PrevIdle DeclUser BGTask kDisp]          
+2026-09-16 11:09:53 +0800 Assertions          	PID 186(coreaudiod) Released PreventUserIdleSystemSleep "com.apple.audio.context799.preventuseridlesleep" 00:01:38  id:0x0x100008608 [System: PrevIdle DeclUser BGTask kDisp]          
+2026-09-16 11:09:53 +0800 Assertions          	PID 186(coreaudiod) Released PreventUserIdleDisplaySleep "com.apple.audio.context800.preventuseridledisplaysleep" 00:01:38  id:0x0x50000860b [System: PrevIdle DeclUser BGTask kDisp]          
+2026-09-16 11:09:53 +0800 Assertions          	PID 186(coreaudiod) Released PreventUserIdleSystemSleep "com.apple.audio.context800.preventuseridlesleep" 00:01:38  id:0x0x10000860a [System: PrevIdle DeclUser BGTask kDisp]          
+   PreventUserIdleDisplaySleep    0
+   PreventSystemSleep             0
+   PreventUserIdleSystemSleep     1
+   pid 673(Electron): [0x0000004800018209] 00:06:51 NoIdleSleepAssertion named: "Electron"  
+   pid 669(sharingd): [0x0000018800018f56] 00:01:31 PreventUserIdleSystemSleep named: "Handoff"  

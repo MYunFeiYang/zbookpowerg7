@@ -1,0 +1,88 @@
+# 档 B 重测前基线  2026-09-16 12:50:18 +0800
+
+## 系统
+12:50  up 22 mins, 2 users, load averages: 7.26 11.27 21.88
+date: Wed Sep 16 12:50:18 CST 2026
+kern.boottime: { sec = 1789532884, usec = 623748 } Wed Sep 16 12:28:04 2026
+
+## 休眠文件（修复后）
+size=17179869184 bytes  blocks=33554560 (x512)  mode=-rw------T  flags=-  owner=root:wheel  mtime=Sep 16 12:44:10 2026
+hw.memsize = 17179869184
+-rw------T 1 root wheel 17179869184 2026-09-16 12:44 /var/vm/sleepimage
+ 16G	/var/vm/sleepimage
+df /:
+Filesystem        Size    Used   Avail Capacity iused ifree %iused  Mounted on
+/dev/disk1s1s1   303Gi    13Gi   173Gi     8%    462k  1.8G    0%   /
+
+## IOPMrootDomain 休眠属性
+"Hibernate File" = "/var/vm/sleepimage"
+"Hibernate Mode" = 25
+"Hibernate File Min" = 1073741824
+
+## pmset
+Battery Power:
+ lowpowermode         1
+ standbydelayhigh     300
+ proximitywake        0
+ standby              1
+ standbydelaylow      300
+ ttyskeepawake        1
+ hibernatemode        25
+ powernap             0
+ highstandbythreshold 50
+ hibernatefile        /var/vm/sleepimage
+ displaysleep         15
+ sleep                1
+ tcpkeepalive         0
+ halfdim              1
+ lessbright           1
+ disksleep            0
+AC Power:
+ lowpowermode         0
+ standbydelayhigh     300
+ standbydelaylow      300
+ standby              1
+ proximitywake        0
+ ttyskeepawake        1
+ hibernatemode        25
+ powernap             0
+ highstandbythreshold 50
+ hibernatefile        /var/vm/sleepimage
+ displaysleep         15
+ womp                 0
+ networkoversleep     0
+ sleep                1
+ tcpkeepalive         0
+ halfdim              1
+ disksleep            0
+
+## kern.hibernate* (冷启动全 0 属正常：这组值由 booter 在恢复休眠时填充)
+kern.hibernatefile: 
+kern.hibernatemode: 0
+kern.hibernategraphicsready: 0
+kern.hibernatewakenotification: 0
+kern.hibernatelockscreenready: 0
+kern.hibernatehidready: 0
+kern.hibernatecount: 0
+
+## kext
+   55   15 0xffffff80041a9000 0x30000    0x30000    as.vit9696.Lilu (1.7.3) 38ACFA46-F60C-3795-B868-EF32F98C78ED <9 7 6 3 2 1>
+   56    0 0xffffff80041d9000 0xf000     0xf000     as.lvs1974.HibernationFixup (1.5.4) 11763059-4512-3EC9-93B2-B65986BDDCFB <55 9 7 6 3 2 1>
+   57    3 0xffffff80041e8000 0x19000    0x19000    as.vit9696.VirtualSMC (1.3.8) FFE98119-15EB-34E0-AA96-4619EA207759 <55 17 9 7 6 3 1>
+   59    0 0xffffff8004224000 0x18000    0x18000    ru.usrsse2.SMCBatteryManager (1.3.8) 5D68FBB6-EDC9-3C2B-8A25-ED3F0E50D0A6 <58 57 55 17 9 7 6 3 1>
+
+## NVRAM 关键变量
+boot-args	-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -wegnoegpu -amfipassbeta -lilubetaall alctcsel=1 revpatch=sbvmm
+nvram -p 全部键名:
+ForceDisplayRotationInEFI GPUROM LocationServicesEnabled PSFU_STATUS SystemAudioVolume auto-boot backlight-level bluetoothExternalDongleFailed bluetoothInternalControllerInfo boot-args csr-active-config efi-backup-boot-device efi-backup-boot-device-data efi-boot-device efi-boot-device-data multiupdater-retry-limits multiupdater-state ota-updateType prev-lang:kbd run-efi-updater supervised 
+
+## pmset log 尾部（睡觉记录）
+Sleep/Wakes since boot:0   Dark Wake Count in this sleep cycle:0
+Sleep/Wakes since boot at 2026-09-16 10:01:45 +0800 :0   Dark Wake Count in this sleep cycle:0
+2026-09-16 10:09:39 +0800 Sleep               	Entering Sleep state due to 'Software Sleep pid=174':TCPKeepAlive=disabled Using AC (Charge:100%) 338 secs  
+2026-09-16 10:15:17 +0800 Wake                	Wake from Deep Idle [CDNVA] : due to LPCB XDCI/UserActivity Assertion Using AC (Charge:100%)           
+Sleep/Wakes since boot at 2026-09-16 10:01:45 +0800 :1   Dark Wake Count in this sleep cycle:0
+Sleep/Wakes since boot at 2026-09-16 11:05:13 +0800 :0   Dark Wake Count in this sleep cycle:0
+2026-09-16 11:16:24 +0800 Sleep               	Entering Sleep state due to 'Software Sleep pid=1915':TCPKeepAlive=disabled Using AC (Charge:100%)           
+Sleep/Wakes since boot at 2026-09-16 11:05:13 +0800 :0   Dark Wake Count in this sleep cycle:0
+2026-09-16 12:04:17 +0800 Sleep               	Entering Sleep state due to 'Software Sleep pid=2439':TCPKeepAlive=disabled Using AC (Charge:100%)           
