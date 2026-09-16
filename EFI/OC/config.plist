@@ -1540,7 +1540,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -wegnoegpu -amfipassbeta -lilubetaall alctcsel=1 revpatch=sbvmm rtcfx_exclude=80-FF</string>
+				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -wegnoegpu -amfipassbeta -lilubetaall alctcsel=1 revpatch=sbvmm rtcfx_exclude=80-FF -rtcfxdbg</string>
 				<key>csr-active-config</key>
 				<data>
 				/w8AAA==
