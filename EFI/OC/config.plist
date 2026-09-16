@@ -1353,7 +1353,7 @@
 			<key>ConsoleAttributes</key>
 			<integer>0</integer>
 			<key>HibernateMode</key>
-			<string>None</string>
+			<string>NVRAM</string>
 			<key>HibernateSkipsPicker</key>
 			<true/>
 			<key>HideAuxiliary</key>
@@ -1406,6 +1406,8 @@
 		<array/>
 		<key>Security</key>
 		<dict>
+			<key>AllowNvramReset</key>
+			<true/>
 			<key>AllowSetDefault</key>
 			<true/>
 			<key>ApECID</key>
