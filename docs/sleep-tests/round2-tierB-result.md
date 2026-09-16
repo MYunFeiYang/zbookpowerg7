@@ -747,4 +747,75 @@ boot-args 追加 **`-rtcfxdbg`**（已同步 ESP）。原因：RTCMemoryFixup �
 
 > ⚠️ 读内核日志的两个坑（本机实测）：`/var/log/system.log` **不含内核日志**（只有 syslogd/用户进程，且只有几百字节）；`log show` 被沙箱禁。**唯一可用通道 = 提权跑 `dmesg`**（`osascript … with administrator privileges`），而内核环缓冲很小 ⇒ **重启后要尽快查**。
 
+---
+
+## 十六、重启后补丁生效验证：**三判据全过** + 三处事实修正（2026-09-16 13:59–14:20）
+
+重启时间 13:59:31（**正常**重启：时钟正确、`ShutdownCause` 正常、无 fsck 强跑）。
+
+### 1. 三判据（全部通过）
+
+| # | 判据 | 命令 | 结果 |
+|---|---|---|---|
+| ① | kext 已加载 | `kmutil showloaded` | ✅ `as.lvs1974.RTCMemoryFixup (1.0.7)`，index 78，依赖链含 Lilu `1.7.3` |
+| ② | boot-args 已生效 | `nvram boot-args` + 内核 `Boot args:` 日志 | ✅ 含 `rtcfx_exclude=80-FF -rtcfxdbg` |
+| ③ | **hook 真的挂上了** | `ioreg` 类实例计数 | ✅ **`RTCMemoryFixup = 1`**（§十六.2） |
+
+### 2. ★ 新发现的可复用验证手段：IOKit 类实例计数表
+
+`ioreg` 根节点的 `IOKitDiagnostics` 属性里藏着一张**每类实例计数表**——它直接回答"某 kext 的驱动有没有被实例化"，而实例化就等价于 `probe → start → hookProvider` 全部跑过：
+
+```bash
+ioreg -d 0 -l -w0 > /tmp/ioreg-root.txt     # 只需根节点（-d 0）
+# 该文件里 "IOKitDiagnostics" → "Classes"={ "类名"=实例数, ... }，1551 个类
+```
+
+本机实测对照：
+
+| 类 | 计数 | 说明 |
+|---|---|---|
+| **`RTCMemoryFixup`** | **1** | **驱动实例存在 ⇒ 已匹配 `PNP0B00` 并执行了 hook** |
+| `AppleRTC` | 1 | RTC 仍归 AppleRTC（该 kext 故意让 `start()` 返回 false 让位——这正是它的设计） |
+| `IORTC` | 1 | — |
+| `ECEnabler`／`HibernationFixup`／`VirtualSMC`／`CpuTscSync` | 各 1 | 对照组，均正常 |
+| `IOACPIPlatformDevice` | 232 | provider 类实例总数 |
+
+**为什么这足以定论**：`hookProvider()` 的两条"安装失败"路径都是 `SYSLOG`（RELEASE 构建里必然编译进去、无条件输出），实测**一条都没出现**；而 `routeVirtual` 返回 false 只有两种可能——`obj`/`vt` 为空，或"该函数已经是我们装的"。实例存在 ⇒ `obj`/`vt` 非空 ⇒ 只会落在"装好了"或"本来就装好"。⇒ **hook 已生效，不是"应该没问题"。**
+
+> ⚠️ 诚实记录一处残留疑点：`readAndApplyRtcBlacklistFromNvram()` 里那条 `failed to load rtc-blacklist config from nvram`（在 `debugEnabled` 为真时**本该**打印）**没出现**。最可能是 `NVStorage::read` 对缺失键返回**空 buffer 而非 null**，于是走了成功分支（成功分支是 DBGLOG，RELEASE 里被编译掉）；次可能是 `debugEnabled` 为假。**不影响上面结论**——挂钩失败那条是 SYSLOG，且实例计数独立成立。
+
+### 3. 三处事实修正（均为本轮实测/源码级，其中两条推翻了本报告早先的写法）
+
+**修正 ①：`-rtcfxdbg` 对 RELEASE 构建无效。** Lilu 的日志宏在**编译期**就分叉：
+
+```c
+#ifdef DEBUG
+#define DBGLOG(module, str, ...)  /* 真打日志 */
+#else
+#define DBGLOG(module, str, ...) do { } while (0)   /* 整条被删 */
+#endif
+```
+
+实测字符串对照：**RELEASE 二进制里 9 条 SYSLOG 全在、DBGLOG 字符串 0 条**；DEBUG 二进制里则有 `RTCMemoryFixup::start()`、`hookProvider for ioRead8 was successful` 等。⇒ §十五 里"加了 `-rtcfxdbg` 就能用 `dmesg` 看到 `was successful`"**是错的**：RELEASE 版永远只有失败日志。参数保留（无害），但要知道它是惰性的；真要成功日志须换 **DEBUG 构建**（该 kext 无 `PANIC` 调用，DBG 版行为等价、只多打日志）。
+
+**修正 ②：启动期内核日志**不能**用 `dmesg` 读。** 沙箱里 `log show` 直连被禁，但经 `osascript … with administrator privileges` **可以跑通**（本轮实测取到 255 MB 统一日志，含完整启动期内核消息与 `(AppleRTC) RTC: setGMTTimeOfDay` 这类 kext 日志）。而 `dmesg` 的环缓冲只有 **128 KB**，本机被 IGPU 日志（`IG:: get_gstate` 约 14 万条/12 分钟）刷爆 ⇒ **实测保留窗口仅 ≈ 开机后 207–209 秒**，启动期日志早已被冲掉。⇒ 查启动期日志必须用**提权 `log show --start/--last`**；`dmesg` 只适合"最近两三分钟"。
+
+**修正 ③：`Hibernate File Min` 不单纯随档位变。** 本轮 mode 25 + `standby 0` 时 `Hibernate File Min` = **8 GiB**（不是 §十三表里写的 1 GiB）⇒ "mode25→1 GiB / mode0→8 GiB"的说法不成立，疑与 `standby` 取值相关，**成因待查**（不为它单独做实验）。**不影响尺寸线已排除的结论。**
+
+### 4. 本轮测试的变量唯一化
+
+| 条件 | 上轮第 3 次（13:11） | 本轮 |
+|---|---|---|
+| `sleepimage` | 16 GiB（实分配） | 8 GiB（macOS 自己定的值，未人为干预） |
+| RTC 写保护 | ✗ 无 | ✅ **已挂（本 § 已证）** |
+| 档位 | 25 | 25 |
+| **唯一变量** | — | **只有"RTC 写保护"这一个** |
+
+⇒ 成功 = 修复确效；失败 = "禁写 RTC 第二 bank + 变量转存 NVRAM"不足，**且能同时排除"尺寸"和"补丁没生效"两种解释** ⇒ 直接上固件层（`AppleRtcRam=true` + `rtc-blacklist`），再不行才是硬件侧（CMOS 纽扣电池，HP 官方判据）。
+
+### 5. 判据（本轮六项，比上轮多两项）
+
+上轮四项：`hibernatecount` 0→1 ／ `sleepimage` mtime 变新 ／ NVRAM 出现 `IOHibernateRTCVariables` ／ 日志有 `Wake from`。
+本轮新增：**⑥ 是否出现 `Entering Hibernate`**（三次失败全都**没走到**这一步）；**⑦ 时钟是否存活 + 有无 HP POST 005**（RTC 是否再被写坏的最直接判据）。
+
 
