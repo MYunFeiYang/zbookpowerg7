@@ -459,4 +459,130 @@ osascript -e 'do shell script "bash /Volumes/Common/workplace/zbookpowerg7/EFI/s
 | `sleepimage` | 已被本次启动截回 1 GiB（mtime `Jan 1 08:01:26 2019`）—— 既然回 mode 0，**无需处理**，macOS 会删 |
 | EFI | **一字未改**（本轮未动 `config.plist`）⇒ 无需同步 |
 
+---
+
+## 十三、「RTC 写坏了修不了？」—— **能修，但先看清一个结构性死结**（2026-09-16 13:27）
+
+> 提问背景：用户见 HP POST 报 `Real-Time Clock Power Loss (005)` 后问「RTC 写坏了修不了？」。
+> 本节结论：**不是修不了，而是"修 RTC"与"档 B 可用"可能互斥**；且本机的三层防线只开了最窄的一层。
+
+### 1. 先分开两件事，别混为一谈
+
+| | 内容 | 性质 |
+|---|---|---|
+| **① RTC 被写坏** | 固件报 005 → 载入默认 → 时间回 `2019-01-01 08:00` → macOS ~35 s 网络校正自愈 | **可恢复**。⚠️ **不是芯片损坏**——没有"修不了"这回事（HP 官方说的 CMOS 电池也是另一种成因，见 §十二.4） |
+| **② 别再被写坏** | 这才是补丁（`RTCMemoryFixup` / `AppleRtcRam`）要解决的事 | 需要配置，且**有前提**（见下） |
+
+### 2. 官方三层菜单 —— 本机只开了最窄的一层
+
+证据：OpenCore `Configuration.tex`（master）原文。
+
+| 层 | 手段 | 覆盖范围 | 本机现状 |
+|---|---|---|---|
+| 内核 · 窄 | `Kernel → Quirks → DisableRtcChecksum` | **仅 `0x58`-`0x59` 主校验和**，仅内核运行时 | ✅ `true` |
+| 内核 · 宽 | `RTCMemoryFixup.kext` + boot-arg `rtcfx_exclude=` | 任意指定 offset（可全排） | ❌ **未装**（`Kexts/` 无此 kext，config 无此 key） |
+| 固件阶段 | `UEFI → ProtocolOverrides → AppleRtcRam = true` + `4D1FDA02-…:rtc-blacklist` | **固件阶段**（macOS bootloader 等）的 RTC I/O | ❌ `AppleRtcRam = false`，无 `rtc-blacklist` |
+
+OpenCore 原文（把三层的关系直接写在 Note 里）：
+
+```
+DisableRtcChecksum
+  Description: Disables primary checksum (0x58-0x59) writing in AppleRTC.
+  Note 1: This option will not protect other areas from being overwritten,
+          see RTCMemoryFixup kernel extension if this is desired.
+  Note 2: This option will not protect areas from being overwritten at
+          firmware stage (e.g. macOS bootloader), see AppleRtcRam protocol
+          description if this is desired.
+```
+
+```
+AppleRtcRam
+  Description: Replaces the Apple RTC RAM protocol with a builtin version.
+  Note: Builtin version of Apple RTC RAM protocol may filter out I/O attempts
+        to certain RTC memory addresses. The list of addresses can be specified
+        in 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:rtc-blacklist variable as a
+        data array.
+```
+
+⇒ **官方文档自己就承认 `DisableRtcChecksum` 只管一个点**。所以本机「开了却照样被写坏」**完全符合预期**，**不能据此推断后两层也无效**。**"没试过" ≠ "修不了"。**
+
+> 📌 修正上一轮的一处表述：`AppleRtcRam` 并不是"Dortania 官方流程的一环"——Dortania《Fixing RTC write issues》只讲了 `RTCMemoryFixup` + `rtc-blacklist` 这条**方法论**；`AppleRtcRam` 是实现固件层屏蔽的**OpenCore 侧手段**，由 OC 文档定义。两者是"目标 / 手段"，不是同一份清单。
+
+### 3. ★ 决定性死结：`0x80-0xAB` 正是**休眠自己的存储区**
+
+`RTCMemoryFixup` 官方 README 原文（这是本节最重要的一句）：
+
+> Offsets from **0x80 to 0xAB** are used to store some hibernation information
+> (**IOHibernateRTCVariables**). ***If any offset in this range causes a conflict,
+> you can exclude it, but hibernation won't work.***
+
+把它和本机的故障机制叠起来看：
+
+```
+macOS 要写休眠状态 → IOHibernateRTCVariables → CMOS 0x80–0xAB
+HP 的固件扩展 CMOS（含 BIOS 设置 + 校验和）也在这片 0x80–0xFF
+        ⇒ 写穿 ⇒ 固件校验失败 ⇒ 报 005 + 载入出厂默认 + 时间归零
+```
+
+**因此坏区位置决定命运：**
+
+| 坏区落点 | 能不能排除 | 结果 |
+|---|---|---|
+| **`0xAC`–`0xFF`** | 可以（休眠信息不在这一段） | ✅ **有解** —— 精确排除后档 B 可用。README 作者本人只坏了 `B2` 一个点，他成功了 |
+| **`0x80`–`0xAB`** | 排除它 ⇒ **`IOHibernateRTCVariables` 也写不进去 ⇒ 休眠直接不工作** | ❌ **死结**：要么休眠废，要么 RTC 继续坏 —— **二选一** |
+
+⚠️ **所以远景论坛那条"HP 处方（`rtcfx_exclude=00-FF`）"只能当"证实手段"，不能当"治疗方案"**：`00-FF` 全排除在原理上必然让休眠失效（把休眠自己的存储区一起排掉了）。它的正确用法是**第一步的证伪/证实**，之后必须二分缩小到 `0xAC` 以上才有实用价值。
+
+**猜落在哪没用，只能二分实测**（Dortania 流程）：
+
+```
+rtcfx_exclude=00-FF          → 重启 + 测一次睡眠：还坏 ⇒ 不是内核层 RTC 写入（转固件层 AppleRtcRam）
+                                                     不坏了 ⇒ 坏区确在 RTC ⇒ 进二分
+rtcfx_exclude=00-7F / 80-FF  → 二分
+rtcfx_exclude=80-BF / C0-FF  → 继续二分……
+最终落到最小范围 → 换成固件级 rtc-blacklist（可移除 boot-arg）
+```
+
+**每一步都要重启 + 睡一次验证，而每一次失败都可能再付一次"RTC 写坏 + BIOS 载入默认"。** 这是本方案的真实成本，不是"点几下配置"。
+
+### 4. 顺手核到的两个可用前提
+
+| 项 | 状态 |
+|---|---|
+| `Misc → Boot → HibernateMode` | = `NVRAM` ✅（档 B 前置，已满足） |
+| `Misc → Security → AllowNvramReset` | = `true` ✅（Reset NVRAM 逃生口） |
+| `NVRAM → WriteFlash` | = `true` ✅（运行时写入会落盘） |
+| `NVRAM → Delete` 段 | **已含 `4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102`（空列表）** ✅ —— Dortania 要求的"必须同时配 Delete"已就位，将来只需在 `Add` 里补变量本身 |
+
+### 5. 本轮动作：**已回滚档 B**（隐患掐断）
+
+⚠️ 核查时发现 **`hibernatemode` 仍是 `25`**（§十二.5 建议的关档尚未执行）。这意味着**只要它自己睡一次，就会再坏一次 RTC**。已执行：
+
+```bash
+bash EFI/scripts/pmset-hibernate.sh off
+```
+
+结果：`Hibernate Mode: 25 → 0`、`hibernatemode 0`、`standby 0` ⇒ 回纯 Deep Idle（~5 W）。**随时可用 `instant` 改回 25。**
+
+### 6. 一次修正：`Hibernate File Min` **不是恒定的，随档位走**
+
+同一次 `ioreg` 采样前后对比（本轮实测）：
+
+| `hibernatemode` | `Hibernate File Min` |
+|---|---|
+| `25` | `1073741824`（1 GiB = RAM/16） |
+| `0` | `8589934592`（8 GiB = RAM/2） |
+
+⇒ 修正本报告 §三 / §十一 及诊断技能里「Min 恒为 1 GiB」的表述：**1 GiB 是 macOS 对 `mode 25` 的预期值，随档位变化**，并非"SAMPLE 建歪了"。
+⚠️ 但这**不影响 §十二 的定论**——第三次测试是在 16 GiB **实分配**条件下失败的，尺寸线仍是被**实测**排除的，与本条无关。
+
+### 7. 结论
+
+> **不是"修不了"，而是"不值得为它冒风险"。**
+
+- 「修 RTC」的唯一收益 = 让档 B 能用。而档 B 在本机**插电场景净负收益**（年省 ≈ 26 元 vs 每次写 16 GiB + 唤醒慢 10–30 s，见 §十一.8）。
+- **"不走那条路"本身就是最彻底的修**：`hibernatemode 0` 之后 macOS 不再执行休眠流程、不再碰 `0x80–0xAB` ⇒ **RTC 永不再被写坏**。零成本、零风险、立即生效。
+- 真正需要档 B 的场景（出差：电池 + 无外接设备/网络/显示器），由档 A 的 `standby` 原生链路覆盖。
+- **将来若确要重开**：按 §十三.3 的二分流程走，**并且做好"可能撞上 `0x80-0xAB` 死结后必须放弃"的心理准备**。上车前先把 `RTCMemoryFixup.kext` 和 `rtcfx_exclude=00-FF` 备齐 —— 顺序不能反。
+
 
