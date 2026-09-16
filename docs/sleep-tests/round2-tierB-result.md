@@ -585,4 +585,88 @@ bash EFI/scripts/pmset-hibernate.sh off
 - 真正需要档 B 的场景（出差：电池 + 无外接设备/网络/显示器），由档 A 的 `standby` 原生链路覆盖。
 - **将来若确要重开**：按 §十三.3 的二分流程走，**并且做好"可能撞上 `0x80-0xAB` 死结后必须放弃"的心理准备**。上车前先把 `RTCMemoryFixup.kext` 和 `rtcfx_exclude=00-FF` 备齐 —— 顺序不能反。
 
+---
+
+## 十四、修复执行：装 `RTCMemoryFixup` + 禁写 RTC 第二 bank（2026-09-16 13:40）
+
+> 用户指令：「必须修，除非硬件物理上不支持」。本节为执行记录。
+> ⚠️ **本节推翻 §十三.3 的"死结"结论** —— 见下。
+
+### 1. ★ 关键发现：官方设计里本来就有这一手
+
+`HibernationFixup` 官方 README **首段**（此前读得不细，这次逐字看）：
+
+```
+An open source kernel extension providing a sync between RTC variables and NVRAM.
+By design the mach kernel encrypts hibernate sleepimage and writes the encryption key to
+variable "IOHibernateRTCVariables" in the system registry (PMRootDomain).
+Somehow this value has to be written into RTC (or SMC) in order the boot.efi could read it.
+But in case if you have to limit your RTC memory to 1 bank (128 bytes), it doesn't work:
+there are no any variables in SMC/NVRAM/RTC (actually FakeSMC).
+
+Fortunately, boot.efi can read key "IOHibernateRTCVariables" from NVRAM!
+This kext detects entering into "hibernate" power state, reads variable
+IOHibernateRTCVariables from the system registry and writes it to NVRAM.
+```
+
+⇒ **`HibernationFixup` 的本质就是一个「RTC 变量 ↔ NVRAM」同步器**，它存在的**唯一理由**就是服务"RTC 不能写"的机器。
+⇒ 而「**limit your RTC memory to 1 bank (128 bytes)**」这个前提，**正是靠 `RTCMemoryFixup` 禁写第二 bank（`0x80`–`0xFF`）来实现的**。
+
+### 2. ★ 修正 §十三.3：那不是死结，是**配套设计**
+
+| | §十三.3 的旧结论 | 实际（本轮查证） |
+|---|---|---|
+| `RTCMemoryFixup` **单独**排除 `0x80-0xAB` | 休眠不工作 ⇒ 判定"死结" | ✅ 对，但**这只是单独用它的情况** |
+| `RTCMemoryFixup` **配合** `HibernationFixup` | （未考虑） | ❌ **不是死结** —— 变量改走 NVRAM，boot.efi 从 NVRAM 读 ⇒ **休眠照常工作** |
+
+⇒ **两个 kext 是配套的**：一个负责"别写 RTC"，一个负责"变量换个地方存"。
+这也解释了 T530 先例的修复清单为什么**两个 kext 都必须出现**，以及为什么 `rtcfx_exclude=80-AB` 在那里是**必需项**而不是禁忌。
+⇒ **§十三.3 把它判成"二选一死结"是错的** —— 错在只看了 `RTCMemoryFixup` 一家的 README，没交叉核 `HibernationFixup`。
+
+### 3. 本次改动（已提交 `4ceea3a`）
+
+| # | 项目 | 内容 |
+|---|---|---|
+| 1 | **新增** `EFI/OC/Kexts/RTCMemoryFixup.kext` | acidanthera 官方 **RELEASE 1.0.7**（Lilu 插件；`as.lvs1974.RTCMemoryFixup`；Mach-O x86_64；sha256 `1ced8729…`） |
+| 2 | `Kernel → Add` | 新增该条目，`Enabled=true`，插在 `Lilu.kext` → `HibernationFixup.kext` **之后**（Lilu 插件必须在 Lilu 之后加载） |
+| 3 | `NVRAM → Add → 7C436110-…:boot-args` | 追加 **`rtcfx_exclude=80-FF`** |
+
+**为什么是 `80-FF` 而不是 `80-AB`**：`80-AB` 是 macOS 自己会写的区间；`80-FF` 是整个第二 bank。HP 的固件扩展 CMOS（含校验和）**延伸到 `0xFF`**，禁整段更保险，且与 HibernationFixup README 的"1 bank"描述完全一致。第一 bank（`0x00`–`0x7F`）保持可写 —— **时钟 `0x00`-`0x0D` 必须能写**（否则时间无法回写硬件 RTC），`0x58`-`0x59` 另有 `DisableRtcChecksum` 兜着。
+
+### 4. 前置条件：逐项核对，**全部已满足**
+
+| 前置 | 值 | 为什么需要 |
+|---|---|---|
+| `Booter → Quirks → DisableVariableWrite` | **`False`** ✅ | 为 `true` 则 macOS 不能写 NVRAM ⇒ HibernationFixup 送不进休眠变量 |
+| `NVRAM → WriteFlash` | **`True`** ✅ | 否则运行时写入不落盘 |
+| `Misc → Boot → HibernateMode` | **`NVRAM`** ✅ | OpenCore 从 NVRAM 探测休眠状态，与 kext 的通路一致 |
+| `Misc → Security → AllowNvramReset` | **`true`** ✅ | Reset NVRAM 逃生口 |
+| `Kernel → Add` 含 `HibernationFixup.kext` | **`true`** ✅ | 配套的另一半（`4ceea3a` 之前就在） |
+| `plutil -lint` | **OK** ✅ | 语法校验通过 |
+
+### 5. 为什么预期能成（因果链）
+
+```
+点睡眠 → macOS 进入休眠流程
+        ├─ 写休眠变量到 RTC 0x80–0xAB
+        │     └─ RTCMemoryFixup 拦截（rtcfx_exclude=80-FF）⇒ 写不进去
+        │           ├─ RTC 第二 bank 保持原样 ⇒★ HP 固件区不再被破坏 ⇒ 不再报 005 / 不再载入默认
+        │           └─ HibernationFixup 把同一变量写进 NVRAM ⇒ boot.efi 仍能读到 ⇒ 恢复链路不断
+        └─ 写 sleepimage（16 GiB，已修）
+→ 断内存供电 → 按电源键 → boot.efi 从 NVRAM 取休眠变量 → 恢复原会话
+```
+
+### 6. ⚠️ 生效步骤（顺序不能乱）
+
+1. **同步 EFI**（工作区 → ESP，FreeFileSync 手动点「开始」；自动触发有滞后）→ 两边 `shasum -a 256` 一致。
+2. **正常重启**（不要长按）。
+3. **重启后先验证补丁真的生效**（`kmutil showloaded` 有 RTCMemoryFixup、`nvram boot-args` 含 `rtcfx_exclude=80-FF`），**确认后才开档位** —— 顺序反了等于在无保护状态下再写一次 RTC。
+4. 验证通过 → `EFI/scripts/pmset-hibernate.sh instant` 开档 25 → 点睡眠 → 等彻底断电 → 按电源键。
+
+### 7. 若仍失败
+
+那说明坏区**不是**"macOS 写第二 bank"造成的，需转向：
+- 固件阶段（boot.efi 写 RTC）⇒ 上 `AppleRtcRam=true` + `rtc-blacklist`（GUID `4D1FDA02-…`，本机 `NVRAM/Delete` 已含该 GUID）
+- 或硬件侧（CMOS 纽扣电池）⇒ 纯正常关机数日观察 005 是否复发
+
 
