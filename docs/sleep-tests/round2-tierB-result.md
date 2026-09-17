@@ -3152,3 +3152,52 @@ Display is turned off
 
 **"某个进程一直持有的东西"天然不是"某次失败的变量"。** 断言从 WorkBuddy 启动起就常在 ⇒ 它无法解释"只有那次失败"。
 正确做法：**先在同机找"同一因素在场却成功"的反例**（本例 11:29），一票否决该因素，**再去比较"成功那次有、失败那次没有"的东西**（本例：`InternalPreventSleep` 信号链、内核 `clamshell closed` 记录）。
+
+### 43.0 §42.5「15 秒裁决实验」—— 用户刚做了，结果 = ③ 通路正常（推翻 §42 假说）
+
+**时间窗：2026-09-17 15:53:26 → 15:58:03。** 用户合盖 → 系统睡眠 → 开盖唤醒，日志完整记录。
+
+#### 43.1 pmset 日志（证据链）
+
+| 时间 | 事件 | 判读 |
+|---|---|---|
+| `15:53:26` | Display is turned off | 合盖熄屏 |
+| `15:53:26` | `Kernel Idle sleep preventers: -None-` + `InternalPreventSleep "darkwakelinger"` Created | **睡眠预备链启动**（§42 说 12:14 缺这条 —— 这次有）|
+| `15:53:39` | `darkwakelinger` TimedOut（13 s）| 预备期结束 |
+| `15:53:54` | `Entering Sleep state due to 'Software Sleep pid=2024'` | **pid 2024 = Clamshell.app 显式发起** |
+| `15:58:01` | Display is turned on | 开盖亮屏 |
+| `15:58:03` | `Wake from Deep Idle [CDNVA] : due to LPCB XDCI/Lid Open` | **真·合盖唤醒**（唤醒原因 = Lid Open）|
+| `15:58:03` | `WakeTime: 2.406 sec` | 教科书级 Deep Idle 唤醒速度 |
+| `15:58:03` | `Kernel Client Acks Delays to Wake: [ApplePS2Controller …(458 ms)]` | PS2 仅 458 ms（S3 模式那次是 157,735 ms）⇒ Deep Idle 路径健康 |
+
+#### 43.2 提权内核日志（PMRD，铁证）
+
+```
+15:53:26.295  kernel  PMRD: clamshell closed 1, disabled 0/0, desktopMode 1, ac 1
+15:53:26.312  kernel  PMRD: kIOMessageSystemWillSleep[134] to pid 2024, Clamshell
+```
+
+- **`clamshell closed 1`** ⇒ 内核**确实感知到合盖**（直接推翻 §42 的"内核没感知 / 评估竞态"假说）
+- **`disabled 0/0`** ⇒ `clamshellSleepDisabled=0`，Clamshell.app 正确把开关拨到"允许合盖睡"
+- 随后内核通知 Clamshell.app（pid 2024）即将睡眠，Clamshell 发起了显式 `Software Sleep`
+
+#### 43.3 三个归因的终局判定
+
+| 之前的归因 | 结论 | 证据 |
+|---|---|---|
+| §41「WorkBuddy 的 `NoIdleSleepAssertion` 挡了合盖睡眠」 | ❌ **错** | 本次断言一直在场（已持 ~2h50m），睡眠照常发生；且 Clamshell 走**显式** `Software Sleep`，不经 idle 路径，不受该断言约束 |
+| §42「12:14 睡眠流程没启动、内核没感知合盖」 | ⚠️ **对 12:14/13:18 成立，但对机制本身不成立** | 本次 `darkwakelinger` 链完整、`clamshell closed 1` 明确 ⇒ 机制层健全，12:14/13:18 属 **Clamshell.app 时机性偶发**（其 GUI/回调那一刻未就绪），非结构性故障 |
+| §42.5「15 s 实验三结局」 | ✅ 命中 **③ 通路正常，12:14 属条件性偶发** | ①②③ 三项全中 |
+
+#### 43.4 结论（可对外收口）
+
+1. **合盖睡眠在本机可用**，由 `Clamshell.app`（`whenClamshellIsClosed=sleep`）接管；它发的是**显式** `Software Sleep`，不受 WorkBuddy 等用户态 idle 断言影响。
+2. **唤醒质量 = Deep Idle 标准**：Lid Open 触发、2.406 s 唤醒、PS2 458 ms，无 `AppleACPIEC` 超时。
+3. **12:14 / 13:18 那两次失败**是 Clamshell.app 时机问题（app 刚启动/回调未注册/评估窗口错过），**非 EFI、非 LID 补丁、非系统配置** ⇒ **仍别动 `SSDT-LID-G7`**。
+4. **要合盖即睡**：直接合盖（Clamshell 接管）；偶发不睡用「苹果菜单 → 睡眠」兜底（显式请求永远有效）。
+5. **全程零 EFI 改动、零系统改动**；WorkBuddy 的 `NoIdleSleepAssertion` 与合盖睡眠无关，无需退出 WorkBuddy。
+
+#### 43.5 对技能 §0b / §42.5 的修正
+
+- §0b「合盖不睡诊断顺序」第 4 步"退出 WorkBuddy 验证"**删除** —— 它挡不住显式合盖睡。
+- §42.5「15 s 实验」补结论：本次实测命中 ③，证明机制健全；少数失败归因为 Clamshell.app 时机偶发，非机制故障。

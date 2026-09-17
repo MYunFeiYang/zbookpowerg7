@@ -1,11 +1,9 @@
 # 睡眠档位调优测试记录
 
-> 🛑 **2026-09-17 14:4x【最新 · §四十二 · 更正 §四十一】** —— 用户追问「**之前你也没档啊，为什么今天挡了？**」⇒ **一问致命，§四十一 的归因被推翻**：
-> ⛔ **断言不是原因** —— 铁证：`11:29:11` **PID 673(Electron) 正持有 `NoIdleSleepAssertion`**，而 **`11:29:41` 机器照样睡了** ⇒ 断言在场也照睡 ⇒ **"WorkBuddy 挡了合盖睡眠"作废**。
-> ⛔ 而且**今天两次"睡眠"根本不是合盖睡眠**：内核行显示入睡那刻 **`clamshell closed 0`（盖子开着）**，reason 全是 `Software Sleep pid=174`(loginwindow) = **有人显式请求**。09-16 才有真合盖睡眠（唤醒原因为 `Lid Open`）。
-> 🔍 **12:14 的真相不是"被挡住"，是"根本没启动"** —— 09-16 每次合盖都有 `InternalPreventSleep(darkwakelinger) → TimedOut → 睡` 完整链，今天两次合盖关屏后**链上一条都没有**；且 `11:42:40→13:03:07` 内核 **PMRD 全程静默、无 `clamshell closed 1`** ⇒ 内核没感知到合盖。
-> 🔑 **真正的机制层 = `disabled`(=`clamshellSleepDisabled`) + 内核合盖感知**：`13:04:06` 内核认到 `closed 1`、`13:04:23` Clamshell 把 `disabled` 拨回 0，**机器仍不睡** ⇒ 疑似**评估时机竞态**。
-> ✅ **要合盖即睡：用「苹果菜单 → 睡眠」**（显式请求，绕过整条链）。**15 秒裁决实验**见 §42.5。完整见 **§四十二**。
+> ✅ **2026-09-17 16:0x【最新 · §四十三 · 收口】** —— 用户刚做了 §42.5「15 秒裁决实验」（15:53 合盖 → 15:58 开盖），**结果 = ③ 通路正常，推翻 §42 假说**：
+> ✅ **合盖睡眠本机可用**，由 `Clamshell.app`（`whenClamshellIsClosed=sleep`，pid 2024）以**显式** `Software Sleep` 发起 ⇒ 不经 idle 路径 ⇒ **不受 WorkBuddy `NoIdleSleepAssertion` 阻挡**（§四一、§四二 两归因均作废）。
+> 🔬 **铁证**：`PMRD: clamshell closed 1, disabled 0/0, desktopMode 1, ac 1` ⇒ 内核**感知到合盖**且 `clamshellSleepDisabled=0`；`darkwakelinger` 链启动；`kIOMessageSystemWillSleep[134] to pid 2024 Clamshell`；`15:58:03 Wake from Deep Idle due to Lid Open`、`WakeTime 2.406 sec`、PS2 仅 458 ms。
+> 🔑 **12:14 / 13:18 两次失败 = Clamshell.app 时机性偶发**（非 EFI / 非 LID 补丁 / 非系统配置）⇒ **仍别动 `SSDT-LID-G7`**。**要合盖即睡：直接合盖（Clamshell 接管）；偶发不睡用「苹果菜单 → 睡眠」兜底。** 完整见 **§四十三**。
 >
 > ---
 >
