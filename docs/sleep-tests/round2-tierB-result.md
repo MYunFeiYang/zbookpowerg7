@@ -2881,3 +2881,62 @@ ioreg -t -c IOPCIDevice -w0 | grep -E '"acpi-path"|"IOName"' | grep -B1 'pci15b7
 | 工作区 vs ESP `config.plist` | 同为 `f7261b162459cfff…` ⇒ 无待同步 |
 | panic 总数 | **仍 = 1**（无新增）⇒ 本次重启干净 |
 | 睡眠记录 | 自 13:03 起**尚未睡过** ⇒ Deep Idle 的"**醒得回来**"这步仍待实测（判据：唤醒 ~2.4 s 且无 `AppleACPIEC` 超时） |
+
+---
+
+## §三十九　「理论可优化项」的 git 历史实证 —— 本机全做过，当前值是收敛结果（2026-09-17 14:1x）
+
+**触发**：用户问「**一定得拔电池测？理论可优化的不能先做？**」。
+这句话点出上一轮的方法论错误：把「先测」当成了走下一步的**门槛**，等于**替用户关掉了「先改」这条路**。
+本节改用**本机 git 历史**（而非外部推断）来回答「理论项到底还剩什么」。
+
+### 39.1 ★ 核心发现：ASPM / NVMe APST 这条线，本机 2025-07 → 2026-07 已经完整走过一遍
+
+| 理论项 | 本机 git 实证（非推断） | 现状 |
+|---|---|---|
+| **ASPM 批量注入** | `92af1f5`（**2025-07-01**）「ASPM优化」—— 一次性注入 27 条 `pci-aspm-default` + `enable-l1-aspm`（xHCI 上） | ✅ 生效中 |
+| **NVMe ASPM / APST 调优** | `e9e012e`（**2026-07-08 15:19**）「fix: 禁用 NVMe APST 并避免磁盘先睡」→ 加 `ps-max-latency-us`<br>`7b0ab03`（**同日 16:49，仅 1.5 小时后**）「fix: **回退** NVMe APST 注入项」→ 把 `pci-aspm-default` 改成 `#pci-aspm-default`（注释掉）、删 `ps-max-latency-us`<br>`04d3b60`（**2026-07-09 17:59**）「fix: **限制 NVMe APST 以提升睡醒稳定**」→ 改回 `ps-max-latency-us` | ✅ 收敛到 `ps-max-latency-us`；**M.2 口上的 `pci-aspm-default` 至今保持注释状态** |
+| **standby / hibernate 深睡** | `hibernatecount = 0`（从未成功）；S4 实测 **6 次全失败**、3 次丢 RTC → HP POST 005 | ⛔ 固件雷，不可碰 |
+| 关 Wi-Fi / BT | —— | ❌ 用户 2026-09-17 明确否决 |
+| 定时唤醒 / 断言 | 连睡 12.6 h 中间唤醒 **0 次**；`pmset -g custom` 全最省态 | ➖ 无肉可削 |
+
+**⇒ 结论**：「**ASPM `3`→`2`**」**不是没人做过的机会，而是做过、并且在 1.5 小时内被回退掉的路径**（`7b0ab03`）。
+`04d3b60` 的 message 直接写着调这个参数的目的是「**提升睡醒稳定**」——
+即这条线是**踩过坑之后收敛到当前值**的，不是空白。（本轮之前我把 `enable-l1-aspm`/`ps-max-latency-us`
+误描述为「无出处遗留」，**错**；它们各自有明确 commit 出处。）
+
+### 39.2 对「一定得拔电池测？」的正面回答
+
+| 论点 | 依据 |
+|---|---|
+| **测了也不能优化** | 唯一可改的杠杆是「睡眠中的唤醒源」，而本机已实测 **12.6 h 连睡 0 次唤醒** ⇒ 这一项已归零；剩下的是**结构性漏电**（DRAM 自刷新 + SoC 保持电路），改不动 |
+| **插电场景下这个数字无决策价值** | 本项目早已定案「**5 W = 墙插功率 ≠ 电池掉电率**」；用户长期插电 ⇒ 5 W 的实际代价只是「合盖温热 ≈ 26 元/年」（`docs/macos-sleep-power-verification.md`） |
+| **⇒ 结论** | **不必为了压功耗去拔电池测**。收益只是「知道地板数字」，成本是拔电睡 4–8 h。要评估出差续航时再测也不迟。**上轮把这条列为「②必做」，不该提。** |
+
+### 39.3 连带查实（顺手排除的嫌疑）
+
+- **本机无 Thunderbolt 控制器**：`ioreg` 全表 grep `Thunderbolt|NHI|TBT` **零节点** ⇒
+  「TB 控制器睡眠漏电」这条嫌疑**排除**（`BIOS_Thunderbolt_Recommendation.md` 里的历史 panic 落在 USB 栈，非 TB 控制器）。
+- **USB 侧**：`pmset -g assertions` 的 3 条内核 USB 断言（`HP HD Camera` / `Bluetooth USB Host Controller` / `USB Optical Mouse`）
+  只影响「**是否自动进入空闲睡眠**」，**不影响已入睡后的功耗** ⇒ 与 §三十八⑥ 一致。
+
+### 39.4 ★ 方法论沉淀：提议「新优化」前，先查这台机器有没有试过
+
+**纪律**：任何「理论上可以优化 X」的提议，在说出口之前先跑
+
+```bash
+cd <repo> && git log -S "<属性名或键名>" --text --oneline -- EFI/OC/config.plist
+```
+
+**本机实证价值**：正是这一步翻出了 `7b0ab03`（回退）与 `04d3b60`（重新收敛），
+把一个看起来「还没做」的机会，直接降级为「**已撞墙的路径**」——省掉一整轮实测 + 一次潜在的掉盘风险。
+
+**配套工具坑（本轮踩到）**：macOS **APFS 大小写不敏感**，但 **git 索引大小写敏感** ⇒
+`git ls-files --error-unmatch EFI/oc/config.plist` 会报 `did not match any file(s) known to git`，
+而正确路径是 `EFI/OC/config.plist`（大写 `OC`）。**别据此误判成「config.plist 不在版本控制里」**（我据此虚惊了一轮）。
+判法：`git ls-files | grep -i "efi/oc/config"`。
+
+### 39.5 本轮唯一还剩的动作（零风险，1 分钟）
+
+**睡 30 秒再唤醒**，读 `WakeTime` 是否为 2.4 s 量级、有无 `AppleACPIEC … OBF=1 poll timed out` ——
+这是 13:03 重启后 Deep Idle 全流程里**唯一还没实测**的环节。
