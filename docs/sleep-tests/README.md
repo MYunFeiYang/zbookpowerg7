@@ -1,6 +1,13 @@
 # 睡眠档位调优测试记录
 
-> 🟢 **2026-09-17 10:4x【最新 · §三十一】—— 重启已验证：第 1 步通过 ✅ `IOPMDeepIdleSupported` 从 `Yes` 变为"属性完全不存在"**
+> 🟢🟢 **2026-09-17 10:5x【最新 · §三十二】—— ★ 第一次 S3 实测：L2 切换成功（已走 S3），L3 半通（能睡、10 s 后被 USB 叫醒）**
+> **★★ 两条前后对照铁证**：① `(AppleACPIPlatform) ACPI: sleep states` 由 **`S0 S3 S4 S5`**（历史 8 次记录全含 S0）变为 **`S3 S4 S5`** —— **S0ix 条目消失**；② `lastSleepType`（airportd）由 **`0x00000007`/`'Deep Idle'`** 变为 **`0x00000002`/`'Normal Sleep'`**。⇒ **macOS 睡眠态模型只剩 `S3/S4/S5`，实际走的就是 S3**（`_S4` 要写镜像而 `hibernatemode=0`、`_S5` 是关机）。⚠️ 诚实标注：**没有**出现正面标签 `Wake from S3`（因为唤醒中途断了）。
+> **时间线**：`10:48:53 PMRD: phase 2`（真睡下去了）→ **`10:49:03 Wake reason: LPCB XDCI`（只睡 ~10 s 就被叫醒）** → `10:50:20 DarkWake`（`lastSleepType 0x02`、`wakereason['LPCB XDCI XHC']`）→ `10:50:28 (AppleIntelCFLGraphicsFramebuffer) [IGFB][ERROR] setAttribute called when FB0 is in a sleep state`（**显示未恢复**）→ `10:52:39` 重启（`SMC shutdown cause: 5` 软关机）。
+> ⇒ **L3 判定：不是"PCH 完全不通"**（确实睡到 phase 2、且能被唤醒）**，而是"能睡、被 USB-C 立即打断、唤醒后显示未恢复"。**
+> ▶️ **下一步**：① **拔掉所有 USB / Type-C 外设**（现挂着外接 `USB Optical Mouse`）再 `pmset sleepnow` → 看能否睡住 >1 min 并出现 `Wake from S3`；② **下次屏幕黑先按键盘 / 触摸板 / 电源键**（DarkWake 本就不点屏，**别当死机直接重启**）。
+> ⚠️ **高度可疑对象**：`SSDT-PCI0.LPCB-Wake-AOAC.aml`（`Enabled=True`）的 `_PRW` 在 Darwin 下返回 **`0x6D, 0x04`** ⇒ **主动给 LPCB 启用了 GPE 0x6D 唤醒**，而本次唤醒源正是 **`LPCB XDCI`** ⇒ 若拔外设后仍被叫醒，可试临时关掉它（回滚一个布尔值）。
+
+> 🟢 **2026-09-17 10:4x【§三十一】—— 重启已验证：第 1 步通过 ✅ `IOPMDeepIdleSupported` 从 `Yes` 变为"属性完全不存在"**
 > 判据链：AppleACPIPlatform 仅在 `\_SB.LPS0` 返回 **Integer 1** 时才 `setProperty("IOPMDeepIdleSupported")` ⇒ 属性**整个消失**（比 `= No` 更彻底）= LPS0 未提供 = **macOS 不再认为平台是 Deep Idle**。同一变量（SSDT 开关）的两次对照观测，前后互证。
 > ⚠️ **两条旁证已否掉（别再踩）**：`ioreg -p IOACPIPlane -l -w0` **输出 0 行、连必然存在的 `PCI0` 都搜不到 ⇒ 该 plane 在本机不可读**（`LPS0`/`_S3` 搜不到是**此路不通**，不是对象不存在）｜OpenCore 日志 = `Misc/Debug/Target = 0`，**无输出**。
 > ★ **"某个 SSDT 到底加载了没有"的可靠判据**：① **行为判据最强**（该 SSDT 的**唯一副作用**是否在系统里出现/消失 —— 本例 `SSDT-DeepIdle` 的唯一副作用就是那个属性）② 配置 + **重启前后对照** ③ DSDT 归属分析 ④ ❌ 别用 IOACPIPlane / OpenCore 日志。

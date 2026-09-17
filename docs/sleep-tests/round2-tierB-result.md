@@ -2154,3 +2154,60 @@ Method (_DSW, 3) {                       // _DSW: Device Sleep Wake
 | 3 | 提权 `log show --last 10m \| grep -i "sleep state"` | 期望出现 **`Entering sleep state [S3]`**（AppleACPIPlatform 二进制内该格式串已核对存在） |
 | 4 | 顺带验副作用 | 醒来后 Fn 键 / 亮度 / 电池指示是否正常（**黑苹果走 S3 有"EC query 失效"先例**：ThinkPad E470/E480/E490 等唤醒后 Fn 键、合盖事件、电池状态更新失效） |
 | — | 若 30 s 不醒 | 长按电源 10 s。**不写 RTC/镜像 ⇒ 无 005**；回滚 = `Enabled` 改回 `true` |
+
+---
+
+## 三十二、★ 第一次 S3 实测（09-17 10:48）—— **L2 已确认切换成功；L3 表现"能睡、能被 USB 叫醒、唤醒后显示未恢复"**
+
+> 用户于 10:48:50 执行睡眠，10:52:39 重启。提权取证窗口 `10:47:30–10:52:40`。
+
+### 1. ★★ 两条决定性判据（**前后对照**，这是本轮最重要的收获）
+
+| 判据 | 关 `SSDT-DeepIdle` **之前** | **之后（本次）** | 含义 |
+|---|---|---|---|
+| `(AppleACPIPlatform) ACPI: sleep states …` | **`S0 S3 S4 S5`**（历史 8 次记录，全部含 S0） | **`S3 S4 S5`** ← **S0 消失** | macOS 的睡眠态模型里**不再有 S0 低功耗（S0ix）条目** |
+| `lastSleepType`（`airportd` 输出） | **`0x00000007` / `'Deep Idle'`** | **`0x00000002` / `'Normal Sleep'`** | **macOS 不再选 Deep Idle** |
+
+⇒ **L2（macOS 选择层）＝✅ 确认改变**：睡眠态模型只剩 `S3/S4/S5`（`_S4` 要写镜像而 `hibernatemode=0` 不走、`_S5` 是关机）⇒ **macOS 实际走的就是 S3**。
+> ⚠️ 诚实标注：**没有**出现正面标签 `Wake from S3`（原因见下：唤醒中途断了）。"走 S3"是由"模型无 S0ix + sleep type 由 Deep Idle 变 Normal Sleep"两条推出，**不是**由 `Wake from S3` 直接点出。
+
+### 2. 完整时间线（内核日志，提权取证）
+
+```
+10:48:20.784  Notification         Display is turned off
+10:48:50.772  PMRD: phase 0, standby 0 delay 10800 ... hibernate 0x0
+10:48:50.778  airportd: description:'Sleep:<off>'
+10:48:52.315  PMRD: phase 1 ...  hibernateMode 0x0
+10:48:52.997  PMRD: kIOMessageSystemCapabilityChange[3]
+10:48:53.002  PMRD: phase 2                                  ← 进入睡眠的最后阶段
+10:49:03.603  (AppleACPIPlatform) AppleACPIPlatformPower Wake reason: LPCB XDCI   ← 只睡 ~10 s 就被叫醒
+10:50:16.973  PMRD: kIOMessageSystemCapabilityChange[3]
+10:50:20.371  airportd: lastSleepType[0x02]/'Normal Sleep', description:'DarkWake:cpu disk net',
+                       wakereason['LPCB XDCI XHC'], PM:[early:1 sleep:0 user:0 dark:1]      ← DarkWake
+10:50:28.086  (AppleIntelCFLGraphicsFramebuffer) [IGFB][ERROR] setAttribute called when
+                       FB0 is in a sleep state - attribute: 'pwrs'                      ← 显示未恢复
+10:52:39      重启（boottime）；SMC ShutdownCause: 5 = Software initiated shutdown
+```
+
+### 3. 判读（三条）
+
+| 项 | 判读 |
+|---|---|
+| ✅ **睡下去了** | `PMRD` 走完 `phase 0 → 1 → 2`（IOPMrootDomain 的最后阶段）⇒ **硬件确实进入了低功耗态**，不是"请求发出但没动作" |
+| ✅ **能醒来** | 10:49:03 有唤醒事件 ⇒ **不是"死透"** ⇒ **不是"PCH 完全不通"** |
+| ⚠️ **两个具体问题** | ① **唤醒源 = `LPCB XDCI`**（Type-C 子系统）⇒ 只睡 10 s 就被打断；② 醒来处于 **DarkWake**（`dark:1`），显示子系统报 `FB0 is in a sleep state` ⇒ **屏幕不亮** |
+
+⚠️ **`pmset -g log` 在 10:48–10:52 窗口内没有任何 `Wake from` / `DarkWake from` 事件** ⇒ 与内核日志的 10:49:03 唤醒并存 ⇒ **唤醒流程没走完**（用户随后重启）。
+⚠️ 附带观察（待跟踪，勿下结论）：本次启动记录 `BatteryHealth: Check Battery; was: Good`。
+
+### 4. ▶️ 下一步（两个方向，代价都极低）
+
+| # | 动作 | 目的 | 判读 |
+|---|---|---|---|
+| 1 | **拔掉所有 USB / Type-C 外设**（当前挂着外接 `USB Optical Mouse`；另注意任何 Type-C 设备）后再 `pmset sleepnow` | 消除 `LPCB XDCI` 唤醒源 | 能睡住 > 1 min 且出现 `Wake from S3` ⇒ **L3 确认通过** |
+| 2 | **下次醒来若屏幕黑，先按键盘 / 触摸板 / 电源键**（**不要直接重启**） | DarkWake 本就不点亮屏幕，可能是被误判为死机 | 按键后屏幕亮起 ⇒ 只是 DarkWake，不是死机 |
+
+**⚠️ 另一个高度可疑对象**：`SSDT-PCI0.LPCB-Wake-AOAC.aml`（`Enabled=True`）的 `_PRW` 在 Darwin 下返回 **`0x6D, 0x04`** ⇒ 它**主动给 LPCB 启用了 GPE 0x6D 唤醒能力**。而本次唤醒原因**正是 `LPCB XDCI`** ⇒ **两者可能直接相关**。
+⇒ 若第 1 步拔掉外设后**仍被 `LPCB` 叫醒**，可试**临时关掉该 SSDT**（回滚同样是一个布尔值）。
+
+**当前 USB 树（实测 `ioreg -p IOUSB`）**：`XHC@14000000` → `HP HD Camera`（内置）/ `Bluetooth USB Host Controller`（内置）/ **`USB Optical Mouse`（外接）**。注意本次唤醒源是 `LPCB XDCI` 而**不是** `XHC`。
