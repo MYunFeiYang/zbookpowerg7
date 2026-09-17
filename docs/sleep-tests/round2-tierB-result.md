@@ -2794,3 +2794,79 @@ RTC 三件套（`AppleRtcRam` / `rtcfx_exclude` / `rtc-blacklist`）的作用域
 记忆与技能里"**macOS 26 Tahoe 上 AirportItlwm 不工作、须改用 itlwm+HeliPort**"这条**已过期**：
 本轮实测 `en1` 正常、`Card Type: Wi-Fi`、`IO80211 Family 12.0`、`Supported PHY Modes 802.11 a/b/g/n/ac`、
 `Wake On Wireless: Supported` ⇒ **本机当前 Wi-Fi 工作正常且是原生接口**。（首次记录于 2026-09-08，此后 EFI 已变更。）
+
+---
+
+## 38. 用户裁决「别动WiFi蓝牙」→ 7 条压降清单逐条实测：**已基本用尽**（2026-09-17 12:5x，零改动）
+
+### 38.1 触发与裁决
+
+用户对 §37 的建议只回一句：**「别动WiFi蓝牙」** ⇒ §37 的"最大可压点 ①（睡眠前关 Wi-Fi/BT）"**作废**，
+本机不再沿这条线提任何建议。本节把 §37 剩下的清单**逐条实测收口**，并**推翻 §37 自己的两处自查结论**。
+
+### 38.2 7 条清单逐条实测（只读取证，全部给出可复现判据）
+
+| 清单项 | 本机状态 | 判据（本轮实测命令 + 输出） |
+|---|---|---|
+| 禁止 S3 睡眠 | **已满足** | `SSDT-DeepIdle` 开启、`IOPMDeepIdleSupported` 存在（= Deep Idle 在跑） |
+| 关闭独显供电电源 | **不适用** | `system_profiler SPDisplaysDataType` → 只有 `Intel UHD Graphics 630`；`ioreg -l -w0 \| grep -oE '"IOName" = "pci(10de\|1002)[0-9a-f,]+"'` → **空** |
+| 电源空闲管理 | **已满足** | ⚠️ **这一项就等于 `SSDT-DeepIdle`**：`01-3-电源空闲管理/` 目录**唯一文件**即 `SSDT-DeepIdle.dsl`，README 正文写"***SSDT-DeepIdle*** ——电源空闲管理补丁"、备注"主要内容来自 @Pike R.Alpha" |
+| SSD 品质 SLC>MLC>TLC>QLC | **已满足** | WD Blue SN570 1TB（`pci15b7,501a`）= **TLC**，硬件换不了 |
+| 更新 SSD 固件 | **未做（结论：不做）** | 固件 `234100WD`；官方工具 SanDisk/WD Dashboard **只有 Windows 版** ⇒ 必须进 Windows 分区，且社区无"改固件后省电多少"的量级先例 |
+| NVMeFix 开 APST | **已满足** | `ioreg -d 0 -l -w0` → `IOKitDiagnostics→Classes` 里 `"NVMeFix"=1`（⚠️ 别用 `ioreg -c NVMeFix`：hook-only kext 不留节点） |
+| 启用 ASPM（补丁启用 L1） | **已满足（等价）** | `DeviceProperties/Add` **27 条全 `pci-aspm-default = 3`** = L0s/L1 均已允许 ⇒ 原文要解决的"ASPM 被禁"场景**本机不存在** |
+
+⇒ **5 条已满足 / 1 条不适用 / 1 条只剩边角（ASPM 3→2）/ 1 条（关 Wi-Fi、BT）被用户否决。**
+
+### 38.3 (§37 ③) 更正：把"电源空闲管理"标成"❓待查"是错的 —— 它就是本机已在用的 `SSDT-DeepIdle`
+
+`01-关于AOAC/01-3-电源空闲管理/` 目录内容：`README.md` + `SSDT-DeepIdle.dsl` + `SSDT-DeepIdle.md`。
+README 正文："***SSDT-DeepIdle*** ——电源空闲管理补丁"，注意事项写"**和 `S3` 睡眠可能有严重冲突，
+使用 ***SSDT-DeepIdle*** 应避免 `S3` 睡眠**"⇒ **与我们 §二十八~§三十四 的实测完全一致，社区文档早就写了。**
+**教训：把清单当"待办"念之前，先给每条打「已满足 / 不适用 / 未做」标签，每个标签后面必须能写出本机判据。**
+
+### 38.4 (§37 ④) ASPM 原文取值表（章节 **16-2《设置ASPM工作模式》**，§37 误记为 `01-5`）
+
+| 目标 | L0s/L1 | **L1** | 禁止 |
+|---|---|---|---|
+| 父设备 | `03000000` | **`02000000`** | `00000000` |
+| 子设备 | `03010000` | **`02010000`** | `00000000` |
+
+- 原文："对于采用了 AOAC 技术的机器，**尝试改变 无线网卡、SSD 等 PCI 设备的 ASPM 模式降低机器功耗**"；
+  示例（小新 PRO13 网卡）**父设备与子设备两条路径都注入**。
+- 原文风险条款："**改变 ASPM 后，如果发生异常情况请恢复 ASPM。**"
+- ⇒ 本机现状 `3` = **L0s/L1 已允许**，原文想修的"ASPM 被禁（0）"**本机不存在**；`3→2` 只是"禁掉 L0s"，
+  **收益方向不明（L0s 也有功耗收益）+ NVMe 在 L1 有掉盘先例** ⇒ **本机默认不动**。
+
+### 38.5 定位方法升级：`"acpi-path"` 反查，不再需要 Hackintool
+
+```bash
+ioreg -t -c IOPCIDevice -w0 | grep -E '"acpi-path"|"IOName"' | grep -B1 'pci15b7'
+# 本机输出：
+#   "acpi-path" = "IOACPIPlane:/_SB/PCI0@0/RP17@1b0000"          ← SSD 的 root port
+#   "acpi-path" = "IOACPIPlane:/_SB/PCI0@0/RP17@1b0000/PXSX@0"   ← SSD 本体
+# ⇒ WD SN570 在 PciRoot(0x0)/Pci(0x1B,0x0)
+```
+
+⇒ §37"`Pci(0x1B,0x0)` 与 `Pci(0x1D,0x0)` 都带 `ps-max-latency-us` ⇒ 不睡眠无法区分哪个是 SSD"的僵局**由此解开**。
+另：`Pci(0x14,0x3)` = `CNVW@140003` = Intel CNVi 网卡（原文点名可改，**已被用户否决**）。
+
+### 38.6 (§37 ⑤ 的) 两条"顺带可压小项"**被推翻** —— 提之前没做前置自查
+
+- `pmset -g custom`：`powernap 0` / `tcpkeepalive 0` / `womp 0` / `proximitywake 0` / `standby 0` /
+  `hibernatemode 0` / 电池 `lowpowermode 1` / AC `networkoversleep 0` ⇒ **已经是全机最省态，无可压**。
+- **09-16 20:13:19 → 09-17 08:52:27 连睡 12.6 h，中间唤醒 0 次**（`pmset -g log` 该窗口只有 1 条 Sleep + 1 条 Wake）
+  ⇒ `pmset -g sched` 里那两条 `calaccessd.travelEngine` 定时唤醒（18:53/19:30）**不值得动**。
+- **纪律：任何"减少唤醒"类建议，先 grep 一次睡眠窗口、数清中间唤醒次数，再决定提不提。**
+
+### 38.7 本轮唯一新发现的真实漏电点
+
+`pmset -g assertions` 实测：`pid 666(Electron)` = **`/Applications/WorkBuddy.app/Contents/MacOS/Electron`**
+持 `NoIdleSleepAssertion`（已 1 h 13 min）⇒ **电池供电时会挡住"空闲自动睡眠"**。
+⚠️ 必须分清：**"挡住了睡眠" ≠ "睡眠中耗电"** —— 合盖/手动睡眠不受它影响；AC 下 `sleep 0` 本来也不空闲睡。
+另 3 条 USB 内核断言：`HP HD Camera` / `Bluetooth USB Host Controller` / `USB Optical Mouse`（相机与蓝牙是内置的，拔不掉）。
+
+### 38.8 本节结论（可对外收口）
+
+**不动 Wi-Fi/BT 的前提下，Deep Idle ≈5 W ≈7%/h 就是本机地板**；7 条社区清单已用尽，
+唯一剩下的动作是**纯电池基线测量**（拔电、合盖睡 4–8 h、记掉电率），先量再谈改；**ASPM 默认不动**。
