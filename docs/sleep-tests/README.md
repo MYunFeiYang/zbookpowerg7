@@ -9,6 +9,8 @@
 > **L3 硬件真按 S3 断电＝❌不确认且**有反例（Surface IceLake 同构、HP 企业实测 `PlatformAoAcOverride=0` 无果、本机 EC 固件 `SLP_S3/4/5` 与 `PCH_SLP_S0IX#` 两套并存）。
 > ⇒ **"没被隐藏" ≠ "能用"**：`SS3=One` 只是**必要条件**（证明固件没隐藏 S3），**推不出** PCH 会用 `SLP_S3` 真断电。
 > ⚠️ **风险升级**：`SSDT-DeepIdle` 是**唯一**把 macOS 推向 S0ix 的东西（`DSDT` 里 `LPS0`/`LXEN` 计数 = **0**）⇒ 关掉后 macOS **会去试 S3**，若处于"代码路径在、PCH 不通"的**半通**状态，可能**睡下去醒不来 / 唤醒黑屏** —— **这正是 DELL E7480 当初引入 `SSDT-DeepIdle` 要规避的症状**。
+> **★「没法确定？」⇒ 穷举全部只读通道，结论：零条**（09-17 10:3x 追加）：macOS `IORegistry`（`ioreg -l -w0 | grep -i "sleep states"` ⇒ **空**、`AppleACPIPlatformExpert` 节点**不存在**）｜`sysctl -a`（只有 `kern.hibernatefile/sleeptime` 等路径与计数器）｜`pmset -g cap`（只列**可设项**，不含睡眠态）｜`Supported Features` 字典（**无 S3**）｜HP QuickSpecs（**通篇无 S3 字样**）｜Windows `powercfg /a`（读**同一份 ACPI** ⇒ **非独立判据**，上轮"权威交叉验证"说法**已更正**）⇒ **唯一直接判据 = 实际睡一次（L2+L3）**。
+> **原理**：`能不能睡进 S3` 的最后一环是**硬件行为**（PCH 是否真拉低 `SLP_S3` 并维持 `VccRAM`）。`_S3` 对象＝**菜单上印了这道菜**；`_PTS/_WAK` 的 `0x03` 分支＝**厨房还留着这套灶**；EC 的 `SLP_S3/4/5`＝**燃气管还在墙上**。**"灶还在" ≠ "火能点着"** —— 本机 EC 固件 `SLP_S3/4/5` 与 `PCH_SLP_S0IX#` **两套并存**，正合"AOAC 把物理 S 信号重定向"的格局。
 > **首测纪律**：① 先存全部工作 → ② `pmset sleepnow` **手动触发、不合盖** → ③ **30 s 不醒长按电源 10 s**。**不写 RTC、不写镜像 ⇒ 无 005**；回滚 = `Enabled` 改回 `true`。完整取证：`round2-tierB-result.md` **§三十**。
 
 > 🟢 **2026-09-17 09:5x【§二十九】—— 用户追问「确认我的硬件支持 S3？」⇒ 分两层答：声明层=确认；执行层=未验证**

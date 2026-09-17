@@ -2076,4 +2076,37 @@ Method (_DSW, 3) {                       // _DSW: Device Sleep Wake
 | **L2 选择层** | macOS 会不会选 S3 | ❌ **不确认** | 现测 `IOPMDeepIdleSupported = Yes` ⇒ 一直走 S0ix；**从未出现 `Wake from S3`**；要变只能靠重启加载 `DeepIdle=False` |
 | **L3 执行层** | 走 S3 后 PCH 是否真按 S3 断电 | ❌ **不确认，且有反例** | Surface IceLake 同构（`If(SS3)` 包 `_S3={0x05,…}`）补出 S3 后**仍不可用**；HP 企业管理员实测 `PlatformAoAcOverride=0` 也没换来 S3 |
 
-⇒ **所以回答"你确认 S3 睡眠吗？"= 不确认。** 我只确认了 **"BIOS 没有对 macOS 隐藏 S3、且固件保留了 S3 代码路径"**，这是**必要条件**。是否真能睡进 S3，**零证据**（不是"验证过失败"，是**从来没试过**），必须走 §6 的实测。
+⇒ **所以回答"你确认 S3 睡眠吗？"= 不确认。** 我只确认了 **"BIOS 没有对 macOS 隐藏 S3、且固件保留了 S3 代码路径"**，这是**必要条件**。是否真能睡进 S3，**零证据**（不是"验证过失败"，是**从来没试过**），必须实测。
+
+### 6. ★ "没法确定？" —— **穷举所有"不重启就能确定"的通道，结论：零条**（09-17 10:3x，用户追问"没法确定？"触发）
+
+> 用户追问"没法确定？"⇒ 本轮**穷举**了 macOS 侧与旁证侧的**全部**可能只读通道，逐条实测/查证。结论：**除了实际睡一次，没有任何通道能给出答案。**
+
+| # | 通道 | 本轮实测 / 依据 | 能答哪一层 | 判定 |
+|---|---|---|---|---|
+| 1 | macOS `IORegistry` | `ioreg -l -w0 \| grep -iE "SupportedSleepStates\|sleep states\|_S3_"` ⇒ **空**；`ioreg -c AppleACPIPlatformExpert` ⇒ **无该节点** | — | ❌ **不存在** |
+| 2 | macOS `sysctl` | `sysctl -a \| grep -iE "sleep\|standby"` ⇒ 只有 `kern.hibernatefile` / `kern.sleeptime` / `kern.sleep_abs_time` 等**路径与计数器**，**无睡眠态列表** | — | ❌ **不存在** |
+| 3 | macOS `pmset` | `pmset -g cap` ⇒ 只列**可设项**（`standby`/`standbydelayhigh`/`hibernatemode`/`powernap`…），**不含任何睡眠态** | — | ❌ **不是判据** |
+| 4 | `IOPMrootDomain` 属性 | 完整的 `Supported Features` 字典含 `Hibernation`/`DeepSleep`/`PowerNap` 等**特性位**，**无 S3**；`SystemPowerProfileOverrideDict` 只是**系统建议默认值**（与现役 `Hibernate Mode=0`/`Standby Enabled=No` 无关） | — | ❌ **不是判据** |
+| 5 | 厂商文档（HP QuickSpecs） | 官方 QuickSpecs 全篇只写 `Connected Standby/Modern Standby: 10mW`（且那是**WLAN 卡**指标），**通篇无 S3 字样** | — | ❌ **无信息** |
+| 6 | Windows `powercfg /a` | 它读的是**同一份 ACPI**（`_S3` 对象存在性 + FADT 位）⇒ 与本文 §二十九 第 1/3 条**同源** | 仅 L1 | ⚠️ **非独立判据** —— **上轮称之为"权威交叉验证"不准确，现更正**；且 Windows 在 AOAC 平台上的策略会干扰读数 |
+| 7 | **实际睡一次** | 关 `SSDT-DeepIdle` → 重启 → 睡眠 → 看 `Wake from S3` + 功率 | **L2 + L3** | ✅ **唯一直接判据** |
+
+**★ 为什么"只读"在原理上就**不可能**够 —— 这决定了没有捷径**：
+
+`能不能睡进 S3` 的**最后一环是硬件行为**：**PCH 是否真的拉低 `SLP_S3`，并把 `VccRAM` 维持住**。ACPI 里的任何东西都只是"声明"：
+
+| 我们已有的 | 类比 | 它**证明**了什么 | 它**没有**证明什么 |
+|---|---|---|---|
+| `_S3` 对象（`SS3=One`） | **菜单上印了这道菜** | 固件愿意把 S3 告诉 OS | 厨房能不能端出来 |
+| `_PTS`/`_WAK` 的 `Arg0==0x03` 分支 | **厨房还留着这套灶** | 固件保留过 S3 的代码路径 | 火还能点着 |
+| EC 固件有 `SLP_S3/4/5` | **灶的燃气管还在墙上** | EC 认得这个信号名 | 管子另一头接的是不是 `SLP_S0ix` |
+
+⇒ 本机 EC 固件里 **`SLP_S3/4/5` 与 `PCH_SLP_S0IX#` 两套并存**，正与"AOAC 固件把物理 S 信号重定向"这一格局吻合。
+⇒ **"灶还在" ≠ "火能点着"。拉一次火，是唯一能知道火着不着的方法。**
+
+**✅ 好消息：这一"拉"在本机是零风险的。**
+- S3 **不写 RTC**（`hibernatemode 0`）、**不写镜像**（`standby 0`）⇒ **不可能引发 005**；
+- 最坏情况是"拉不着/半着"→ 强制断电，**回滚 = 一个布尔值**（`SSDT-DeepIdle.aml` 的 `Enabled` 改回 `true`）。
+
+**★ 所以"能确定吗"的最终答案**：**能，但只有一条路 —— 亲手试一次。** 代价：一次重启 + 一次 `pmset sleepnow`；收益：把 L2/L3 从"零证据"变成"确定"。**除此外全是同源信息或旁证，给不出新的一层。**
