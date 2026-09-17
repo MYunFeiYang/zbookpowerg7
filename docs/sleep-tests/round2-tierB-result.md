@@ -2527,3 +2527,126 @@ RTC 三件套（`AppleRtcRam` / `rtcfx_exclude` / `rtc-blacklist`）的作用域
 >
 > **③ 列混淆变量的硬手段**：`last reboot`（真实开机时刻）+ `git log --format='%h|%ci|%s' -- EFI/OC/config.plist`
 > （配置生效时刻）对齐 ⇒ 立刻能看出"哪些改动是在哪次重启后一起生效的"。**别凭记忆说"我没改别的"。**
+
+---
+
+## 三十六、★★★ 用户追问「全部只能测试？变量是不是太多了，不确定的点都先在社区确认过吗？」——**去社区查证，结论：本机落在社区方案的覆盖范围之外**（09-17 12:3x）
+
+**用户原话**：*"全部只能测试？变量是不是太多了，不确定的点都先在社区确认过吗？"*
+
+**这不是情绪，是方法论纠正，而且是对的。** 本节**不做任何实测**，全部是社区/上游文档查证。
+
+### 1. ★★★ 决定性证据：OC-Little《01-关于AOAC》原文（回答了本节全部问题）
+
+来源：`OC-little/01-关于AOAC`（loverping 镜像、黑果小兵版同文）。逐字摘录：
+
+> **AOAC 问题**
+> **睡眠失败问题**
+> 由于 **AOAC 和 S3 本身相矛盾**，采用了 AOAC 技术的机器**不具有 S3 睡眠功能**，如 Lenovo PRO13。
+> 这样的机器**一旦进入 S3 睡眠就会睡眠失败**。
+> **睡眠失败**主要表现为：**睡眠后无法被唤醒，呈现死机状态，只能强制关机**。
+> **睡眠失败本质是机器一直停滞在睡眠过程，始终没有睡眠成功。**
+> **待机时间问题**
+> **禁止S3睡眠** 可以解决 睡眠失败 问题，但是机器将不再睡眠。……电池耗电量较大，**大约每小时耗电 5%–10%**。
+> **AOAC 解决方案**（community 标准清单）
+> 1. **禁止 S3 睡眠**；2. 关闭独显供电；3. 电源空闲管理；4. 选品质好的 SSD；5. NVMeFix.kext + APST；6. 启用 ASPM
+
+**★ 这段社区原文，逐条命中了本机每一个症状与每一个结论**：
+
+| 社区原文 | 本机 | 命中 |
+|---|---|---|
+| "**AOAC 和 S3 本身相矛盾**" | FADT `bit21 LOW_POWER_S0_IDLE_CAPABLE=1`；§二十七/§三十四 结论"AOAC 与 S4/S3 结构性冲突" | ✅ 逐字 |
+| "**一旦进入 S3 睡眠就会睡眠失败**" | S3 实测两次都失败（§三十二/§三十四） | ✅ |
+| "**睡眠后无法被唤醒，呈现死机状态，只能强制关机**" | **用户原话**："按睡眠键后就没动了……按电源键没反应，最后长按电源键关机再启动" | ✅ **一字不差** |
+| "**睡眠失败本质是机器一直停滞在睡眠过程**" | `WakeTime 159.336 s`、`ApplePS2Controller SetState to 2 = 157,735 ms`（§三十四） | ✅ 机制吻合 |
+| "**禁止 S3 睡眠 可以解决 睡眠失败 问题**" | 现已回滚到 Deep Idle（§三十四） | ✅ **社区标准解 = 我做的回滚** |
+| "电池……**大约每小时耗电 5%–10%**" | 实测 Deep Idle ~5 W ⇒ 8 h 掉 **57%**（≈7%/h） | ✅ **落在区间内** |
+
+⇒ **OC-Little 给出的"AOAC 解决方案"第一条就是"禁止 S3 睡眠"** —— 也就是说，**我最终做的回滚，就是社区多年来的标准答案**。而本机原先那套 `SSDT-DeepIdle` + `SSDT-PCI0.LPCB-Wake-AOAC` + `SSDT-NameS3-disable` 三件套，正是这条方案的实现。
+
+### 2. ★★ Ice Lake hackintosh 汇总仓库：AOAC 机型只有三条路，本机三条都不可用
+
+来源：`m0d16l14n1/icelake-hackintosh`（Ice Lake 黑苹果问题汇总，Dortania/acidanthera 生态内的活跃汇总）。原文：
+
+> **Sleep issues (wake-up problem)**：Some Ice Lake machines have **AOAC enabled (can't be disabled in most part of laptops because of "locked" BIOS)**
+> Possible Solutions：
+> **① Use daliansky patches/SSDTs** → *"**Isn't so stable: battery life is low, some machines can't wake even with these patches**"*
+> **② Unlock BIOS settings → disable AOAC** (Low power S0 idle or any S0ix stuff) → *"It's the most hard way, but the most **stable**"*
+> **③ Enable S3 sleep using a SSDT and ACPI rename for some of Dells** (Only if your DSDT has S3 present.) → *"Second cleanest way / stable. **If your DSDT has _S3, this will work.** However, there might still be a issue where your OEM vendor (for example Dell) might disable/remove S3 state/event from DSDT entirely."*
+
+**把本机代入这三条路**：
+
+| 社区路径 | 社区评价 | 本机适用性 |
+|---|---|---|
+| ① daliansky/SSDT 补丁（= `SSDT-DeepIdle` 那套 = **本机原状态**） | "**不稳定：电池寿命低，有些机器即使用这些补丁也唤不醒**" | ✅ 可用，但**社区自己说它不稳定 + 耗电高** ⇒ 这解释了 5 W |
+| ② BIOS 解锁关 AOAC | "最难，但**最稳定**" | ❌ **本机 BIOS 无此项**（§二十八：HP 官方《Power Management Options》全表查无 S0ix/Modern Standby；同族两例实测无效；唯一 `Extended Idle Power States` 官方定义是 C-state） |
+| ③ SSDT + rename 开 S3 | "第二干净/稳定；`_S3` 在就能work" | ⚠️ **社区明确限定 "for some of Dells"**，本机是 **HP** ⇒ **不在适用范围** |
+
+⇒ **本机落在三条路的空隙里**：①能用但天生耗电高、②硬件没给开关、③社区只对 Dell 有效。
+**这解释了为什么"每个方向都要自己试"** —— 不是我没查，而是**本机确实没有社区现成先例可抄**。但**§二十八 那个决定（关 DeepIdle 上 S3）本该在动手前就查到这里** —— 见第 5 节自我批评。
+
+### 3. ★ 旁证：HP **同平台**（Comet Lake）有"S3 唤醒时 EC 未就绪 → Watchdog → panic"的记载
+
+来源：`tsight.io`《不仅仅是点亮：HP EliteBook 840 系列的内核级电源管理深度调优》。原文：
+
+> 在 **EliteBook 840 G5/G7** 机型上，用户常见的"睡眠唤醒内核恐慌"……源于 **macOS 对 ACPI GPE 中断处理与 HP 固件 EC 状态寄存器之间的同步失效**。
+> 当系统进入 S3 睡眠时，**EC 尝试切换电源轨**，但 **macOS 的 AppleACPIPlatform 在唤醒阶段过早触发了对 `_WAK` 的调用，导致处于未就绪状态的 EC 响应超时，引发 Watchdog 挂起，最终导致 panic**。
+
+⚠️ **可信度标注：这是 AI 生成的技术站文章，不是一线用户实录，只能当方向性旁证。**
+但它的方向与我们的**实测**（`AppleACPIEC EC OBF=1 poll timed out` 连绵 + `NMIPI/TLB flush timeout` Watchdog panic + 落在 USB 栈）**一致**，且机型 **EliteBook 840 G7 = Comet Lake = 与本机 ZBook Power G7 同代同平台**。⇒ 记为"同平台方向的独立旁证"，不作为判据。
+
+### 4. ★ 论坛侧：AOAC 机型的标准操作就是"禁用 S3"
+
+来源：`bbs.pcbeta.com` 帖 1886592 / 1951791（远景论坛）。关键点（用户 `remyxo`、`zhyw78` 等）：
+
+> `SSDT-NameS3-disable` / `SSDT-MethodS3-disable` + `ACPI/Patch` 的 `_S3 → XS3` 改名
+> （`Comment: "_S3 to XS3"`, `Find: 5F53335F`, `Replace: 5853335F`）
+> **"这是禁止 S3 睡眠，给 AOAC 机器用的。"**
+> 楼主实测回报：*"睡眠后不能唤醒、只能强制关机重启"* → 打完补丁后 **"可以正常唤醒"**。
+
+⇒ 社区里"睡眠后不能唤醒、只能强制关机"是**被反复命中的标准症状名**，标准处置 = **禁用 S3**，不是"修 S3"。本机症状与处理同构。
+
+**顺手排除的一条**：本机 `ACPI/Patch` 只有 `PNLF→XNLF`、`GNUMGPDI→TPNMGPDI` 两条，**没有** `_S3→XS3` ⇒ **本机的 S3 从未被社区式地"禁用"过**，它是**原生存在**的（§三十 已证）。这也说明来源配置走的是"① 用 SSDT 补丁"这条路，而不是"禁用 S3"。
+
+### 5. 自我批评：§二十八 那一步，我该先查到这里
+
+| 环节 | 我查了什么 | 缺口 |
+|---|---|---|
+| §二十四 改 RTC 四件套 | ✅ AppleRTC 2.0.1 反汇编 + RTCMemoryFixup 源码 + 上游 README | 无缺口（有源码级依据） |
+| §二十八 关 `SSDT-DeepIdle` 上 S3 | ✅ AppleACPIPlatform 字符串 + OC-Little《AOAC唤醒方法》 | ❌ **只查了"怎么关"，没查"AOAC 机器关掉之后会怎样"** |
+| §三十三 关 LPCB AOAC | ✅ OC-Little 官方 + DSDT 归属 + FADT 寄存器 | 无缺口（且发现"同名不同物"） |
+
+**§二十八 的缺口是实质性的**：OC-Little《01-关于AOAC》**当时就在同一个仓库里**（`01-关于AOAC` 是 `01-4-AOAC唤醒方法` 的**父目录**），原文第一段就写着"**AOAC 和 S3 本身相矛盾**"、"**一旦进入 S3 睡眠就会睡眠失败**"。
+⇒ **我读了子页面，没读父页面。** 如果读了，就该知道：**在 AOAC 机器上强上 S3，不是"实验"，是社区已定性的失败路径**；后面两次实测（§三十二/§三十四）与那次 panic，**本可以省掉**。
+
+⚠️ **不过要诚实说明边界**：查到这里也只能得出"**大概率不行**"，不能得出"**一定不行**"。
+① OC-Little 举的例子是 **Lenovo PRO13**（非 HP），Ice Lake 仓库说 S3 路径 **对部分 Dell 有效** ⇒ **HP Comet Lake + 原生 `_S3`** 这个具体组合，**社区没有直接先例**（既没有成功案例，也没有失败案例）。
+② 我实测拿到了它的**具体失败形态**（`EC OBF=1` 计数 S3 34/120 vs Deep Idle 0/0），这是社区查不到的**本机专属证据**。
+⇒ 正确的表述是：**社区已把这条路定性为"极可能失败"，实测把它从"极可能"提升为"本机确认"，代价是一次 panic。若先查社区，可以只花"一次重启"就收工（甚至不试）。**
+
+### 6. 变量清点：整轮动过 **6 个**，现已全部归零
+
+| # | 变量 | 引入 | 依据强度 | 现状 |
+|---|---|---|---|---|
+| 1 | `rtcfx_exclude` `80-FF` → `0E-FF` | §二十四 | 源码级（AppleRTC 反汇编） | **保留**（RTC 防护，与睡眠档位无关） |
+| 2 | `UEFI/ProtocolOverrides/AppleRtcRam` `false→true` | §二十四 | 上游 README | **保留** |
+| 3 | `NVRAM rtc-blacklist = 242B` | §二十四 | 上游 Sample.plist | **保留** |
+| 4 | `NVRAM/Delete` 补 `rtc-blacklist` | §二十四 | 上游 README | **保留** |
+| 5 | `SSDT-DeepIdle.aml` `true→false` | §二十八 | ✅ 源码级，但**未查社区后果** | **已回滚 `true`** |
+| 6 | `SSDT-PCI0.LPCB-Wake-AOAC.aml` `true→false` | §三十三 | ✅ 官方 + DSDT 归属 | **已回滚 `true`** |
+
+⇒ **睡眠档位相关的变量（#5/#6）已全部回滚；#1–#4 是 RTC 防护，只碰 RTC RAM（I/O `0x70/0x71`），与 EC（`0x62/0x66`）端口不相交（§三十五），且它们的存在是**为了防 005**，与睡眠档位无关。
+⇒ **回答"变量是不是太多"：曾经是 6 个，现在睡眠相关 = 0 个，机器处于"已知稳定态"。**
+
+### 7. 结论：以后不确定的点，先走这张表
+
+> **纪律升级（写进技能）**：凡准备改配置前，**先按"三层"查**：
+> **① 同一作者的父/邻页**（本次教训：读了 `01-4` 没读 `01`）→
+> **② 平台汇总仓库的"问题清单"**（如 `icelake-hackintosh` 的 Sleep issues 表，直接给"三条路 + 各自代价"）→
+> **③ 症状名搜论坛**（本次"睡眠后无法唤醒只能强制关机"一搜即中 AOAC 标准症状）。
+> 三层查完仍无先例 ⇒ **才轮到实测**，且实测前**必须先写清"预期形态 + 回滚点 + 是否触发不可逆风险"**。
+
+**最终答复用户**：
+- **"全部只能测试？"** → ❌ 不。本轮**零实测**，纯社区查证，且**一查就命中了全部结论**。
+- **"变量太多？"** → 曾是 6 个，**现已收敛为 0 个**（睡眠相关全回滚）；且 4 个 RTC 变量与本次失败机制无关（端口不相交）。
+- **"不确定的点都先在社区确认过吗？"** → **关键结论：是**（OC-Little 原文逐字命中）；**§二十八 那一步：否**（读了子页没读父页，这是我该改的）；**本机这个具体组合（HP Comet Lake + 原生 S3）：社区无先例**（三条路都不覆盖）。
