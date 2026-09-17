@@ -1,6 +1,12 @@
 # 睡眠档位调优测试记录
 
-> 🔴 **2026-09-17 10:2x【最新 · §三十】—— 用户再问「s3睡眠？你确认？」⇒ 补两条硬证，结论仍是"只确认声明层，不确认能睡"**
+> 🟢 **2026-09-17 10:4x【最新 · §三十一】—— 重启已验证：第 1 步通过 ✅ `IOPMDeepIdleSupported` 从 `Yes` 变为"属性完全不存在"**
+> 判据链：AppleACPIPlatform 仅在 `\_SB.LPS0` 返回 **Integer 1** 时才 `setProperty("IOPMDeepIdleSupported")` ⇒ 属性**整个消失**（比 `= No` 更彻底）= LPS0 未提供 = **macOS 不再认为平台是 Deep Idle**。同一变量（SSDT 开关）的两次对照观测，前后互证。
+> ⚠️ **两条旁证已否掉（别再踩）**：`ioreg -p IOACPIPlane -l -w0` **输出 0 行、连必然存在的 `PCI0` 都搜不到 ⇒ 该 plane 在本机不可读**（`LPS0`/`_S3` 搜不到是**此路不通**，不是对象不存在）｜OpenCore 日志 = `Misc/Debug/Target = 0`，**无输出**。
+> ★ **"某个 SSDT 到底加载了没有"的可靠判据**：① **行为判据最强**（该 SSDT 的**唯一副作用**是否在系统里出现/消失 —— 本例 `SSDT-DeepIdle` 的唯一副作用就是那个属性）② 配置 + **重启前后对照** ③ DSDT 归属分析 ④ ❌ 别用 IOACPIPlane / OpenCore 日志。
+> ▶️ **第 2 步（待执行，唯一直接判据）**：`pmset sleepnow`（手动、**不合盖**）→ 醒来查 `pmset -g log | grep -iE "Entering Sleep|Wake from"`：出现 **`Wake from S3`** = L2+L3 双确认；仍是 `Wake from Deep Idle` = 未被选中。顺带验 Fn 键/亮度/电池指示（黑苹果走 S3 有"EC query 失效"先例）。**不写 RTC/镜像 ⇒ 无 005**。
+
+> 🔴 **2026-09-17 10:2x【§三十】—— 用户再问「s3睡眠？你确认？」⇒ 补两条硬证，结论仍是"只确认声明层，不确认能睡"**
 > **新证 A（决定性）**：`SSDT-OCLT-S3Fix.aml` 是**空转**的 —— `Enabled=False`；且其 ASL 只在**非 Darwin** 下定义 `_S3`（Darwin 分支为空），而它赖以自洽的 `_S3→XS3` 改名在 `ACPI/Patch` 里**根本不存在**（config 只有 2 条 patch：PNLF→XNLF、GNUMGPDI→TPNMGPDI）⇒ **`_S3` / `SS3=One` 100% 来自 HP 固件原生，"补丁论"在任何开关组合下都不成立**。
 > **新证 B（对首测有利）**：`SSDT-PCI0.LPCB-Wake-AOAC.aml`（`Enabled=True`）的 `_DSW` **只在 `Arg0 == 0x03` 时动作** —— `0x03` 就是 **S3** ⇒ **唤醒侧配置本来就是按 S3 准备的**，它与 `SSDT-DeepIdle` 是**替代关系而非叠加**。
 > **准确答法（三层，只确认第一层）**：

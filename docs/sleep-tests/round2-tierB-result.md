@@ -2110,3 +2110,47 @@ Method (_DSW, 3) {                       // _DSW: Device Sleep Wake
 - 最坏情况是"拉不着/半着"→ 强制断电，**回滚 = 一个布尔值**（`SSDT-DeepIdle.aml` 的 `Enabled` 改回 `true`）。
 
 **★ 所以"能确定吗"的最终答案**：**能，但只有一条路 —— 亲手试一次。** 代价：一次重启 + 一次 `pmset sleepnow`；收益：把 L2/L3 从"零证据"变成"确定"。**除此外全是同源信息或旁证，给不出新的一层。**
+
+---
+
+## 三十一、重启后验证（09-17 10:4x）—— **第 1 步通过：DeepIdle 让路成功** ✅
+
+用户于 **10:39:56** 重启（`sysctl -n kern.boottime`）。验证结果：
+
+| 观测项 | 重启前（09-17 09:5x） | 重启后（10:4x） | 判读 |
+|---|---|---|---|
+| `IOPMDeepIdleSupported` | `Yes` | **属性完全不存在**（不是 `= No`） | ✅ **让路成功** |
+| 工作区 / ESP `SSDT-DeepIdle.aml` | `False` / `False` | `False` / `False` | 配置未变（唯一变量就是它） |
+| `hibernatemode` / `standby` | `0` / `0` | `0` / `0` | 未动，S3 路径不写 RTC/镜像 |
+
+**判据链**：上轮反汇编已确认 AppleACPIPlatform 的逻辑是 —— 仅当 `AcpiEvaluateObject("\_SB.LPS0")` 返回 **Integer 1** 时才 `setProperty("IOPMDeepIdleSupported")`。
+现在该属性**整个消失**（比 `= No` 更彻底）⇒ LPS0 未提供 ⇒ **macOS 不再认为平台是 Deep Idle**。
+⇒ 这是**同一变量（SSDT 开关）的两次对照观测**，前后互证，结论成立。
+
+### ⚠️ 两条被否掉的旁证（踩坑记录，防止后人重复）
+
+| 方法 | 实测 | 结论 |
+|---|---|---|
+| `ioreg -p IOACPIPlane -l -w0 \| grep -iE "LPS0\|LXEN"` | **输出 0 行** —— 连必然存在的 `PCI0` 都搜不到 | ❌ **该 plane 在本机不可读**。`LPS0`/`_S3` 搜不到是**此路不通**，**不是**对象不存在。**以后别用它查 ACPI 命名空间/方法名。** |
+| OpenCore 启动日志 | `Misc/Debug/Target = 0`（关闭），ESP 根目录**无** `opencore-*.txt` | ❌ 无日志可查 |
+
+### ★ 由此沉淀：**"某个 SSDT 到底加载了没有"的可靠判据**（按强度排序）
+
+| # | 方法 | 说明 |
+|---|---|---|
+| 1 | **行为判据（最强）** | 该 SSDT 的**唯一副作用**是否在系统里出现/消失。本例：`SSDT-DeepIdle` 唯一作用就是提供 `\_SB.LPS0`/`\_GPE.LXEN` ⇒ 唯一可观测副作用就是 `IOPMDeepIdleSupported` 属性 ⇒ 直接读它 |
+| 2 | **配置 + 前后对照** | 读工作区与 ESP 两处 `Enabled`，并以"重启前 vs 重启后"做对照（**同一变量的两次观测**才有说服力） |
+| 3 | **DSDT 归属分析** | 目标对象在 `DSDT.dsl` 里是否已存在。**不存在 ⇒ 只能由 SSDT 提供**；存在 ⇒ 需做缩进/作用域归属判断（区分"原生"与"SSDT 覆盖"） |
+| 4 | ❌ 不可用 | `ioreg -p IOACPIPlane`（0 行）；OpenCore 日志（默认 `Target=0` 无文件输出） |
+
+### ▶️ 第 2 步（待执行，唯一直接判据）
+
+睡一次，看是 `Wake from S3` 还是老样子 `Wake from Deep Idle`：
+
+| 步 | 动作 | 判读 |
+|---|---|---|
+| 1 | `pmset sleepnow`（**手动、不合盖**；机器刚重启若仍在索引，可等负载降下来再睡） | — |
+| 2 | 醒来后：`pmset -g log \| grep -iE "Entering Sleep\|Wake from" \| tail` | **`Wake from S3`** = L2+L3 双确认 ✅；仍 `Wake from Deep Idle` = S3 未被选中 ⚠️ |
+| 3 | 提权 `log show --last 10m \| grep -i "sleep state"` | 期望出现 **`Entering sleep state [S3]`**（AppleACPIPlatform 二进制内该格式串已核对存在） |
+| 4 | 顺带验副作用 | 醒来后 Fn 键 / 亮度 / 电池指示是否正常（**黑苹果走 S3 有"EC query 失效"先例**：ThinkPad E470/E480/E490 等唤醒后 Fn 键、合盖事件、电池状态更新失效） |
+| — | 若 30 s 不醒 | 长按电源 10 s。**不写 RTC/镜像 ⇒ 无 005**；回滚 = `Enabled` 改回 `true` |
