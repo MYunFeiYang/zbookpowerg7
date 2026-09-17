@@ -152,9 +152,9 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>DeepIdle path: LPC wake helpers (AOAC-class); pair with DeepIdle. AML in ACPI/</string>
+				<string>DISABLED 2026-09-17 (S3 experiment, round 2): DeepIdle companion table. Its own Comment used to read "pair with DeepIdle", and SSDT-DeepIdle.aml is already Enabled=false, so this one became an orphan that still fired. It is the ONLY source of LPCB._PRW in the whole namespace (DSDT Device(LPCB) @DSDT.dsl:11574-11607 has neither _PRW nor _DSW), and its _PRW returns Package{0x6D, 0x04} - the very GPE whose "LPCB XDCI" wake interrupted the first S3 test after ~10 s. Its _DSW is gated on Arg0==0x03 (S3) and writes IO 0x1800/0x1801; FADT reports PM1a_EVT_BLK=0x00001800, so that is PM1_STS and AOEN is PM1_STS bit8 = PWRBTN_STS. Under DeepIdle Arg0 was never 3, so it had never executed - it fired for the first time in the S3 test. Rollback: set Enabled=true.</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>Path</key>
 				<string>SSDT-PCI0.LPCB-Wake-AOAC.aml</string>
 			</dict>
@@ -295,17 +295,25 @@
 				<key>Enabled</key>
 				<true/>
 				<key>Find</key>
-				<data>AFAAbABhAHQAZgBvAHIAbQBTAHUAcABwAG8AcgB0AC4AcABsAGkAcwB0</data>
+				<data>
+				AFAAbABhAHQAZgBvAHIAbQBTAHUAcABwAG8AcgB0AC4A
+				cABsAGkAcwB0
+				</data>
 				<key>Identifier</key>
 				<string>Apple</string>
 				<key>Limit</key>
 				<integer>0</integer>
 				<key>Mask</key>
-				<data></data>
+				<data>
+				</data>
 				<key>Replace</key>
-				<data>AC4ALgAuAC4ALgAuAC4ALgAuAC4ALgAuAC4ALgAuAC4ALgAuAC4ALgAu</data>
+				<data>
+				AC4ALgAuAC4ALgAuAC4ALgAuAC4ALgAuAC4ALgAuAC4A
+				LgAuAC4ALgAu
+				</data>
 				<key>ReplaceMask</key>
-				<data></data>
+				<data>
+				</data>
 				<key>Skip</key>
 				<integer>0</integer>
 			</dict>
@@ -1527,7 +1535,14 @@
 			<dict>
 				<key>rtc-blacklist</key>
 				<data>
-				Dg8QERITFBUWFxgZGhscHR4fICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj9AQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVpbXF1eX2BhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ent8fX5/gIGCg4SFhoeIiYqLjI2Oj5CRkpOUlZaXmJmam5ydnp+goaKjpKWmp6ipqqusra6vsLGys7S1tre4ubq7vL2+v8DBwsPExcbHyMnKy8zNzs/Q0dLT1NXW19jZ2tvc3d7f4OHi4+Tl5ufo6err7O3u7/Dx8vP09fb3+Pn6+/z9/v8=
+				Dg8QERITFBUWFxgZGhscHR4fICEiIyQlJicoKSorLC0u
+				LzAxMjM0NTY3ODk6Ozw9Pj9AQUJDREVGR0hJSktMTU5P
+				UFFSU1RVVldYWVpbXF1eX2BhYmNkZWZnaGlqa2xtbm9w
+				cXJzdHV2d3h5ent8fX5/gIGCg4SFhoeIiYqLjI2Oj5CR
+				kpOUlZaXmJmam5ydnp+goaKjpKWmp6ipqqusra6vsLGy
+				s7S1tre4ubq7vL2+v8DBwsPExcbHyMnKy8zNzs/Q0dLT
+				1NXW19jZ2tvc3d7f4OHi4+Tl5ufo6err7O3u7/Dx8vP0
+				9fb3+Pn6+/z9/v8=
 				</data>
 			</dict>
 			<key>7C436110-AB2A-4BBB-A880-FE41995C9F82</key>

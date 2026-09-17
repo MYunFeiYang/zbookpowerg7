@@ -1,6 +1,13 @@
 # 睡眠档位调优测试记录
 
-> 🟢🟢 **2026-09-17 10:5x【最新 · §三十二】—— ★ 第一次 S3 实测：L2 切换成功（已走 S3），L3 半通（能睡、10 s 后被 USB 叫醒）**
+> 🔥🔥🔥 **2026-09-17 11:0x【最新 · §三十三】—— ★★ 元凶候选锁定：`SSDT-PCI0.LPCB-Wake-AOAC` 是 DeepIdle 的配套件，上一轮漏关了**
+> **触发**：用户回答三问 ⇒ **① 按睡眠键后机器就没动；② 回来按电源键没反应；③ 最后长按电源键关机重启；④ 没有 Type-C 设备** ⇒ **"外设插入唤醒"整类排除**。
+> **核心发现**：该条目原本的 Comment 字面写着 **`pair with DeepIdle`**，而 `SSDT-DeepIdle.aml` 已被我关掉 ⇒ **配套件成了孤儿却仍在生效**。它是 **LPCB 唯一的 `_PRW` 来源**（DSDT `Device(LPCB)` @`11574-11607` 内 `_PRW`/`_DSW` 计数均为 **0**），`_PRW` 返回 `Package{0x6D, 0x04}` —— **正是 `LPCB XDCI` 用的那个 GPE**；`_DSW` 被 `Arg0==0x03(S3)` 门控并写 IO `0x1800/0x1801`，而 FADT 实测 **`PM1a_EVT_BLK=0x00001800`** ⇒ 那是 **PM1_STS**、`AOEN` 是 **PWRBTN_STS**。在 DeepIdle 时代它**从未执行过**，关掉 DeepIdle 后**第一次生效**，首次 S3 实测 10 s 就被打断 ⇒ **时间线一一对应**。
+> ⚠️ 另一疑点：OC-Little 官方《AOAC唤醒方法》给的同名文件内容是 **`_PS0`/`_PS3`**（`\_WAK(0x03)` 重置唤醒），**本机却是 `_DSW`/`_PRW`** ⇒ **同名不同物**，不能按官方说明推断其安全性。
+> **▶️ 已落盘**：`SSDT-PCI0.LPCB-Wake-AOAC.aml → Enabled=false`（工作区）。**待用户**：同步 ESP → 重启 → `pmset sleepnow`（不合盖）。
+> 结果：**睡住 >1 min / 出 `Wake from S3` = 元凶确认，S3 可用**；**仍被 `LPCB XDCI` 叫醒 = 不是它** ⇒ 进方案 B（经典 GPRW 补丁，把 GPE 0x6D 唤醒整类关掉）。回滚 = `Enabled=true`，零 RTC 风险。
+
+> 🟢🟢 **2026-09-17 10:5x【§三十二】—— ★ 第一次 S3 实测：L2 切换成功（已走 S3），L3 半通（能睡、10 s 后被 USB 叫醒）**
 > **★★ 两条前后对照铁证**：① `(AppleACPIPlatform) ACPI: sleep states` 由 **`S0 S3 S4 S5`**（历史 8 次记录全含 S0）变为 **`S3 S4 S5`** —— **S0ix 条目消失**；② `lastSleepType`（airportd）由 **`0x00000007`/`'Deep Idle'`** 变为 **`0x00000002`/`'Normal Sleep'`**。⇒ **macOS 睡眠态模型只剩 `S3/S4/S5`，实际走的就是 S3**（`_S4` 要写镜像而 `hibernatemode=0`、`_S5` 是关机）。⚠️ 诚实标注：**没有**出现正面标签 `Wake from S3`（因为唤醒中途断了）。
 > **时间线**：`10:48:53 PMRD: phase 2`（真睡下去了）→ **`10:49:03 Wake reason: LPCB XDCI`（只睡 ~10 s 就被叫醒）** → `10:50:20 DarkWake`（`lastSleepType 0x02`、`wakereason['LPCB XDCI XHC']`）→ `10:50:28 (AppleIntelCFLGraphicsFramebuffer) [IGFB][ERROR] setAttribute called when FB0 is in a sleep state`（**显示未恢复**）→ `10:52:39` 重启（`SMC shutdown cause: 5` 软关机）。
 > ⇒ **L3 判定：不是"PCH 完全不通"**（确实睡到 phase 2、且能被唤醒）**，而是"能睡、被 USB-C 立即打断、唤醒后显示未恢复"。**

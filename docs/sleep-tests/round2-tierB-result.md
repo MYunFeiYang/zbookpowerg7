@@ -2211,3 +2211,65 @@ Method (_DSW, 3) {                       // _DSW: Device Sleep Wake
 ⇒ 若第 1 步拔掉外设后**仍被 `LPCB` 叫醒**，可试**临时关掉该 SSDT**（回滚同样是一个布尔值）。
 
 **当前 USB 树（实测 `ioreg -p IOUSB`）**：`XHC@14000000` → `HP HD Camera`（内置）/ `Bluetooth USB Host Controller`（内置）/ **`USB Optical Mouse`（外接）**。注意本次唤醒源是 `LPCB XDCI` 而**不是** `XHC`。
+
+---
+
+## 三十三、★★ 元凶候选锁定：`SSDT-PCI0.LPCB-Wake-AOAC` 是 **DeepIdle 的配套件**，上一轮被我漏关（09-17 11:0x）
+
+### 触发：用户回答三问，排除了"外设唤醒"
+
+用户实测回答：**① 按睡眠键后就没动了；② 上厕所回来按电源键没反应；③ 最后长按电源键关机重启；④ 没有 Type-C 设备。**
+⇒ **"外设插入导致唤醒"整类排除** ⇒ `LPCB XDCI` 的唤醒信号是**配置/固件自己发出来的**，不是插了什么。
+
+### 7 条证据链（全部本轮只读实测）
+
+| # | 证据 | 出处 |
+|---|---|---|
+| 1 | **配套关系自证**：该条目原本的 Comment 原文 = `DeepIdle path: LPC wake helpers (AOAC-class); **pair with DeepIdle**`。而 `SSDT-DeepIdle.aml` 已在同一轮被 `Enabled=false` ⇒ **配套件成了孤儿，却仍在生效** | `config.plist` ACPI/Add |
+| 2 | **官方定义**：OC-Little《AOAC唤醒方法》原文明说本文件是 `SSDT-DeepIdle` 的**配套修复** —— *"SSDT-DeepIdle 补丁可以使机器进入深度空闲状态……但同时也会导致唤醒机器比较困难……有可能会：**不能点亮屏幕**或者**不能更新电源数据**"* | OC-Little `01-关于AOAC/01-4-AOAC唤醒方法` |
+| 2b | ⚠️ **内容不符**：官方给出的补丁体是 **`_PS0` + `_PS3`**（`_PS0` 内调 `\_WAK(0x03)` 重置唤醒状态）；**本机文件里根本没有 `_PS0`/`_PS3`，而是 `_DSW` + `_PRW`** ⇒ **同名不同物，本机这份来自另一来源**，不能按官方说明推断其安全性 | `EFI/oc/ACPI/SSDT-PCI0.LPCB-Wake-AOAC.dsl:25-64` |
+| 3 | **它是 LPCB 唯一的 `_PRW` 来源**：`Device (LPCB)` 体内 `Method (_PRW` 计数 = **0**、`Method (_DSW` 计数 = **0** ⇒ 唤醒原因里的 **"LPCB" 只能来自这个 SSDT** | `DSDT.dsl:11574-11607` |
+| 4 | **它声明的 GPE 与 XDCI 同一个**：`_PRW` 返回 `Package(){0x6D, 0x04}`；DSDT 里 `GPRW(0x6D,0x04)` 的原生主人是 **SBUS / HDAS / XDCI / CNVW**（4 个，**不含 LPCB**）⇒ 本 SSDT 是在**新增**一条 GPE 0x6D 的唤醒声明 | `DSDT.dsl:12246, 12831, 12939, 26581` |
+| 5 | **★ 它写的是 PM1_STS**：`_DSW` 在 `Arg0==0x03` 时执行 `OperationRegion(AOWR, SystemIO, 0x1800, 0x02)` + `Field{AOAC,8, AOEN,1}` + `AOEN = Arg2`。FADT 实测 **`PM1a_EVT_BLK = 0x00001800`** ⇒ `0x1800` 就是 **PM1_STS**（16-bit 电源管理状态寄存器），`AOEN` = `0x1801` bit0 = PM1_STS 的 **bit8 = `PWRBTN_STS`（电源键状态）** | `SSDT-…-Wake-AOAC.dsl:34-44` + `FACP-1.aml` @0x38 |
+| 6 | **它只在 S3 生效**：`_DSW` 全程被 `Arg0 == 0x03` 门控 ⇒ DeepIdle 时代 macOS 走 S0ix、`_DSW` 的 Arg0 不会是 3 ⇒ **从未执行过**；关掉 DeepIdle 后**第一次真正生效**，首次 S3 实测就在 **10 s** 后被打断 ⇒ **时间线一一对应** | 同上 + §三十二 时间线 |
+| 7 | **DSDT 的 `GPRW` 由常量驱动**：`Method (GPRW,2)` 用 `(SS1<<1)\|(SS2<<2)\|(SS3<<3)\|(SS4<<4)` 决定返回的睡眠态；`SS1=SS2=0 / SS3=SS4=1` ⇒ `GPRW(0x6D,0x04)` 原样返回 `{0x6D,0x04}`（声明可自 S3/S4 唤醒） | `DSDT.dsl:31307` + `5706-5709` |
+
+### 因果链
+
+```
+SSDT-DeepIdle 提供 \_SB.LPS0  →  macOS 选 Deep Idle(S0ix，~5 W)
+        ↓ 为省电把它关掉（§二十八）
+macOS 回落 DSDT _S3  →  真走 S3（§三十二 L2 已确认 ✅）
+        ↓ 但它的配套件没跟着关 ← 本次新发现的漏洞
+SSDT-PCI0.LPCB-Wake-AOAC 在 S3 下首次生效：
+   ① _DSW 写 PM1_STS(0x1800/0x1801)   ← 进睡前去动电源管理状态寄存器
+   ② _PRW 给 LPCB 新增 GPE 0x6D 声明   ← 与 XDCI/SBUS/HDAS/CNVW 同一个 GPE
+        ↓
+10:48:53 睡下 → 10:49:03 Wake reason: LPCB XDCI（只睡 ~10 s）
+```
+
+### 结论
+
+**这不是"硬件不支持 S3"——恰恰相反。** 睡到了 `PMRD phase 2`、也能被唤醒 ⇒ **S3 通路是活的**；打断它的是一个**本该跟着 DeepIdle 一起关掉的配套件**。
+
+**▶️ 第 2 步实验（严格 1 个变量）**：`SSDT-PCI0.LPCB-Wake-AOAC.aml` → `Enabled=false` → 同步 ESP → 重启 → `pmset sleepnow`（不合盖）。
+
+| 结果 | 判读 | 下一步 |
+|---|---|---|
+| 睡住 >1 min，或日志出现 `Wake from S3` | ✅ 元凶确认，S3 可用（5 W→≈0.5–1 W） | 收工，转长期验证 |
+| 仍被 `LPCB XDCI` 叫醒 | ❌ 不是它 | 进方案 B |
+
+**方案 B（若 A 无效）**：`_PRW` 的原生主人还在 —— `XDCI`/`SBUS`/`HDAS`/`CNVW` 自己就声明了 `GPRW(0x6D,0x04)`。用经典 GPRW 补丁把 **GPE 0x6D 的唤醒整类关掉**：
+```
+ACPI/Patch:  Find 47505257 02 → Replace 58505257 02      (GPRW → XPRW)
++ 注入 SSDT: Method (GPRW,2) { If (_OSI("Darwin")) { If (LEqual(0x6D,Arg0)) { Return (Package(){0x6D,Zero}) } } Return (XPRW(Arg0,Arg1)) }
+```
+（出处：黑苹果星球《启用休眠简单步骤》所附 @Sukka 补丁 `OEM Table ID "GPRW"` / OC-Little 同名补丁。**副作用**：SBUS/HDAS/XDCI/CNVW 不能再唤醒系统；电源键走 EC、不经这条 GPE ⇒ 不受影响。）
+
+**回滚**：`Enabled=true`（1 个布尔值）。**零 RTC 风险**（S3 不写 RTC、不写镜像）。
+
+### 教训（通用）
+
+> **AOAC/DeepIdle 类补丁是"成对"的。关一个必须同时关它的配套件。**
+> 判定法：查 `config.plist` 里各 ACPI/Add 条目的 **Comment 是否互相引用**（本例字面写着 `pair with DeepIdle`），
+> 再用「**该 SSDT 是否在 DSDT 里有同名对象**」确认它到底"新增"了什么（本例 LPCB 的 `_PRW` 是凭空新增的）。
