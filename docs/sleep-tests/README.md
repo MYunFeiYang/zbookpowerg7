@@ -1,10 +1,11 @@
 # 睡眠档位调优测试记录
 
-> 🧩 **2026-09-17 14:3x【最新 · §四十一】** —— 用户追问「**之前合盖可以进 deep idle 啊**」⇒ 追出真因：**不是 macOS、不是 EFI、也不是 LID 补丁，而是两个第三方进程** ——
-> **① 让合盖能睡的是 `/Applications/Clamshell.app`**（`com.kovrazhkin.Clamshell` v2.3，偏好里写着 **`whenClamshellIsClosed = sleep`**，官方文案点名"给接外接屏的 MacBook 用户用"）；
-> **② 今天中午起让它睡不成的，是 WorkBuddy 自己** —— `pmset -g assertions` 实测 **`NoIdleSleepAssertion`（pid 671 Electron = WorkBuddy.app）已持 `01:25:21`**，而 Clamshell 的 Sleep 动作在「接屏 + 插电」时走的正是「**关掉所有屏 → 等 idle sleep**」，被这个断言挡住 ⇒ **屏黑了、机器一直醒着**（逐字对应其官方说明："If there are processes that hold assertions to prevent idle sleep, the system will wait before sleep with turned off displays"）。
-> ⇒ **§四十 的 A/B 两候选作废**；`macos-sleep-power-verification.md` §八.4「双 LID 设备」归因**更正**（`AppleClamshellCausesSleep=No` 在「接屏 + 插电」下**本就该是 No**）。
-> **要合盖就睡**：① 合盖前**退出 WorkBuddy**（首选，1 分钟可验）；② **苹果菜单 → 睡眠**（显式请求，不受该断言阻挡）。完整见 **§四十一**。
+> 🛑 **2026-09-17 14:4x【最新 · §四十二 · 更正 §四十一】** —— 用户追问「**之前你也没档啊，为什么今天挡了？**」⇒ **一问致命，§四十一 的归因被推翻**：
+> ⛔ **断言不是原因** —— 铁证：`11:29:11` **PID 673(Electron) 正持有 `NoIdleSleepAssertion`**，而 **`11:29:41` 机器照样睡了** ⇒ 断言在场也照睡 ⇒ **"WorkBuddy 挡了合盖睡眠"作废**。
+> ⛔ 而且**今天两次"睡眠"根本不是合盖睡眠**：内核行显示入睡那刻 **`clamshell closed 0`（盖子开着）**，reason 全是 `Software Sleep pid=174`(loginwindow) = **有人显式请求**。09-16 才有真合盖睡眠（唤醒原因为 `Lid Open`）。
+> 🔍 **12:14 的真相不是"被挡住"，是"根本没启动"** —— 09-16 每次合盖都有 `InternalPreventSleep(darkwakelinger) → TimedOut → 睡` 完整链，今天两次合盖关屏后**链上一条都没有**；且 `11:42:40→13:03:07` 内核 **PMRD 全程静默、无 `clamshell closed 1`** ⇒ 内核没感知到合盖。
+> 🔑 **真正的机制层 = `disabled`(=`clamshellSleepDisabled`) + 内核合盖感知**：`13:04:06` 内核认到 `closed 1`、`13:04:23` Clamshell 把 `disabled` 拨回 0，**机器仍不睡** ⇒ 疑似**评估时机竞态**。
+> ✅ **要合盖即睡：用「苹果菜单 → 睡眠」**（显式请求，绕过整条链）。**15 秒裁决实验**见 §42.5。完整见 **§四十二**。
 >
 > ---
 >

@@ -3068,3 +3068,87 @@ cd <repo> && git log -S "<属性名或键名>" --text --oneline -- EFI/OC/config
   未抓到 App → loginwindow 的调用链；`pid=174` 在 09-16 会话中**未复核**（**当前**会话确认为 `loginwindow`）。
 - **11:29 那次外接屏是否接着，未实测。**
 - **一次干净坐实（1 分钟）**：退出 WorkBuddy → 合盖 30 s → **若睡 = 全链成立**；若不睡 = 回到"App 未触发"分支再查。
+
+---
+
+## 四十二、更正 §四十一：断言不是原因 —— 「之前你也没档啊，为什么今天挡了？」
+
+**用户这一问直接证伪了 §四十一 的 ②**（"WorkBuddy 的 `NoIdleSleepAssertion` 挡住了合盖睡眠"）。
+零 EFI / 零系统改动，全部为 `pmset -g log` + 提权 `log show` 只读取证。
+
+### 42.1 铁证（同机、同日、同一断言，一睡一不睡）
+
+| 时刻 | Electron 断言 | 结果 |
+|---|---|---|
+| `11:29:11` | **PID 673(Electron) 持有** `NoIdleSleepAssertion "Electron" 00:10:54`，`[System: PrevIdle DeclUser BGTask kDisp]` | **`11:29:41` 照样睡了** ✅ |
+| `12:14:49` | PID 666(Electron) 持有同一断言 `00:31:09`，`[System: PrevIdle]` | 之后一直没睡 ❌ |
+
+⇒ **断言在场，机器照睡** ⇒ 断言**挡不住**这条睡眠路径 ⇒ **§四十一 的 ② 归因错误，撤回**
+（`Software Sleep` 是**显式请求**，显式请求不受用户态 idle-sleep 断言约束；断言只影响 idle 计时器。）
+
+### 42.2 顺手推翻的第二个误解：今天两次「睡眠」根本不是合盖睡眠
+
+| 睡眠时刻 | reason | 内核状态行 |
+|---|---|---|
+| `10:48:50` | `Software Sleep pid=174`(loginwindow) | `DarkWake: sleepASAP 1, **clamshell closed 0**, disabled 0/0, desktopMode 1, ac 1` |
+| `11:29:41` | `Software Sleep pid=174`(loginwindow) | `DarkWake: sleepASAP 1, **clamshell closed 0**, disabled 0/0, desktopMode 1, ac 1` |
+
+**`clamshell closed 0` = 睡眠那一刻盖子开着** ⇒ 这两次都是**有人显式请求睡眠**（按键/菜单），**不是合盖触发**。
+⇒ 今天（09-17）**还没有成功过一次真正的"合盖睡眠"**；用户中午 12:14 那次才是今天第一次合盖尝试。
+
+对照 09-16 确有真合盖睡眠：`14:39:31` 入睡 → `14:42:03 Wake … due to PWRB/**Lid Open**`；`19:58:07` 入睡 → `20:00:16 Wake … due to …/**Lid Open**` ⇒ **用户"之前合盖能睡"是事实**。
+
+### 42.3 中午 12:14 的真相：不是"被挡住"，是"根本没启动"
+
+09-16 每次合盖睡眠前都有一条完整信号链（**每次无一例外**）：
+```
+Display is turned off
+ → powerd Created InternalPreventSleep "com.apple.powermanagement.darkwakelinger"
+ → powerd TimedOut（约 13–17 s 后）
+ → Entering Sleep state
+```
+今天两次合盖（`12:14:49`、`13:18:49`）关屏之后：
+```
+Display is turned off
+ → (无 InternalPreventSleep、无 WillSleep、无 clamshell 状态行)
+ → Kernel Idle sleep preventers: -None-      ← 只是显示管理器收工
+```
+⇒ **系统压根没有进入"准备睡眠"流程。** 所以问题不是"谁挡了"，而是"**谁该发而没发**"。
+
+### 42.4 真正的机制层：`disabled`（= `clamshellSleepDisabled`）+ 内核合盖感知
+
+内核 `PMRD` 原始行格式：`clamshell closed X, disabled Y/Z, desktopMode W, ac V`。今天全过程：
+
+| 时刻 | 状态 | 含义 |
+|---|---|---|
+| `11:17:30` | `closed 0, disabled 1/0 → **0/0**, desktopMode 1` | **外接屏接入时**，`disabled` 被置 0（允许合盖睡眠）—— 这就是 Clamshell.app 的动作 |
+| `11:29:42` | `disabled 1/0` | 唤醒后系统把 `disabled` 恢复为 1 |
+| `11:42:40` | `disabled 1/0 → **0/0**`（desktopMode 1） | 重启后外接屏接入，**又被置 0** |
+| **`11:42:40` → `13:03:07`** | **PMRD 全程静默，无任何 `clamshell closed 1`** | ⚠️ **这 80 分钟内核没有记录到任何合盖状态变化**（而 `12:14:49` 确实关屏了） |
+| `13:03:47` | `disabled 1/0 → **0/0**`（desktopMode 1） | 再次置 0 |
+| **`13:04:06`** | **`clamshell closed 1**, disabled 0/0` | ✅ 内核**这次认到了合盖** |
+| `13:04:07` | `closed 1, disabled **1/0**` | 系统在合盖后 1 秒把 `disabled` 拨回 1 |
+| `13:04:23` | `closed 1, disabled **0/0**` | Clamshell 又拨回 0 —— **但仍没睡** |
+| `13:59:33` | `closed 0` | 开盖 |
+
+**两条并列的疑点**：
+1. **`11:42:40`→`13:03:07` 内核无合盖记录** ⇒ 12:14 那次合盖**内核没感知到**（本该有 `closed 1`）；
+2. **`13:04:06` 内核感知到了合盖、`disabled` 也被拨回 0，但机器仍不睡** ⇒ 疑似**评估时机竞态**：系统在 `13:04:07`（`disabled=1`）那一刻已评估完"不睡"，之后即便 `disabled` 变 0，也没有新事件触发**重新评估**。
+
+⇒ **断言与这两条都无关。§四十一 归因链整体作废。**
+
+### 42.5 结论（可对外收口）
+
+- **不是 WorkBuddy 挡的** —— 断言在场时（11:29）机器照睡。
+- **今天两次合盖失败（12:14、13:18）的症状**：系统未启动睡眠流程，且（12:14 那次）内核连"合盖"事件都没记录。
+- **要合盖即睡，当前最稳的仍是「苹果菜单 → 睡眠」**（显式请求，绕过上面整条链）。
+- **一次 15 秒裁决实验**（比上轮那个更有效）：**现在合盖 15 s 再开**，只看三样 ——
+  ① 内核 `PMRD` 有没有出现 `clamshell closed 1`（**合盖感知**）；② `disabled` 有没有被置 0；③ 有没有 `Entering Sleep state`。
+  - ①否 ⇒ **LID 感知层问题**（`SSDT-LID-G7`/EC 方向，我此前的"双 LID"怀疑要复活，但需另立判据）
+  - ①②是、③否 ⇒ **评估时机竞态**（Clamshell 拨回 0 太晚）
+  - ③是 ⇒ 通路正常，12:14 属条件性偶发
+
+### 42.6 方法论教训（已写入技能）
+
+**"某个进程一直持有的东西"天然不是"某次失败的变量"。** 断言从 WorkBuddy 启动起就常在 ⇒ 它无法解释"只有那次失败"。
+正确做法：**先在同机找"同一因素在场却成功"的反例**（本例 11:29），一票否决该因素，**再去比较"成功那次有、失败那次没有"的东西**（本例：`InternalPreventSleep` 信号链、内核 `clamshell closed` 记录）。
