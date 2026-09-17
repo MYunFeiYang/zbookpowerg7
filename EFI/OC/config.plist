@@ -96,9 +96,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>DeepIdle path: LPS0 / S0 deep idle (primary focus). AML in ACPI/
-
-[RESTORED 2026-09-17 evening] Re-enabled together with SSDT-DeepIdle.aml: the force-S3 experiment is concluded a FAILURE (docs/sleep-tests/round2-tierB-result.md section 34). Under S3 this machine woke 65x slower (WakeTime 159.336 s vs 2.430-2.617 s across four Deep Idle wakes), the PS2 controller took 342x longer to resume (157735 ms vs 457-466 ms), and it produced the only kernel panic this machine has ever recorded (NMIPI TLB flush timeout, backtrace through IOUSBHostFamily / AppleUSBXHCI / IntelBluetoothFirmware). XDCI wake is benign under Deep Idle - it appears in the historical Deep Idle wake reasons too - so it was never the culprit. Rollback target is the known-stable Deep Idle state.</string>
+				<string>DeepIdle path: LPS0 / S0 deep idle (primary focus). AML in ACPI/ [RESTORED 2026-09-17 evening] Re-enabled together with SSDT-DeepIdle.aml: the force-S3 experiment is concluded a FAILURE (docs/sleep-tests/round2-tierB-result.md section 34). Under S3 this machine woke 65x slower (WakeTime 159.336 s vs 2.430-2.617 s across four Deep Idle wakes), the PS2 controller took 342x longer to resume (157735 ms vs 457-466 ms), and it produced the only kernel panic this machine has ever recorded (NMIPI TLB flush timeout, backtrace through IOUSBHostFamily / AppleUSBXHCI / IntelBluetoothFirmware). XDCI wake is benign under Deep Idle - it appears in the historical Deep Idle wake reasons too - so it was never the culprit. Rollback target is the known-stable Deep Idle state.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -106,9 +104,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>DeepIdle path: LPC wake helpers (AOAC-class); pair with DeepIdle. AML in ACPI/
-
-[RESTORED 2026-09-17 evening] Re-enabled together with SSDT-DeepIdle.aml: the force-S3 experiment is concluded a FAILURE (docs/sleep-tests/round2-tierB-result.md section 34). Under S3 this machine woke 65x slower (WakeTime 159.336 s vs 2.430-2.617 s across four Deep Idle wakes), the PS2 controller took 342x longer to resume (157735 ms vs 457-466 ms), and it produced the only kernel panic this machine has ever recorded (NMIPI TLB flush timeout, backtrace through IOUSBHostFamily / AppleUSBXHCI / IntelBluetoothFirmware). XDCI wake is benign under Deep Idle - it appears in the historical Deep Idle wake reasons too - so it was never the culprit. Rollback target is the known-stable Deep Idle state.</string>
+				<string>DeepIdle path: LPC wake helpers (AOAC-class); pair with DeepIdle. AML in ACPI/ [RESTORED 2026-09-17 evening] Re-enabled together with SSDT-DeepIdle.aml: the force-S3 experiment is concluded a FAILURE (docs/sleep-tests/round2-tierB-result.md section 34). Under S3 this machine woke 65x slower (WakeTime 159.336 s vs 2.430-2.617 s across four Deep Idle wakes), the PS2 controller took 342x longer to resume (157735 ms vs 457-466 ms), and it produced the only kernel panic this machine has ever recorded (NMIPI TLB flush timeout, backtrace through IOUSBHostFamily / AppleUSBXHCI / IntelBluetoothFirmware). XDCI wake is benign under Deep Idle - it appears in the historical Deep Idle wake reasons too - so it was never the culprit. Rollback target is the known-stable Deep Idle state.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
