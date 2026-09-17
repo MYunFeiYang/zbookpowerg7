@@ -1,6 +1,20 @@
 # 睡眠档位调优测试记录
 
-> 🛑🛑🛑 **2026-09-17 11:45【最新 · §三十四】—— ★★★ 结论：S3 路线收手回滚。不是"触发源"问题，是「唤醒通路」本身坏了**
+> 🔍🔍 **2026-09-17 12:0x【最新 · §三十五】—— 用户追问「有没有可能是你配置有问题？」⇒ 定位到 **EC（嵌入式控制器）在 S3 恢复后停止响应****
+> **① ★★★ 新证据**：S3 恢复窗口里 `(AppleACPIEC) EC OBF=1 poll timed out` **每 ~2.2 秒一次连绵不断** —— EC 的 Output Buffer Full 恒为 1 ⇒ **EC 从不响应**（`AppleACPIEC` 轮询 I/O `0x66` 永远等不到清位）。
+> **② ★★★ 对照（`EC OBF=1` 计数）**：09-15 普通运行 **1**（噪声）/ 09-16 20:00 Deep Idle 唤醒 **0** / 09-17 08:52 Deep Idle 唤醒 **0** ‖ **09-17 10:48 S3 第一次 34** / **11:33 S3 第二次 120** / 11:46 回滚后运行 **0** ⇒ **分界干净，S3 独有**。
+> **③ 一次解释所有慢数字**：`ApplePS2Controller(SetState to 2)` 457–466 ms → **157,735 ms**、`SMCSMBusController(SetState to 1)` 不上榜 → **11,064 ms** —— **PS2/KBC 与 SMC 都经 EC 访问** ⇒ 死等 ⇒ 唤醒拖到 160 s ⇒ USB/蓝牙/摄像头重新枚举失败 ⇒ panic 落 USB 栈。
+> **④ 诚实交代混淆变量（用户这一半是对的）**：09-17 只有 10:39/10:52/11:16/11:42 四次重启，最后一次"已知良好"的 Deep Idle 唤醒是 **08:52**；而 **10:39 那次重启同时生效了 4 项** = `DeepIdle=false` + `AppleRtcRam=false→true` + `rtcfx_exclude 80-FF→0E-FF` + 新增 `rtc-blacklist 242B` ⇒ **没有一次 S3 实测跑在干净配置上**。
+> **⑤ 但 RTC 三件套在机制上被排除**：其作用域只有 **RTC RAM（I/O `0x70/0x71`）**，而坏的是 **EC（I/O `0x62/0x66`、驱动 `AppleACPIEC`）** ⇒ **两条路径硬件上完全不相交**。**拦 RTC 写不可能让 EC 停止回话。**
+> **⑥ 真 A/B**：`SSDT-PCI0.LPCB-Wake-AOAC` 开（34 次）也失败、关（120 次）也失败 ⇒ 不是决定因素。
+> **⑦ 结论**：`SSDT-DeepIdle=false` **不是"配错了值"**，而是打开了一条**这台固件没有完整实现的状态转换**。EC 的 ACPI 声明干净（DSDT `Device(EC0)`@`27116` `_HID=PNP0C09`、`_REG`@`27196`；`SSDT-EC.aml` 仅 125 B 假 EC，不改名不隐藏；`ACPI/Patch` 仅 2 条且不碰 EC），**同一套 EC 握手代码每次开机都跑通** ⇒ 是 S3 后固件把 EC 留在不接受 legacy 初始化的状态，与 §二十七「AOAC 与 S4 冲突」**同族**。
+> **⑧ 唯一剩余实验（建议不做）**：单独回退 RTC 三件套 + 保留 `DeepIdle=false` 再测。收益仍只是"也许能修好唤醒"（确定收益 5 W→1 W），且回退会重开 005 风险窗口。
+> **⑨ ⚠️ 当前状态**：`boottime`=11:42:02、`IOPMDeepIdleSupported` **仍不存在** ⇒ **本轮系统还在 S3 模式**；工作区/ESP 已哈希一致（`f7261b16…`）且两 SSDT 均 `True` ⇒ **磁盘已是稳定态，只差重启**。
+> 完整取证：`round2-tierB-result.md` **§三十五**。
+>
+> ---
+>
+> **【以下为 §三十四 · 已成历史条目】** 🛑🛑🛑 **2026-09-17 11:45 —— ★★★ 结论：S3 路线收手回滚。不是"触发源"问题，是「唤醒通路」本身坏了**
 > **触发**：用户反馈 **"又只能强制关机才正常"**（第二次 S3 实测，且 `SSDT-DeepIdle` + `SSDT-PCI0.LPCB-Wake-AOAC` 均已 `false`、工作区/ESP 哈希一致 `77d88978…`）。
 > **① 本机有史以来唯一一次内核 panic**：`Kernel-2026-09-17-114214.panic` —— `NMIPI for unresponsive processor: TLB flush timeout`，backtrace 落在 `IOUSBHostFamily` / `AppleUSBXHCI` / `AppleUSBXHCIPCI` / `com.zxystd.IntelBluetoothFirmware`。`ls Kernel-*.panic | wc -l` = **1**（历史仅此一次）。
 > **② ★★★ 决定性同机 A/B**：`WakeTime` 全历史 5 条 —— 前 4 条（Deep Idle，09-16~09-17）**2.617 / 2.430 / 2.436 / 2.442 s**；S3 那次 **159.336 s**（**65×**）。同一驱动的 `Kernel Client Acks`：`ApplePS2Controller(msg: SetState to 2)` 历史 4 次 **457/462/461/466 ms** → S3 **157,735 ms**（**342×**）。两个独立数字互证 ⇒ **唤醒真的花了近 160 秒**。
