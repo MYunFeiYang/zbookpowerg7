@@ -3250,3 +3250,33 @@ Display is turned off
 - **唯一能动的口子 = 睡前断外设（外屏+USB鼠标）**，属用户物理动作，零风险。
 - **正确动作顺序**：先按 §44.4 测真实掉电率 → 再决定是否值得断外设。
 - 全程零 EFI 改动、零系统改动。
+
+---
+
+#### 45. ACPI 删减（16:2x）—— 用户要求"删减一下无效的acpi"
+
+**方法（按铁律先查证再删，不盲删）**：枚举 config `ACPI/Add` 共 19 张 → 硬件查证（ioreg PCI 树确认**无独显 / 无雷电**）→ 反汇编疑点表确认作用域。
+
+**删除 6 张（判据逐条可复现）**：
+
+| 表 | Enabled | 判据 |
+|---|---|---|
+| `SSDT-TPD3-CRS.aml` | False | 加载即被拒（DSDT 已定义 `TPD3.SBFG`，`AE_ALREADY_EXISTS`），注释记"never applied, useless by design" |
+| `SSDT-TPD3-INI.aml` | False | 同上（`_INI` 冲突），已被 `SSDT-TPD3-PIN.aml` 取代 |
+| `SSDT-TB3HP-ZBook.aml` | False | TB3 热插拔；本机无 TB 控制器（ioreg 零节点） |
+| `SSDT-TB3HP-ZBook-lite.aml` | False | 同上（实验版） |
+| `SSDT-OCLT-S3Fix.aml` | False | Darwin 路径空（no-op），`XS3_` 悬空，macOS 26 忽略 `_S3` |
+| `SSDT-dGPU-PowerOff-Darwin.aml` | True | 作用域 `_SB.PCI0.PEG0.PEGP._OFF` 经 `CondRefOf` 保护；**本机无独显 ⇒ method 不存在 ⇒ 整表纯 no-op** |
+
+**保留（判定为有效）**：
+
+- `SSDT-thunderbolt-disable.aml`（Enabled=True）：把 `RP01` 在 Darwin 下 `_STA=0` 隐藏 —— 本机 RP01 正是死 TB 设备，**隐藏它正是它该干的事 ⇒ 仍生效**，保留。
+- 其余 12 张（EC / AWAC / PLUG / USBX / I2C0-GNVS / TPD3-PIN / LID-G7 / SNDW-off / PMC / PNLF / DeepIdle / PCI0.LPCB-Wake-AOAC）均为本机在用功能，保留。
+
+**结果**：19 → **13 张**。
+
+**一致性校验**：① 剩余 13 张文件均存在；② 全仓库 grep 已删表名**无残留引用**；③ `ACPI/Patch` 仅 2 条（`PNLF→XNLF` rename、`TPD3` rename），均指向保留表，无交叉依赖；④ `plutil -lint` OK。
+
+**风险与回滚**：8 个文件全部 git 追踪，删除**可逆**（历史版本 `git checkout` 即可恢复）；未触动 ESP，需用户手动同步后才生效。
+
+**提醒**：本次仅删"无效 / 无硬件"表，**未碰任何在用功能**；睡眠（Deep Idle）/ 合盖 / 独显禁用等逻辑不变。
