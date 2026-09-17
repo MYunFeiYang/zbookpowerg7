@@ -2870,3 +2870,14 @@ ioreg -t -c IOPCIDevice -w0 | grep -E '"acpi-path"|"IOName"' | grep -B1 'pci15b7
 
 **不动 Wi-Fi/BT 的前提下，Deep Idle ≈5 W ≈7%/h 就是本机地板**；7 条社区清单已用尽，
 唯一剩下的动作是**纯电池基线测量**（拔电、合盖睡 4–8 h、记掉电率），先量再谈改；**ASPM 默认不动**。
+
+### 38.9 重启验证（同日 13:03，本节收尾）
+
+| 检查项 | 结果 |
+|---|---|
+| `kern.boottime` | **13:03:07**（原 11:42:02）⇒ 已重启 |
+| `IOPMDeepIdleSupported` | **`Yes`** ⇒ 属性回来了，`SSDT-DeepIdle` 生效、**已离开 S3 模式、回到 Deep Idle** |
+| `ACPI/Add` 开关 | `SSDT-DeepIdle.aml=True`、`SSDT-PCI0.LPCB-Wake-AOAC.aml=True`、`SSDT-OCLT-S3Fix.aml=False` |
+| 工作区 vs ESP `config.plist` | 同为 `f7261b162459cfff…` ⇒ 无待同步 |
+| panic 总数 | **仍 = 1**（无新增）⇒ 本次重启干净 |
+| 睡眠记录 | 自 13:03 起**尚未睡过** ⇒ Deep Idle 的"**醒得回来**"这步仍待实测（判据：唤醒 ~2.4 s 且无 `AppleACPIEC` 超时） |
