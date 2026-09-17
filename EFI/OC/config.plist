@@ -110,6 +110,14 @@
 				<key>Path</key>
 				<string>SSDT-PCI0.LPCB-Wake-AOAC.aml</string>
 			</dict>
+			<dict>
+				<key>Comment</key>
+				<string>dGPU power-down on Darwin (renamed from SSDT-eGPU OFF-AOAC); keep enabled</string>
+				<key>Enabled</key>
+				<true/>
+				<key>Path</key>
+				<string>SSDT-dGPU-PowerOff-Darwin.aml</string>
+			</dict>
 		</array>
 		<key>Delete</key>
 		<array>
@@ -215,8 +223,6 @@
 		</array>
 		<key>Quirks</key>
 		<dict>
-			<key>EnableForAll</key>
-			<false/>
 			<key>FadtEnableReset</key>
 			<true/>
 			<key>NormalizeHeaders</key>
@@ -285,8 +291,6 @@
 			<key>DisableVariableWrite</key>
 			<false/>
 			<key>DiscardHibernateMap</key>
-			<false/>
-			<key>EnableForAll</key>
 			<false/>
 			<key>EnableSafeModeSlide</key>
 			<true/>
@@ -598,7 +602,7 @@
 				<key>BundlePath</key>
 				<string>RTCMemoryFixup.kext</string>
 				<key>Comment</key>
-				<string>V1.0.7 | By acidanthera</string>
+				<string>V1.0.8 | By acidanthera</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -1318,8 +1322,6 @@
 			<true/>
 			<key>ShowPicker</key>
 			<true/>
-			<key>SkipCustomEntryCheck</key>
-			<false/>
 			<key>TakeoffDelay</key>
 			<integer>500</integer>
 			<key>Timeout</key>
