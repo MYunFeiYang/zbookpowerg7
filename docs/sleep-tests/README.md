@@ -1,11 +1,16 @@
 # 睡眠档位调优测试记录
 
-> 🔥🔥🔥 **2026-09-17 11:0x【最新 · §三十三】—— ★★ 元凶候选锁定：`SSDT-PCI0.LPCB-Wake-AOAC` 是 DeepIdle 的配套件，上一轮漏关了**
-> **触发**：用户回答三问 ⇒ **① 按睡眠键后机器就没动；② 回来按电源键没反应；③ 最后长按电源键关机重启；④ 没有 Type-C 设备** ⇒ **"外设插入唤醒"整类排除**。
-> **核心发现**：该条目原本的 Comment 字面写着 **`pair with DeepIdle`**，而 `SSDT-DeepIdle.aml` 已被我关掉 ⇒ **配套件成了孤儿却仍在生效**。它是 **LPCB 唯一的 `_PRW` 来源**（DSDT `Device(LPCB)` @`11574-11607` 内 `_PRW`/`_DSW` 计数均为 **0**），`_PRW` 返回 `Package{0x6D, 0x04}` —— **正是 `LPCB XDCI` 用的那个 GPE**；`_DSW` 被 `Arg0==0x03(S3)` 门控并写 IO `0x1800/0x1801`，而 FADT 实测 **`PM1a_EVT_BLK=0x00001800`** ⇒ 那是 **PM1_STS**、`AOEN` 是 **PWRBTN_STS**。在 DeepIdle 时代它**从未执行过**，关掉 DeepIdle 后**第一次生效**，首次 S3 实测 10 s 就被打断 ⇒ **时间线一一对应**。
-> ⚠️ 另一疑点：OC-Little 官方《AOAC唤醒方法》给的同名文件内容是 **`_PS0`/`_PS3`**（`\_WAK(0x03)` 重置唤醒），**本机却是 `_DSW`/`_PRW`** ⇒ **同名不同物**，不能按官方说明推断其安全性。
-> **▶️ 已落盘**：`SSDT-PCI0.LPCB-Wake-AOAC.aml → Enabled=false`（工作区）。**待用户**：同步 ESP → 重启 → `pmset sleepnow`（不合盖）。
-> 结果：**睡住 >1 min / 出 `Wake from S3` = 元凶确认，S3 可用**；**仍被 `LPCB XDCI` 叫醒 = 不是它** ⇒ 进方案 B（经典 GPRW 补丁，把 GPE 0x6D 唤醒整类关掉）。回滚 = `Enabled=true`，零 RTC 风险。
+> 🛑🛑🛑 **2026-09-17 11:45【最新 · §三十四】—— ★★★ 结论：S3 路线收手回滚。不是"触发源"问题，是「唤醒通路」本身坏了**
+> **触发**：用户反馈 **"又只能强制关机才正常"**（第二次 S3 实测，且 `SSDT-DeepIdle` + `SSDT-PCI0.LPCB-Wake-AOAC` 均已 `false`、工作区/ESP 哈希一致 `77d88978…`）。
+> **① 本机有史以来唯一一次内核 panic**：`Kernel-2026-09-17-114214.panic` —— `NMIPI for unresponsive processor: TLB flush timeout`，backtrace 落在 `IOUSBHostFamily` / `AppleUSBXHCI` / `AppleUSBXHCIPCI` / `com.zxystd.IntelBluetoothFirmware`。`ls Kernel-*.panic | wc -l` = **1**（历史仅此一次）。
+> **② ★★★ 决定性同机 A/B**：`WakeTime` 全历史 5 条 —— 前 4 条（Deep Idle，09-16~09-17）**2.617 / 2.430 / 2.436 / 2.442 s**；S3 那次 **159.336 s**（**65×**）。同一驱动的 `Kernel Client Acks`：`ApplePS2Controller(msg: SetState to 2)` 历史 4 次 **457/462/461/466 ms** → S3 **157,735 ms**（**342×**）。两个独立数字互证 ⇒ **唤醒真的花了近 160 秒**。
+> **③ 上一条假设只对了一半**：唤醒原因由 `LPCB XDCI` 退成 `XDCI` ⇒ LPCB 那条 SSDT **确实有效但只是"多出来的一个"**；XDCI 原生就有 `_PRW`，仍在叫醒机器。**但 XDCI 唤醒是无辜的** —— Deep Idle 时代的唤醒原因里**同样有 `LPCB XDCI`**，那时只要 2.4 s。**⇒ §三十三 的"元凶"定性降级为"次要贡献者"。**
+> **④ 方案 B 作废**：GPRW 补丁只能去掉**触发源**，改不了**坏掉的唤醒通路**（PS2 挂 157 s、SMC SMBus 11 s、framebuffer 报错、USB/BT 栈 panic）⇒ 第一次正常唤醒照样撞上。
+> **⑤ 已回滚（工作区，`plutil -lint` 通过）**：`SSDT-DeepIdle.aml` 与 `SSDT-PCI0.LPCB-Wake-AOAC.aml` 双双 `Enabled=true`，Comment 追加回滚说明 ⇒ 恢复 **已知稳定态：Deep Idle / 唤醒 2.4 s / 历史连睡 12.6 h 无异常**。
+> **▶️ 待用户**：同步 ESP → 重启。**之后不必再测睡眠。** 出远门直接关机。
+> **⑥ 三层判据最终定分**：L1 声明层 ✅确认 / L2 选择层 ✅确认会选 / **L3 执行层 ❌确认不能用**。⇒ 本机（AOAC 固件）**不能安全使用 S3**，属 AOAC 与 legacy S3 的**结构性不兼容**（与 §二十七 的 S4 同族）。
+
+> 🔥🔥🔥 **【§三十三 · 已降级为"次要贡献者"】** `SSDT-PCI0.LPCB-Wake-AOAC` 是 DeepIdle 的配套件，上一轮漏关。它原本的 Comment 字面写着 **`pair with DeepIdle`** ⇒ 配套件成了孤儿却仍在生效。它是 **LPCB 唯一的 `_PRW` 来源**（DSDT `Device(LPCB)` @`11574-11607` 内 `_PRW`/`_DSW` 计数均为 **0**），`_PRW` 返回 `Package{0x6D, 0x04}`；`_DSW` 被 `Arg0==0x03(S3)` 门控并写 IO `0x1800/0x1801`（FADT 实测 `PM1a_EVT_BLK=0x00001800` ⇒ `PM1_STS`，`AOEN` = `PWRBTN_STS`）。⚠️ OC-Little 官方同名文件内容是 `_PS0`/`_PS3`，本机却是 `_DSW`/`_PRW` ⇒ **同名不同物**。**最终结论见 §三十四：它有效但不是根因。**
 
 > 🟢🟢 **2026-09-17 10:5x【§三十二】—— ★ 第一次 S3 实测：L2 切换成功（已走 S3），L3 半通（能睡、10 s 后被 USB 叫醒）**
 > **★★ 两条前后对照铁证**：① `(AppleACPIPlatform) ACPI: sleep states` 由 **`S0 S3 S4 S5`**（历史 8 次记录全含 S0）变为 **`S3 S4 S5`** —— **S0ix 条目消失**；② `lastSleepType`（airportd）由 **`0x00000007`/`'Deep Idle'`** 变为 **`0x00000002`/`'Normal Sleep'`**。⇒ **macOS 睡眠态模型只剩 `S3/S4/S5`，实际走的就是 S3**（`_S4` 要写镜像而 `hibernatemode=0`、`_S5` 是关机）。⚠️ 诚实标注：**没有**出现正面标签 `Wake from S3`（因为唤醒中途断了）。

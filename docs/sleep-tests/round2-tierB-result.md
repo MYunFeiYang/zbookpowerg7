@@ -2273,3 +2273,129 @@ ACPI/Patch:  Find 47505257 02 → Replace 58505257 02      (GPRW → XPRW)
 > **AOAC/DeepIdle 类补丁是"成对"的。关一个必须同时关它的配套件。**
 > 判定法：查 `config.plist` 里各 ACPI/Add 条目的 **Comment 是否互相引用**（本例字面写着 `pair with DeepIdle`），
 > 再用「**该 SSDT 是否在 DSDT 里有同名对象**」确认它到底"新增"了什么（本例 LPCB 的 `_PRW` 是凭空新增的）。
+
+---
+
+## 三十四、★★★ 第二次 S3 实测（09-17 11:29）—— **判定：S3 路线的失败不是"触发源"问题，是「唤醒通路」本身坏了。收手回滚。**
+
+> 用户反馈原文：**"又只能强制关机才正常"**。
+> 复现前置：`SSDT-DeepIdle.aml` + `SSDT-PCI0.LPCB-Wake-AOAC.aml` 均为 `Enabled=False`，
+> 工作区与 ESP `config.plist` **哈希一致**（`77d88978…`）⇒ **上一条假设（LPCB 是元凶）已进入生效状态**。
+
+### 1. 首个物证：**本机有史以来唯一一次内核 panic**
+
+```
+$ ls /Library/Logs/DiagnosticReports/Kernel-*.panic | wc -l   →  1
+/Library/Logs/DiagnosticReports/Kernel-2026-09-17-114214.panic
+```
+
+```
+Panic(CPU 0, ...): NMIPI for unresponsive processor: TLB flush timeout, TLB state:0x0
+Panicked task: 237 threads: pid 0: kernel_task
+Kernel Extensions in backtrace:
+  com.apple.iokit.IOUSBHostFamily(1.2)
+  com.apple.driver.usb.AppleUSBXHCI(1.2)
+  com.apple.driver.usb.AppleUSBXHCIPCI(1.2)
+  com.zxystd.IntelBluetoothFirmware(2.5)      ← 第三方 kext，帧地址确落在其段内
+Boot args: ... rtcfx_exclude=0E-FF -rtcfxdbg
+Hibernation exit count: 0
+System uptime in nanoseconds: 1204280044279   → 约 20 min（11:17:03 开机 ⇒ panic ≈ 11:37:07）
+```
+
+**含义**：panic 类型是"**CPU 不响应 / TLB flush 超时**"看门狗 —— backtrace 是**卡死时 CPU 停在哪**，
+即 **USB(XHCI) / 蓝牙固件栈**。不是 S3 的 ACPI 状态机本身崩了，而是**唤醒后驱动层卡住**。
+
+旁证：`ExcUserFault_bluetoothd-2026-09-17-113456.ips`（`EXC_GUARD`, namespc 18）—— 蓝牙守护进程在同一时段触发守卫异常。
+
+### 2. 时间线（11:17 那次开机）
+
+| 时刻 | 事件 | 出处 |
+|---|---|---|
+| 11:29:41 | `Entering Sleep state due to 'Software Sleep pid=174'` | `pmset -g log` |
+| 11:29:53 | **`AppleACPIPlatformPower Wake reason: XDCI`**（注意：**不再是 `LPCB XDCI`**） | 内核日志 |
+| 11:31:25 | `kern.wakereason['XDCI XHC']` DarkWake | `airportd` |
+| 11:33:47 | **`DarkWake from Normal Sleep [CDN] : due to XDCI/`** + `WakeTime: 159.336 sec` | `pmset -g log` |
+| 11:33:47 | `ApplePS2Controller driver is slow(msg: SetState to 2)(157735 ms)` | 同上 |
+| 11:34:32 | `Entering Sleep state due to 'Maintenance Sleep'` | 同上 |
+| 11:36:56 | 又一次 DarkWake，`kern.wakereason['XDCI XHC']` | `airportd` |
+| **≈11:37:07** | **PANIC**（上个 DarkWake 后约 11 s） | panic 报告 uptime |
+| 11:42:14 | `SMC shutdown cause: 5`（软关机/强制关机） | `pmset -g log` |
+
+**⇒ `SSDT-PCI0.LPCB-Wake-AOAC` 确实有效**：唤醒原因从 `LPCB XDCI` 退成 `XDCI`（少了一个贡献者）。
+**但 XDCI 本身仍在叫醒机器**（它的 `_PRW` 在 DSDT 原生就有，`GPRW(0x6D,0x04)`）。
+**⇒ 上一条假设只对了一半：LPCB 是"多出来的一个"，不是"唯一的那个"。**
+
+### 3. ★★★ 决定性对照：唤醒耗时 **65×**、驱动恢复 **342×**（同机 A/B）
+
+`pmset -g log` 里 `WakeTime` 全历史只有 5 条，前 4 条全是 Deep Idle 时代：
+
+| 唤醒 | 睡眠态 | **WakeTime** |
+|---|---|---|
+| 09-16 10:15 | `Wake from Deep Idle [CDNVA] … due to LPCB XDCI/UserActivity Assertion` | **2.617 s** |
+| 09-16 14:42 | `Wake from Deep Idle … due to PWRB/Lid Open` | **2.430 s** |
+| 09-16 20:00 | `Wake from Deep Idle … due to LPCB XDCI/Lid Open` | **2.436 s** |
+| 09-17 08:52 | `Wake from Deep Idle … due to PWRB/UserActivity Assertion` | **2.442 s** |
+| **09-17 11:33** | **`DarkWake from Normal Sleep … due to XDCI/`** | **159.336 s** ← **65×** |
+
+同一驱动的 `Kernel Client Acks → Delays to Wake notifications`（同一条日志格式、同一个 driver）：
+
+| | `ApplePS2Controller … (msg: SetState to 2)` | 出处 |
+|---|---|---|
+| Deep Idle 时代 ×4 | **457 / 462 / 461 / 466 ms** | 09-16 10:15、14:42、20:00、09-17 08:52 |
+| **S3 首次** | **157,735 ms** | 09-17 11:33:47 ← **342×** |
+
+**两个独立数字互相印证**：`WakeTime 159.336 s` ≈ `PS2 挂起 157.7 s` + 其余开销 ⇒ **唤醒真的花了近 160 秒**，
+不是单位读数错误。另有 `SMCSMBusController … (11064 ms)`（Deep Idle 时代从未出现）。
+⚠️ 诚实标注：4 条 Deep Idle 是**整机唤醒**、S3 那条是 **DarkWake**，严格说非同类；
+但 **DarkWake 本该比整机唤醒更快（秒级）**，159 s 无论怎么比都是病态。
+
+### 4. 为什么这条对照把"继续折腾"这条路堵死了
+
+- ❌ **方案 B（GPRW 补丁关掉 GPE 0x6D 整类）已经没有意义**。它只能**去掉触发源**；
+  而**唤醒通路本身**（PS2 挂 157 s、SMC SMBus 11 s、framebuffer 报错、USB/BT 栈 panic）不会因此变好。
+  就算再无外设叫醒，**用户第一次正常唤醒（开盖/电源键）照样撞上同一条坏路**。
+- 🔍 **XDCI 唤醒其实是"无辜"的**：Deep Idle 时代的唤醒原因里**同样有 `LPCB XDCI`**（09-16 10:15、09-16 20:00），
+  那时唤醒只要 **2.4 s**。同一个唤醒源，在 Deep Idle 下无害、在 S3 下演变成 160 s + panic
+  ⇒ **问题在 S3 这条通路，不在唤醒源**。**§三十三 的"元凶"定性据此降级为"次要贡献者"。**
+- 🧯 **代价与收益完全不成比例**：省的是 5 W → ~0.5–1 W（8 h 睡眠 57% → ~7% 电量）；
+  换来的是**每次睡眠都要冒一次"卡死 + panic + 强制断电"的风险**。
+
+### 5. 结论与已执行动作
+
+**结论：本机（HP ZBook Power G7，AOAC 固件）不能安全使用 S3。**
+不是"BIOS 藏了 S3"（§二十九 已证伪），不是"macOS 不选 S3"（§三十二 已确认它会选），
+更不是"某个 SSDT 唤醒了它"（§三十四 已排除）——
+而是 **macOS 的 S3 唤醒通路在这套 AOAC 固件上跑不通**。这是 AOAC 平台与 legacy S3 的**结构性不兼容**，
+与 §二十七"S4 与 AOAC 结构性冲突"是同一族问题。
+
+**已执行回滚（工作区，`plutil -lint` 通过）**：
+
+| 条目 | 改动 |
+|---|---|
+| `SSDT-DeepIdle.aml` | `Enabled=false` → **`true`**，Comment 追加回滚说明 |
+| `SSDT-PCI0.LPCB-Wake-AOAC.aml` | `Enabled=false` → **`true`**，Comment 追加回滚说明 |
+
+⇒ 恢复到 **已知稳定态：Deep Idle，唤醒 2.4 s，历史连睡 12.6 h 无异常**。
+**待用户**：同步 ESP → 重启（之后不必再测睡眠）。
+
+### 6. 三层判据的最终定分（本节合卷）
+
+| 层 | 问题 | 结论 |
+|---|---|---|
+| **L1 声明层** | 固件有没有把 S3 交给 OS | ✅ **确认**（§二十九，6 条硬证） |
+| **L2 选择层** | macOS 会不会选 S3 | ✅ **确认会选**（§三十二/§三十四：`sleep states` 去掉 S0、`lastSleepType 0x02 Normal Sleep`、`DarkWake from Normal Sleep`） |
+| **L3 执行层** | 走 S3 后能不能用 | ❌ **确认不能用**（本节：唤醒 65× 慢、驱动 342× 慢、panic ×1） |
+
+> **这三层是可以分开成立的，这是本次最大的方法论收获**：
+> "**固件声明了**" + "**OS 选了**" ≠ "**能用**"。
+> 判 L3 **只能实测**，而实测的判据不是"睡得下去"，而是"**醒得回来、且醒得正常**"——
+> 后者要看 `WakeTime` 与 `Kernel Client Acks` 的**同机历史对照**，不能只看有没有 `Wake from S3` 字样。
+
+### 7. 留档：本次未验证的两条（若将来还想碰 S3）
+
+1. `HibernationFixup.kext` 的 `SetState` 钩子是否在 S3 通路上帮了倒忙（本机 `hibernatemode 0`，
+   理论上不该介入；要验可临时置 `Enabled=false` 再测一次）。
+2. `CpuTscSync.kext` 与 "NMIPI / TLB flush timeout" 类 panic 的关联（社区有零星报告，本机仅 1 次样本，不足判）。
+
+**但两者的期望收益都只是"也许能修好唤醒"**，而当前唯一确定的收益是"5 W 变 1 W"——
+在**稳定性优先**的前提下，本机不值得再投入。

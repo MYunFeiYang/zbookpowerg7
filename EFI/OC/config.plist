@@ -144,17 +144,21 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>DISABLED 2026-09-17 (force-S3 experiment): this table is the ONLY source of \_SB.LPS0 and \_GPE.LXEN in the whole namespace (DSDT has neither). AppleACPIPlatform.kext literally evaluates "\_SB.LPS0" and only when it returns Integer 1 does it set IOPMDeepIdleSupported=true on IOPMrootDomain, which is what makes macOS pick Deep Idle (S0ix, ~5 W) instead of DSDT _S3 (SLP_TYP 0x05, ~0.5-1 W). Roll back by setting Enabled=true. AML kept in ACPI/</string>
+				<string>DeepIdle path: LPS0 / S0 deep idle (primary focus). AML in ACPI/
+
+[RESTORED 2026-09-17 evening] Re-enabled together with SSDT-DeepIdle.aml: the force-S3 experiment is concluded a FAILURE (docs/sleep-tests/round2-tierB-result.md section 34). Under S3 this machine woke 65x slower (WakeTime 159.336 s vs 2.430-2.617 s across four Deep Idle wakes), the PS2 controller took 342x longer to resume (157735 ms vs 457-466 ms), and it produced the only kernel panic this machine has ever recorded (NMIPI TLB flush timeout, backtrace through IOUSBHostFamily / AppleUSBXHCI / IntelBluetoothFirmware). XDCI wake is benign under Deep Idle - it appears in the historical Deep Idle wake reasons too - so it was never the culprit. Rollback target is the known-stable Deep Idle state.</string>
 				<key>Enabled</key>
-				<false/>
+				<true/>
 				<key>Path</key>
 				<string>SSDT-DeepIdle.aml</string>
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>DISABLED 2026-09-17 (S3 experiment, round 2): DeepIdle companion table. Its own Comment used to read "pair with DeepIdle", and SSDT-DeepIdle.aml is already Enabled=false, so this one became an orphan that still fired. It is the ONLY source of LPCB._PRW in the whole namespace (DSDT Device(LPCB) @DSDT.dsl:11574-11607 has neither _PRW nor _DSW), and its _PRW returns Package{0x6D, 0x04} - the very GPE whose "LPCB XDCI" wake interrupted the first S3 test after ~10 s. Its _DSW is gated on Arg0==0x03 (S3) and writes IO 0x1800/0x1801; FADT reports PM1a_EVT_BLK=0x00001800, so that is PM1_STS and AOEN is PM1_STS bit8 = PWRBTN_STS. Under DeepIdle Arg0 was never 3, so it had never executed - it fired for the first time in the S3 test. Rollback: set Enabled=true.</string>
+				<string>DeepIdle path: LPC wake helpers (AOAC-class); pair with DeepIdle. AML in ACPI/
+
+[RESTORED 2026-09-17 evening] Re-enabled together with SSDT-DeepIdle.aml: the force-S3 experiment is concluded a FAILURE (docs/sleep-tests/round2-tierB-result.md section 34). Under S3 this machine woke 65x slower (WakeTime 159.336 s vs 2.430-2.617 s across four Deep Idle wakes), the PS2 controller took 342x longer to resume (157735 ms vs 457-466 ms), and it produced the only kernel panic this machine has ever recorded (NMIPI TLB flush timeout, backtrace through IOUSBHostFamily / AppleUSBXHCI / IntelBluetoothFirmware). XDCI wake is benign under Deep Idle - it appears in the historical Deep Idle wake reasons too - so it was never the culprit. Rollback target is the known-stable Deep Idle state.</string>
 				<key>Enabled</key>
-				<false/>
+				<true/>
 				<key>Path</key>
 				<string>SSDT-PCI0.LPCB-Wake-AOAC.aml</string>
 			</dict>
