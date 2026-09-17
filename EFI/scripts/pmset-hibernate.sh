@@ -119,11 +119,14 @@
 #   ./pmset-hibernate.sh off       # ★ 现状（安全档）：两电源源 hibernatemode 0 + standby 0，纯 Deep Idle
 #   ./pmset-hibernate.sh acfast    # 只让插电侧回到「永不写盘」（不碰 RTC / 最快醒 / 恒 ~5W）
 #
-#   ⛔ 以下四个已停用（需 FORCE_HIBERNATE=1 才放行，且明知会坏 RTC）：
+#   ⛔ 以下五个已停用（需 FORCE_HIBERNATE=1 才放行，且明知会坏 RTC）：
 #   ./pmset-hibernate.sh auto      # ✗ 已证伪：两档都深睡（AC 1h/2h ｜ BAT 10/30min）
 #   ./pmset-hibernate.sh test      # ✗ 已证伪：受控试验（合盖 5 分钟后断电）
 #   ./pmset-hibernate.sh on        # ✗ 已证伪：延迟断电
 #   ./pmset-hibernate.sh instant   # ✗ 已证伪：合盖即断电（全电源源）
+#   ./pmset-hibernate.sh rtcprobe  # 🔬 19:xx「复炉」**诊断档**（mode 25 + standby 1 + 300 s）：
+#                                  #    在 RTC 写通道封满后重跑一次，判定「软件写 RTC」是否成立。
+#                                  #    详见 docs/sleep-tests/round2-tierB-result.md §二十四。
 #
 # 判据 / 回滚：
 #   成功   = 功率计 5W -> ~0.2W，开盖能回到原会话
@@ -152,7 +155,7 @@ fi
 # ⛔ 硬闸（见文件头 ⛔⛔⛔ 段）：休眠档在本机已证伪，默认拒绝执行。
 #    必须显式 FORCE_HIBERNATE=1 才放行（仅当你明知会写坏 RTC/CMOS 仍要做实验）。
 case "${1:-}" in
-  auto|test|on|instant)
+  auto|test|on|instant|rtcprobe)
     if [[ "${FORCE_HIBERNATE:-0}" != "1" ]]; then
       cat >&2 <<'WARN'
 
@@ -170,8 +173,12 @@ case "${1:-}" in
 
    ⇒ 出差 / 带机出门请用「关机」替代休眠：0 W、零风险、开机时长基本相当。
 
-   仍要实验：FORCE_HIBERNATE=1 $0 <auto|test|on|instant>
-   完整取证：docs/sleep-tests/round2-tierB-result.md §二十三
+   仍要实验：FORCE_HIBERNATE=1 $0 <auto|test|on|instant|rtcprobe>
+     · rtcprobe = 2026-09-16 19:xx「复炉」用的**诊断档**：
+       此时 RTC 写通道已被封满（rtcfx_exclude=0E-FF ＋ AppleRtcRam=true ＋
+       rtc-blacklist 242 字节），目的**不是**把休眠配好，而是判定
+       「RTC 是不是被软件写坏」这一整类假设 —— 详见 round2-tierB-result.md §二十四。
+   完整取证：docs/sleep-tests/round2-tierB-result.md §二十三 / §二十四
 
 WARN
       exit 2
@@ -181,7 +188,7 @@ esac
 
 # status 是纯只读的，不需要 root；只有改系统电源设置的子命令才提权
 case "${1:-}" in
-  auto|acfast|test|on|instant|off)
+  auto|acfast|test|on|instant|rtcprobe|off)
     if [[ "$(id -u)" -ne 0 ]]; then
       echo "Re-running with sudo..."
       if [[ "${FORCE_HIBERNATE:-0}" == "1" ]]; then
@@ -344,6 +351,36 @@ case "${1:-}" in
     $PMSET -a hibernatemode 25
     echo "    注意：每次睡眠都要读镜像，唤醒明显变慢（等同 Win 侧 LIDACTION=2）。"
     echo "    参照先例：ThinkPad E480 / Surface Laptop 3 / Fujitsu Q958 均用此档。"
+    show_status
+    ;;
+
+  rtcprobe)
+    echo "==> 诊断档：RTC 写通道封满后的**一次**休眠尝试（目的 = 判定，不是修好）"
+    # ★ 只武装**当前正在用的那个电源源**，另一侧保持安全档 ——
+    #   否则拔电出门时，另一侧会变成「15 min 自动睡 + 5 min 后休眠」的**无人看管地雷**（18:27 的教训）。
+    if $PMSET -g batt 2>/dev/null | grep -q "'AC Power'"; then
+      SRC="-c"; SRCNAME="AC（插电）"
+    else
+      SRC="-b"; SRCNAME="Battery（电池）"
+    fi
+    echo "    只武装【$SRCNAME】侧；另一侧保持 hibernatemode 0 / standby 0（不拆地雷）"
+    echo "    配置 = hibernatemode 25 + standby 1 + 300 s —— 与失败的档 B **同形**，只把延迟缩短"
+    echo "    前置（本次已实测落地）：rtcfx_exclude=0E-FF ｜ AppleRtcRam=true ｜ rtc-blacklist 242 B"
+    $PMSET "$SRC" hibernatemode 25
+    $PMSET "$SRC" standby 1
+    $PMSET "$SRC" standbydelaylow 300
+    $PMSET "$SRC" standbydelayhigh 300
+    echo
+    echo "    人工步骤："
+    echo "      · 用「苹果菜单 → 睡眠」入睡（**别合盖** —— 外接屏接着会进 clamshell，根本不睡）"
+    echo "      · 期间**别拔电源**（拔了就用另一侧的安全档，本次测不出来）"
+    echo "      · 等 6~8 分钟，看是否断气 / 电源灯灭"
+    echo
+    echo "    判读（决定性，二选一）："
+    echo "      · 重启后**无** HP POST 005 ⇒ 属「软件写 RTC」⇒ 风险归零，可从容往下二分定位"
+    echo "      · 重启后**有** HP POST 005 ⇒ 「软件写 RTC」整类**一次性证伪** ⇒ 转固件侧或收手"
+    echo "    取证：pmset -g log | grep -E 'Entering Sleep|Entering Hibernate|Wake from' ｜ nvram -p ｜ who -b"
+    echo "    回滚：$0 off  ★ 无论成败都先跑它"
     show_status
     ;;
 

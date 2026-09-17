@@ -1290,3 +1290,532 @@ sudo pmset -c standbydelayhigh 7200    # 电量≥50% → 2 h
   **目标（拔电放包里不掉电）100% 达成，且不需要再冒任何硬件风险。**
 - **路线 Q（不推荐）：继续攻。** 代价 = 对 `0E–7F` / `AC–FF` 做偏移二分实测（上游说冲突偏移逐机不同），
   **每轮 = 一次重启 + 一次"可能再坏 RTC / 再报 005"**；且**即便找到偏移，排除它也就等于放弃休眠**。值博率明确为负。
+
+---
+
+## 二十四、2026-09-16 19:0x 复炉：把「软件可写 RTC」通道**一次封满**（EFI 已改，待重启验证）
+
+> 上一节的"值博率负"建立在**「防护已配齐」这个前提**上。本轮**逐行核对上游源码后，该前提不成立** ——
+> 前 5 次失败是在**防护有缺口**的条件下测的。硬件声明支持 S4（FADT bit7 `RTC_S4=1` + DSDT `SS4=One`），
+> 所以**先把两条可拦截通道关到底**，一次实验二选一定论。
+
+### 1. 本轮查清的硬事实（全部来自上游源码，非推断）
+
+| # | 事实 | 出处（逐字） |
+|---|---|---|
+| 1 | Apple 的 RTC RAM 是**扁平 256 字节空间**：bank1（端口 `0x70/0x71`）= `00–7F`，bank2（`0x72/0x73`）= `80–FF` | `OcRtcLib.c:33-39`（`if (Offset < RTC_BANK_SIZE) … else …`）＋ `AppleRtc.h:344` `#define APPLE_RTC_TOTAL_SIZE 0x100` |
+| 2 | ★ **macOS/boot.efi 每写一次 RTC RAM，都会把 `0x0E–0xFF` 共 242 字节整体重写一遍**：先读全部 256 字节 → 改目标 → 重算两个校验和 → 从 `0x0E` 循环写回 `0xFF` | `AppleRtcRam.c:232-234`：`for (Index = APPLE_RTC_CHECKSUM_START; Index < APPLE_RTC_TOTAL_SIZE; ++Index) SyncRtcWrite (...)` |
+| 3 | 协议层写入**只可能落在 `0x0E` 以上**（`< 0x0E` 直接被拒） ⇒ **黑名单保 `00–0D` 就够，时钟不受影响** | `AppleRtcRam.c:196`：`Address < APPLE_RTC_CHECKSUM_START` ⇒ `EFI_INVALID_PARAMETER` |
+| 4 | `rtc-blacklist` 语义 = **逐字节地址表**（每个字节就是一个绝对地址 `0x00–0xFF`），命中 ⇒ **真实写入被丢弃**（改为内存模拟），读也走模拟值 | `AppleRtcRam.c:337-340` `mEmulatedRtcStatus[RtcBlacklist[Index]] = TRUE;` ＋ `SyncRtcWrite()` 命中分支 |
+| 5 | `rtcfx_exclude` 与它**同一坐标：`safe_offset = (cmd_reg==0x72/0x73 ? 0x80 : 0) + (cmd_offset & 0x7F)`** ⇒ 两个名单可以填**完全相同的字节** | `RTCMemoryFixup.cpp:165-171,202-209` |
+| 6 | 偏移区间解析：`%02X` 十六进制、`soffset < eoffset < 256` ⇒ `0E-FF` 合法 | `RTCMemoryFixup.cpp:223-284` |
+| 7 | ⚠️ `SyncRtcRead()` 的模拟分支**有上游 bug**（`return mEmulatedRtcArea[Address];` —— 没写 `*ValuePtr`，把值当 `EFI_STATUS` 返回）⇒ 黑名单区的**读**结果不可靠。**但这不影响安全性质：所有写仍被丢弃。** | `AppleRtcRam.c:43-45`（master 与 `1.0.7` 标签同形） |
+
+⇒ ★ **关键推论**：Apple 的校验和区间**从 `0x0E` 起算**（`RTCMemoryFixup.cpp:34`
+`APPLERTC_HASHED_ADDR 0x0E // Checksum is calculated starting from this address`），
+而 **`0x0E–0x57` / `0x5A–0x7F` 这段从来没有任何一层拦过**：
+
+| 防护层 | 管哪一段 | 本轮之前 |
+|---|---|---|
+| `Kernel/Quirks/DisableRtcChecksum` | 内核、只管 `0x58/0x59` | ✅ 开着（覆盖极窄） |
+| `RTCMemoryFixup` + `rtcfx_exclude` | 内核 I/O（hook `IOPortAccess::ioWrite8`） | `80-FF` ⇒ **`0E-7F` 裸奔** |
+| `UEFI/ProtocolOverrides/AppleRtcRam` | **boot.efi / 固件协议层**（内核 kext 天生管不到） | ❌ `false` = 零防护 |
+| `NVRAM:rtc-blacklist`（该协议的寄存器名单） | 同上 | ❌ 变量不存在 |
+
+### 2. 本次改动（4 项，**只改工作区 EFI**，未碰 ESP；`plutil -lint` = OK）
+
+| # | 位置 | 原值 → 新值 |
+|---|---|---|
+| 1 | `NVRAM/Add/7C436110…/boot-args` | `rtcfx_exclude=80-FF` → **`rtcfx_exclude=0E-FF`**（保留 `00-0D` 时钟可写） |
+| 2 | `UEFI/ProtocolOverrides/AppleRtcRam` | `false` → **`true`** |
+| 3 | `NVRAM/Add` 新增 `4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:rtc-blacklist` | `<data>` 242 字节 = `0x0E,0x0F,…,0xFF`（逐地址表） |
+| 4 | `NVRAM/Delete/4D1FDA02-…` | `<array/>` → **`[rtc-blacklist]`**（OC 文档原文："to overwrite an existing variable value, add the variable name to the `Delete` section"） |
+
+- GUID/变量名出处：`Include/Acidanthera/Guid/OcVariable.h:80` `OC_RTC_BLACKLIST_VARIABLE_NAME L"rtc-blacklist"`；
+  官方 `Docs/Sample.plist:1461-1463 / 1490-1492` 用的正是 `4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102` 这个 GUID。
+- 文档出处：`Docs/Configuration.tex:9062-9071`（`AppleRtcRam`：*"Builtin version … **may filter out I/O attempts
+  to certain RTC memory addresses**. The list of addresses can be specified in
+  `4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:rtc-blacklist` variable as a data array."*）。
+- `git diff`：`EFI/OC/config.plist | 12 insertions(+), 3 deletions(-)`，**无格式噪声**（未用 PlistBuddy，逐处文本编辑）。
+- 安全检查：`AppleRtcRam` 只影响 macOS 引导链；`rtc-blacklist` 只拦**写**；时钟 `00–0D` 不封 ⇒ **Windows 引导与本机时间不受影响**。
+
+### 3. 预期判读（三条都是决定性的）
+
+| 结果 | 结论 |
+|---|---|
+| **不再 005，且日志出现 `Entering Hibernate`** | 🎉 成了（说明之前是软件写 RTC，且封锁并未阻断休眠密钥路径） |
+| **不再 005，但仍无 `Entering Hibernate`** | ✅ RTC 通道已封死 ⇒ 问题**转移到 `HibernationFixup` / 进入 hibernate 电源态这一段**，继续查（此时已**零 RTC 风险**，可以从容试） |
+| **照样 005** | ⛔ **「软件写 RTC」这一整类假设一次性证伪**（两条可拦截通道全关到底，剩下只有固件自身 / 异常下电）⇒ 直接转固件侧或收手 |
+
+**→ 实际结果（19:29 实测）：走的是第三行「照样 005」。**
+⚠️ **但归因必须按 §二十五 改写**：本次证伪的是「软件把 CMOS 写花」，而**它并不是「休眠失败」的解释** ——
+原判读里"直接转固件侧或收手"这句**过度收敛了**；正确的下一步是 §二十五 的 **R1（RTC 供电验证）**，而不是收手。
+
+### 4. 执行步骤（需要用户操作）
+
+0. **先跑核验脚本**（只读、免 sudo）：`./EFI/scripts/rtc-protect-verify.sh`
+   —— 查「运行期 boot-args / NVRAM 变量 / 工作区↔ESP 四项 / 电源策略」。
+1. ~~同步~~ **已同步**：19:16 实测 `/Volumes/ESP/EFI/OC/config.plist` 与工作区 **`shasum -a 256` 完全一致**
+   （`4d5d742c…`），且从 ESP 现场提取确认：`AppleRtcRam=true`、`rtcfx_exclude=0E-FF`、`rtc-blacklist` = 324 字符 base64。
+   ⇒ **部署这一步已经完成，只剩重启。** ⚠️ 反过来说：**现在重启就会带着新配置启动**，想暂缓就别重启（或先 `git revert` 再同步）。
+2. **重启**（OC 启动时才会安装该协议、写入该 NVRAM 变量）。
+3. **验证变量真的落地**：`nvram -p | grep -i rtc-blacklist`（应回 242 字节数据）。
+   ⚠️ 若 `nvram` 读不到（它可能不列非 Apple GUID 变量），以 `rtc-protect-verify.sh` 第 3 项 / 从 EFI 侧用 `RtcRw` 为准。
+4. **重新武装休眠档**（此前已加硬闸）：`FORCE_HIBERNATE=1 ./EFI/scripts/pmset-hibernate.sh auto`
+   —— 之后睡眠一次，观察是否复现失败签名。
+5. **无论成败先回滚**：`./EFI/scripts/pmset-hibernate.sh off`。
+6. 失败签名见 `README.md`「失败判据」表；失败后**先取证再重启**（`pmset -g log`、`nvram -p`、`who -b`）。
+
+### 5. 若第 3 步要"精确制导"（下一轮选项，未执行）
+
+上游自带探针 `Application/RtcRw`（`Usage: RtcRw <dump|read|write> <addr> <value>`，`RtcRw.c:118`）
+可以**在不睡眠的情况下**逐地址验证"写哪个偏移会坏 CMOS" —— 比二分实测更快、更准，也更容易把风险收敛到
+一次一字节。待本轮结论出来再决定要不要用。
+
+---
+
+## 二十五、第 6 次失败（19:29）+ **方向重大修正：005 不是「CMOS 被写花」，是「RTC 掉电」**
+
+**执行**：2026-09-16 19:29:44，AC 侧诊断档 `rtcprobe`（`hibernatemode 25` + `standby 1` + `standbydelay 300/300`）。
+**结果**：**失败（第 6 次）**，HP POST 005 + 系统时钟回 2019 ⇒ **第 3 次丢 RTC**。
+
+### 1. 直接结果
+
+| 观测 | 值 |
+|---|---|
+| 入睡 | `19:29:44 Entering Sleep state due to 'Software Sleep pid=174'` |
+| `Wake from` | **无** ✗ |
+| `Entering Hibernate` | **无** ✗ |
+| `ShutdownCause` | **无** ✗ |
+| 重启 | `kern.boottime` = **19:33:15 冷启动** |
+| 时钟 | `who -b` → `Jan 1 08:00`；`ioreg` 内核断言 `creat=2019/1/1 08:01 / 08:05 / 08:17` ⇒ **RTC 丢失坐实** |
+| NVRAM 休眠变量 | `nvram -p` 无 ⇒ `HibernationFixup` 仍未触发 / 未落盘 |
+
+### 2. ⭐ 断崖精确定位（本轮最有价值的新证据）
+
+`log show --start "19:28:30" --end "19:34:00" --style syslog --info` 导出 **113.8 万行**，逐分钟统计：
+
+| 分钟 | 行数 | |
+|---|---|---|
+| 19:28 | 16,025 | |
+| 19:29 | 36,285 | |
+| **19:30** | **0** | ← |
+| **19:31** | **0** | ← 整整三分钟零日志 |
+| **19:32** | **0** | ← |
+| 19:33 | 126,518 | 冷启动 |
+
+**最后一条日志 = `19:29:44.169436`**，内容是**正常的"准备睡眠"收尾**：
+`bluetoothd` → `ObjectDiscovery will stop advertising` / `LE Scans Paused` / `Scan state change: Stopping(4) --> Idle(1)` / `scans paused`。
+
+⇒ **没有 panic、没有报错、没有任何 RTC 消息、没有内核警告 —— 日志是"戛然而止"的。**
+⇒ **这不是软件崩溃，是电被硬切掉。**（软件崩溃会留 panic，或至少留下不规律的日志衰减；这里是正常流程中途瞬间归零。）
+
+### 3. 三层防护：源码级复核，确认**真的全部生效**
+
+**① `RTCMemoryFixup` —— 黑名单地址的写只落内存，永不进真 RTC**（`RTCMemoryFixup.cpp`）：
+
+```cpp
+int safe_offset = (cmd_reg == CMOS_ADDREG2) ? 0x80 : 0;
+safe_offset += (cmd_offset & 0x7F);          // 端口 0x70/71=bank1(00-7F)，0x72/73=bank2(80-FF)
+```
+
+**② `AppleRtcRam` 的写路径 —— 双重保险**（`AppleRtcRam.c`）：
+
+```c
+// 黑名单地址：只写内存模拟区
+if (mEmulatedRtcStatus[Address]) { mEmulatedRtcArea[Address] = Value; return EFI_SUCCESS; }
+...
+OcRtcWrite (Address, Value);                 // 只有非黑名单才真写硬件
+```
+
+而且 `SyncRtcRead()` 有个**上游 bug**，反而变成第二道锁：
+
+```c
+if (mEmulatedRtcStatus[Address]) {
+  return mEmulatedRtcArea[Address];   // ← 返回值当 EFI_STATUS 用，且不写 *ValuePtr
+}
+```
+
+`AppleRtcRamWriteData()` **第一步**就调 `AppleRtcRamReadData()`，只要它返回非 0（= `EFI_ERROR`）就**整个写操作直接 return**：
+
+```c
+Status = AppleRtcRamReadData (This, TempBuffer, APPLE_RTC_TOTAL_SIZE, 0);
+if (EFI_ERROR (Status)) { return Status; }   // 短路
+```
+
+⇒ **运行期已实测**：`rtcfx_exclude=0E-FF` 在 `sysctl kern.bootargs` 里、`rtc-blacklist` 242 字节在 `nvram` 里、`AppleRtcRam=true` 在工作区与 ESP 双向一致。
+⇒ **结论：macOS 软件栈（内核 + boot.efi 协议层）写不进真 RTC 的 `0x0E–0xFF`。而 005 照样出现。**
+
+### 4. ⭐⭐ 方向重大修正
+
+**此前 §二十三 / §二十四 的隐含前提是：「005 = 某段代码把 CMOS 校验和写坏了」。**
+**HP 官方文档直接否掉了这个前提**：
+
+> **实时时钟电源断开 (005)**：系统时间无效。未设置时间和日期。**这可能是由电池电量损耗导致的结果。** 在操作系统中设置正确的时间和日期。**如果此消息持续出现，您可能需要更换 CMOS 或 RTC 电池。**
+> —— HP 支持 `support.hp.com/cn-zh/document/c01442956`、`hp.com/go/techcenter/startup`
+> 英文原文：*"Real-Time Clock Power Loss (005) … This might be a result of a **loss in battery power** … you might need to **replace the CMOS or RTC battery**."*
+
+**⇒ 005 的官方语义是「RTC 失去电力」，不是「CMOS 被写花」。**
+
+**因果链改写**：
+
+| 旧解释（**已弱化**） | 新解释（**主假设**） |
+|---|---|
+| 某段代码把 CMOS 校验和写坏 → POST 检测到 → 005 + 时钟重置 | **休眠时机器真的断电了 → 断电期间 RTC 供电中断（RTC 电池撑不住）→ 开机 POST 检测到 RTC 掉电 → 005** |
+| 封住所有软件写通道就该停止 005 | **封写通道本来就不该影响 005 —— 掉电不是「写」** |
+
+⇒ **这恰好解释了本轮最大的困惑：三层全封、照样 005。**
+⇒ 也解释了**非确定性**：今日 5 次"断崖"（11:16 / 12:04 / 13:11 / 18:09 / 19:29）里**只有 3 次报 005**（11:16 / 18:09 / 19:29）。**同样的断崖、不同的结果 = 供电临界的典型特征。**
+
+**HP 服务手册（ZBook Power G7）逐条确认本机硬件形态**：
+
+- 「**RTC battery** —— 用双面胶贴在主板上，带线缆接插件；**不作为零售备件提供**」（`Component replacement procedures` 章节）
+- 故障表：「**Incorrect date and time** → Possible cause: **Real-time clock (RTC) battery might need replacement.** → 1. 在 OS 里重设时间 2. **更换 RTC 电池**」
+
+### 5. 待验证（**零风险**，不涉及睡眠）
+
+**实验 R1：正常关机（S5）能保住 RTC 吗？**
+
+1. 苹果菜单 → **关机**（不是"重启"）
+2. **拔掉 AC 适配器**（保留内置电池）
+3. 等 **20–30 分钟**
+4. 开机
+
+| 结果 | 结论 |
+|---|---|
+| **报 005 / 时间回 2019** | ⇒ **RTC 电池 / 断电供电坐实** ⇒ 换或重插 RTC 电池 —— **这可能是真解** |
+| **一切正常** | ⇒ RTC 电池还行 ⇒ 焦点回到"休眠路径为什么异常断电" |
+
+⚠️ 必须在**未武装休眠档**时做（现两电源源已是 `hibernatemode 0` / `standby 0`，安全）。
+
+### 6. 待用户回答（一句话就能定方向）
+
+**POST 005 之后按 ENTER 进系统，是「恢复了刚才的窗口 / 程序」还是「全新桌面」？**
+
+- **恢复会话** ⇒ **休眠其实写成功了** —— 只是 POST 那一屏把"恢复"反射成了"重启"（屏幕原文就是 `ENTER-Reboot the System`）
+- **全新桌面** ⇒ 镜像没被用上（或密钥丢了解不开）
+
+⭐ 这一条直接区分「休眠没做成」与「做成了但被打断」。
+
+### 7. 对既有结论的修正
+
+| 原结论 | 修正 |
+|---|---|
+| 「保 CMOS 与保休眠互斥」（§二十三"判死"） | **降级为"未证实"**。原文推理链本身仍成立（排除 `0x80–0xAB` 会让休眠密钥无处可放），但**它不再是 005 的解释**；005 现归因于 RTC 掉电 |
+| 「软件写 RTC 整类一次性证伪」（§二十四预期判读） | **成立，但归因要改**：证伪的是"软件把 CMOS 写花"，**这跟"休眠失败"可能是两个独立问题** |
+| 「出差改用关机」（替代方案） | **暂缓下最终结论**。若 R1 证明 RTC 电池是主因，换电池后休眠可能真的可用 |
+| 「`AppleRtcRam` 的 bug 不影响安全性质」 | 维持 —— 且本轮补上：该 bug **还额外短路了写路径**，是双重保险 |
+
+### 8. 本轮新增的零风险判据速查
+
+| 现象 | 含义 |
+|---|---|
+| 日志"戛然而止"（连续整分钟 0 行），且最后一条是正常睡眠收尾 | **硬断电**，不是崩溃 |
+| 断崖后重启报 005 + `who -b` 回 `Jan 1` | RTC 在断电期间**丢电**（≠ 被写花） |
+| `ioreg` 断言 `creat=2019/1/1 08:0x` | 同上，且能反推固件默认时间 ≈ 2019-01-01 08:00 |
+| `pmset -g log` 无 `ShutdownCause` | 断电没走 OS 关机流程 |
+
+---
+
+## 二十六、09-16 20:0x —— 主假设收敛：**固件在 S4 退出路径重置 RTC**（HP 官方文档背书）
+
+**触发**：用户现场观察 —— 「**只有睡眠唤醒后才报那个错**」（正常关机/重启从来不报）。
+
+### 1. wtmp 硬证据：时间因素被排除
+
+`last` 显示今日全部正常关机/重启的时钟**全对**：
+
+| 关机 | 重启 |
+|---|---|
+| 10:00 | 10:01 |
+| 11:04 | 11:05 |
+| 12:55 | 12:56 |
+| 13:58 | 13:59 |
+| 19:19 | 19:19 |
+
+⇒ 只有"睡过"的那几次出现 `2019-01-01`。
+⇒ **"RTC 电池弱 / 时间因素"降级**：弱电池会在**任何**长时间断电后丢时间，不会专挑"睡过"那次。
+（`pmset -g log` 只保留到当日 09:04，无法据此统计历史丢失次数；`who -b` 回 `Jan 1 08:00` 是本会话从 19:33 那次失败启动的痕迹。）
+
+### 2. ★ 决定性外部证据：HP 官方文档自己写了这条
+
+来源：HP 支持文档 `support.hp.com/cn-zh/document/ish_2843606-2359609-16`
+《惠普电脑 - 设置时间和日期、时钟损失时间、时间和日期不正确 (Windows)》，**章节标题与正文逐字**：
+
+> **退出休眠状态后，系统时钟显示的时间不正确。**
+> **在某些电脑上，系统时钟在退出休眠状态后可能停止或重置。更新 BIOS 应该可能会解决该问题。**
+
+⇒ **HP 自己承认**：部分机型在"退出休眠"这条路径上会把 RTC 时钟**停止或重置**；**官方解法 = 更新 BIOS**。
+⇒ 用户的观察与 HP 的措辞**逐字对应**（"退出休眠" ↔ "睡眠唤醒后"；"停止或重置" ↔ 时钟回 2019）。
+
+### 3. BIOS 版本谱系（ZBook Power G7）
+
+| 版本 | SoftPaq | 出处 |
+|---|---|---|
+| `01.02.02` | — | HP 2020-10 BIOS Refresh（`c06963118`） |
+| `01.16.00` | SP151397 | HP 2024-05 Intel BIOS Guard 安全更新（`HPSBHF03936`） |
+| `01.18.01` | SP154814 | HP Intel 2024.3 IPU（`HPSBHF03981`） |
+| **`01.20.00`** | **SP157074** | HP Intel 2025.1 IPU（`HPSBHF04011`）＝ 目前查到的最新 |
+
+⚠️ **不可回退**：HP 支持社区 2025-03-07 帖（`h30471`，同机型 ZBook Power G7）用户实测 —— 刷到 01.20.00 后**无法降回 01.19.00**，回帖说明 *"安全性增强的BIOS不支持回退"*。
+
+### 4. 旁证：HP 历史上就在修这个机型的休眠问题
+
+HP 2020-10 BIOS Refresh（`c06963118`）release notes 原文含：
+
+> *"Fixes issue where system cannot detect external dock or no display when resume from **hibernation**/shutdown on dGPU supported platform."*
+
+### 5. 本机 BIOS 版本**从 macOS 取不到**（已穷举，勿再绕）
+
+| 尝试 | 结果 |
+|---|---|
+| `system_profiler SPHardwareDataType` | `System Firmware Version: 2094.80.5.0.0` —— 因 OC `UpdateSMBIOSMode=Custom`，这是 **MacBookPro16,4 的值**，非 HP BIOS |
+| ACPI 全表头 `OEM Revision` | DSDT/FACP/RSDT/XSDT 全 `0x00000000`；`OEM Table ID=87EC`（板号，非版本） |
+| ESP `EFI/HP/DEVFW/*`（2026-07-16 落地） | 无版本串（`strings` 只捞到 `N51` 一处）；ESP 上**没有** `EFI/HP/BIOS/` 目录 |
+
+⇒ **只能**：F10 → `Main` 页读 BIOS Version；或 Windows 下 `fn+Esc`（HP 系统信息）/ `wmic bios get smbiosbiosversion`。
+
+### 6. 另一条零 macOS 风险的判据
+
+Windows 分区 `hiberfil.sys` = **6.6 GB，mtime `2026-09-15 16:20`**（`Windows/Logs/HPFus/HPCDLOG.LOG` 同日 16:20 也有活动记录）
+⇒ **Windows 休眠是开着的、而且用过**。
+若那次 Windows 休眠→开机**没报 005** ⇒ 问题只在 **macOS / OpenCore 侧**；若也报 ⇒ 是**平台级**（Windows 也中招）。
+
+### 7. 修正后的假设与动作
+
+| 项 | 修正后 |
+|---|---|
+| **主假设** | **本机固件在 S4（休眠）退出路径上把 RTC 时钟停止/重置** —— HP 官方文档承认的机型级行为 |
+| **RTC 电池弱** | **降级**：主电池在机内时 RTC 本就有电，R1（关机＋拔 AC 20–30 min）**正负结果都不足以定它的罪**；真要验只能拆机量/换 CR2032 |
+| **"软件写 RTC"** | 已排除（三层防护运行期实测生效）—— 与"问题不在软件写"**吻合** |
+| **唯一动作** | **核对 BIOS 版本 → 低于最新则更新 → 复测休眠** |
+
+**HP 官方给的更新路径**（来源：`ish_4366901-4234704-16`《HP 商用笔记本电脑 – 更新 BIOS》，步骤名逐字）：
+
+1. **F10** → **「在 HP.com 中检查 BIOS 更新」** → 按屏幕说明（BIOS 内联网自查，最省事）
+2. **Windows 下**：下载 **SP157074** → 双击 → *HP BIOS 更新和恢复* → **更新** → **立即重新启动** → **立即应用更新**
+3. **不依赖 Windows**：Esc → **F2（硬件诊断 UEFI）** → **固件管理 / BIOS 管理** → **BIOS 更新** → **选择要应用的 BIOS 镜像** → `HP_TOOLS-USB 驱动器 → Hewlett-Packard → BIOS → 当前` → 选与主板 ID 匹配的文件（如 `02291.bin`）→ **立即应用更新**
+   （U 盘需先在 Windows 下用 SoftPaq 的「创建恢复 USB 闪存驱动器」功能制作）
+
+**升级前必须知道的风险 + 已有安全垫**：
+
+| 风险 | 现状 / 对策 |
+|---|---|
+| **01.20.00 不可回退** | 社区实测。**这是本次唯一的不可逆点** —— 用户拍板 |
+| BIOS 更新触发 Load Setup Defaults ＋可能清 NVRAM ⇒ **OC 启动项可能消失** | ✅ 已核实 ESP `\EFI\BOOT\BOOTX64.efi` **存在**（2026-06-08）⇒ 固件默认路径仍能起 OC |
+| 新 BIOS 改 ACPI ⇒ 现有 SSDT/补丁需复核 | ✅ 更新前 ACPI 快照已在 `docs/SysReport/ACPI`（含 `DSDT.aml/.dsl`）⇒ 更新后可逐表 diff |
+| BIOS 项回默认（Secure Boot / TPM / VT-d / 雷电 / 启动顺序） | 参照仓库 `BIOS_Thunderbolt_Recommendation.md` 逐项重设 |
+
+**判读（更新后复测一次 `rtcprobe`）**：
+- **不再 005** ⇒ HP 官方解法成立，**结案**（且这是零额外风险的正规修复路径）
+- **仍 005** ⇒ HP 该建议对本机无效 ⇒ 只剩「RTC 纽扣电池」或「本机固件无解」两条
+
+---
+
+## 二十七、09-17 上午 —— **根因收敛：AOAC（Low Power S0 Idle）与 S4 结构性冲突**（本轮把"剩余可能"推进到只剩两条）
+
+> 起因：用户追问「为什么休眠不行呢？所有的可能都排除了？」「你又说硬件支持，既然支持就慢慢排查啊」「window 肯定没有问题啊」。
+> 本轮**没有再动任何配置**，全部是只读取证（`pmset -g log`、kext 反汇编、ACPI 反汇编、上游源码 / 官方文档 / 社区先例）。
+
+### 1. ★★ 决定性的差分证据：失败**只**发生在休眠档（`pmset -g log` 全量）
+
+`pmset -g log` 覆盖今天 09:04 起全部记录（3080 行，已轮转，无更长历史）。今天共 **9 次睡眠**：
+
+| # | 入睡 | 唤醒 | 时长 | 档位 |
+|---|---|---|---|---|
+| 1 | 10:09:39 | ✅ 10:15:17 **Wake from Deep Idle**（LPCB XDCI/UserActivity） | 338 s | 普通 |
+| 2 | **11:16:24** | ❌ **无** | — | **休眠** |
+| 3 | **12:04:17** | ❌ **无** | — | **休眠** |
+| 4 | **13:11:46** | ❌ **无** | — | **休眠** |
+| 5 | 14:39:31 | ✅ 14:42:03 **Wake from Deep Idle**（PWRB/Lid Open） | 152 s | 普通 |
+| 6 | **18:09:57** | ❌ **无** | — | **休眠** |
+| 7 | **19:29:44** | ❌ **无** | — | **休眠** |
+| 8 | 19:58:07 | ✅ 20:00:16 **Wake from Deep Idle**（LPCB XDCI/Lid Open） | 129 s | 普通 |
+| 9 | 20:13:19 | ✅ **09-17 08:52:27**（PWRB/UserActivity） | **45548 s ≈ 12.6 h** | 普通 |
+
+**⇒ 五项硬结论：**
+
+1. **5 次失败 ≡ 5 次武装了休眠的睡眠**（11:16 / 12:04 / 13:11 / 18:09 / 19:29），**一一对应，零例外**。
+2. **4 次普通睡眠全部正常唤醒**，包括 **连睡 12.6 小时**（20:13 → 次日 08:52）且 **RTC 无恙、无 005、时间正确**。
+3. **所有成功唤醒都是 `Wake from Deep Idle`** —— 从来没有一次是 `Wake from S3`，也从没有 `Entering Hibernate`。
+4. 失败的 4 条**时长栏为空**（成功的有 `338 secs` / `45548 secs`），即**系统自己都没记下这次睡眠结束**——与"硬断电"吻合。
+5. ⇒ **普通睡眠没有问题；坏的只是休眠。** 这一条把"RTC 电池弱""RTC 被写坏""固件普遍性问题"**整类排除** —— 一个衰弱的 RTC 电池不可能只在"睡过且落盘"那几次掉时间。
+
+> 附带：第 1 / 5 / 8 次的唤醒原因分别是 `LPCB XDCI/UserActivity`、`PWRB/Lid Open`、`LPCB XDCI/Lid Open` —— **唤醒链路正常**，睡眠/唤醒本体健康。
+
+### 2. 平台侧硬事实：**AOAC 是开启的**（复算 FADT）
+
+```
+FADT flags @112 = 0x002384A5
+   bit7  = 1  RTC_S4（固件声明支持 RTC 从 S4 唤醒）
+   bit10 = 1  RESET_REG_SUP
+   bit16 = 1  S4_RTC_STS_VALID
+   ★ bit21 = 1  LOW_POWER_S0_IDLE_CAPABLE  → AOAC 开启
+```
+另有 **`LPIT-1.aml`**（Low Power Idle Table）⇒ **双证：本机处于 AOAC/Modern Standby 模式的"冲突侧"。**
+
+`SS3 = One` / `SS4 = One`（DSDT 5708-5709），`_S3` SLP_TYP=`0x05`、`_S4` SLP_TYP=`0x06`（DSDT 38257-38285，标准值）⇒ **固件在 ACPI 层面确实声明了 S3 与 S4** —— 这就是用户说的"硬件支持"。
+
+### 3. macOS 侧为什么会走 Deep Idle 而不用 S3：**`\_SB.LPS0`**
+
+`EFI/OC/ACPI/SSDT-DeepIdle.aml` 反汇编（`SSDT-DeepIdle.dsl`）：
+
+```asl
+Scope (_SB)  { Method (LPS0, 0) { If (_OSI ("Darwin")) { Return (One) } } }
+Scope (_GPE) { Method (LXEN, 0) { If (_OSI ("Darwin")) { Return (One) } } }
+```
+
+**权威出处**（Pike / pikeralpha，Apple 内核逆向）：
+
+> *"Do you have a property with the name: **IOPMDeepIdleSupported**? … The second question can be solved by adding the following code to your ACPI tables: `Scope (\_SB) { Method (LPS0, 0) { … Return (One) } } Scope (\_GPE) { Method (LXEN, 0) { … Return (One) } }`"*
+
+⇒ **`LPS0` 返回 One ⇒ macOS 认为 `IOPMDeepIdleSupported = true` ⇒ 选 Deep Idle，而不是 `_S3`。**
+⇒ **这两个 SSDT 就是"macOS 在本机不走传统 S3"的直接原因**——不是 macOS 26 忽略 `_S3`，是它**有更优选择就不选**。
+
+### 4. macOS 与 Windows 的**结构性差异**（回答「Windows 肯定没问题」）
+
+`SSDT-AWAC.aml` 反汇编（73 字节全文解码）：
+
+```asl
+Scope (\_SB) { If (_OSI ("Darwin")) { STAS = One } }
+```
+
+DSDT 里 `STAS` 是 AWAC/RTC 的**互斥开关**：
+
+| | `STAS` | `Device (AWAC)` (ACPI000E) | `Device (RTC)` (PNP0B00) |
+|---|---|---|---|
+| **macOS** | **One** | `_STA` → **Zero（隐藏）** | `_STA` → **0x0F（启用）** |
+| **Windows** | Zero | 0x0F（启用） | Zero（隐藏） |
+
+（出处：DSDT 9384-9406 `AWAC._STA` vs 29670-29694 `RTC._STA`）
+
+**⇒ 两个系统驱动的"时间/闹钟设备"根本不同** —— 这就是"Windows 休眠好、macOS 休眠坏"的第一层解释：**macOS 走的是 Apple 私有的 S4 路径**（加密 sleepimage ＋ 把密钥写进 RTC `0x80–0xAB` ＋ 交给 `boot.efi` 读回），而 Windows 走的是 Intel/微软在 AOAC 平台上认证过的路径。
+
+### 5. 全量取证：AppleRTC 到底碰了 RTC 的哪些地址（反汇编，非推测）
+
+`AppleRTC.kext` **2.0.1**，`otool -tV` 全量提取 `rtcWrite` / `rtcRead` / `rtcSafeRead` / `rtcWriteBytes` / `updateChecksum` 的立即数：
+
+| 函数 | 行为 |
+|---|---|
+| `rtcWrite(offset, value)` | `bank = offset >> 7`；端口 = `base + bank*2`（`base=0x70`）；**两处 `callq *0x960(%rax)` = `fProvider->ioWrite8`** |
+| `rtcWriteBytes(buf, len, off)` | 循环调 `rtcWrite(off+i, buf[i])` |
+| `setHibernateState(len)` | `rtcWriteBytes(data, len, **0x80**)` 然后 `updateChecksum()` |
+| `updateChecksum()` | 对 **`0x0E`…`0xFF`（242 字节）** 算校验，写入 **`0x58` / `0x59`** |
+| 全部被写的偏移 | `01–09`（闹钟/时钟）、`0B`（Register B）、`58/59`、`80–AB`、`B0–B7` |
+
+**★ 关键交叉验证**：`rtcWrite` 用的是 **`fProvider->ioWrite8`（虚方法）**，而 `RTCMemoryFixup` 正是 `KernelPatcher::routeVirtual(provider, IOPortAccessOffset::ioWrite8, …)`（源码 331 行）⇒ **它 hook 的就是同一条虚拟方法** ⇒ **`rtcfx_exclude=0E-FF` 对 `setHibernateState` 的写入是真正生效的**（不是"没装上"或"拦错了"）。
+
+**⇒ 由此得出本轮最重要的一条排除：**
+**把 `0x0E–0xFF` 全部封死（内核 `rtcfx_exclude=0E-FF` ＋ 协议层 `AppleRtcRam=true` ＋ `rtc-blacklist` 242 B，运行期均已实测落地）之后，第 6 次休眠依旧 005** ⇒ **"macOS / boot.efi 写坏 RTC"这一整类被真正封死证伪**（上一轮对此的怀疑，这轮用源码级证据补实了）。
+
+`AppleRtc.h` 常量对照（`0x80` 区就是休眠密钥）：
+
+```
+APPLE_RTC_HIBERNATION_KEY_ADDR   0x80    LENGTH 0x2C (44)   ← IOHibernateRTCVariables
+APPLE_RTC_FIRMWARE_CHECK_ADDR    0xAF
+APPLE_RTC_TRACE_POINT_ADDR       0xB0    LENGTH 8           ← boot.efi 路标
+APPLE_RTC_WL_MASK_ADDR           0xB1    （含 HIB_CLEAR_KEYS / HIB_CLEAR_IMG 位）
+APPLE_RTC_WL_EVENT_ADDR          0xB2
+```
+
+### 6. 我们自己引入的、唯一"Darwin 专有且碰到 RTC 域"的东西：`SSDT-PCI0.LPCB-Wake-AOAC`
+
+```asl
+Scope (_SB.PCI0.LPCB)          // ← RTC 设备的父设备
+{
+    Method (_DSW, 3)           // Device Sleep Wake
+    {
+        If (!_OSI ("Darwin")) { Return (Zero) }
+        If ((Arg0 == 0x03))    // ← 只处理 S3
+        {
+            OperationRegion (AOWR, SystemIO, 0x1800, 0x02)
+            Field (AOWR, ByteAcc, NoLock, Preserve) { AOAC, 8, AOEN, 1 }
+            AOEN = Arg2        // ← 写 PCH 的 AOAC/深睡使能位
+        }
+    }
+    Method (_PRW, 0) { … 0x6D /0x04 on Darwin … }
+}
+```
+
+**加载状态核实（缩进归属分析，防"静默丢弃"）**：DSDT 里共 5 个 `_DSW`，分别属于 `GLAN / XHC / XDCI / HDAS / CNVW`；**`\_SB.PCI0.LPCB` 下既无 `_DSW` 也无 `_PRW`** ⇒ **本 SSDT 不冲突、确实被应用**（不是像 `SSDT-TPD3-CRS/INI` 那样被 `AE_ALREADY_EXISTS` 丢弃）。
+
+⇒ 它是**全链路里唯一一个"按 `_OSI("Darwin")` 分支、改到 RTC 父设备睡眠行为、且写 PCH AOAC 使能位"的补丁** —— 因此**它是"Windows 好 / macOS 坏"的第二层候选**，值得一次对照实验（见 §7 路线 ①）。
+
+### 7. HP 侧没有软件扳手：`S0ID` 在 HP DSDT 里是**只读镜像**
+
+```
+5844:   S0ID,   8,                                  ← GNVS 字段（固件填入）
+30219:  If ((S0ID == One)){}                        ← _WAK 里，**空块**
+31337:  If ((S0ID == One)){}                        ← 另一处，**空块**
+```
+⇒ HP 把 AOAC 的**行为**做在 SMM/固件里，ACPI 侧只留一个**报告位**，**两处引用都是空 if** ⇒
+**在 HP 上无法像 Lenovo 那样用 SSDT（`STY0=0` / `S0ID=0`）从 ACPI 侧关掉 AOAC。**
+（对照：Lenovo X1C6 的 `SSDT-Sleep.dsl` 里 `STY0`/`S0ID` 是**可写且被固件采纳**的 GNVS 字段 ⇒ 那是 Lenovo 独有的路。）
+
+### 8. 外部先例（两条，都是同代同配）
+
+**① Dell Latitude 5410**（i5-10310U + AX201 + `MacBookPro16,3`）EFI 仓库原文（项目文档 `round2-plan.md` §2 已收录）：
+
+> **Notes for Low Power S0 Idle**: The default value of Low Power S0 Idle is enabled, it **conflicts S3 Sleep wake up and S4 Sleep**. I strongly recommend to use S3 sleep by disabling Low Power S0 Idle capability by: `setup_var_cv Setup 0x14 0x1 0x0`
+
+**② ThinkPad X1C6 `SSDT-Sleep.dsl`**（tylernguyen）：
+
+> *"For X1C6 its perfectly possible to set SleepType=Windows in BIOS while getting perfect **S3-Standby in OSX**… With this SSDT it is perfectly possible to have ACPI-sleepstates **S0 (DeepIdle), S3 (Standby) & S4 (Hibernation)** working."*
+> *"**F.e. S0-DeepIdle has a much higher power draw on sleep as S3 atm.**"*
+
+**③ HP 自己的平台症状吻合**（第三方汇总）：HP 2019 年起的 EliteBook / ProBook / **ZBook** 用 Modern Standby(S0ix) 替代传统 S3；存在**固件 bug 导致合盖后静默猝死、无 dump（Event 41/6008）**，HP 在 2024 年陆续发过 BIOS 修复。BIOS 里该选项名随机型不同，可能是 **"Extended Idle" / "Modern Standby" / "Sleep State" / "ACPI Sleep Mode" / "S0 Low Power Idle"**。
+（对照本机失败签名：入睡 → 硬断电 → 无 panic → 重启 005 —— **与"静默猝死"同型**。）
+
+### 9. ★ 代价模型的修正（这是本轮最该记住的一条）
+
+`README.md` 第 89 行与 `round2-plan.md` 把「BIOS 关 AOAC 换 S3」列为**"S4 / 本末倒置 / 不建议"**，理由是：
+
+> *"我们本来的目标就是'Deep Idle 睡眠耗电高'，关掉 Deep Idle 等于把要优化的对象换掉了。"*
+
+**这个推理是错的**，因为它默认「S3 比 Deep Idle 差」。实测与社区口径恰好相反：
+
+| 睡眠态 | 本机/社区实测功耗 | 8 h 掉电（70.6 Wh 电池） |
+|---|---|---|
+| **Deep Idle（S0ix，现役）** | **≈5 W**（实测） | **≈57 %** |
+| **传统 S3** | 社区量级 **≈0.3–1 W** | ≈3–11 % |
+| 真休眠（S4） | 理论 ~0.2 W | ~2 % |
+
+⇒ **关掉 AOAC 换 S3 不是"放弃优化"，而是把 5 W 换成 ≈0.5–1 W（5–10 倍收益）**，且**顺带给 S4 让路**（先例①）。**它应该是首选路线，不是最后一条。**
+
+### 10. 现在的"剩余可能"清单（回答用户的"所有可能都排除了吗"）
+
+**已排除（有硬证据）**：
+触发条件没配齐 ｜ `sleepimage` 尺寸（16 GiB 实分配仍失败）｜ `RTCMemoryFixup` 没装/语法错（`rtcWrite` 走同一条 `ioWrite8` 虚方法，hook 确有效）｜ `HibernationFixup` 版本不支持（1.5.4 首条 changelog 即 macOS 26）｜ 平台没有 S4（`bit7 RTC_S4=1` ＋ `_S4` 存在）｜ USB/磁盘被误标外置 ｜ **macOS/boot.efi 写坏 RTC**（`0E–FF` 全封仍 005）｜ **RTC 电池弱**（普通睡眠连睡 12.6 h 无 005）｜ 两个 SSDT 因重名被静默丢弃（已用缩进归属逐个核实）
+
+**仍活着（就剩两条）**：
+
+| # | 假设 | 支持证据 | 怎么验 |
+|---|---|---|---|
+| **A** | **AOAC(S0ix/Modern Standby) 与 S4 在固件层冲突** —— macOS 的私有 S4 路径在 AOAC 固件上语义不匹配 ⇒ 断电极不正常 ⇒ RTC 掉电 | FADT bit21=1 ＋ LPIT ＋ 先例①②③ ＋ 差分证据（只有休眠档失败） | **① BIOS 关 AOAC 换 S3 → 复测；② 更新 BIOS** |
+| **B** | **HP 固件在 Modern Standby / 深睡路径上的 bug**（静默猝死型），新版 BIOS 已修 | 第三方汇总明确记载 HP 该代机型有此固件 bug ＋ HP 官方 005 文档指向"更新 BIOS" | **更新 BIOS 到 01.20.00（SP157074）后复测** |
+
+⇒ **A 与 B 指向同一个动作集合（关 AOAC / 更新 BIOS）**，所以下一步不需要再二选一，直接按代价从低到高做即可。
+
+### 11. 下一步路线（按代价从低到高，**全部不需要再碰休眠，因而不冒坏 RTC 的风险**）
+
+| 路线 | 操作 | 预期 | 风险 |
+|---|---|---|---|
+| **① 查 BIOS 版本**（2 分钟） | 开机 **F10 → Main**（或 Windows 里 `fn+Esc` / `wmic bios get smbiosbiosversion`） | 拿到版本号，决定 ② 是否值得 | 🟢 零 |
+| **② 升 BIOS**（若 < 01.20.00） | F10 内联网自查 / Windows 跑 **SP157074**（见 §二十六 三条路径） | **B** 类 bug 可能被修；先例③ | 🟡 中；**01.20.00 不可回退 = 唯一不可逆点，用户拍板** |
+| **③ BIOS 关 AOAC 换 S3**（★ 收益最大的一刀） | 在 F10 里找 **"Extended Idle" / "Modern Standby" / "Sleep State" / "S0 Low Power Idle"** 改 Disabled；**同时把 `SSDT-DeepIdle` 与 `SSDT-PCI0.LPCB-Wake-AOAC` 设为 `Enabled=false`**（否则 `LPS0` 还在，macOS 仍选 Deep Idle） | 睡眠 **5 W → ≈0.5–1 W**；顺带给 S4 让路 | 🟡 中；BIOS 项**可能被隐藏**（见 §7：HP 无 ACPI 扳手，只能用 setup_var 一类手段）；需重测睡眠/唤醒 |
+| **④ 若 ③ 后仍想 0.2 W** | 再试 `FORCE_HIBERNATE=1 … rtcprobe` | 可能真能用了（先例①就是"关 AOAC + HibernationFixup"） | 🟡 中（此时才值得再冒一次 RTC 风险） |
+| **⑤ 若 BIOS 项隐藏** | UEFI Shell 写 setup var（Dell 先例的 `setup_var_cv` 思路）或 Windows 下用 **HP BIOS Configuration Utility (BCU)** 按设置名读写 | 同 ③ | 🔴 高（写错可致不开机）→ 排最后 |
+
+**判读（③ 之后，二选一）**：
+- `pmset -g log` 出现 **`Wake from S3`**（不再全是 Deep Idle）＋ 墙插功率掉到 ≈1 W 级 ⇒ **AOAC 让路成功** ⇒ 目标达成，**不必再追休眠**
+- 仍是 `Wake from Deep Idle` ⇒ AOAC 没关掉（多半是 BIOS 项隐藏或被固件强制）⇒ 转 ⑤，或**接受 5 W** 并把"出差用关机"作为定案
+
+### 12. 本轮撤回/降级
+
+| 之前 | 现在 |
+|---|---|
+| 「保 CMOS 与保休眠互斥」（上游 README 判死） | **降级为未证实** —— 推理链仍成立，但**它不是 005 的解释**（005 是掉电） |
+| 「软件写 RTC 整类证伪 ⇒ 收手」 | **证伪成立但归因错**（见 §二十五）；本轮用源码把"确实生效"补实 |
+| 「关 AOAC 换 S3 = 本末倒置 / 不建议」 | **撤销** —— 代价模型算反了（§9）；**应为首选** |
+| 「macOS 26 忽略 `_S3`」（`SSDT-OCLT-S3Fix` 停用理由） | **表述需修正** —— `_S3` 仍在，只是 macOS 因 `LPS0` 选了更优的 Deep Idle；关掉 AOAC 与 `LPS0` 后能否用 S3 = 待验 |
+| 「005 ⇒ 固件载入出厂默认」 | 早已撤回（屏幕原文无此句） |

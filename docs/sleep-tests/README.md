@@ -1,5 +1,33 @@
 # 睡眠档位调优测试记录
 
+> 🟢🟢🟢 **2026-09-17 09:0x【最新 · §二十七】—— 根因收敛：AOAC（Low Power S0 Idle）与 S4 结构性冲突**
+> **① 差分证据（本轮最硬的一条，来自 `pmset -g log` 全量）**：今天 **9 次睡眠 = 5 次武装休眠（全部死）＋ 4 次普通睡眠（全部正常）**，
+> 其中 **20:13 → 次日 08:52 连睡 12.6 小时，RTC 无恙、无 005、时间正确**。
+> ⇒ **普通睡眠没问题；坏的只有休眠。** ⇒ 「RTC 电池弱」「RTC 被写坏」**整类排除**。
+> **② 平台侧**：`FADT bit21 LOW_POWER_S0_IDLE_CAPABLE = 1` ＋ `LPIT-1.aml` ⇒ **AOAC 开着** ⇒ **与 S3/S4 结构性冲突**（同代先例 Dell 5410 原话：*"Low Power S0 Idle … conflicts S3 Sleep wake up and S4 Sleep"*）。
+> **③ macOS 侧**：`SSDT-DeepIdle` = `\_SB.LPS0(){Return One}` ⇒ macOS `IOPMDeepIdleSupported=true` ⇒ **选 Deep Idle 而不选 `_S3`**（Pike/pikeralpha 权威出处）。
+> **④ ★ 代价模型修正（重要）**：社区口径 *"S0-DeepIdle has a much higher power draw on sleep as S3"* ⇒
+> **关掉 AOAC 换 S3 = 把 5 W 换成 ≈0.5–1 W（5–10 倍收益），不是"本末倒置"** ⇒ **它应为首选，不是最后一条**（撤销 `round2-plan.md` 的"不建议"）。
+> **⑤ 下一步（不需再碰休眠、不冒坏 RTC 风险）**：① 查 BIOS 版本（F10 → Main）→ ② 若 < 01.20.00 升到 **SP157074** → ③ BIOS 关 AOAC **并同时关掉 `SSDT-DeepIdle` + `SSDT-PCI0.LPCB-Wake-AOAC`** → 看是否出现 `Wake from S3` ＋ 功率掉到 ≈1 W。
+> 完整取证：`round2-tierB-result.md` **§二十七**。
+
+> 🔵🔵 **2026-09-16 20:0x【§二十六】—— HP 官方文档印证：这是固件问题，解法 = 更新 BIOS**
+> 用户现场观察「**只有睡眠唤醒后才报那个错**」＋ wtmp 证据（今日 5 次正常关机/重启时钟**全对**）
+> ⇒ **"RTC 电池弱 / 时间因素"降级**（弱电池不会专挑"睡过"那次丢时间）。
+> HP 支持文档 `ish_2843606-2359609-16` **原文有一节标题就是**：
+> > **退出休眠状态后，系统时钟显示的时间不正确。**
+> > **在某些电脑上，系统时钟在退出休眠状态后可能停止或重置。更新 BIOS 应该可能会解决该问题。**
+> ⇒ 本机 BIOS 大概率是老旧版本；HP 对 ZBook Power G7 已更新到 **01.20.00（SP157074）**。
+> ⇒ **下一步只有一个**：核对 BIOS 版本（F10 → Main，或 Windows `fn+Esc` / `wmic bios get smbiosbiosversion`）→ 低于最新则更新后复测。
+> ⚠️ 01.20.00 属"安全性增强"版，**刷上去不能回退**；安全垫已核（ESP `\EFI\BOOT\BOOTX64.efi` 存在、ACPI 快照可 diff）。
+> 完整取证：`round2-tierB-result.md` **§二十六**。
+
+> ⚠️⚠️ **2026-09-16 19:5x【总修正】—— 已被 §二十六 细化，主结论仍有效**
+> **HP 005 的官方语义是「RTC 掉电」，不是「CMOS 被写花」**（HP 原文 *"…a loss in **battery power** … you might need to **replace the CMOS or RTC battery**"*）。
+> ⇒ 三层软件防护（内核 `rtcfx_exclude=0E-FF` ＋ 协议层 `AppleRtcRam=true` ＋ `rtc-blacklist` 242 B）**全开仍报 005，本就不矛盾** —— 掉电不是"写"。
+> ⇒ 「保 CMOS 与保休眠互斥」「出差改用关机」两条**均降级 / 暂缓**。
+> 完整论证：`round2-tierB-result.md` **§二十五**。
+
 > ⚠️ **2026-09-16 复查：`round1` 的"档 A 判死"结论已撤回。**
 > 真因是**测试条件不成立**（`standby` 要求电池供电，而测试在插电下进行），
 > 且 EFI 缺 `HibernationFixup.kext`。详见 `round1-tierA-result.md` 顶部撤回声明
@@ -7,18 +35,30 @@
 
 ---
 
-## ⛔ 2026-09-16 18:30 结案：**本机"真休眠"路线已证伪，测试全部终止**
+## ⛔ 2026-09-16 18:30 结案（⚠️ 已由 §二十五 修正）：**"真休眠"路线 6 次尝试全部失败，测试终止**
 
-- **5 次真休眠尝试（11:16 / 12:04 / 13:11 / 14:39 / 18:09）全部失败**，其中 **2 次把 RTC/CMOS 写坏** ——
+- **6 次真休眠尝试（11:16 / 12:04 / 13:11 / 14:39 / 18:09 / 19:29）全部失败**，其中 **3 次把 RTC 写坏** ——
   重启后 POST 报 **HP 005 `Real-Time Clock Power Loss`** ＋ 系统时钟回落 `2019-01-01`。
 - **`RTCMemoryFixup` 装对了也没挡住**（`rtcfx_exclude=80-FF` 语法经上游 README 核对**正确**，类实例计数 = 1）。
 - **`HibernationFixup` 的 NVRAM 兜底从未触发**（失败后 `nvram -p` 无任何休眠变量）⇒ 机器死在"进入 hibernate 电源态"**之前**。
 - ★ 上游 `RTCMemoryFixup` README 原文：`0x80–0xAB` 存放 `IOHibernateRTCVariables`，
   「**If any offset in this range causes a conflict, you can exclude it, but hibernation won't work.**」
-  ⇒ **保 CMOS 与 保休眠，在这类硬件上互斥。**
-- ⇒ **替代方案：出差/带机出门用「关机」** —— 0 W（比休眠更低）、零 RTC 风险、开机 30–40 s 与休眠唤醒相当。
-- ⇒ 脚本 `pmset-hibernate.sh` 的 `auto / test / on / instant` **已加硬闸**（需 `FORCE_HIBERNATE=1`）。
-- 完整取证：`round2-tierB-result.md` **§二十三**。
+  ⇒ ~~保 CMOS 与 保休眠互斥~~ —— **⚠️ §二十五 已把此"判死"降级为「未证实」**（推理链本身仍成立，但它已不是 005 的解释）。
+- ⇒ 脚本 `pmset-hibernate.sh` 的 `auto / test / on / instant` **已加硬闸**（需 `FORCE_HIBERNATE=1`；另有 `rtcprobe` 诊断档）。
+- 完整取证：`round2-tierB-result.md` **§二十三**（＋ §二十四 / §二十五）。
+
+### 🔁 2026-09-16 19:0x 复炉 → **19:29 已出结果：照样 005**
+
+逐行核对上游源码后确认：**前 5 次测量是在「RTC 防护有缺口」的条件下做的** ——
+Apple 校验和区间从 `0x0E` 起算，`0x0E–0x7F` **从未被任何一层拦过**；协议层（boot.efi）更是**零防护**
+（`AppleRtcRam=false`、无 `rtc-blacklist`）。
+⇒ 已改工作区 EFI **4 项**：`rtcfx_exclude=80-FF→0E-FF`、`AppleRtcRam=true`、
+新增 `4D1FDA02-…:rtc-blacklist`(242 字节 `0E–FF`)、`NVRAM/Delete` 补该项
+（19:16 同步 ESP，19:19 实测四项运行期**全部生效**）。
+**结果（19:29）＝照样 005** ⇒ **「软件写 RTC 把 CMOS 写花」整类成立性证伪**（源码级复核：黑名单写只落内存，
+协议层写路径还被 `SyncRtcRead` 的 bug 额外短路 = 双重保险）。
+⚠️ **但这不等于解释了"休眠失败" —— 两者可能是独立问题，见 §二十五。**
+详见 `round2-tierB-result.md` **§二十四**（含硬事实出处、执行步骤、回滚）。
 
 ---
 
@@ -57,7 +97,7 @@
 | Deep Idle | `hibernatemode 0` `standby 0` | 永不落盘，内存全程带电（≈5 W 墙插） | ✅ **2026-09-16 18:27 起为现役档**（两电源源，`pmset-hibernate.sh off`） |
 | ~~A 惰性深睡~~ | `hibernatemode 25` `standby 1` `standbydelay* 3600/7200` | 短睡内存秒醒 → 1~2 h 后落盘断电 | ⛔ **已证伪并停用**（18:09 实测：睡下即断气 + POST 005）；改成 `25/1/3600-7200` 也**没有改变结局** |
 | ~~B 真休眠~~ | `hibernatemode 25` `standby 1` `standbydelay* 600/1800` | 短睡内存秒醒 → 10~30 min 后落盘断电 | ⛔ **已证伪并停用**；且**已拆掉地雷** —— 电池侧前提天然满足，留着它下次出门合盖必炸 |
-| C 传统 S3 | 清 FADT bit21 / BIOS 关 AOAC | 实验级；**代价是放弃 Deep Idle** | 排最后，不建议 |
+| **C 传统 S3** | BIOS 关 AOAC（Low Power S0 Idle）＋ **关掉 `SSDT-DeepIdle` / `SSDT-PCI0.LPCB-Wake-AOAC`** | ★ **`hibernatemode 0`**：睡眠 **改为 S3**，功耗 **≈0.5–1 W**（vs Deep Idle 的 ≈5 W） | 🟢🟢 **2026-09-17 升为首选**（§二十七 §9 撤销原"本末倒置/不建议"——代价模型算反了：S3 比 Deep Idle **省 5–10 倍**，而不是更差） |
 
 > ⚠️ 「档 B = 每次睡眠立即写镜像 + 断电」这条**原表述已修正**：`hibernatemode 25` **单独设了不生效**，
 > 必须配 `standby 1` 作为**触发计时器**（本机无 `autopoweroff` 可用）。缺了它 ⇒ 全程 Deep Idle（14:39 实测）。
@@ -115,3 +155,4 @@ OpenCore 菜单 Enter → Reset NVRAM（逃生口 `AllowNvramReset=true` 已开�
 - `baseline-2026-09-16.txt` —— 改动前的 pmset 快照
 - `round1-tierA-result.md` —— 第 1 轮实测（含撤回声明）
 - `round2-plan.md` —— 修正后的复测路线 S1~S4
+- `../../EFI/scripts/rtc-protect-verify.sh` —— 只读核验「RTC 写保护四层」是否落地（§二十四 的执行前提）
