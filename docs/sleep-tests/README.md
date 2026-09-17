@@ -1,6 +1,10 @@
 # 睡眠档位调优测试记录
 
-> ✅ **2026-09-17 16:0x【最新 · §四十三 · 收口】** —— 用户刚做了 §42.5「15 秒裁决实验」（15:53 合盖 → 15:58 开盖），**结果 = ③ 通路正常，推翻 §42 假说**：
+> 🔬 **2026-09-17 16:1x【最新 · §四十四】—— 用户要求「压一下 Deep Idle 功耗」⇒ 实地量真值：awake-idle 24.75W（外屏亮/desktopMode/AC），睡眠功率仍~5W 估算未实测；配置层面无安全杠杆（7 条清单用尽§38 + ASPM 撞墙§39 + Wi-Fi/BT 被否§38），唯一安全口子=睡前断外设（外屏+USB鼠标），且须先量真实掉电率再谈改**
+>
+> ---
+
+> ✅ **2026-09-17 16:0x【§四十三 · 收口】** —— 用户刚做了 §42.5「15 秒裁决实验」（15:53 合盖 → 15:58 开盖），**结果 = ③ 通路正常，推翻 §42 假说**：
 > ✅ **合盖睡眠本机可用**，由 `Clamshell.app`（`whenClamshellIsClosed=sleep`，pid 2024）以**显式** `Software Sleep` 发起 ⇒ 不经 idle 路径 ⇒ **不受 WorkBuddy `NoIdleSleepAssertion` 阻挡**（§四一、§四二 两归因均作废）。
 > 🔬 **铁证**：`PMRD: clamshell closed 1, disabled 0/0, desktopMode 1, ac 1` ⇒ 内核**感知到合盖**且 `clamshellSleepDisabled=0`；`darkwakelinger` 链启动；`kIOMessageSystemWillSleep[134] to pid 2024 Clamshell`；`15:58:03 Wake from Deep Idle due to Lid Open`、`WakeTime 2.406 sec`、PS2 仅 458 ms。
 > 🔑 **12:14 / 13:18 两次失败 = Clamshell.app 时机性偶发**（非 EFI / 非 LID 补丁 / 非系统配置）⇒ **仍别动 `SSDT-LID-G7`**。**要合盖即睡：直接合盖（Clamshell 接管）；偶发不睡用「苹果菜单 → 睡眠」兜底。** 完整见 **§四十三**。
