@@ -24,14 +24,6 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>dGPU power-down on Darwin (renamed from SSDT-eGPU OFF-AOAC); keep enabled</string>
-				<key>Enabled</key>
-				<true/>
-				<key>Path</key>
-				<string>SSDT-dGPU-PowerOff-Darwin.aml</string>
-			</dict>
-			<dict>
-				<key>Comment</key>
 				<string>Faked Embedded Controller (Laptop)</string>
 				<key>Enabled</key>
 				<true/>
@@ -72,43 +64,11 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>DISABLED 2026-09-15: rejected at load time, never applied. DSDT already defines TPD3.SBFG, so the interpreter logs "ACPI Error: [SBFG] Namespace lookup failure, AE_ALREADY_EXISTS" and drops the table. Kept for reference (also useless by design: VoodooI2C reads _DSM/TP7D, not _CRS).</string>
-				<key>Enabled</key>
-				<false/>
-				<key>Path</key>
-				<string>SSDT-TPD3-CRS.aml</string>
-			</dict>
-			<dict>
-				<key>Comment</key>
-				<string>DISABLED 2026-09-15: rejected at load time, never applied. DSDT already defines TPD3._INI, so the interpreter logs "ACPI Error: [_INI] Namespace lookup failure, AE_ALREADY_EXISTS" and INT1 stayed at GNUM(GPDI) = 333. Superseded by SSDT-TPD3-PIN.aml (TPNM) + the DSDT GNUM to TPNM ACPI/Patch below.</string>
-				<key>Enabled</key>
-				<false/>
-				<key>Path</key>
-				<string>SSDT-TPD3-INI.aml</string>
-			</dict>
-			<dict>
-				<key>Comment</key>
 				<string>TPD3 (ELAN073D) trackpad GPIO interrupt pin: supplies TPNM() = 0x0102 = 258 = GPP_E2. Only works together with the ACPI/Patch entry below, which rewrites the DSDT call site GNUM(GPDI) into TPNM(GPDI) inside TPD3._INI. Rollback: revert this commit.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
 				<string>SSDT-TPD3-PIN.aml</string>
-			</dict>
-			<dict>
-				<key>Comment</key>
-				<string>TB3 JHL7540: hotplug + force-power + wake _DSW (_SB.PCI0.RP01.PXSX)</string>
-				<key>Enabled</key>
-				<false/>
-				<key>Path</key>
-				<string>SSDT-TB3HP-ZBook.aml</string>
-			</dict>
-			<dict>
-				<key>Comment</key>
-				<string>TB3 lite (experimental): hotplug + wake _DSW, no force-power</string>
-				<key>Enabled</key>
-				<false/>
-				<key>Path</key>
-				<string>SSDT-TB3HP-ZBook-lite.aml</string>
 			</dict>
 			<dict>
 				<key>Comment</key>
@@ -133,14 +93,6 @@
 				<true/>
 				<key>Path</key>
 				<string>SSDT-PNLF.aml</string>
-			</dict>
-			<dict>
-				<key>Comment</key>
-				<string>OCLT S3-Fix: disabled 2026-08-05. Darwin path is empty (no-op), XS3_ external is dangling (no _S3-&gt;XS3_ rename patch exists). macOS 26 ignores _S3 anyway. Re-enable if sleep regresses.</string>
-				<key>Enabled</key>
-				<false/>
-				<key>Path</key>
-				<string>SSDT-OCLT-S3Fix.aml</string>
 			</dict>
 			<dict>
 				<key>Comment</key>
@@ -637,24 +589,6 @@
 				<true/>
 				<key>ExecutablePath</key>
 				<string>Contents/MacOS/Lilu</string>
-				<key>MaxKernel</key>
-				<string></string>
-				<key>MinKernel</key>
-				<string></string>
-				<key>PlistPath</key>
-				<string>Contents/Info.plist</string>
-			</dict>
-			<dict>
-				<key>Arch</key>
-				<string>Any</string>
-				<key>BundlePath</key>
-				<string>HibernationFixup.kext</string>
-				<key>Comment</key>
-				<string>V1.5.4 | By acidanthera</string>
-				<key>Enabled</key>
-				<true/>
-				<key>ExecutablePath</key>
-				<string>Contents/MacOS/HibernationFixup</string>
 				<key>MaxKernel</key>
 				<string></string>
 				<key>MinKernel</key>
@@ -1170,42 +1104,6 @@
 				<key>Arch</key>
 				<string>Any</string>
 				<key>BundlePath</key>
-				<string>VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Mouse.kext</string>
-				<key>Comment</key>
-				<string>V2.3.8 | Off: no physical trackpoint; avoid extra PS2 pointing path</string>
-				<key>Enabled</key>
-				<false/>
-				<key>ExecutablePath</key>
-				<string>Contents/MacOS/VoodooPS2Mouse</string>
-				<key>MaxKernel</key>
-				<string></string>
-				<key>MinKernel</key>
-				<string></string>
-				<key>PlistPath</key>
-				<string>Contents/Info.plist</string>
-			</dict>
-			<dict>
-				<key>Arch</key>
-				<string>Any</string>
-				<key>BundlePath</key>
-				<string>VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Trackpad.kext</string>
-				<key>Comment</key>
-				<string>V2.3.8 | Off: I2C ELAN is primary; PS/2 trackpad fights VoodooI2C pointer path</string>
-				<key>Enabled</key>
-				<false/>
-				<key>ExecutablePath</key>
-				<string>Contents/MacOS/VoodooPS2Trackpad</string>
-				<key>MaxKernel</key>
-				<string></string>
-				<key>MinKernel</key>
-				<string></string>
-				<key>PlistPath</key>
-				<string>Contents/Info.plist</string>
-			</dict>
-			<dict>
-				<key>Arch</key>
-				<string>Any</string>
-				<key>BundlePath</key>
 				<string>RestrictEvents.kext</string>
 				<key>Comment</key>
 				<string>V1.1.7 | RestrictEvents 1.1.6 for OTA (revpatch=sbvmm), Acidanthera</string>
@@ -1454,8 +1352,6 @@
 		<array/>
 		<key>Security</key>
 		<dict>
-			<key>AllowNvramReset</key>
-			<true/>
 			<key>AllowSetDefault</key>
 			<true/>
 			<key>ApECID</key>
