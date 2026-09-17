@@ -2940,3 +2940,72 @@ cd <repo> && git log -S "<属性名或键名>" --text --oneline -- EFI/OC/config
 
 **睡 30 秒再唤醒**，读 `WakeTime` 是否为 2.4 s 量级、有无 `AppleACPIEC … OBF=1 poll timed out` ——
 这是 13:03 重启后 Deep Idle 全流程里**唯一还没实测**的环节。
+
+---
+
+## §四十　为什么今天中午合盖了没有睡眠（2026-09-17 14:1x 用户提问）
+
+### 40.1 日志实证：合盖 20 分钟，零睡眠事件
+
+`pmset -g log` 今日显示器事件：
+
+| 时刻 | 事件 |
+|---|---|
+| **12:14:49** | `Display is turned off` ⇒ **合盖** |
+| **12:34:21** | `Display is turned on` ⇒ **开盖** |
+| 中间 **20 分钟** | **无任何 `Sleep` / `Wake` / `DarkWake` 记录** |
+
+对照：今日**最后一条**睡眠记录是 **11:34:32**（S3 实验期），此后至今 **0 条**
+⇒ 用户的观察属实：**合盖确实没有触发睡眠**。
+
+### 40.2 根因：`AppleClamshellCausesSleep = No`，且没有兜底计时器
+
+| 检查项 | 实测值 | 含义 |
+|---|---|---|
+| `ioreg -r -c IOPMrootDomain` → `AppleClamshellCausesSleep` | **`No`** | **合盖不引起睡眠**（正常 Mac 为 `Yes`）—— 就是它 |
+| `AppleClamshellState` | `No` | 当前开盖态，LID 状态可读 |
+| `SleepDisabled` / `pmset disablesleep` | 均 `No` / 未设 | **不是**被 `disablesleep` 禁掉的 |
+| 外接显示器 | **`PHL 241B8Q`**（HDMI/DVI，扩展模式） | 合盖会进 `desktopMode`（clamshell） |
+| AC 下 `sleep` | **`0`** | 空闲计时器关闭 ⇒ **无兜底** |
+| 电池下 `sleep` | `15` | 电池下合盖最终仍会被空闲计时器兜底睡掉 |
+
+**⇒ 完整链条**：合盖 → 因 `AppleClamshellCausesSleep=No` **不触发合盖睡眠** → AC 下 `sleep 0`（无空闲兜底）
+→ **一直不睡**。此现象在 `docs/macos-sleep-power-verification.md` **§八.4** 已有记录：
+「**合盖不直接睡，靠空闲计时器兜底**」，并标注"收益小，未修"。
+
+### 40.3 成因待区分（两个候选，需一次 10 秒实测裁决）
+
+| 候选 | 依据 |
+|---|---|
+| **A. 外接显示器 ⇒ desktop mode** | 历史日志 `PMRD: Clamshell closed 1, disabled 0/0, **desktopMode 1**, ac 1`（§十三 第 3 次）；当前 `PHL 241B8Q` 接着 |
+| **B. 双 LID 设备（`SSDT-LID-G7`）** | `docs/macos-sleep-power-verification.md` §八.4 原文：「DSDT `\_SB.LID` 真 + `SSDT-LID-G7` 恒返回 1」 |
+
+⚠️ **A 与 B 的证据有张力**：`PMRD: Clamshell closed **1**` 表明 powerd **能读到"已合盖"**
+⇒ LID 状态**并不**恒返回"开"；但 §八.4 记的恰是"`SSDT-LID-G7` 恒返回 1"。
+⇒ **这两条至少有一条不准**，需实测裁决。
+
+**已查实的旁证**：`SSDT-LID-G7.aml` 当前 `Enabled=True`（在生效）；其符号表含
+`Device LIDG7` / `_HID PNP0C0D` / `_CID PNP0C0D` / `_STA` / `_LID` / `_OSI("Darwin")` / `EC0.LIDS` / `S5`，
+即它是一个**新建的第二只 LID 设备**（与 DSDT 的 `\_SB.LID` 并存）—— 与 §八.4 的"双 LID"描述一致。
+（本机无 `iasl`，未反汇编成功，`_LID` 的返回值尚未直接读出。）
+
+### 40.4 一次 10 秒的裁决实测（零风险）
+
+1. **保持外接显示器接着** → 合盖 10 秒 → 读 `ioreg -r -k AppleClamshellState -d 4`：
+   - 变 **`Yes`** ⇒ LID 正常，**A 成立**（显示器→desktop mode），§八.4 的"恒返回 1"**不准**
+   - 仍 **`No`** ⇒ **B 成立**，`SSDT-LID-G7` 确实屏蔽了合盖状态
+2. 更快版：**拔掉 HDMI**（不合盖），直接读 `AppleClamshellCausesSleep` 是否变 `Yes`。
+
+### 40.5 顺带一条好消息
+
+中午合盖的那 20 分钟，机器跑的是 **S3 模式**（11:42 开机时 ESP 仍是老版本 `a6cef82`）。
+**正因为合盖没有触发睡眠，才没有踩到 S3 那套「卡死 160 s + panic」的雷** —— 这次"没睡"反而是安全的。
+
+### 40.6 想让它合盖就睡，怎么办
+
+| 方案 | 做法 | 代价 / 风险 |
+|---|---|---|
+| **① 手动睡（推荐）** | 苹果菜单 → 睡眠（或 `pmset sleepnow`） | 不受 clamshell 影响；**当前是 Deep Idle 模式，安全**（唤醒 ~2.4 s） |
+| **② 合盖前拔 HDMI** | 拔掉 `PHL 241B8Q` 再合盖 | 若 A 成立 ⇒ 立刻恢复"合盖即睡"；零风险可回滚 |
+| ③ 改 `AppleClamshellCausesSleep` | 需动 `SSDT-LID-G7` / LID 相关 ACPI | ⚠️ **高风险**：`SSDT-LID-G7` 的存在目的可能就是防"唤醒后误判合盖而立刻回睡"（`pmset-hibernate.sh:375` 也提示过 clamshell 行为）⇒ 动它前必须先查证其原始意图 |
+| ④ 把 AC 的 `sleep 0` 改非 0 | `pmset -a sleep N` | 会推翻"插电永不自动睡"的既有设定，**不建议** |
