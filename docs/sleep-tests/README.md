@@ -1,6 +1,17 @@
 # 睡眠档位调优测试记录
 
-> 🟢 **2026-09-17 09:5x【最新 · §二十九】—— 用户追问「确认我的硬件支持 S3？」⇒ 分两层答：声明层=确认；执行层=未验证**
+> 🔴 **2026-09-17 10:2x【最新 · §三十】—— 用户再问「s3睡眠？你确认？」⇒ 补两条硬证，结论仍是"只确认声明层，不确认能睡"**
+> **新证 A（决定性）**：`SSDT-OCLT-S3Fix.aml` 是**空转**的 —— `Enabled=False`；且其 ASL 只在**非 Darwin** 下定义 `_S3`（Darwin 分支为空），而它赖以自洽的 `_S3→XS3` 改名在 `ACPI/Patch` 里**根本不存在**（config 只有 2 条 patch：PNLF→XNLF、GNUMGPDI→TPNMGPDI）⇒ **`_S3` / `SS3=One` 100% 来自 HP 固件原生，"补丁论"在任何开关组合下都不成立**。
+> **新证 B（对首测有利）**：`SSDT-PCI0.LPCB-Wake-AOAC.aml`（`Enabled=True`）的 `_DSW` **只在 `Arg0 == 0x03` 时动作** —— `0x03` 就是 **S3** ⇒ **唤醒侧配置本来就是按 S3 准备的**，它与 `SSDT-DeepIdle` 是**替代关系而非叠加**。
+> **准确答法（三层，只确认第一层）**：
+> **L1 声明层＝✅确认**（`_S3`@`DSDT.dsl:38257-38266`、`SS3=One` 常量@`5706-5709`、S3Fix 空转、FADT `HW_REDUCED_ACPI=0`、日志 `ACPI: sleep states S0 S3 S4 S5`）；
+> **L2 macOS 选不选 S3＝❌不确认**（现测 `IOPMDeepIdleSupported = Yes`，从未出现 `Wake from S3`）；
+> **L3 硬件真按 S3 断电＝❌不确认且**有反例（Surface IceLake 同构、HP 企业实测 `PlatformAoAcOverride=0` 无果、本机 EC 固件 `SLP_S3/4/5` 与 `PCH_SLP_S0IX#` 两套并存）。
+> ⇒ **"没被隐藏" ≠ "能用"**：`SS3=One` 只是**必要条件**（证明固件没隐藏 S3），**推不出** PCH 会用 `SLP_S3` 真断电。
+> ⚠️ **风险升级**：`SSDT-DeepIdle` 是**唯一**把 macOS 推向 S0ix 的东西（`DSDT` 里 `LPS0`/`LXEN` 计数 = **0**）⇒ 关掉后 macOS **会去试 S3**，若处于"代码路径在、PCH 不通"的**半通**状态，可能**睡下去醒不来 / 唤醒黑屏** —— **这正是 DELL E7480 当初引入 `SSDT-DeepIdle` 要规避的症状**。
+> **首测纪律**：① 先存全部工作 → ② `pmset sleepnow` **手动触发、不合盖** → ③ **30 s 不醒长按电源 10 s**。**不写 RTC、不写镜像 ⇒ 无 005**；回滚 = `Enabled` 改回 `true`。完整取证：`round2-tierB-result.md` **§三十**。
+
+> 🟢 **2026-09-17 09:5x【§二十九】—— 用户追问「确认我的硬件支持 S3？」⇒ 分两层答：声明层=确认；执行层=未验证**
 > **① 声明层已定案（6 条只读硬证）**：
 > `\_S3` 存在（`DSDT.dsl:38257-38266`，`SLP_TYPa=0x05`，根作用域）｜**★ `SS3` 是常量 `One`**（`:5706-5709`，全库无赋值 ⇒ `If (SS3)` 恒真）⇒ **本机是"原生声明 S3"，不是补丁改的**｜
 > FADT `FLAGS=0x002384A5`（`HW_REDUCED_ACPI=0` ＋ `RTC_S4=1` ＋ `LOW_POWER_S0_IDLE_CAPABLE=1` ⇒ **AOAC 与 S3 并存**）｜
