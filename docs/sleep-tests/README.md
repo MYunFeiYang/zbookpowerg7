@@ -1,6 +1,19 @@
 # 睡眠档位调优测试记录
 
-> 🟢🟢🟢 **2026-09-17 09:2x【最新 · §二十八】—— BIOS 路线作废；真正的扳手 = 关掉 `SSDT-DeepIdle`（源码级铁证）**
+> 🟢 **2026-09-17 09:5x【最新 · §二十九】—— 用户追问「确认我的硬件支持 S3？」⇒ 分两层答：声明层=确认；执行层=未验证**
+> **① 声明层已定案（6 条只读硬证）**：
+> `\_S3` 存在（`DSDT.dsl:38257-38266`，`SLP_TYPa=0x05`，根作用域）｜**★ `SS3` 是常量 `One`**（`:5706-5709`，全库无赋值 ⇒ `If (SS3)` 恒真）⇒ **本机是"原生声明 S3"，不是补丁改的**｜
+> FADT `FLAGS=0x002384A5`（`HW_REDUCED_ACPI=0` ＋ `RTC_S4=1` ＋ `LOW_POWER_S0_IDLE_CAPABLE=1` ⇒ **AOAC 与 S3 并存**）｜
+> `_PTS:30144` / `_WAK:30233,30241` 有 `Arg0==0x03` 分支（含 `SSMI 0xEA91`）⇒ **固件写了 S3 流程**｜
+> EC 固件有 `SLP_S3/S4/S5`、`PrepareToEnterS0` ⇒ **EC 也有 S3 状态机**｜
+> 本机内核日志实测 `ACPI: sleep states S0 S3 S4 S5`，**且与 DSDT 里实际存在的 `_Sx`（SS1=SS2=0 ⇒ 只有 S0/S3/S4/S5）逐一对应**。
+> **② 执行层未验证**：所有历史睡眠的唤醒行都是 `Wake from Deep Idle`，**无一次 `Wake from S3`**，`IOPMDeepIdleSupported` 仍 `Yes`；
+> 反例仍在（Surface IceLake 是 `SS3=0` 靠补丁补出来的 S3，**与本机"原生 One"不同，只能当风险提示**）。
+> **③ 现状推进**：工作区与 ESP 的 `config.plist` **哈希已一致**（`d8da91f2…`）⇒ §二十八 的 `SSDT-DeepIdle=false` **已在 ESP**，**只差重启**。
+> **④ 判据不变**：重启 → `ioreg -c IOPMrootDomain -r -d 1 | grep -i deepidle` 变 `No` ⇒ 再睡，看 `Wake from S3`（目标 5 W → ≈0.5–1 W）。
+> ⚠️ **S3 不写 RTC、不写镜像 ⇒ 该实验不会引发 005**；起不来就长按电源。完整取证：`round2-tierB-result.md` **§二十九**。
+
+> 🟢🟢🟢 **2026-09-17 09:2x【§二十八】—— BIOS 路线作废；真正的扳手 = 关掉 `SSDT-DeepIdle`（源码级铁证）**
 > **① 撤回（重要）**：§二十七 让你"去 F10 找 BIOS 关 AOAC"**是猜的**。核实结论：HP《Power Management Options》官方菜单全表里**没有**任何 `Modern Standby` / `S0ix` / `Sleep State` 条目；
 > 唯一真实存在的 `Extended Idle Power States`，HP 官方定义是 **C-state 空闲省电**（*"decrease the processor's power consumption when the processor is idle"*），**不是 S0ix 选择器**；
 > 同族 HP ZBook 实测原话 *"[x] Extended Idle Power States setting was indeed a dud … did absolutely nothing to this issue"*。BIOS 已是最新 ⇒ **§二十七 的 ②③ 两条全部作废**。

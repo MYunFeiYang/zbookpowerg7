@@ -1935,3 +1935,81 @@ SLP_S3        SLP_LAN
 | 「BIOS 关 AOAC 换 S3」= 首选路线（§二十七 ③） | **降级为"该选项是否存在都不能保证"** —— HP 官方菜单表查无此项；同族机型两例实测无效；唯一真实存在的 `Extended Idle Power States` 官方定义是 C-state |
 | 「更新 BIOS 到 01.20.00」（§二十六 / §二十七 ②） | **作废**（用户确认 BIOS 已是最新） |
 | **新的首选（本 §）** | **关掉 `SSDT-DeepIdle`（去掉 `\_SB.LPS0`）以强制 S3** —— BIOS 无关、零 RTC 风险、**判据可在不睡眠时读出** |
+
+---
+
+## 二十九、09-17 09:5x —— 用户追问「**确认我的硬件支持 S3？**」⇒ 分两层：**声明层=确认（6 条硬证）；执行层=未验证**
+
+> 本轮**零改动**，全部只读取证。起因：§二十八 的首选路线的前提是"本机能走 S3"，用户要求先确认。
+
+### 1. 一句话结论
+
+| 层 | 判定 | 依据强度 |
+|---|---|---|
+| **声明层**：固件把 S3 暴露给 OS 了吗 | ✅ **确认支持** | 6 条独立证据（ACPI 对象 / FADT / 固件代码路径 / EC 固件 / 运行期内核日志） |
+| **执行层**：真能睡进 S3 吗 | ⚠️ **未验证**（一次都没跑过） | 全部历史睡眠的唤醒行都是 `Wake from Deep Idle`，**无一次 `Wake from S3`** |
+
+⇒ 所以对外只能说：**"路径存在"已坐实；"能不能跑通"必须靠那次实测。**
+
+### 2. 声明层：6 条证据（全为只读实测 / 源码级）
+
+| # | 证据 | 出处 | 判读 |
+|---|---|---|---|
+| 1 | `\_S3` 被创建，`SLP_TYPa = 0x05`；同级 `_S4 = 0x06`、`_S5 = 0x07`；**全在根作用域**（缩进 = 4 空格） | `DSDT.dsl:38257-38266`（`_S0`@38239 / `_S4`@38270 / `_S5`@38279） | 固件把 S3 作为合法睡眠态暴露 |
+| 2 | **★ 新发现：`SS3` 是常量 `One`** —— `Name (SS1, Zero)` / `Name (SS2, Zero)` / `Name (SS3, One)` / `Name (SS4, One)`，且**全库对 SS1/SS3/SS4 无任何赋值** ⇒ `If (SS3)` **恒真** | `DSDT.dsl:5706-5709`；引用仅 3 处（Name、`Local0 \|= (SS3 << 0x03)`@31312、`If (SS3)`@38257） | **本机是"原生声明 S3"**，不是补丁改出来的 |
+| 3 | FADT `FLAGS = 0x002384A5`（offset **112**，小端 `A5 84 23 00`）：`bit24 HW_REDUCED_ACPI = 0`、`bit7 RTC_S4 = 1`、`bit21 LOW_POWER_S0_IDLE_CAPABLE = 1` | `docs/SysReport/ACPI/FACP-1.aml`（rev 6, len 276） | **完整 ACPI 模型**；且 **AOAC 与 S3 在固件声明里并存**，不是二选一 |
+| 4 | `_PTS` 有 S3 分支（`If ((Arg0 == 0x03))`）；`_WAK` 有两处：`Arg0==0x03` → `\_SB.SSMI (0xEA91, Arg0, …)`（走固件 SMI）、`(Arg0==3 \|\| 4)` → TB 的 `TRAP (0x02, 0x14)` | `DSDT.dsl:30144`；`30233` / `30237` / `30241` | **固件真写了 S3 的睡眠/唤醒流程**（空声明不会写分支） |
+| 5 | EC 固件串：`SLP_S3` / `SLP_S4` / `SLP_S5`、`PrepareToEnterS0` / `PrepareToExitS0`、`PrepareToEnter/ExitDeepSx`、`PCH_SLP_S0IX#`、`** System still has power entering sleep state` | `ESP/EFI/HP/DEVFW/Firmware.BIN` | EC 侧 **同时** 有 S3 与 S0ix 两套状态机 |
+| 6 | **运行期（本机统一日志，提权取证）**：`kernel: (AppleACPIPlatform) ACPI: sleep states S0 S3 S4 S5` | §十七-B（同份日志含 259,512 条 `kernel:` 行 ⇒ 通道可用性已坐实） | AppleACPIPlatform **确实解析到了 `\_S3` 的 Sleep State 包** |
+
+**★ 第 6 条的自洽校验（本轮新增，能一次证伪"看错了"）**：
+AppleACPIPlatform 二进制里 `ACPI: sleep states%s%s%s%s` / `Sleep State return object is not a Package` / `\_S3_` 均为**字面存在**（`strings` 实测）；
+而 `SS1=0`/`SS2=0` ⇒ `\_S1`/`\_S2` **不存在** ⇒ 本机实际存在的 `_Sx` 恰好 = `{S0, S3, S4, S5}` —— **与日志的四项逐一对应**。
+⇒ 两条互不依赖的证据（静态 DSDT + 运行期日志）指向同一集合，**"本机存在 `\_S3`"可以定案。**
+
+**★ 与外部反例的关键差别（决定乐观程度）**：
+`docs/macos-sleep-power-verification.md` §四(3) 那个 Surface IceLake 反例，是 **`SS3 = Zero` 靠补丁强行补出 `_S3`**；
+本机是 **HP 原生 `SS3 = One`**。⇒ 反例**不能直接照搬**，只能当风险提示（第 3 节）。
+
+### 3. 执行层：不能确认（三条反向证据/风险）
+
+| 项 | 实况 |
+|---|---|
+| 从未跑过 | `pmset -g log` 全部唤醒行都是 **`Wake from Deep Idle`**（S0ix）；**没有任何一次 `Wake from S3`**；刚才实测 `IOPMDeepIdleSupported = Yes`（`ioreg -c IOPMrootDomain -r -d 1`）⇒ macOS 一直在走 Deep Idle，**S3 执行层零验证** |
+| 同构反例 | Surface IceLake 族（同样 `If (SS3)` 包 `_S3 = {0x05,…}` 的 Intel 参考实现）补出 S3 后**日志变成 `S3 S4 S5`，但 S3 睡眠本身依然不可用**，最终靠 `hibernatemode 25` |
+| HP 侧旁证 | drwindows 2025-12 企业管理员（管一批 HP）实测 `PlatformAoAcOverride=0` **没有换来 S3**（原话 *"Wenn ich den Key setze, aktiviert sich jedoch S3 nicht"*）；⚠️ 但未知该批机型 `SS3` 是否为 0 |
+
+### 4. Windows 侧旁证（**不构成反证**，仅说明平台在 AOAC 侧）
+
+`/Volumes/TZBOOK/Windows/System32/SleepStudy/` 存在，且 `SleepStudyTraceSession.etl` mtime = **2026-09-15 17:35**、含 `ScreenOn/` 子目录
+⇒ **SleepStudy 是 Modern Standby 的诊断设施** ⇒ Windows 走的是 Modern Standby。
+⇒ 与"FADT bit21 AOAC 开着"一致；**但推不出"S3 不存在"** —— Windows 只要平台支持 Modern Standby 就优先用它。
+★ 权威交叉验证（需切一次 Windows，**非必需**）：管理员 CMD 跑 `powercfg /a` —— 出现 `Standby (S3)` = 固件把 S3 交给了 OS；只有 `S0 Low Power Idle` 且 `Standby (S3) is not available` = 固件没给。
+（本轮尝试读 Windows 注册表 `config/SYSTEM` hive 查 `PlatformAoAcOverride` **失败**：该路径在挂载点下不存在 ⇒ 此路不通，已放弃。）
+
+### 5. 现状更新（比 §二十八 更进一步：**同步已完成，只差重启**）
+
+实测（本轮）：
+
+```
+shasum -a 256 EFI/oc/config.plist /Volumes/ESP/EFI/OC/config.plist
+d8da91f2056e25046da092ac3bd5e3bd52e31037125f187572109f86f70ee875  工作区
+d8da91f2056e25046da092ac3bd5e3bd52e31037125f187572109f86f70ee875  ESP      ← 完全一致
+两边 ACPI/Add → SSDT-DeepIdle.aml Enabled = False
+```
+
+⇒ **§二十八 的改动已经在 ESP 上**（原记"ESP 未同步"作废），而运行态仍是 `IOPMDeepIdleSupported = Yes` ⇒ **只差一次重启**。
+
+### 6. 判读步骤（沿用 §二十八，零 RTC 风险）
+
+| 步 | 命令 | 判读 |
+|---|---|---|
+| 1 | 重启 | — |
+| 2 | `ioreg -c IOPMrootDomain -r -d 1 \| grep -i deepidle` | `No` ⇒ 让路成功；仍 `Yes` ⇒ 该标志另有来源 ⇒ **回滚 `Enabled=true`，零损失** |
+| 3 | 仅当 ② 为 `No`：睡一次 | `pmset -g log` 期望 **`Wake from S3`**（不再是 `Wake from Deep Idle`）；提权 `log show --last 10m` 里期望出现 **`Entering sleep state [S3]`**（AppleACPIPlatform 二进制内 `Entering sleep state [S%u]` / `Invoking sleep state S%d (%s)` 已核对存在）；功率目标 5 W → ≈0.5–1 W |
+| 4 | 若睡下去起不来 | 长按电源 10 s 强制关机。**与休眠不同的关键一点：S3 不写 RTC、也不写镜像**（`hibernatemode 0` / `standby 0` 已确认）⇒ **无 005、无时钟归零风险** |
+
+### 7. 本轮结论一句话
+
+**"支持 S3" 已在 ACPI/固件层（对象 + 代码路径 + EC 状态机 + macOS 解析）四层确认；"能真睡下去"尚未验证、且有同构反例。**
+⇒ 建议按 ②③ 实测：成本 = 一次重启 + 一次睡眠，回滚 = 改回一个布尔值，且**该实验不触碰 RTC/休眠路径**。
