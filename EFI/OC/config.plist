@@ -328,37 +328,10 @@
 	<dict>
 		<key>Add</key>
 		<dict>
-			<key>PciRoot(0x0)/Pci(0x0,0x0)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
-			<key>PciRoot(0x0)/Pci(0x1,0x0)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
-			<key>PciRoot(0x0)/Pci(0x12,0x0)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
 			<key>PciRoot(0x0)/Pci(0x14,0x0)</key>
 			<dict>
 				<key>enable-l1-aspm</key>
 				<integer>1</integer>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
-			<key>PciRoot(0x0)/Pci(0x14,0x2)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
-			<key>PciRoot(0x0)/Pci(0x14,0x3)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
 			</dict>
 			<key>PciRoot(0x0)/Pci(0x15,0x0)</key>
 			<dict>
@@ -366,23 +339,6 @@
 				<string>VoodooI2C,PCI</string>
 				<key>device-type</key>
 				<string>Trackpad</string>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
-			<key>PciRoot(0x0)/Pci(0x15,0x1)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
-			<key>PciRoot(0x0)/Pci(0x16,0x0)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
-			<key>PciRoot(0x0)/Pci(0x1B,0x0)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
 			</dict>
 			<key>PciRoot(0x0)/Pci(0x1B,0x0)/Pci(0x0,0x0)</key>
 			<dict>
@@ -391,52 +347,13 @@
 				oIYBAAAAAAA=
 				</data>
 			</dict>
-			<key>PciRoot(0x0)/Pci(0x1C,0x0)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
 			<key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)</key>
 			<dict>
 				<key>built-in</key>
 				<integer>1</integer>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
-			<key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x0,0x0)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
-			<key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x0,0x0)/Pci(0x0,0x0)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
-			<key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x1,0x0)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
-			<key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x2,0x0)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
-			<key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)/Pci(0x2,0x0)/Pci(0x0,0x0)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
-			<key>PciRoot(0x0)/Pci(0x1D,0x0)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
 			</dict>
 			<key>PciRoot(0x0)/Pci(0x1D,0x0)/Pci(0x0,0x0)</key>
 			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
 				<key>ps-max-latency-us</key>
 				<data>
 				oIYBAAAAAAA=
@@ -458,8 +375,6 @@
 				<integer>190</integer>
 				<key>fan0-size</key>
 				<integer>1</integer>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
 			</dict>
 			<key>PciRoot(0x0)/Pci(0x1F,0x3)</key>
 			<dict>
@@ -467,23 +382,6 @@
 				<string>onboard-1</string>
 				<key>layout-id</key>
 				<integer>55</integer>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
-			<key>PciRoot(0x0)/Pci(0x1F,0x4)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
-			<key>PciRoot(0x0)/Pci(0x1F,0x5)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
-			<key>PciRoot(0x0)/Pci(0x1F,0x6)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
 			</dict>
 			<key>PciRoot(0x0)/Pci(0x2,0x0)</key>
 			<dict>
@@ -562,13 +460,6 @@
 				</data>
 				<key>hda-gfx</key>
 				<string>onboard-1</string>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
-			</dict>
-			<key>PciRoot(0x0)/Pci(0x4,0x0)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<integer>3</integer>
 			</dict>
 		</dict>
 		<key>Delete</key>
@@ -1460,7 +1351,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -wegnoegpu -amfipassbeta -lilubetaall alctcsel=1 revpatch=sbvmm rtcfx_exclude=0E-FF -rtcfxdbg</string>
+				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1  -amfipassbeta -lilubetaall alctcsel=1 revpatch=sbvmm rtcfx_exclude=0E-FF -rtcfxdbg</string>
 				<key>csr-active-config</key>
 				<data>
 				/w8AAA==
