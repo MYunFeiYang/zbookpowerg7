@@ -1,14 +1,21 @@
 # 睡眠档位调优测试记录
 
-> 🟢🟢🟢 **2026-09-17 09:0x【最新 · §二十七】—— 根因收敛：AOAC（Low Power S0 Idle）与 S4 结构性冲突**
-> **① 差分证据（本轮最硬的一条，来自 `pmset -g log` 全量）**：今天 **9 次睡眠 = 5 次武装休眠（全部死）＋ 4 次普通睡眠（全部正常）**，
-> 其中 **20:13 → 次日 08:52 连睡 12.6 小时，RTC 无恙、无 005、时间正确**。
-> ⇒ **普通睡眠没问题；坏的只有休眠。** ⇒ 「RTC 电池弱」「RTC 被写坏」**整类排除**。
-> **② 平台侧**：`FADT bit21 LOW_POWER_S0_IDLE_CAPABLE = 1` ＋ `LPIT-1.aml` ⇒ **AOAC 开着** ⇒ **与 S3/S4 结构性冲突**（同代先例 Dell 5410 原话：*"Low Power S0 Idle … conflicts S3 Sleep wake up and S4 Sleep"*）。
-> **③ macOS 侧**：`SSDT-DeepIdle` = `\_SB.LPS0(){Return One}` ⇒ macOS `IOPMDeepIdleSupported=true` ⇒ **选 Deep Idle 而不选 `_S3`**（Pike/pikeralpha 权威出处）。
-> **④ ★ 代价模型修正（重要）**：社区口径 *"S0-DeepIdle has a much higher power draw on sleep as S3"* ⇒
-> **关掉 AOAC 换 S3 = 把 5 W 换成 ≈0.5–1 W（5–10 倍收益），不是"本末倒置"** ⇒ **它应为首选，不是最后一条**（撤销 `round2-plan.md` 的"不建议"）。
-> **⑤ 下一步（不需再碰休眠、不冒坏 RTC 风险）**：① 查 BIOS 版本（F10 → Main）→ ② 若 < 01.20.00 升到 **SP157074** → ③ BIOS 关 AOAC **并同时关掉 `SSDT-DeepIdle` + `SSDT-PCI0.LPCB-Wake-AOAC`** → 看是否出现 `Wake from S3` ＋ 功率掉到 ≈1 W。
+> 🟢🟢🟢 **2026-09-17 09:2x【最新 · §二十八】—— BIOS 路线作废；真正的扳手 = 关掉 `SSDT-DeepIdle`（源码级铁证）**
+> **① 撤回（重要）**：§二十七 让你"去 F10 找 BIOS 关 AOAC"**是猜的**。核实结论：HP《Power Management Options》官方菜单全表里**没有**任何 `Modern Standby` / `S0ix` / `Sleep State` 条目；
+> 唯一真实存在的 `Extended Idle Power States`，HP 官方定义是 **C-state 空闲省电**（*"decrease the processor's power consumption when the processor is idle"*），**不是 S0ix 选择器**；
+> 同族 HP ZBook 实测原话 *"[x] Extended Idle Power States setting was indeed a dud … did absolutely nothing to this issue"*。BIOS 已是最新 ⇒ **§二十七 的 ②③ 两条全部作废**。
+> **② 源码级铁证（新的首选路线）**：反汇编 `AppleACPIPlatform.kext` 可见它**字面求值 `\_SB.LPS0`**，且**只有返回 Integer 1** 才 `setProperty("IOPMDeepIdleSupported")` 到 `IOPMrootDomain`（随后同样处理 `\_GPE.LXEN`）。
+> 而 `\_SB.LPS0` **只由我们 EFI 的 `SSDT-DeepIdle.aml` 提供**（DSDT 里两者皆无）⇒ **关掉它 = 强制 macOS 回落 DSDT 的 `_S3`（SLP_TYP 0x05）**。
+> **③ 现状实测**：`ioreg -c IOPMrootDomain` ⇒ **`"IOPMDeepIdleSupported" = Yes`**（读出来的，不是推的）。
+> **④ 已落盘（工作区，1 个布尔值）**：`SSDT-DeepIdle.aml` → `Enabled=false`；`SSDT-PCI0.LPCB-Wake-AOAC` **保持启用**（它的 `_DSW` 只在 S3 时动作）；`hibernatemode 0` / `standby 0` **不动**。
+> **⑤ 判据不用睡觉就能读 ⇒ 零 RTC 风险**：同步 + 重启后跑
+> `ioreg -c IOPMrootDomain | grep IOPMDeepIdleSupported` → 变 `No` = 让路成功（**再**去睡，看是否出现 `Wake from S3`，目标 5 W → ≈0.5–1 W）；仍 `Yes` = 此路不通，**零损失，直接回滚**。
+> ⚠️ **风险**：那套三件套在来源机型（Dell Latitude E7480）上**正是为规避"S3 唤醒黑屏"而引入**的 ⇒ 有重现黑屏的可能；但只改 1 个布尔值、不碰 NVRAM/休眠/Windows 引导 ⇒ 可无损回滚。
+> 完整取证：`round2-tierB-result.md` **§二十八**。
+
+> 🔵 **2026-09-17 09:0x【§二十七】—— 根因收敛：AOAC 与 S4 结构性冲突**（其 ②③ 两条已由 §二十八 作废）
+> 差分铁证：今天 **9 次睡眠 = 5 次武装休眠（全死）＋ 4 次普通睡眠（全活，含连睡 12.6 h 无 005）** ⇒ 「RTC 电池弱」「RTC 被写坏」**整类排除**。
+> 代价模型修正：**S3（≈0.5–1 W）远优于 Deep Idle（≈5 W）** ⇒ 换 S3 是**首选**，不是"本末倒置"。
 > 完整取证：`round2-tierB-result.md` **§二十七**。
 
 > 🔵🔵 **2026-09-16 20:0x【§二十六】—— HP 官方文档印证：这是固件问题，解法 = 更新 BIOS**
@@ -97,7 +104,7 @@ Apple 校验和区间从 `0x0E` 起算，`0x0E–0x7F` **从未被任何一层�
 | Deep Idle | `hibernatemode 0` `standby 0` | 永不落盘，内存全程带电（≈5 W 墙插） | ✅ **2026-09-16 18:27 起为现役档**（两电源源，`pmset-hibernate.sh off`） |
 | ~~A 惰性深睡~~ | `hibernatemode 25` `standby 1` `standbydelay* 3600/7200` | 短睡内存秒醒 → 1~2 h 后落盘断电 | ⛔ **已证伪并停用**（18:09 实测：睡下即断气 + POST 005）；改成 `25/1/3600-7200` 也**没有改变结局** |
 | ~~B 真休眠~~ | `hibernatemode 25` `standby 1` `standbydelay* 600/1800` | 短睡内存秒醒 → 10~30 min 后落盘断电 | ⛔ **已证伪并停用**；且**已拆掉地雷** —— 电池侧前提天然满足，留着它下次出门合盖必炸 |
-| **C 传统 S3** | BIOS 关 AOAC（Low Power S0 Idle）＋ **关掉 `SSDT-DeepIdle` / `SSDT-PCI0.LPCB-Wake-AOAC`** | ★ **`hibernatemode 0`**：睡眠 **改为 S3**，功耗 **≈0.5–1 W**（vs Deep Idle 的 ≈5 W） | 🟢🟢 **2026-09-17 升为首选**（§二十七 §9 撤销原"本末倒置/不建议"——代价模型算反了：S3 比 Deep Idle **省 5–10 倍**，而不是更差） |
+| **C 传统 S3** | **只需关掉 `SSDT-DeepIdle`**（去掉 `\_SB.LPS0`）→ 重启。**不需要动 BIOS，也不需要关 `SSDT-PCI0.LPCB-Wake-AOAC`** | ★ **`hibernatemode 0`**：睡眠 **改为 S3**，功耗 **≈0.5–1 W**（vs Deep Idle 的 ≈5 W） | 🟢🟢🟢 **2026-09-17 定为首选（§二十八）** —— BIOS 路线已被证伪（HP 菜单无该选项 + 同族两例实测无效）；本行判据**不用睡觉就能读出**（`IOPMDeepIdleSupported` 是否翻 `No`） |
 
 > ⚠️ 「档 B = 每次睡眠立即写镜像 + 断电」这条**原表述已修正**：`hibernatemode 25` **单独设了不生效**，
 > 必须配 `standby 1` 作为**触发计时器**（本机无 `autopoweroff` 可用）。缺了它 ⇒ 全程 Deep Idle（14:39 实测）。

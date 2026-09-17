@@ -144,9 +144,9 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>DeepIdle path: LPS0 / S0 deep idle (primary focus). AML in ACPI/</string>
+				<string>DISABLED 2026-09-17 (force-S3 experiment): this table is the ONLY source of \_SB.LPS0 and \_GPE.LXEN in the whole namespace (DSDT has neither). AppleACPIPlatform.kext literally evaluates "\_SB.LPS0" and only when it returns Integer 1 does it set IOPMDeepIdleSupported=true on IOPMrootDomain, which is what makes macOS pick Deep Idle (S0ix, ~5 W) instead of DSDT _S3 (SLP_TYP 0x05, ~0.5-1 W). Roll back by setting Enabled=true. AML kept in ACPI/</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>Path</key>
 				<string>SSDT-DeepIdle.aml</string>
 			</dict>

@@ -1819,3 +1819,119 @@ Scope (_SB.PCI0.LPCB)          // ← RTC 设备的父设备
 | 「关 AOAC 换 S3 = 本末倒置 / 不建议」 | **撤销** —— 代价模型算反了（§9）；**应为首选** |
 | 「macOS 26 忽略 `_S3`」（`SSDT-OCLT-S3Fix` 停用理由） | **表述需修正** —— `_S3` 仍在，只是 macOS 因 `LPS0` 选了更优的 Deep Idle；关掉 AOAC 与 `LPS0` 后能否用 S3 = 待验 |
 | 「005 ⇒ 固件载入出厂默认」 | 早已撤回（屏幕原文无此句） |
+
+---
+
+## 二十八、09-17 上午（二）—— **BIOS 路线作废；真正的扳手 = 关掉 `SSDT-DeepIdle`（带源码级铁证）**
+
+> 起因：用户质疑「**bios版本是最新的，你确定bios有这个配置？**」。
+> 本轮仍然**只做了 1 个布尔值的配置改动**（工作区 `SSDT-DeepIdle.aml` → `Enabled=false`），其余全部为只读取证。
+
+### 1. 撤回：§二十七 的路线 ③ 是猜的，且证据偏向"就算找到也没用"
+
+我上一轮给的是四个候选名（`Extended Idle` / `Modern Standby` / `Sleep State` / `S0 Low Power Idle`）。核实后：
+
+**a) 只有一个真实存在，且语义不是我要的。**
+
+- **HP 官方 Maintenance and Service Guide 原文**：
+  > `Extended Idle Power States (enable/disable)` — *"Allows certain operating systems to decrease the processor's power consumption **when the processor is idle**. Default is enabled."*
+  ⇒ 这是 **C-state 空闲省电**（`Runtime Power Management` 那一类），**不是 S0ix / S3 的选择器**。
+- **HP 官方《Power Management Options》菜单全表**（HP PC Commercial BIOS Setup Administration Guide）逐项为：
+  `Runtime Power Management` ｜ `Extended Idle Power States` ｜ `S5 Maximum Power Savings` ｜ `SATA Power Management` ｜ **`Deep Sleep`（Notebook Only，注意其定义是"S3/S4/S5 省电 + 关掉部分唤醒事件"）** ｜ `PCI Express Power Management` ｜ `PCIe Speed Power Policy`。
+  ⇒ **通篇没有任何 `Modern Standby` / `S0ix` / `Sleep State` / `Low Power S0 Idle` 条目。**
+
+**b) 同族机型两例实测：无效。**
+
+- **tenforums 2021（HP ZBook 用户 jimhoyle）原文**：
+  > *"[x] **Extended Idle Power States setting was indeed a dud.** It was supposed to control S3, but all settings in BIOS did absolutely nothing to this issue. … Spent dozens of hours experimenting."*
+- **drwindows 2025-12（企业批量管理 HP 的管理员）**：机器上 Modern Standby 仍生效，设 `PlatformAoAcOverride=0` 后 **S3 依然没出现**；"Extended Idle 原来是开的，我已经关掉"（未见其确认成功）。
+
+**c) 那条路唯一可确认的事实**：HP 中文社区（2023-05，HP 志愿者）给出的**菜单路径真实存在** ——
+`F10 → 先进 (Advanced) → 电源管理选项 (Power Management Options) → 取消勾选【扩展闲置电源节能】(Extended Idle Power States)`。
+⇒ 但按 (a) 的定义，它勾/不勾都不是 S0ix 开关。
+
+**⇒ 结论：`"BIOS 有那个开关"我不能保证，而且现有证据偏向"即使找到也无效"。`**
+叠加"BIOS 已是最新"⇒ **§二十七 的路线 ②（升 BIOS）与 ③（BIOS 关 AOAC）一并作废。**
+
+### 2. ★ 找到真正的扳手：`\_SB.LPS0`（BIOS 无关，源码级铁证）
+
+**前提（§二十七 已核实）**：`SSDT-DeepIdle.aml` 是命名空间里 `\_SB.LPS0` 与 `\_GPE.LXEN` 的**唯一来源**（DSDT 两者皆无，所以不存在重名被丢弃的问题）。
+
+**直接读证（不是推断）**：
+```
+ioreg -c IOPMrootDomain -r -d 1 | grep -i deepidle
+      "IOPMDeepIdleSupported" = Yes
+```
+
+**源码级铁证** —— 反汇编 `AppleACPIPlatform.kext`（`/System/Library/Extensions/AppleACPIPlatform.kext/Contents/MacOS/AppleACPIPlatform`）：
+
+```asm
+; 字符串表里 "\_SB.LPS0" / "\_GPE.LXEN" 是字面存在的（strings 第 2945 / 2947 行）
+leaq   "\_SB.LPS0", %rsi
+callq  _AcpiEvaluateObject          ; 求值 \_SB.LPS0
+testl  %eax, %eax      ; jne skip   ; 求值失败 → 直接跳过
+cmpl   $0x1, -0x40(%rbp) ; jne skip ; 返回类型必须是 Integer
+cmpl   $0x1, -0x38(%rbp) ; jne skip ; 值必须是 1
+movb   $0x1, 0x16d(%rbx)            ; 置标志
+setProperty "IOPMDeepIdleSupported" ; 落到 IOPMrootDomain
+; ……随后对 "\_GPE.LXEN" 做同样处理
+```
+
+**⇒ 因果链闭合**：关掉 `SSDT-DeepIdle.aml` ⇒ `\_SB.LPS0` 不存在 ⇒ `AcpiEvaluateObject` 失败 ⇒ `IOPMDeepIdleSupported` 不再被设 ⇒ **macOS 不再走 Deep Idle，回落到 DSDT 的 `_S3`**（`SLP_TYP = 0x05`，DSDT 38259-38265，已核实存在）。
+
+### 3. 已落盘（工作区，只动 1 个布尔值）
+
+| 文件 | 改动 | 理由 |
+|---|---|---|
+| `EFI/oc/config.plist` → `SSDT-DeepIdle.aml` | `Enabled: true → **false**` | 去掉 `\_SB.LPS0`（唯一来源） |
+| `SSDT-PCI0.LPCB-Wake-AOAC.aml` | **保持 `Enabled=true`** | 它的 `_DSW` **只在 `Arg0 == 0x03`（S3）时动作**，正是我们要切过去的模式，属"帮 S3 唤醒"的一侧；一次只改一个变量 |
+| `SSDT-OCLT-S3Fix.aml` | 早已停用 | Darwin 路径是空壳；`ACPI/Patch` 里**没有** `_S3→XS3_` 改名 ⇒ 本来就是 no-op |
+| `pmset`（`hibernatemode` / `standby`） | **不动**（0 / 0） | 本实验**完全不碰休眠** |
+
+`ACPI/Patch` 全表实测只有 2 条：`PNLF→XNLF`、`GNUMGPDI→TPNMGPDI` ⇒ **`_S3` 名没有被改掉**，这是"能回落到 S3"的前提。
+
+### 4. ★★ 本实验的关键优势：**判据不用睡觉就能读出** ⇒ 零 RTC 风险
+
+| 步 | 动作 | 判读 |
+|---|---|---|
+| 1 | 同步 `EFI/oc` → ESP，**重启** | — |
+| 2 | **`ioreg -c IOPMrootDomain \| grep IOPMDeepIdleSupported`** | `No` ⇒ **让路成功**；仍 `Yes` ⇒ 该标志另有来源 ⇒ **此路不通，零损失，直接回滚** |
+| 3 | （仅当 ② 为 `No`）睡一次 | `pmset -g log` 应出现 **`Wake from S3`**（不再是 `Wake from Deep Idle`）；墙插功率目标 **5 W → ≈0.5–1 W** |
+
+⇒ **第 2 步是纯只读，且不涉及睡眠** —— 所以"flag 没翻就不睡"，全程不碰 `hibernatemode`，**一次都不会坏 RTC**。
+
+### 5. ⚠️ 风险坦白（必须在执行前告知）
+
+OC-Little 那套三件套（`SSDT-DeepIdle` + `SSDT-PCI0.LPCB-Wake-AOAC` + `SSDT-NameS3-disable`）在**来源机型 Dell Latitude E7480** 上被采用的**理由恰好相反**：该机 **S3 唤醒后黑屏**，所以才"禁 S3、改走 AOAC/DeepIdle"。⇒ **关掉 `LPS0` 有重现"唤醒黑屏"或"睡不着"的可能。**
+
+- 代价与回滚：改 1 个布尔值 + 一次重启；不碰 NVRAM / 休眠 / Windows 引导 ⇒ **可无损回滚**（`Enabled=true` 即可）。
+- 因此**先做只读的第 2 步**；flag 没翻就不睡。
+
+### 6. 顺带挖到：本机 EC 固件自己就在记账"RTC 掉电"
+
+`ESP/EFI/HP/DEVFW/Firmware.BIN`（32 MB，EC/固件镜像）里的睡眠状态机字符串：
+
+```
+OS requested for hibernation state.
+** System still has power entering sleep state
+PrepareToEnterDeepSx        PrepareToExitDeepSx
+Missed PCH_SLP_S0IX# INTR   PCH_SLP_S0IX# = %u
+RTC power loss=%hu                              ← EC 自己记录「RTC 掉电」
+EC RTC Sync Fail!! val: %hu idx: %hu
+RTC Sync Cmd Rejected due to EC_MPM = %02hXh CloseTrustedAPI = %02hXh
+FB requested EC reset after manual recovery in S3
+SLP_S3        SLP_LAN
+```
+
+⇒ ① 本机固件层**明确区分** S3 / S0ix / DeepSx / hibernation 四态，并有"OS 请求休眠态"的专门分支；
+⇒ ② **EC 自己就在跟踪 `RTC power loss`** —— 与 §二十五「005 = RTC 掉电」的语义完全吻合；
+⇒ ③ 也说明这条故障位于 **EC/固件层**，从 macOS/ACPI 侧大概率修不动（与"软件写 RTC 已证伪"一致）。
+（旁注：`FB requested EC reset after manual recovery in S3` 暗示固件对"S3 手工恢复"有专门处理，留待观察。）
+
+### 7. 本轮撤回 / 降级
+
+| 之前 | 现在 |
+|---|---|
+| 「BIOS 关 AOAC 换 S3」= 首选路线（§二十七 ③） | **降级为"该选项是否存在都不能保证"** —— HP 官方菜单表查无此项；同族机型两例实测无效；唯一真实存在的 `Extended Idle Power States` 官方定义是 C-state |
+| 「更新 BIOS 到 01.20.00」（§二十六 / §二十七 ②） | **作废**（用户确认 BIOS 已是最新） |
+| **新的首选（本 §）** | **关掉 `SSDT-DeepIdle`（去掉 `\_SB.LPS0`）以强制 S3** —— BIOS 无关、零 RTC 风险、**判据可在不睡眠时读出** |
