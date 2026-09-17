@@ -3009,3 +3009,62 @@ cd <repo> && git log -S "<属性名或键名>" --text --oneline -- EFI/OC/config
 | **② 合盖前拔 HDMI** | 拔掉 `PHL 241B8Q` 再合盖 | 若 A 成立 ⇒ 立刻恢复"合盖即睡"；零风险可回滚 |
 | ③ 改 `AppleClamshellCausesSleep` | 需动 `SSDT-LID-G7` / LID 相关 ACPI | ⚠️ **高风险**：`SSDT-LID-G7` 的存在目的可能就是防"唤醒后误判合盖而立刻回睡"（`pmset-hibernate.sh:375` 也提示过 clamshell 行为）⇒ 动它前必须先查证其原始意图 |
 | ④ 把 AC 的 `sleep 0` 改非 0 | `pmset -a sleep N` | 会推翻"插电永不自动睡"的既有设定，**不建议** |
+
+---
+
+### 41. 【更正 §四十】合盖不睡的真因 —— 第三方 Clamshell.app + 本机 WorkBuddy 的「防空闲睡眠」断言
+
+> 用户追问「**之前合盖可以进 deep idle 啊**」⇒ 顺着去查：§四十 的 A/B 两候选**都不成立**；
+> 真因是「**一个第三方 App 在管合盖**」+「**另一个 App（WorkBuddy 自己）挡住了它**」。本轮**零 EFI 改动**。
+
+#### 41.1 铁证链（5 条，全部本机可复现）
+
+| # | 判据 | 来源 |
+|---|---|---|
+| ① | `/Applications/Clamshell.app`（`com.kovrazhkin.Clamshell` **v2.3**，App Store，作者 Alexander Kovrazhkin）**正在运行** | `ps aux` → pid 2024，13:04 启动 |
+| ② | 它的设置：**`whenClamshellIsClosed = sleep`**（`settingsUpdateDate = 2026-08-05 09:14:15`） | `~/Library/Containers/com.kovrazhkin.Clamshell/Data/Library/Preferences/com.kovrazhkin.Clamshell.plist` |
+| ③ | 它靠内核私有标志工作：二进制含 **`_clamshellSleepDisabled`** / `_whenClamshellIsClosed`；随包带 **root LaunchDaemon** `com.kovrazhkin.ClamshellDaemon`（BTM 日志 10:40:08 `Setting service … to enabled` + `Submit job succeeded`） | `strings` 二进制 + `backgroundtaskmanagementd` 日志 |
+| ④ | 官方说明原文：**"Sleep causes an immediate system sleep when your MacBook closes. It is very useful for users who use MacBook with external displays connected."**；**"…the system will enter an idle sleep mode. If there are processes that hold assertions to prevent idle sleep, the system will wait before sleep with turned off displays while these processes are running."** | App Store 文案（macupdater.net 镜像，v1.7 更新说明 + 描述） |
+| ⑤ | **本机此刻的断言持有者**：`pmset -g assertions`（14:29:37）→ `PreventUserIdleSystemSleep 1`，唯一持有者 **`pid 671(Electron) … NoIdleSleepAssertion named: "Electron"`，已 `01:25:21`** = **WorkBuddy.app 主进程** | 本机实测 |
+
+#### 41.2 事件序列吻合（不只是文档对得上）
+
+- **12:14:49** `Display is turned off` → 之后**零睡眠事件**；同一条日志里可见 `PID 666(Electron) Summary NoIdleSleepAssertion … 00:31:09`；
+- **13:18:49** 同样：屏灭、无睡眠；
+- **09-16 全天 7 次** `Display off → ~30 s → Sleep`（28/28/30/32/29/30/28/32/31 s，一致性极高），reason 全为 `Software Sleep pid=174`；**今天 11:29:41** 亦然。
+
+⇒ 结论：**"能睡"与"不能睡"的分界点不在 EFI、不在重启、也不在 LID 补丁，而在「这一次睡眠是显式请求，还是等着 idle sleep」**：
+
+- **显式请求**（`Software Sleep`）—— `NoIdleSleepAssertion` **挡不住**（它只拦 idle 触发）⇒ 09-16 与今天 11:29 成功；
+- **idle 路径**（Clamshell.app 在「接屏 + 插电」时的 Sleep 动作 = 关掉所有屏 + 等 idle sleep）—— **被 WorkBuddy 的断言挡住** ⇒ 12:14 / 13:18 失败，表现为「屏黑了但机器一直醒着」。
+
+#### 41.3 §四十 两候选裁决
+
+- **A（外接屏 `desktopMode`）**：**部分成立、但不是断点**。外接屏 + 电源 = Apple 官方 clamshell 语义
+  （`IOPMrootDomain::shouldSleepOnClamshellClosed()` = `!clamshellDisabled && !(desktopMode && acAdaptorConnected) && !clamshellSleepDisabled`）
+  ⇒ **原生合盖睡眠本就不会触发**；这也正是用户装 Clamshell.app 的理由（官方文案点名 "useful for users who use MacBook with external displays connected"）。但它解释不了"今天 12:14 之前能睡"。
+- **B（双 LID / `SSDT-LID-G7` 恒返回 1）**：**不成立**。若 LID 通路恒"未合盖"，09-16 那 7 次合盖睡眠不可能发生。
+  `AppleClamshellCausesSleep=No` 在「接屏 + 插电」下**本来就该是 No**。
+- ⇒ `docs/macos-sleep-power-verification.md` **§八.4** 的归因（"双 LID 设备导致"）应更正为「外接屏 + 电源下的正常 clamshell 语义」；**⛔ 仍不建议动 `SSDT-LID-G7`**。
+
+#### 41.4 想合盖就睡（取代 §40.6）
+
+| 方案 | 做法 | 判定 |
+|---|---|---|
+| **① 合盖前退出 WorkBuddy** | 让它释放 `NoIdleSleepAssertion` ⇒ Clamshell.app 的 idle-sleep 路径立刻生效 | **首选**；零风险；1 分钟可验证 |
+| **② 苹果菜单 → 睡眠** | 显式请求，不受 idle 断言阻挡（09-16 / 今天 11:29 的成功路径） | 推荐，随时可用 |
+| ③ 合盖前拔 HDMI | 回到原生路径 | 有效但麻烦 |
+| ④ 改 Clamshell.app 模式 | `Shut Down` / `Turn Off Displays & Prevent Idle Sleep` | 都不是"睡" ⇒ 不改 |
+| ⑤ 动 EFI / `SSDT-LID-G7` | —— | ⛔ 与本次无关 |
+
+#### 41.5 更正我自己的两句话
+
+1. 14:1x 我说「`NoIdleSleepAssertion` 只挡空闲自动睡眠、**不影响合盖睡眠**」—— **错**。在 Clamshell.app 的 Sleep 模式下，合盖睡的**正是 idle sleep** ⇒ 它**确实**会挡住合盖睡眠。
+2. §四十 的「成因两候选 A/B 待裁决」**作废**（见 41.3）。
+
+#### 41.6 自曝：仍是推断的部分
+
+- 「09-16 的 `Software Sleep pid=174` 由 Clamshell.app 发起」是**推断**（依据：~30 s 的极高一致性 + 该 App 的官方动作描述 + 该 App 常驻）。
+  未抓到 App → loginwindow 的调用链；`pid=174` 在 09-16 会话中**未复核**（**当前**会话确认为 `loginwindow`）。
+- **11:29 那次外接屏是否接着，未实测。**
+- **一次干净坐实（1 分钟）**：退出 WorkBuddy → 合盖 30 s → **若睡 = 全链成立**；若不睡 = 回到"App 未触发"分支再查。

@@ -324,6 +324,12 @@ cd EFI/scripts
 2. **S3 若真走通，EC query 类功能可能在唤醒后失效**（ThinkPad E480 明确记录：
    睡眠唤醒后 Fn 快捷键、合盖事件、电池状态更新失效）。
 3. **SSV seal 已损坏**，休眠镜像写入与恢复是否受「认证根」逻辑影响未验证。
-4. 双 LID 设备（DSDT `\_SB.LID` 真 + `SSDT-LID-G7` 恒返回 1）导致
+4. ~~双 LID 设备（DSDT `\_SB.LID` 真 + `SSDT-LID-G7` 恒返回 1）导致
    `AppleClamshellCausesSleep=No`（正常 Mac 为 Yes）→ **合盖不直接睡，靠空闲计时器兜底**。
-   收益小，未修。
+   收益小，未修。~~
+   > ⚠️ **2026-09-17 更正（见 `docs/sleep-tests/round2-tierB-result.md` §四十一）**：此归因**不成立**。
+   > `AppleClamshellCausesSleep=No` 在「**外接屏 + 电源**」下**本来就该是 No** —— 这是 Apple 官方 clamshell 语义
+   > （`IOPMrootDomain::shouldSleepOnClamshellClosed()` = `!clamshellDisabled && !(desktopMode && acAdaptorConnected) && !clamshellSleepDisabled`），
+   > **真机同样如此**，与 LID 补丁无关（若 LID 通路恒"未合盖"，09-16 那 7 次合盖睡眠不可能发生）。
+   > 本机"合盖能睡"实际由第三方 **`/Applications/Clamshell.app`**（`whenClamshellIsClosed = sleep`）实现；
+   > 而它今天失效的原因是该动作依赖 **idle sleep**，被 `NoIdleSleepAssertion` 挡住。**⛔ 仍不建议动 `SSDT-LID-G7`。**

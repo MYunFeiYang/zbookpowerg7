@@ -1,6 +1,14 @@
 # 睡眠档位调优测试记录
 
-> 🛑 **2026-09-17 14:1x【最新 · §四十】—— 用户问「今天中午合盖了没睡眠」⇒ **不是故障**：`AppleClamshellCausesSleep=No` ⇒ 合盖不触发睡眠，叠加 AC `sleep 0` 无兜底 = **永远不睡**；文档 §八.4 早有记录**
+> 🧩 **2026-09-17 14:3x【最新 · §四十一】** —— 用户追问「**之前合盖可以进 deep idle 啊**」⇒ 追出真因：**不是 macOS、不是 EFI、也不是 LID 补丁，而是两个第三方进程** ——
+> **① 让合盖能睡的是 `/Applications/Clamshell.app`**（`com.kovrazhkin.Clamshell` v2.3，偏好里写着 **`whenClamshellIsClosed = sleep`**，官方文案点名"给接外接屏的 MacBook 用户用"）；
+> **② 今天中午起让它睡不成的，是 WorkBuddy 自己** —— `pmset -g assertions` 实测 **`NoIdleSleepAssertion`（pid 671 Electron = WorkBuddy.app）已持 `01:25:21`**，而 Clamshell 的 Sleep 动作在「接屏 + 插电」时走的正是「**关掉所有屏 → 等 idle sleep**」，被这个断言挡住 ⇒ **屏黑了、机器一直醒着**（逐字对应其官方说明："If there are processes that hold assertions to prevent idle sleep, the system will wait before sleep with turned off displays"）。
+> ⇒ **§四十 的 A/B 两候选作废**；`macos-sleep-power-verification.md` §八.4「双 LID 设备」归因**更正**（`AppleClamshellCausesSleep=No` 在「接屏 + 插电」下**本就该是 No**）。
+> **要合盖就睡**：① 合盖前**退出 WorkBuddy**（首选，1 分钟可验）；② **苹果菜单 → 睡眠**（显式请求，不受该断言阻挡）。完整见 **§四十一**。
+>
+> ---
+>
+> 🛑 **2026-09-17 14:1x【§四十】—— 用户问「今天中午合盖了没睡眠」⇒ **不是故障**：`AppleClamshellCausesSleep=No` ⇒ 合盖不触发睡眠，叠加 AC `sleep 0` 无兜底 = **永远不睡**；文档 §八.4 早有记录**
 > **① 日志实证**：`pmset -g log` 今日 `Display is turned off` **12:14:49**（合盖）→ `turned on` **12:34:21**（开盖），**中间 20 分钟零 `Sleep`/`Wake` 记录**；今日最后一条睡眠是 **11:34:32**。
 > **② 直接原因**：`ioreg -r -c IOPMrootDomain` → **`AppleClamshellCausesSleep = No`**（正常 Mac 为 `Yes`）⇒ **合盖不引起睡眠**；且 AC 下 `sleep 0`（空闲计时器关）⇒ **无兜底**。`SleepDisabled=No` ⇒ 不是被 `disablesleep` 禁的。此现象 `docs/macos-sleep-power-verification.md` **§八.4** 早有记录（「合盖不直接睡，靠空闲计时器兜底」，标注"收益小，未修"）。
 > **③ 成因两候选（待 10 秒实测裁决）**：**A** 外接显示器 `PHL 241B8Q` 接着 ⇒ `desktopMode 1`（clamshell）；**B** §八.4 说的"双 LID 设备 / `SSDT-LID-G7` 恒返回 1"。⚠️ **A/B 证据有张力**：历史日志 `PMRD: Clamshell closed **1**` 表明 powerd **能读到合盖** ⇒ B 的"恒返回 1"**存疑**。**裁决法**：保持外接屏接着，合盖 10 秒读 `AppleClamshellState` —— 变 `Yes` = A 成立；仍 `No` = B 成立。（旁证：`SSDT-LID-G7.aml Enabled=True`，符号表含 `Device LIDG7`/`_HID PNP0C0D`/`_LID`/`EC0.LIDS`，确为**第二只 LID 设备**；本机无 `iasl`，未反汇编。）
