@@ -1,6 +1,14 @@
 # 睡眠档位调优测试记录
 
-> 🧹 **2026-09-17 16:2x【最新 · §四十五】—— 用户要求「删减一下无效的acpi」⇒ 按铁律先查证再删：删 6 张（5 张已禁用 no-op/无TB + 1 张无独显故纯 no-op 的 dGPU-PowerOff），保留 thunderbolt-disable（掩死 RP01 仍生效）；ACPI 表 19 → 13 张，plutil OK、无残留引用、git 可逆**
+> 📄 **2026-09-17 19:3x【最新 · §五十七】—— ASPM 注入审计**（答复「ASPM 现在不是全被禁用了吗？」+「确定？」）⇒ 26 条已删注入**逐条映射到 ioreg 实测**：**23 条天生无效**（15 条注在 ASPM 字段=0 的内建/私有链路设备，8 条注在不存在的设备：`1C` 深链 6 + `1D` 2）⇒ 真受影响**仅 3 条**（`PEG0`/`RP17`/`pci-bridge@1C`）；**SSD 本体从未被注入 ASPM**（其省电走 NVMeFix APST）。**全机能做 ASPM 的 PCIe 链路只有 4 条**。⚠️ 别用「XHC 还带 `enable-l1-aspm`」反驳"全禁用"——XHC 无 PCIe 链路，该属性是装饰性的。★ 新通用验证法：**属性名回 ioreg 反查 = 注入有没有落地**（现存 8 条中 `1C/0,0` 的 `built-in`、`1D/0,0` 的 `ps-max-latency-us` 实测**惰性**）。边界：`ioreg` 只给 Capabilities、读不到 Control ⇒ 实时开关只有 **Hackintool → PCIe 页**。完整见 **`aspm-audit.md`**。
+>
+> ---
+>
+> ⚠️ **2026-09-17 17:0x【§四十八 · 更正 §四十五】—— 用户一句「有独显」推翻"无独显"结论**：本机**确有独显**；`-wegnoegpu` 只屏蔽驱动、硬件仍在，必须靠 `SSDT-dGPU-PowerOff-Darwin.aml` 调 `PEGP._OFF()` 断电。**§四十五 把它当「无独显纯 no-op」删掉是误判，已从 git 恢复（commit `0db9c05`），ACPI 回 14 张。** 正判据：`boot-args` 含 `-wegnoegpu`（**自证有独显**）+ ACPI 命名空间 `PEG0@10000→PEGP@0` 真实在线 + DSDT `Device(PEGP)`/`Method(_OFF)`。余 5 张（TPD3×2 / TB3HP×2 / OCLT-S3Fix）原 Disabled 无副作用，维持删除。
+>
+> ---
+>
+> 🧹 **2026-09-17 16:2x【§四十五】—— 用户要求「删减一下无效的acpi」⇒ 按铁律先查证再删：删 6 张（5 张已禁用 no-op/无TB + 1 张 dGPU-PowerOff，**该条已作废，见 §四十八**），保留 thunderbolt-disable（掩死 RP01 仍生效）；ACPI 表 19 → 13 张（**后被 §四十八 修正为 14 张**），plutil OK、无残留引用、git 可逆**
 >
 > ---
 
