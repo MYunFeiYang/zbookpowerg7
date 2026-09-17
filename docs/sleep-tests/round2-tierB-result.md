@@ -2650,3 +2650,147 @@ RTC 三件套（`AppleRtcRam` / `rtcfx_exclude` / `rtc-blacklist`）的作用域
 - **"全部只能测试？"** → ❌ 不。本轮**零实测**，纯社区查证，且**一查就命中了全部结论**。
 - **"变量太多？"** → 曾是 6 个，**现已收敛为 0 个**（睡眠相关全回滚）；且 4 个 RTC 变量与本次失败机制无关（端口不相交）。
 - **"不确定的点都先在社区确认过吗？"** → **关键结论：是**（OC-Little 原文逐字命中）；**§二十八 那一步：否**（读了子页没读父页，这是我该改的）；**本机这个具体组合（HP Comet Lake + 原生 S3）：社区无先例**（三条路都不覆盖）。
+
+---
+
+## 三十七、★ 用户追问「Deep Idle 的功耗可以压吗？」—— **能压；社区有一整节 7 条压降清单，我上轮漏读了它**（09-17 12:4x）
+
+### 37.1 触发与纠正
+
+用户问："deep idle 的功耗可以压吗？"
+
+这一问暴露了本次调查的**第二个读漏**（第一个是 §三十六 的子页/父页）：
+
+> §二十八~§三十六 全程围绕"**换睡眠档位**"（Deep Idle ↔ S3 ↔ S4），**从未碰过"在 Deep Idle 内部压降功耗"这条路**。
+> 而 OC-Little《01-关于AOAC》父页里，就在我上轮引用的那段"AOAC 和 S3 相矛盾"**下面**，
+> 有一整节叫 **「AOAC 解决方案」** —— **我没读完那一节就动手了。**
+
+### 37.2 ★ 决定性原文：OC-Little《01-关于AOAC》→「AOAC解决方案」全节
+
+原文照抄（7 条）：
+
+```
+- 禁止 S3 睡眠
+- 关闭独显的供电电源
+- 电源空闲管理
+- 选择品质较好的 SSD：SLC>MLC>TLC>QLC（不确定）
+- 可能的话更新 SSD 固件以提高电源管理的效能
+- 使用 NVMeFix.kext 开启 SSD 的 APST
+- 启用 ASPM（BIOS 高级选项启用ASPM、补丁启用 L1）
+```
+
+配套补丁 7 条（原文）：
+
+```
+- 禁止 S3 睡眠——参见《禁止S3睡眠》
+- 禁用独显补丁——参见《AOAC禁止独显》
+- 电源空闲管理补丁——参见《电源空闲管理》
+- AOAC唤醒补丁——参见《AOAC唤醒方法》
+- 秒醒补丁——参见《060D补丁》
+- 启用设备 LI ——参见《设置ASPM工作模式》，感谢 @iStar丶Forever 提供方法
+- 管控蓝牙WIFI——参见《睡眠自动关闭蓝牙WIFI》，感谢 @i5 ex900 0.66%/h 华星 OC Dreamn 提供方法
+```
+
+### 37.3 三个关键数字
+
+| 数字 | 含义 | 出处 |
+|---|---|---|
+| **5%–10% / h** | 社区对**未压降** AOAC 机器的耗电描述 | 父页「待机时间问题」 |
+| **≈7% / h**（5 W） | **本机实测** —— 正落在上面区间内 ⇒ **本机目前就是"未压降基线"** | 本机 70.6 Wh × 7% ≈ 5 W |
+| **0.66% / h** | 社区**压降后**的实测（@i5 ex900 署名的 `SleepWithoutBluetoothAndWifi`） | 父页「管控蓝牙WIFI」条 |
+
+⇒ **"7%/h 是正常值"这条被社区佐证；而"能压到 1%/h 量级"有署名案例。** 两者不冲突：前者是基线，后者是优化后。
+
+### 37.4 子页原文（本轮实读，非推断）
+
+**《01-5-设置ASPM工作模式》**（原文要点）：
+
+- ASPM = 活动状态电源管理；L0=正常 / L0s=待机（快进快出，省得少）/ **L1=低功耗待机（"相比 L0s 会进一步降低功耗"，退出更慢）**
+- **"对于采用了 AOAC 技术的机器，尝试改变 `无线网卡`、`SSD` 的 ASPM 模式降低机器功耗。"**
+- 注入表（`pci-aspm-default`，data）：
+
+| 目标 | L0s/L1 | **L1** | 禁止 |
+|---|---|---|---|
+| 父设备 | `03000000` | **`02000000`** | `00000000` |
+| 子设备 | `03010000` | **`02010000`** | `00000000` |
+
+- 注意事项原文：**"Hackintool.app 工具可以查看设备 ASPM 工作模式。"** / **"改变 ASPM 后，如果发生异常情况请恢复 ASPM。"**
+
+**《01-6-睡眠自动关闭蓝牙WIFI》**（原文要点）：
+
+- 形态 = **用户态脚本**（`SleepWithoutBluetoothAndWifi 1.5`），`install.sh`（需 brew）或 `install-without-brew.sh`
+- 功能 = "睡眠自动关闭蓝牙WIFI，睡醒自动开启"
+- 版本史里有一条**重要警示**：`V1.5 修复唤醒后WIFI无法打开的问题` ⇒ **该脚本历史上踩过"唤醒后 WiFi 起不来"的坑**，第三方脚本成熟度一般。
+
+### 37.5 本机现状：7 条逐条对照（本轮全部实测）
+
+| # | 社区手段 | 本机实测 | 判定 |
+|---|---|---|---|
+| 1 | 禁止 S3 睡眠 | 已回滚到 Deep Idle（§三十四） | ✅ **已做** |
+| 2 | 关闭独显供电 | **无独显**（只有 Intel UHD 630） | ➖ 不适用 |
+| 3 | 电源空闲管理 | 未查（子页 `01-3` 未读） | ❓ **待查** |
+| 4 | SSD 品质 SLC>MLC>TLC>QLC | **WD Blue SN570 1TB = TLC**（DRAM-less） | ➖ 固定，换不了 |
+| 5 | 更新 SSD 固件 | `Revision = 234100WD` | ❓ **待查是否有新版** |
+| 6 | NVMeFix.kext 开 APST | **已装 1.1.4，`Kernel/Add` 第 10 位 `[ON]`** | ✅ **已做** |
+| 7 | **启用 ASPM（L1）** | ⚠️ **27 条 DeviceProperties 全是 `pci-aspm-default = 3`**（IORegistry 实测 17 条为 `<03000000>` = **L0s/L1**） | ⚠️ **可压：3(L0s/L1) → 2(L1)** |
+| + | **睡眠关 BT/WiFi** | ❌ **未做** | ❌ **最大可压点（0.66%/h 案例）** |
+
+### 37.6 本机实测原始数据（本轮取证）
+
+```
+① ASPM 实际注入（ioreg -l -w0 | grep -oE '"pci-aspm-default" = [^,}]*'）：
+     17 × "pci-aspm-default" = <03000000>     ← L0s|L1（= 3）
+      1 × "pci-aspm-default" = 0               ← 该条禁用 ASPM
+   config 侧：DeviceProperties/Add 共 27 条路径，每条都写 pci-aspm-default = 3
+
+② Wi-Fi（system_profiler SPAirPortDataType）：
+     en1 / Card Type: Wi-Fi (0x8086, 0x74) / Firmware: itlwm 2.3.0
+     IO80211 Family: 12.0 (1200.13.1)      ← 挂在原生 IO80211 栈上
+     **Wake On Wireless: Supported**        ← ★ 睡眠中保持唤醒能力
+     ⇒ 本机 Wi-Fi 是"原生接口"，不是 itlwm+HeliPort 的第三方栈
+     （注：记忆里"Tahoe 上 AirportItlwm 不工作"的口径**已过期**，本机当前 Wi-Fi 正常）
+
+③ 蓝牙：State = On，Chipset = THIRD_PARTY_DONGLE，**Transport = USB**（走 USB 总线）
+
+④ SSD：pci15b7,501a = WD Blue SN570 1TB（15b7=SanDisk/WD，501a=SN570）
+
+⑤ 定时唤醒（pmset -g sched）：
+     [0] 09/17 18:53:47  com.apple.alarm.user-invisible-com.apple.calaccessd.travelEngine.periodicRefreshTimer
+     [1] 09/17 19:30:39  同上
+     ⇒ 日历"行程引擎"的周期性唤醒（user-invisible）
+
+⑥ 断言（pmset -g assertions）：
+     Kernel Assertions: 0x4=USB ×3 —— HP HD Camera / Bluetooth USB Host Controller / **USB Optical Mouse（外接）**
+     用户态：pid 666(Electron) NoIdleSleepAssertion "Electron" 已持 1h1m
+```
+
+**已排除的噪声/工具坑**：`ioreg -p IOPCIDevice` **只返回 `Root` 一行**（不是有效 plane，同 `IOACPIPlane` 那个坑）⇒
+查 PCI 设备树要用 **`-c IOPCIDevice`**；查设备 ID 用 `ioreg -l -w0 | grep -oE '"IOName" = "pci[0-9a-f,]+"'`。
+另：`system_profiler SPPCIDataType` 本机**返回空**（不可用作 ASPM 判据）。
+
+### 37.7 三个可压点（按 收益/风险 排序）
+
+| 序 | 手段 | 社区依据 | 收益预期 | 风险 | 回滚 |
+|---|---|---|---|---|---|
+| **①** | **睡眠前关 Wi-Fi（+蓝牙）** | `01-6`，署名 **0.66%/h** | **高**（Wi-Fi 是原生接口 + `Wake On Wireless: Supported`，Modern Standby 下保持在线 = 持续耗电） | **零**（用户态脚本，不碰 ACPI/EFI） | 删脚本 |
+| **②** | **ASPM 由 L0s/L1 改纯 L1** | `01-5` 原文明确点名"**无线网卡、SSD**" | **中**（S0ix 中链路若优先走 L0s 就不进 L1 ⇒ 直接耗电） | **中**（NVMe 在 L1 下有掉盘/超时先例；原文自己说"异常请恢复"） | 值改回 3 |
+| **③** | 清理定时唤醒 + 拔外接鼠标 | `pmset -g sched` / assertions | 低（减少 DarkWake 次数） | 零 | 重新设回 |
+
+**② 的操作边界（若做）**：**只改无线网卡与 SSD 两条路径**，其余 25 条不动。
+- 无线网卡 = `PciRoot(0x0)/Pci(0x1C,0x0)`（父）+ `.../Pci(0x0,0x0)`（子，`built-in=1`）
+- SSD = `PciRoot(0x0)/Pci(0x1D,0x0)`（父）+ `.../Pci(0x0,0x0)`（子，带 `ps-max-latency-us`）
+- ⚠️ **注意**：`Pci(0x1B,0x0)` 的子节点**也有** `ps-max-latency-us`，本机只有一块 NVMe ⇒ **两个候选路径在不睡眠的情况下无法区分**，
+  改之前应先用 **Hackintool** 确认（原文推荐的工具），否则**宁可不改**。
+
+### 37.8 诚实边界
+
+- **0.66%/h 是别人机器的数字**（华星 OC Dreamn），**HP ZBook Power G7 无先例** —— 与 §三十六 一致：本机在社区方案的覆盖边缘。
+- **"5 W 里有多少是平台结构性压不动的"，在本机无法在不睡眠的情况下测出** —— 必须实测一次睡眠掉电率才有数。
+- 但**这三条都是此前从未做过的方向**，且 ①③ 零风险 ⇒ **有理由先试**。
+- **判据纪律**：优化后仍需用**同机前后对照**（`pmset -g log` 睡眠时长 + 电池掉电率），不能凭"改了就该省电"。
+
+### 37.9 本机 Wi-Fi 口径更正
+
+记忆与技能里"**macOS 26 Tahoe 上 AirportItlwm 不工作、须改用 itlwm+HeliPort**"这条**已过期**：
+本轮实测 `en1` 正常、`Card Type: Wi-Fi`、`IO80211 Family 12.0`、`Supported PHY Modes 802.11 a/b/g/n/ac`、
+`Wake On Wireless: Supported` ⇒ **本机当前 Wi-Fi 工作正常且是原生接口**。（首次记录于 2026-09-08，此后 EFI 已变更。）
