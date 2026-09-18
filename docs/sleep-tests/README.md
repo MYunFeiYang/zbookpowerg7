@@ -1,6 +1,14 @@
 # 睡眠档位调优测试记录
 
-> 📊📊 **2026-09-18 09:2x【§六十八 · 最新】—— 用户问「还有优化的空间吗？」⇒ **换维度**：睡眠档位确实到头了，但**日常系统开销 + 内存**两处有实打实的空间，且此前六轮从没查过 → `docs/system-overhead-audit.md`**
+> ✅✅ **2026-09-18 11:2x【§六十九 · 最新】—— 用户答「A」⇒ 执行 A-1：关闭 ESP 的 Spotlight 索引（本轮唯一系统改动，可逆）**
+> **已执行并验证**：`osascript … "mdutil -i off /Volumes/ESP" with administrator privileges` ⇒ `.Spotlight-V100` **4.1 M → 20 K**（`Store-V2` 被清空）、`mdutil -s` = **disabled**。**持久性验证通过**：`unmount → 重挂` 后仍 disabled、`Store-V2` 未被重建 ⇒ 是真关闭，不是"暂时不扫"；同期复核 ESP 内容与工作区 **sha256 一致**（`config.plist` / `OpenCore.efi`）、ACPI 20 / Drivers 6 / Kexts 27 全等。
+> **⚠️ 两条操作要点（已入文档 §8.4）**：① **别删 `/Volumes/ESP/.Spotlight-V100`**（剩的 20 K 是 Spotlight 读**卷级配置**的锚点，删了会回落默认→重新索引）；② **`diskutil mount disk0s1` 必须提权**（裸跑报 `failed to mount … try the "readOnly" option`）⇒ 手工卸载 ESP 前先确认手上有 root 手段能挂回来，否则同步目标消失。
+> **顺带订正 §2.3 的表述**：重扫的真凶**不是** `com.oc.mountesp`（`RunAtLoad=true`、无 `WatchPaths`/`KeepAlive`/`StartInterval` ⇒ 只在开机挂载一次），而是 **RealTimeSync 常驻（PID 3663/3672）** → `FreeFileSync /Volumes/Common/FreeFileSync/BatchRun.ffs_batch`（`Delay: 3`）。同步范围实读 = `EFI/oc → /Volumes/ESP/EFI/oc`，**不含 ESP 根**。
+> **回滚**：`sudo mdutil -i on /Volumes/ESP`。**`/Volumes/Common`（298 MB）保持 enabled 未动**；常驻软件重叠（B 组）未动。完整记录 → `docs/system-overhead-audit.md` **§8**。
+>
+> ---
+>
+> 📊📊 **2026-09-18 09:2x【§六十八】—— 用户问「还有优化的空间吗？」⇒ **换维度**：睡眠档位确实到头了，但**日常系统开销 + 内存**两处有实打实的空间，且此前六轮从没查过 → `docs/system-overhead-audit.md`**
 > **① 常驻**：第三方系统服务 **22 个** + LaunchAgents **15 个**；**功能重叠成对存在** —— 远程控制 **ToDesk(3 进程) + 向日葵 awesun(2)**、清理工具 **腾讯柠檬(3) + CleanMyMac5**。**② `/Volumes/ESP` 被 Spotlight 索引＝纯浪费**（铁证 `.Spotlight-V100` 4.1 MB、`mdutil -as` = enabled）：`com.oc.mountesp` 让它常挂载而它又是 FreeFileSync 镜像目标 ⇒ **每轮同步都触发重扫** ⇒ 修法 `sudo mdutil -i off /Volumes/ESP`。**③ 内存 16 GB 已吃紧**：`swap used 1426/2048 M = 70%`、free ≈136 MB、压缩页 626 万、wired 4.2 GB（⚠️ 开机 17 min 读数，待连续采样）；**HP 官方 QuickSpecs 明写 2×DDR4 SODIMM / 客户可更换 / 上限 64 GB** ⇒ `system_profiler` 的 `Upgradeable Memory: No` **是 OC 注入的假字段**。**④ CPU 告警锚点**：`WindowServer`(21:33) 与 `apfsd`(21:40) 于 09-17 **各触发一次 50% CPU × 180 s 超限**（`ThermalPressure -> 0`，非热问题）。**⑤ 不可动**：Sangfor 全家桶 10+ 进程，含 **`endpoint_security` 系统扩展**（公司软件）。
 > **顺带更正两处过期记录**：boot-args 里的 **`-wegnoegpu` 已移除**（`ebf6d5c` 09-17 17:29 连同 aspm 注入一并删，改由 `SSDT-dGPU-PowerOff-Darwin.aml` 调 `PEGP._OFF` 断电）｜**`rtcfx_exclude` 实为 `0E-FF`**（非旧记的 `80-FF`，`config` 与 `nvram` 两边一致）。
 >

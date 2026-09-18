@@ -64,7 +64,9 @@
 
 > ⇒ **两个远程控制 + 两个清理工具同时在册、功能完全重叠**。这类软件的共同特征是"常驻 + 定时轮询 + 界面注入"，是桌面环境（WindowServer）额外负担的常见来源。
 
-### 2.3 ★ ESP 分区被 Spotlight 索引（纯浪费，铁证）
+### 2.3 ★ ESP 分区被 Spotlight 索引（纯浪费，铁证）—— ✅ **已于 09-18 11:19 关闭并验证**
+
+> 执行与验证记录见 **§8**。本节保留当时的取证原文，作为"改前基线"。
 
 ```
 mdutil -as
@@ -245,8 +247,58 @@ ECC: Disabled        Upgradeable Memory: No     ← ⚠️ 见下
 
 - [ ] **内存常态压力**：跨 ≥4 h 每 15 min 采一次 `sysctl -n vm.swapusage` + `memory_pressure`，确认 §3.1 是峰值还是常态（决定 C-1 该不该做）
 - [ ] **apfsd / WindowServer 告警是否复发**：观察 `/Library/Logs/DiagnosticReports/` 是否再出现 `*.cpu_resource.diag`
-- [ ] **A-1 效果验证**：关掉 ESP 索引后，比对 `mds_stores` 在同步前后的活跃度
+- [ ] **A-1 重启后复核**（09-18 11:19 已执行，并已通过"卸载→重挂"验证，见 §8）：下次重启后再跑一次 `mdutil -s /Volumes/ESP` 确认跨重启保持；若复活，说明要改用 launchd 挂钩在挂载后自动关
 
 ---
 
-*本轮 EFI / pmset / config **零改动**；仅读与落盘。*
+## 8. ★ A-1 执行记录：关闭 ESP 的 Spotlight 索引（2026-09-18 11:19）
+
+### 8.1 做了什么
+
+```
+osascript -e 'do shell script "mdutil -i off /Volumes/ESP" with administrator privileges'
+→ /System/Volumes/Data/Volumes/ESP:	Indexing disabled.
+```
+
+### 8.2 前后对照（全部实读，非转述）
+
+| 项 | 改前 | 改后 |
+|---|---|---|
+| `mdutil -s /Volumes/ESP` | `Indexing enabled.` | **`Indexing disabled.`** |
+| `/Volumes/ESP/.Spotlight-V100` 占用 | **4.1 M** | **20 K**（只剩 `VolumeConfiguration.plist`，`Store-V2` 被清空） |
+| `VolumeConfiguration.plist` mtime | 08-05 10:34 | 09-18 11:19（被改写） |
+| 该 plist 的 `Options` | `{ConfigurationType: 'Default'}` | **仍是 `Default`** ⇒ 禁用状态**不**存在卷上这份文件里，而存在数据卷侧的中央配置（按 `ConfigurationVolumeUUID = 852A2DCE-…C59A` 索引） |
+
+### 8.3 持久性验证：卸载 → 重新挂载 → 状态保持
+
+```
+mdutil -s /Volumes/ESP      → Indexing disabled.
+diskutil unmount disk0s1    → Volume ESP on disk0s1 unmounted
+diskutil mount disk0s1      → ✗ failed to mount（非提权）
+osascript … "diskutil mount disk0s1" with administrator privileges
+                            → ✓ Volume ESP on disk0s1 mounted
+mdutil -s /Volumes/ESP      → Indexing disabled.   ← 保持
+du -sh /Volumes/ESP/.Spotlight-V100 → 20K          ← Store-V2 未被重建
+```
+
+⇒ **卸载重挂后不复活**，且没有重新生成索引存储 ⇒ 关闭是真生效，不是"暂时不扫"。ESP 内容完整性同时复核：`config.plist` / `OpenCore.efi` 与工作区 sha256 一致，ACPI 20 / Drivers 6 / Kexts 27 全等。
+
+### 8.4 ⚠️ 两条必须记住的操作要点
+
+1. **不要删 `/Volumes/ESP/.Spotlight-V100`**。虽然现在只有 20 K，但那是 Spotlight 读**卷级配置**的位置；删掉可能让该卷回落默认（启用）并被重新索引 —— 正好是这次要消除的行为。留着这 20 K 是"锚点"，不是垃圾。
+2. **`diskutil mount disk0s1` 需要 root**。本轮实测非提权执行返回 `failed to mount … try the "readOnly" option`，**只有提权才成功**。`com.oc.mountesp` 由 LaunchDaemon（root）运行所以不受影响，但**任何手工卸载 ESP 的动作，都必须先确认手上有 root 手段能挂回来**，否则 FreeFileSync 的同步目标会消失。
+
+### 8.5 顺带厘清：重扫的真实触发源不是挂载服务
+
+- `com.oc.mountesp`（`/Library/LaunchDaemons/`，调 `/Library/Scripts/mount-esp.sh`）= `RunAtLoad=true`，**无 `WatchPaths` / `KeepAlive` / `StartInterval`** ⇒ **只在开机挂载一次**，不是"持续触发重扫"的元凶（§2.3 的表述不够准确，在此订正）。
+- 真凶 = **RealTimeSync（实测常驻，PID 3663 / 3672）**：`LastRun.ffs_real` → `Commandline: FreeFileSync /Volumes/Common/FreeFileSync/BatchRun.ffs_batch`，`Delay: 3` ⇒ 工作区一有改动即触发同步，**每轮同步都改 ESP 上文件的 mtime ⇒ 每轮都喂给索引器**。
+- 同步范围（`LastRun.ffs_gui` 实读）：`Left: /Volumes/Common/workplace/zbookpowerg7/EFI/oc` → `Right: /Volumes/ESP/EFI/oc` ⇒ **镜像目标是 `EFI/oc` 这一层，不含 ESP 根**，所以 ESP 根下的 `.Spotlight-V100` / `.Trashes` / `.fseventsd` 不会被镜像删掉（这正是它能存活到今天的原因）。
+
+### 8.6 未执行的部分
+
+- **`/Volumes/Common`（索引 298 MB）保持 enabled 不动** —— 它是工作区盘（git 仓库 + 代码 + 文档），Spotlight 搜索有实际价值。若要关：`sudo mdutil -i off /Volumes/Common`（可逆：`sudo mdutil -i on /Volumes/Common`）。
+- 本轮**未动任何常驻软件**（B 组：ToDesk/向日葵、腾讯柠檬/CleanMyMac5 的功能重叠取舍仍待定）。
+
+---
+
+*本轮**唯一改动**：`mdutil -i off /Volumes/ESP`（系统级、一条命令可逆）。**EFI / pmset / config 零改动**，其余均为读取与落盘。回滚：`sudo mdutil -i on /Volumes/ESP`。*
