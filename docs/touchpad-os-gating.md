@@ -134,7 +134,24 @@ GNVS 字段 `GPDI`），写死任何常数都会重新引入"用一个猜出来�
 
 ---
 
-## 4. 验证步骤
+## 4. 验证步骤与实测结果
+
+### 4.0 实测结果 —— ✅ 双侧通过（2026-09-18）
+
+| 侧 | 证据 | 来源 |
+|---|---|---|
+| **macOS** | 重启后实时 ioreg：`"Interrupt Mode" = "GPIO"`、`"gpioPin" = 258`（与 `TPNM` Darwin 分支 `0x0102` 逐位吻合）；`VoodooI2CDeviceNub` / `VoodooI2CHIDDevice` / `VoodooI2CPrecisionTouchpadHIDEventDriver` / `AppleMultitouchDevice` 全载；`DeviceOpenedByEventSystem = Yes`；无 `isPolling` 强制轮询标志 | **本机 ioreg 实测** |
+| **Windows** | 触控板恢复可用 | **用户实机确认**（用户在 Windows 侧操作后回报「两边都 ok 了」） |
+
+流程时序：14:01 从 Windows 关机 → 14:05 重启回 macOS（`last reboot` 实读）。
+
+⚠️ 口径说明：Windows 侧结论来自用户实机体验，**不是 AI 自采数据**（macOS 侧读不到 Windows 的 PCI/ACPI 状态）。但两侧结论一致且与 §2/§3 的机制推断完全吻合 ⇒「回落式修法正确」成立。
+
+与 §4 验证清单的对应：第 1~3 步（同步 + 哈希 + macOS 回归）全部通过（哈希 `61077ccb…`，工作区/ESP 一致）；第 4 步 Windows 侧通过；第 5 步（失败分支排查）未触发。
+
+---
+
+### 4.1 验证清单（供后续同类改动复用）
 
 1. 工作区 → ESP 同步（FreeFileSync 镜像 `EFI/oc` → ESP，**手动点「开始」**；自动触发会滞后）
 2. 同步后核对两边 `shasum -a 256 EFI/oc/ACPI/SSDT-TPD3-PIN.aml` 一致

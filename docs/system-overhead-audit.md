@@ -247,7 +247,7 @@ ECC: Disabled        Upgradeable Memory: No     ← ⚠️ 见下
 
 - [ ] **内存常态压力**：跨 ≥4 h 每 15 min 采一次 `sysctl -n vm.swapusage` + `memory_pressure`，确认 §3.1 是峰值还是常态（决定 C-1 该不该做）
 - [ ] **apfsd / WindowServer 告警是否复发**：观察 `/Library/Logs/DiagnosticReports/` 是否再出现 `*.cpu_resource.diag`
-- [ ] **A-1 重启后复核**（09-18 11:19 已执行，并已通过"卸载→重挂"验证，见 §8）：下次重启后再跑一次 `mdutil -s /Volumes/ESP` 确认跨重启保持；若复活，说明要改用 launchd 挂钩在挂载后自动关
+- [x] **A-1 重启后复核**（09-18 11:19 已执行，并已通过"卸载→重挂"验证，见 §8）—— ✅ **2026-09-18 14:05 重启后实测：`Indexing disabled` 保持**（复核记录见 §9.5）
 
 ---
 
@@ -353,8 +353,29 @@ ESP（`disk0s1`）那次做了，因为**卸载它不影响任何在用数据**�
 
 ### 9.4 待办
 
-- [ ] **下次重启后复核两个卷**：`mdutil -s /Volumes/ESP; mdutil -s /Volumes/Common`
-      —— 若任一复活，说明该状态**未跨重启持久**，需改用 launchd 挂钩在挂载后自动关。
+- [x] **下次重启后复核两个卷**：`mdutil -s /Volumes/ESP; mdutil -s /Volumes/Common` —— ✅ **已复核通过，见 §9.5**
+
+### 9.5 ★ 跨重启复核（2026-09-18 14:05）—— ✅ 通过（本条为「跨挂载持久」的补充实证）
+
+**时机**：用户 14:01 从 Windows 关机、14:05 重启回 macOS（`last reboot` 实读）。重启 = 卷全部重新挂载 ⇒ 是「跨重启」这一维度的天然测试点。
+
+**实测（`osascript … with administrator privileges` 提权读）**：
+
+```
+--- ESP ---
+/Volumes/ESP:       Indexing disabled.
+--- Common ---
+/Volumes/Common:    Indexing disabled.
+--- 根卷 ---
+/:                  Indexing enabled.      ← 对照组：根卷仍开，说明 mdutil 本体工作正常，不是"全都报 disabled"
+```
+
+**结论**：
+1. 两卷关闭状态 **跨重启保持**，§9.4 的"若复活需改用 launchd 挂钩"这一兜底**不触发**。
+2. **补强了 §9.3 的机制判断**：上一轮已有的实证是"跨挂载（卸载→重挂）持久"，现在**又多了"跨重启（整机重启、卷重新挂载）持久"** —— 两种重挂路径都不丢 ⇒ 更坐实「状态不依赖卷上文件、存在系统保护位置」，也再次排除"内存态"的可能。
+3. **对照组（根卷 `Indexing enabled`）是本条的关键**：如果三个卷都报 disabled，就该怀疑 `mdutil -s` 输出被污染；根卷一开两关，说明读数可信。
+
+*回滚不变：`sudo mdutil -i on <卷>`。*
 - [ ] 若日后需要 Spotlight 搜工作区 ⇒ `sudo mdutil -i on /Volumes/Common`
       （会重建索引，首轮全盘扫描有一次性开销）。
 
