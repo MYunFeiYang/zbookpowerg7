@@ -3280,3 +3280,81 @@ Display is turned off
 **风险与回滚**：8 个文件全部 git 追踪，删除**可逆**（历史版本 `git checkout` 即可恢复）；未触动 ESP，需用户手动同步后才生效。
 
 **提醒**：本次仅删"无效 / 无硬件"表，**未碰任何在用功能**；睡眠（Deep Idle）/ 合盖 / 独显禁用等逻辑不变。
+
+---
+
+## §六十　路线 B（S4 完整配方 T3）逐条查证 —— **三件套对本机 0 条适用**（2026-09-17 20:2x）
+
+> **触发**：用户选「B」= 照 5T33Z0 Lenovo-T530 issue #48 的"完整配方"改三处 EFI（`RebuildAppleMemoryMap` / `ReservedMemory` / `DiscardHibernateMap`）+ 重启 + 实测 S4。
+> **按铁律：动手前先查证。查完结论 —— 三处改动对本机没有任何一条有依据支撑 ⇒ 原 T3 作废，改走 B-1。**（这是第 3 次由查证拦下的白付代价，前两次见 §二十八 BIOS 路线、§三十六 S3 三条路）
+
+### 1. 逐条查证（上游官方文档 + 原始 issue，非二手转述）
+
+| # | 项 | T530 配方 | 官方原文依据 | 对本机适用性 |
+|---|---|---|---|---|
+| ① | `Booter/Quirks/RebuildAppleMemoryMap` | `True` → **`False`** | OC 官方 `Configuration.tex` L1800-：**Failsafe=`false`**；L9990 明说这类键"**no definite approach even on similar systems**，需穷举组合"。**Dortania《Comet Lake》页推荐 `YES`**，注释原文 *"can break on some laptop OEM firmwares **so if you receive early boot failures disable this**"* | ❌ **逆推荐**。本机 `True` 正是 Dortania 对该平台的值；改 `False` 的官方触发条件（"早期启动失败"）本机**不存在** |
+| ② | `UEFI/ReservedMemory` | 加 1 条（`569344` / `4096` / `RuntimeCode`） | OC 官方 L7793-：*"memory areas **exclusive to specific firmware and hardware** functioning"*，举例 = *"**第二个 256 MB 被 Intel HD 3000 破坏**"*。**Dortania 原文**：*"Used for exempting certain memory regions from OSes to use, **mainly relevant for Sandy Bridge iGPUs or systems with faulty memory**. **Use of this quirk is not covered in this guide**"* | ❌ **平台不符**。T530 = Ivy Bridge + HD4000（Sandy/Ivy 世代核显的内存区问题）；本机 = Comet Lake UHD 630。**照搬他机地址 = 往本机内存映射里塞一条无依据的保留区** |
+| ③ | `Booter/Quirks/DiscardHibernateMap` | `False` → **`True`** | OC 官方 L1584-1597：作用 = *"forces the XNU kernel to **ignore a newly supplied memory map** and assume that it did not change **after waking from hibernation**"*；**Note 原文**：*"may be used to workaround defective memory map implementations on **older, rare legacy hardware**. Examples of such hardware are **Ivy Bridge laptops with Insyde firmware such as the Acer V3-571G**. **Do not use this option without a full understanding of the implications.**"* | ❌ **因果错位**。issue #48 原文把它的用途限定为 *"**To fix a black screen that happens after hibernating and waking once and then try to hibernate again**"* ＝ **第二次休眠黑屏**；本机**第一次就从未成功**（全历史零 `Entering Hibernate`）⇒ 该键作用在**唤醒恢复侧**，本机根本没走到 |
+
+> **共同点**：三条全部来自**"别人的机器 + 别人的世代"**。T530 配方的真实语义是"**在 Ivy Bridge/Insyde 上，休眠已经能跑通**，再解决 RTC 区被覆盖(①)与第二次黑屏(③)"。本机卡在**更前面**（`§十九`~`§二十四` 已证：连镜像都没写出、零 `Entering Hibernate`）。
+
+### 2. 本机日志实证：轮不到"恢复侧"
+
+`pmset -g log`（跨启动，本轮实读）——**5 次"武装休眠"尝试**（09-16 `11:16:24` / `12:04:17` / `13:11:46` / `18:09:57` / `19:29:44`）：
+
+- 每一条**只有** `Entering Sleep state due to 'Software Sleep'` ＋ `Using AC (Charge:100%)`，**没有 secs、没有 `Wake from`、没有 `Entering Hibernate`、没有 `Entering Standby`**；
+- **同期对照**：4 次普通睡眠（`10:09:39`/`14:39:31`/`19:58:07`/`20:13:19`）**全部**有 `Wake from Deep Idle` + 时长 ⇒ 同一份日志里"成功形态"长什么样一目了然；
+- 另：`HibernationFixup.kext` **已在 `a3cd5f7`（09-17 16:44）移出 `Kernel/Add`**（`Kexts/` 目录还在，config 引用数 = **0**）⇒ 现配置下**恢复侧的写端为空**；
+- ⇒ **本机的失败点是"写镜像 / 固件断电"，不是"唤醒后内存映射对不上"** ⇒ ③ 打不到靶，① 只是启动期开关，② 平台不符。
+
+### 3. 顺带查出的基线事实（改配置前必读）
+
+| 项 | 实测值 | 说明 |
+|---|---|---|
+| `/var/vm/` | **空**（无 `sleepimage`；目录 mtime `09-16 19:37`） | mode 0 下系统已删镜像 |
+| `Hibernate File Min`（`ioreg`） | **8589934592 = 8 GiB** | 一旦触发休眠，内核要写 ≥8 GiB |
+| `SystemPowerProfileOverrideDict`（`ioreg`） | **AC / Battery 两侧 `Hibernate Mode = 3`**、`Standby Enabled = 1` | ★ **本机机型的原生默认就是 mode 3** ⇒ 用 3 是"回到默认"，不是新发明 |
+| `Misc/Boot` | `HibernateMode = NVRAM` ✅ ／ `HibernateSkipsPicker = true` ✅ | 与 T530 配方此项**一致**，无需动 |
+| `EnableWriteUnprotector` | `false` ✅ | Dortania：与 `RebuildAppleMemoryMap=YES` 搭配的**正确值**（本机自洽） |
+| `pmset -g` 现役 | 两电源源 `hibernatemode 0` + `standby 0`；AC `sleep 0` | 现役 = Deep Idle，**永不写镜像** ⇒ 要测 S4 必须先武装 |
+
+### 4. 修正后的路线 B：**先用零代价判定"写镜像阶段"通不通**
+
+| 阶段 | 动作 | 判据 | 风险 |
+|---|---|---|---|
+| **B-1（先做）** | `sudo pmset -c hibernatemode 3` → **插电、手动** `pmset sleepnow` 睡 ~30 s → 按键唤醒 | `ls -l /var/vm/sleepimage` 出现 **≥8 GiB** 文件且 mtime = 刚才 ⇒ **写镜像通**；仍为空 ⇒ **写镜像阶段就坏**（B 路可当场判死，省掉一次固件赌注） | **低**：mode 3 **不断电**、秒醒；唯一代价 = 写镜像会碰 RTC RAM `0x80–0xAB`（`IOHibernateRTCVariables`）⇒ 005 风险**存在**但低于 mode 25 |
+| **B-2（B-1 通过才做）** | `HibernationFixup` 加回 `Kernel/Add` → 重启 → `hibernatemode 25` 实测 | `Wake from Hibernate` ＋ `Entering Hibernate` | **中高**：可能再丢 RTC → HP POST 005 |
+| **B-3** | 若 B-2 仍 005 ⇒ **S4 永久判死**，此后不再碰 | — | — |
+
+**三件事（铁律要求，实测前写清）**：
+
+- **预期形态**：B-1 成功 = `/var/vm/sleepimage` 变为 8+ GiB、mtime = 测试时刻、`pmset -g log` 出现 `Sleep ... N s` + `Wake from`；失败 = 文件仍不存在（或 1 GiB 占位）。
+- **回滚点**：`sudo pmset -c hibernatemode 0`（一条命令，立即回到现役 Deep Idle 档）。
+- **不可逆风险**：写镜像路径必然写 RTC RAM（`0x80–0xAB` 存 `IOHibernateRTCVariables`）⇒ **有再次触发 HP POST 005 + BIOS 载入默认的概率**。本机 RTC 四层防护已在位（`rtcfx_exclude=0E-FF` / `AppleRtcRam=true` / `rtc-blacklist` / `NVRAM Delete`），但 **§二十四 已证"四层全开仍 005"** ⇒ **不能指望它们兜住**。
+
+### 5. 方法论（新增，已入技能）
+
+★ **跨机型移植社区配方，必须逐条查"这一条的平台适用范围"，而不是查"这套配方在别人机器上成了没成"。**
+本轮的判据全部来自上游一手文档：`RebuildAppleMemoryMap` 查 Dortania 同平台页推荐值、`ReservedMemory` 查 Dortania 原文的适用平台、`DiscardHibernateMap` 查 OC 官方 Note 的硬件限定 + 原始 issue 的**症状限定**。
+> 与 §三十六 同一类教训（只读子页不读父页 / 只看结论不看限定条件），但这次是**在动手前**拦住的，零代价。
+
+### 6. 追问「同机型有成功的先例吗？」—— 四层查证（2026-09-17 20:5x）
+
+| 层次 | 查到什么 | 结论 |
+|---|---|---|
+| **① 严格同机型**<br>HP ZBook Power G7 | GitHub 搜 `zbook hackintosh` = **36 个仓库，零个 Power G7**（最接近 = Fury 15 G7 / Firefly 14 G7）。**但找到 1 份同机型成功报告**（installhackintosh.com，2024-05-19）：`i7-10750H / 32G / UHD 630 / Quadro P620 / AX201 / ALC236 / ELAN073D` **与本机逐项对得上**，`What's Working` 明确含 **"Restart, Sleep and Shutdown"** | ✅ **有"普通睡眠"先例**；⚠️ 但全文 **零字提 hibernation / S4 / hibernatemode**，且是 Sonoma 14.4.1 + OC 1.0.0 ⇒ **"真休眠(S4)"无先例** |
+| **② 同代兄弟**<br>Comet Lake | `kilianbalaguer/HPZBook-Fury-G7-Hackintosh`（**ZBook Fury 15 G7，macOS 26 Tahoe**）：README 列 **"Sleep/wake ✅"**，睡眠修复 = `igfxonln=1`（★**本机 boot-args 里已有这条**）；**全文无 hibernation**，且作者把 sleep 类 bug 列入"会直接关闭" | ✅ sleep 可行；**S4 无** |
+| **③ 权威指南立场** | **Dortania《Fixing Sleep》原文**：`Misc -> Boot -> HibernateMode -> **None**` —— *"We're gonna **avoid the black magic that is S4** for this guide"*；并把 `pmset autopoweroff 0` / `standby 0` 作为排错前置 | ❌ **官方把 S4 定性为"避开"** |
+| **④ 有 S4 成功先例的机器** | 见下表 —— **全部是 2012–2020 的联想/富士通，没有一台是 AOAC 固件** | ⚠️ 先例存在，但**世代不符** |
+
+| 机型 | 世代 | 来源 | 结果 |
+|---|---|---|---|
+| Lenovo T530 | Ivy Bridge (2012) | `5T33Z0/Lenovo-T530-…` issue #48 | ✅ 成功（**＝ T3 配方的唯一出处**） |
+| Fujitsu Esprimo Q958 | 老平台 | `5T33Z0/Fujitsu-Esprimo-Q958-…` README（**同作者第二台**） | ✅ 有完整配方：`hibernatemode 25` + **`standby 1`（原文：*"required for hibernation to actually work"*）** + `standbydelay 900/900` |
+| Lenovo X250 | Broadwell (2015) | `zamkara/Lenovo-Thinkpad-X250-…` issue #11 | ⚠️ 休眠可恢复，但**每次重启报 BIOS Checksum Error**，未解决 |
+| Lenovo Yoga Duet 7 13IML05 | **Ice Lake (2020)** | `jlempen/Yoga-Duet-7-13IML05-OpenCore` | ⚠️ 有专章 *"Fixing Hibernate Mode 25"*（reset `com.apple.PowerManagement*` + 重建 `sleepimage` + `pmset restoredefaults`）⇒ **试过、仍在排错** |
+
+★ **关键洞察**：三台"成功"的（T530 / Q958 / X250）**没有一台是 AOAC 机型** —— 全是 Legacy S3 世代。而本机是 **AOAC 固件**（§三十六 已定：AOAC 与 legacy S 状态结构性冲突）。
+⇒ **T3 配方"0 条适用"的更深层原因在此：它出自"非 AOAC 世代"的机器。** 而且越"接近现代"的先例（Ice Lake Yoga）越是"**还在排错**"，不是"已成功"。
+
+**⇒ 对本轮决策的影响**：先例既不站在"该赌"这边，也不构成"绝对判死"（先例存在 ≠ 本机必然不行；AOAC + Comet Lake 这个组合本机确实是第一个）。**B-1 的设计因此不变，而且更该先做** —— 它用最低代价回答"本机连写镜像都做不到吗"；只有它通了，先例那套配方才有移植价值。

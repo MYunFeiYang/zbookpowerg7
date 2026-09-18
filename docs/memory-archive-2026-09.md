@@ -8,7 +8,8 @@
 
 ## 原 MEMORY.md 全文（2026-09-16 13:10 归档）
 
-# zbookpowerg7 黑苹果（HP ZBook Power G7 / OC 1.0.8 / MacBookPro16,4 / macOS 26.6.2 25G83）
+# zbookpowerg7 黑苹果（HP ZBook Power G7 / OC 1.0.8-dev `REL-108-2026-09-16` / MacBookPro16,4 / macOS 26.6.2 25G83）
+> ⚠️ 2026-09-18 核：`1.0.8` **非官方正式版**（官方最新正式版 = **1.0.7 / 2026-03-20**），本机跑的是 master/开发版构建 —— 详见根 `README.md`「引导器与 kext 版本」。
 > 本文件 = **铁律 + 索引**；细节见 `docs/`（git 跟踪）与 `.workbuddy/memory/<日期>.md`。
 
 ## 铁律

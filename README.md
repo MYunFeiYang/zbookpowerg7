@@ -50,6 +50,25 @@ macOS 辅助脚本统一入口：**`sh EFI/scripts/oc-setup.sh`**（`install-all
 
 将整个 **`EFI`** 复制到 **ESP 分区根目录**（与 **`EFI/oc`** 同级），按 OpenCore 常规流程使用。
 
+## 引导器与 kext 版本（含来源，2026-09-18 核）
+
+**运行中的引导器版本以 NVRAM 为权威读数**（文件大小 / 文档标题都可能过时）：
+
+```bash
+nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:opencore-version
+# → REL-108-2026-09-16
+```
+
+| 组件 | 运行版本 | 官方最新**正式版** | 判定 |
+|------|----------|--------------------|------|
+| **OpenCore 核心** | `REL-108-2026-09-16` | **1.0.7**（2026-03-20） | ⚠️ **开发版构建** —— 官方**从无 1.0.8 正式发布** |
+| **RTCMemoryFixup** | **1.0.8** | **1.0.7**（2020-10-05） | ⚠️ 同上，非正式发布版 |
+
+- ⚠️ 因此本仓库 / 文档中出现的「OC 1.0.8」均应理解为 **master / 开发版构建**，不是官方 release。凡涉及「某问题是否已在 1.0.8 修掉」的判断，**必须落到具体 commit / changelog 条目**，不可拿版本号当正式版比对。性质上，Dortania [`build-repo`](https://github.com/dortania/build-repo) 每日构建发布的 OpenCorePkg 就是这条线（构建时间与 `REL-108-<date>` 的日期可对上）；**本机这两份二进制的具体来源（自建 / 每日构建下载）尚待机主确认**。
+- ⚠️ OC 1.0.8 changelog 里的 hibernation 条目原文是 *"Fixed unresolved ATAPI device paths on **NVMe Macs** during hibernation"* —— **针对真 Mac**，与本机的 S4（真休眠）无关，**勿据此认为本机 S4 有救**（见 [`docs/sleep-tests/`](docs/sleep-tests/)）。
+- 本批二进制于 2026-09-16/17 由机主手动升级，自 `eeac312` 起纳入版本控制 —— 此前长期处于 **工作区 == ESP ≠ HEAD** 的漂移态，任何 `git checkout -- EFI/` 都会**静默把 OC 核心换回旧版**。
+- ⚠️ **`EFI/oc/` 下不要放非必需的 plist**：`oldConfig.plist` 这类文件会被同步任务**一并镜像进 ESP**（已实测 `/Volumes/ESP/EFI/OC/oldConfig.plist` 存在）。备份请放到 `EFI/` 之外。
+
 ## 已知限制
 
 - **内置麦克风**：**不支持**（Intel SST / SoundWire 数字麦；2026-06-11 已验证无电平）。**勿再**为内置麦改 layout。  

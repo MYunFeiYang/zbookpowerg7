@@ -1,7 +1,7 @@
 # 合盖睡眠功耗实测（Round 3 · 2026-09-17）
 
 ## 测试条件
-- 机型：HP ZBook Power G7 / OC 1.0.8 / macOS 26.6.2（Deep Idle / S0ix 唯一可用睡眠）
+- 机型：HP ZBook Power G7 / OC 1.0.8-dev（`REL-108-2026-09-16`，非官方正式版）/ macOS 26.6.2（Deep Idle / S0ix 唯一可用睡眠）
 - 当前改动基线：kext 33→30、ACPI 14 张（含 dGPU 断电 SSDT 恢复）、aspm 注入全清
 - 合盖前：拔 AC 适配器、满电 100% 合盖（裸机，无外屏/外接鼠标）
 - WiFi / BT：保持开启（用户要求不动，测真实态）
