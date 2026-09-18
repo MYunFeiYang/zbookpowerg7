@@ -267,7 +267,7 @@ osascript -e 'do shell script "mdutil -i off /Volumes/ESP" with administrator pr
 | `mdutil -s /Volumes/ESP` | `Indexing enabled.` | **`Indexing disabled.`** |
 | `/Volumes/ESP/.Spotlight-V100` 占用 | **4.1 M** | **20 K**（只剩 `VolumeConfiguration.plist`，`Store-V2` 被清空） |
 | `VolumeConfiguration.plist` mtime | 08-05 10:34 | 09-18 11:19（被改写） |
-| 该 plist 的 `Options` | `{ConfigurationType: 'Default'}` | **仍是 `Default`** ⇒ 禁用状态**不**存在卷上这份文件里，而存在数据卷侧的中央配置（按 `ConfigurationVolumeUUID = 852A2DCE-…C59A` 索引） |
+| 该 plist 的 `Options` / `Stores` | `Default` / 1 条 store 记录 | **仍是 `Default`**、store 记录仍在（只改了 mtime 与 `ConfigurationModificationVersion`）⇒ 卷上这份文件**不承载「禁用」语义**（机制见 **§9.3**，含对我上一轮错误推断的更正） |
 
 ### 8.3 持久性验证：卸载 → 重新挂载 → 状态保持
 
@@ -301,4 +301,63 @@ du -sh /Volumes/ESP/.Spotlight-V100 → 20K          ← Store-V2 未被重建
 
 ---
 
-*本轮**唯一改动**：`mdutil -i off /Volumes/ESP`（系统级、一条命令可逆）。**EFI / pmset / config 零改动**，其余均为读取与落盘。回滚：`sudo mdutil -i on /Volumes/ESP`。*
+## 9. A-1 续：关闭 `/Volumes/Common` 的索引（2026-09-18 11:35）
+
+### 9.1 执行与前后对照
+
+```
+osascript -e 'do shell script "mdutil -i off /Volumes/Common" with administrator privileges'
+→ /System/Volumes/Data/Volumes/Common:	Indexing disabled.
+```
+
+| 项 | 改前 | 改后 |
+|---|---|---|
+| `mdutil -s /Volumes/Common` | `Indexing enabled.` | **`Indexing disabled.`** |
+| `/Volumes/Common/.Spotlight-V100` | **298 M** | **512 K**（`Store-V2` 被清空） |
+| 卷可用空间（`df -h`） | 112 Gi | **113 Gi**（约释放 298 MB） |
+| `mdfind -onlyin /Volumes/Common "config.plist"` | 能命中 | **无输出**（符合预期）；直接路径访问不受影响 |
+
+**卷信息**：`disk0s5` / **ExFAT** / UUID `C132AD3D-BFDB-3F77-A4F6-FCF939B2B9E0` / 303 GiB / 可用 113 GiB。
+⚠️ **本卷是工作区所在盘**（`/Volumes/Common/workplace/zbookpowerg7`）。
+
+### 9.2 ⚠️ 为什么这次**没有**做「卸载 → 重挂」持久性验证
+
+ESP（`disk0s1`）那次做了，因为**卸载它不影响任何在用数据**。
+`/Volumes/Common` 不同：**工作区（git 仓库）就在它上面**，而本轮已实测
+**`diskutil mount` 需要 root、裸跑会失败** —— 一旦卸载后挂不回来，整个工作区当场不可用。
+**风险不对等 ⇒ 主动降级验证强度**，改为"只读核对 + 重启后复核"。
+（这不是图省事，是**对高代价操作主动收手** —— 与 skill 里「判据不能拿推断当结论」同一纪律。）
+
+### 9.3 ★ 机制查证：禁用状态到底存在哪？（并更正我上一轮的错误推断）
+
+**结论：存储位置未查明；但"跨挂载持久"有实证。**
+
+已排除：
+- ❌ **不在被改卷上的 `VolumeConfiguration.plist`**：ESP 与 Common 关闭后，该文件的
+  `Options` **仍是 `{'ConfigurationType': 'Default'}`**、`Stores` 里那条记录**仍在**（10 个键），
+  只改了 `ConfigurationModificationDate` 与 `ConfigurationModificationVersion`（`26.5.2 → 26.6.2`）
+  ⇒ **卷上这份文件不承载"禁用"语义**。
+- ❌ **不在 `/System/Volumes/Data/.Spotlight-V100/VolumeConfiguration.plist`**（我上一轮的推断）：
+  实测 `plutil -p … | grep -i -E "C132AD3D|852A2DCE"` ⇒ **NO_MATCH**。
+- ⚠️ `/var/db/Spotlight`（`root:wheel`）与 `/var/db/Spotlight-V100`（`root:_mds_stores`）
+  **即使 `with administrator privileges` 也 `Permission denied`** ⇒ 受系统保护，读不到。
+
+仍成立的实证（**这两条才是判据**）：
+1. ESP 关闭后经 **"卸载 → 重新挂载"** 仍为 disabled、`Store-V2` 未被重建
+   —— 重挂会让 mds 重新评估该卷，仍不索引 ⇒ **磁盘上有持久记录**（不是内存态）。
+2. **`/Volumes/TZBOOK`（NTFS）长期 disabled，且根本没有 `.Spotlight-V100` 目录**
+   ⇒ 该状态**不依赖卷上文件**。
+
+⇒ 判据写作：**"跨挂载持久（有实证）；存储位置未查明（受系统保护，读不到）"**。
+⚠️ 这正是 skill §0a-3 / §0a-6 的纪律：**推断不能当结论**；查不到就写"未查明"。
+
+### 9.4 待办
+
+- [ ] **下次重启后复核两个卷**：`mdutil -s /Volumes/ESP; mdutil -s /Volumes/Common`
+      —— 若任一复活，说明该状态**未跨重启持久**，需改用 launchd 挂钩在挂载后自动关。
+- [ ] 若日后需要 Spotlight 搜工作区 ⇒ `sudo mdutil -i on /Volumes/Common`
+      （会重建索引，首轮全盘扫描有一次性开销）。
+
+---
+
+*本轮**改动共两处**（均为系统级、一条命令可逆）：`mdutil -i off /Volumes/ESP`、`mdutil -i off /Volumes/Common`。**EFI / pmset / config 零改动**，其余均为读取与落盘。回滚：`sudo mdutil -i on <卷>`。*

@@ -1,6 +1,14 @@
 # 睡眠档位调优测试记录
 
-> ✅✅ **2026-09-18 11:2x【§六十九 · 最新】—— 用户答「A」⇒ 执行 A-1：关闭 ESP 的 Spotlight 索引（本轮唯一系统改动，可逆）**
+> ✅✅ **2026-09-18 11:3x【§七十 · 最新】—— 用户答「关」⇒ A-1 续：关闭 `/Volumes/Common` 的索引（**工作区所在盘**，用户明确要求）**
+> **已执行**：`mdutil -i off /Volumes/Common` ⇒ `.Spotlight-V100` **298 M → 512 K**、`mdutil -s` = disabled、卷可用空间 **112 → 113 Gi**、`mdfind -onlyin /Volumes/Common` **已搜不到**（直接路径 / git / IDE 搜索不受影响）。卷 = `disk0s5` ExFAT / UUID `C132AD3D-…`。
+> **⚠️ 本次刻意不做「卸载 → 重挂」验证**：`/Volumes/Common` 就是**工作区所在盘**，而本轮已实测 **`diskutil mount` 需 root、裸跑会失败** ⇒ 一旦卸载后挂不回来，工作区当场不可用 ⇒ **风险不对等，主动降级为"只读核对 + 重启后复核"**（已列入待办）。
+> **★ 机制查证，并更正我上一轮的错误推断**：禁用状态**不在**被改卷的 `VolumeConfiguration.plist` 里（两个卷关闭后 `Options` 仍 `Default`、`Stores` 记录仍在，只改 mtime 与 `ConfigurationModificationVersion`）。我上轮据此推断"记在 `/System/Volumes/Data/.Spotlight-V100/`（按卷 UUID）"，随之实测 **grep 两个 UUID 均 NO_MATCH**，而 `/var/db/Spotlight`、`/var/db/Spotlight-V100` **即使 root 也 `Permission denied`**（系统保护）⇒ **存储位置未查明，就写"未查明"**。判据只写实证两条：**ESP 经"卸载→重挂"仍 disabled** ＋ **长期 disabled 的 NTFS 卷根本没有 `.Spotlight-V100` 目录** ⇒ **跨挂载持久、不依赖卷上文件**。
+> **回滚**：`sudo mdutil -i on /Volumes/Common`。完整记录 → `docs/system-overhead-audit.md` **§9**。
+>
+> ---
+>
+> ✅✅ **2026-09-18 11:2x【§六十九】—— 用户答「A」⇒ 执行 A-1：关闭 ESP 的 Spotlight 索引**
 > **已执行并验证**：`osascript … "mdutil -i off /Volumes/ESP" with administrator privileges` ⇒ `.Spotlight-V100` **4.1 M → 20 K**（`Store-V2` 被清空）、`mdutil -s` = **disabled**。**持久性验证通过**：`unmount → 重挂` 后仍 disabled、`Store-V2` 未被重建 ⇒ 是真关闭，不是"暂时不扫"；同期复核 ESP 内容与工作区 **sha256 一致**（`config.plist` / `OpenCore.efi`）、ACPI 20 / Drivers 6 / Kexts 27 全等。
 > **⚠️ 两条操作要点（已入文档 §8.4）**：① **别删 `/Volumes/ESP/.Spotlight-V100`**（剩的 20 K 是 Spotlight 读**卷级配置**的锚点，删了会回落默认→重新索引）；② **`diskutil mount disk0s1` 必须提权**（裸跑报 `failed to mount … try the "readOnly" option`）⇒ 手工卸载 ESP 前先确认手上有 root 手段能挂回来，否则同步目标消失。
 > **顺带订正 §2.3 的表述**：重扫的真凶**不是** `com.oc.mountesp`（`RunAtLoad=true`、无 `WatchPaths`/`KeepAlive`/`StartInterval` ⇒ 只在开机挂载一次），而是 **RealTimeSync 常驻（PID 3663/3672）** → `FreeFileSync /Volumes/Common/FreeFileSync/BatchRun.ffs_batch`（`Delay: 3`）。同步范围实读 = `EFI/oc → /Volumes/ESP/EFI/oc`，**不含 ESP 根**。
