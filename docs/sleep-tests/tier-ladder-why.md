@@ -147,3 +147,65 @@ OC-Little 父页《01-关于AOAC》（★ 我为漏读它付出过一次 panic �
 | 再深一档（S4）呢？ | 更远。唯一结构性缺口 `#28` 落在固件手里；5 次武装休眠全在恢复侧失败、3 次 POST 005；AOAC 家族 0 先例 |
 | 有半档吗？ | 没有。`mode 3` 电气上仍是挂起（只是多写镜像）、`standby` 的终点就是 S4、C-state 属另一维度 |
 | 那还剩什么？ | **量准现役档位**（`tools/sleep-power-measure.sh`）。配置层确实无牌可打 —— 本轮结论与 round4 自洽 |
+
+---
+
+## 附录 A · 「能不能关掉 AOAC？」（2026-09-18 16:4x 追查）
+
+> 触发：用户问「不能关闭AOAC？」｜**性质**：本轮**只读**（零配置/零 EFI 改动），新增证据 = Window 分区 hive 直读 + 上游口径查证。
+
+### A.1 三层开关 —— 只有一层是"我们能碰的"
+
+| 层 | 开关 | 现状 | 结果 |
+|---|---|---|---|
+| **① OS 声明层**（各 OS 自己） | macOS：`\_SB.LPS0`（撤掉即转 S3）｜Windows：注册表 `PlatformAoAcOverride=0` | ✅ **能关，而且已经关过** —— `SSDT-DeepIdle=false` 实测：`IOPMDeepIdleSupported` Yes→No、系统**确实转去走 S3** | ❌ **关完 EC 罢工**（`EC OBF=1` 34/120 次、`WakeTime` 159 s、本机唯一 panic）⇒ **这一层关了也白关** |
+| **② 固件菜单层** | BIOS 里的 `Modern Standby` / `S0ix` / `Sleep State` / `Low Power S0 Idle` | ❌ **HP 没有这一项** | — |
+| **③ 固件隐藏变量层** | UEFI Shell 写隐藏 setup 变量（Dell 5410 先例：`setup_var_cv Setup 0x14 0x1 0x0`） | ⚠️ **从未尝试；对 HP 完全未验证**（是否存在该项 / 偏移 / GUID 均未知） | 🔴 高：写错可致不开机；**HP 侧零上游先例** |
+
+**② 的依据（HP 官方文档原文级）**：HP《Power Management Options》菜单**全表逐项** = `Runtime Power Management` ｜ `Extended Idle Power States` ｜ `S5 Maximum Power Savings` ｜ `SATA Power Management` ｜ `Deep Sleep` ｜ `PCI Express Power Management` ｜ `PCIe Speed Power Policy` ⇒ **通篇没有任何 `Modern Standby` / `S0ix` / `Sleep State` / `Low Power S0 Idle` 条目**。
+
+> ⚠️ **别被 `Extended Idle Power States` 骗到**：HP 官方定义为 *"Allows certain operating systems to decrease the processor's power consumption **when the processor is idle**"* ⇒ 是 **C-state 空闲省电**（Runtime Power Management 那一类），**不是 S0ix / S3 的选择器**。
+> 同族 ZBook 用户实测原话（tenforums 2021）：*"**[x] Extended Idle Power States setting was indeed a dud.** It was supposed to control S3, but all settings in BIOS did absolutely nothing to this issue. … Spent dozens of hours experimenting."*
+
+### A.2 ★ 本轮新增一手证据：Windows 分区直读（零风险）
+
+`/Volumes/TZBOOK/Windows/System32/config/system`（⚠️ **文件名是小写**，`SYSTEM` 大写会 `No such file or directory` —— 这正是 §三十X 那次"读注册表失败"的真因）mtime = **2026-09-18 14:05** ⇒ 是你最近一次进 Windows 的写入。
+
+| 检索项 | 结果 | 意义 |
+|---|---|---|
+| **正向对照**：`HiberbootEnabled` / `PowerSettings` | ✅ 均命中 | 检索方法有效（不是编码或工具问题） |
+| **`PlatformAoAcOverride`** | **字节级 0 命中** | 本机 Windows **从未设置过**该 override ⇒ §二十八 引用的 drwindows 反例**与本机无关**，我们处在"从零开始"的位置 |
+| `ConnectedStandbyPlatform` / `StandbyActivationEnergy` / `*ModernStandbyWoLMagicPacket` / `BthLEInputSuppressionModernStandbyOptIn` | ✅ 命中 | 这台 Windows **确实运行在 Modern Standby 策略下** |
+
+⇒ 与另两条**互相独立**的证据三重印证：**FADT bit21 `LOW_POWER_S0_IDLE_CAPABLE`=1** ｜ **`System32/SleepStudy/` 存在且今天 14:05 仍在写**（`SleepStudy` 是 Modern Standby 的**专属**诊断设施，S3 平台不会生成） ｜ **hive 里的 Modern Standby 策略串**。
+
+### A.3 ★ 上游口径（微软侧）：AOAC 与 S3 **不可共存**，且必须**厂商**给开关
+
+| 来源 | 原文 | 分级 |
+|---|---|---|
+| **MS 官方文档（System Power States）口径**，经 Microsoft 员工在问答区引用 | *"**Systems that support Modern Standby do not use S1-S3.**"* | **可当判据**（MS 文档口径） |
+| **MS 问答区同一案例**（标题原文《WIN11 修改注册表为S3睡眠模式后无法唤醒》） | 用户执行 `reg add … PlatformAoAcOverride /t REG_DWORD /d 0` 关闭现代待机 ⇒ **"点击睡眠后无法唤醒"**；答复原文：*"**待机 (S0 低电量待机)是硬件级的功能，它和 S3 不可共存**，除非您的计算机厂商提供开关开启 S3 电源模式才能启用（同时 S0 会被关闭）"* | **方向强**（含 MSFT 员工回复、引官方文档） |
+| 网上"改注册表就能切 S3"的一批博客（positioniseverything / techbloat / geekchamp / wintips 等） | 口径一致，但它们**自己都写着**"若固件不暴露 S3 则无效" | ⚠️ **仅方向，不可当判据** |
+
+> **★★ 同形先例（本轮最有价值的一条）**：Windows 侧"强行让 OS 走 S3"的结果 = **睡下去醒不来**；我们在 macOS 侧做的（撤 `LPS0`）结果 = **只能强制关机 / `WakeTime` 159 s / EC 罢工**。**两条完全独立的路径，同一个结果** ⇒ 指向同一个原因：**固件层没有 S3 的物理路径**。
+
+### A.4 ★ 为什么我不建议赌那一刀：**赌注不对称**
+
+| | 内容 |
+|---|---|
+| **代价** | 关掉 AOAC ⇒ **放弃 Deep Idle** —— 本机**唯一可用**的睡眠档（实测 2.4 s 唤醒 / ~4 W） |
+| **目标** | S3 —— 本机**已实测是坏的** |
+| **赌输** | **两头空**：既没有 S3，也丢了 Deep Idle |
+| **上游态度** | OC-Little 父页把「**禁止 S3 睡眠**」列为 AOAC 平台的**标准解** ⇒ 我们现在的状态**就是**那个标准解 |
+
+### A.5 建议：先做零风险探底（都在 Windows，共约 5 分钟）
+
+| 步 | 动作 | 风险 | 能定什么 |
+|---|---|---|---|
+| **①** | 管理员 CMD：`powercfg /a` | ✅ **纯只读** | **固件到底有没有把 S3 交给 OS**：出现 `Standby (S3)` ⇒ 有；只报 `Standby (S0 Low Power Idle)` 且注明 S3 不可用 ⇒ **没有 ⇒ 这一刀可彻底封板** |
+| **②** | **仅当 ① 显示有 S3**：`reg add …PlatformAoAcOverride /t REG_DWORD /d 0` → 重启 → 睡一次 | ⚠️ 中（醒不回来就强制关机，与既有 S3 实测同形） | **隔离「固件不支持」vs「只有 macOS 不支持」** —— 用厂商自己的 OS + 驱动 + 固件路径测 S3，是最终裁决 |
+| **③** | 无论结果都 `reg delete …PlatformAoAcOverride /f` 还原 | — | 别把 Windows 也搞成"睡下去醒不来" |
+| **④** | 只有 ① 有 S3 **且** ② 能正常唤醒 ⇒ 才值得评估 ⑤ | — | — |
+| **⑤** | UEFI Shell 写隐藏 setup 变量（`setup_var_cv` 思路） | 🔴 **高** | 唯一能改到**固件层**的软件路径；**HP 无先例** |
+
+> **判据**：② 若 Windows 也醒不回来 ⇒ **固件层没有 S3 物理路径**，与 macOS 侧结论**互相封闭** ⇒ AOAC 这条线可**彻底封板**（不是"没试过"，而是**两套 OS 都测过**）。

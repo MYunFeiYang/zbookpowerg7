@@ -1,6 +1,16 @@
 # 睡眠档位调优测试记录
 
-> 🪜🪜 **2026-09-18 16:2x【§七十二 · 最新】—— 用户「为什么只能 deep idle？不能更进一档？」⇒ 一页纸固化：**声明层 ✅ / 选择层 ✅ / 执行层 ❌，卡点 = EC 固件（非 OpenCore 变量）****
+> 🔌🔌 **2026-09-18 16:4x【§七十三 · 最新】—— 用户「不能关闭AOAC？」⇒ 三层开关：**OS 层已关过（无效）／固件菜单层 HP 没有／固件隐藏变量层从未试且无先例****
+> **① OS 声明层 = 唯一能碰的一层，且已实测关过**：撤 `\_SB.LPS0`（`SSDT-DeepIdle=false`）⇒ `IOPMDeepIdleSupported` Yes→No、系统**确实转去走 S3** ⇒ **EC 罢工**。⇒「关 AOAC」在能关的那层**关了、没用**。
+> **② 固件菜单层 = HP 没有**：HP 官方《Power Management Options》全表 7 项（`Runtime Power Management`/`Extended Idle Power States`/`S5 Maximum Power Savings`/`SATA Power Management`/`Deep Sleep`/`PCI Express Power Management`/`PCIe Speed Power Policy`）**通篇无 `Modern Standby`/`S0ix`/`Sleep State`/`Low Power S0 Idle`**；唯一名字像的 `Extended Idle Power States` 官方定义是 **C-state 空闲省电**，同族 ZBook 用户实测原文 *"was indeed a dud"*。
+> **③ ★ 本轮新增一手证据（Windows 分区直读）**：`/Volumes/TZBOOK/Windows/System32/config/**system**`（⚠️ **必须小写**，大写 `SYSTEM` 会 `No such file` —— 这就是当初"读注册表失败"的真因）字节级检索：`PlatformAoAcOverride` **0 命中**（= 本机 Windows **从未设置过**；正向对照 `HiberbootEnabled`/`PowerSettings` 均命中 ⇒ 方法有效）；命中 `ConnectedStandbyPlatform`/`StandbyActivationEnergy`/`*ModernStandbyWoLMagicPacket` ⇒ **Windows 确实跑 Modern Standby**，与 **FADT bit21 AOAC=1** + **`SleepStudy/`（今天 14:05 仍在写）** 三重独立互印。
+> **④ ★ 上游同形先例（微软侧）**：MS 问答区《WIN11 修改注册表为S3睡眠模式后无法唤醒》—— 用户 `PlatformAoAcOverride=0` 关现代待机后 **"点击睡眠后无法唤醒"**；答复原文 *"**S0 低电量待机是硬件级功能，它和 S3 不可共存**，除非厂商提供开关"*；MS 文档口径 *"Systems that support Modern Standby do not use S1-S3"*。⇒ 与 macOS 侧"只能强制关机"**同形**（两条独立路径、同一结果）。⚠️ 分级：MS 问答区=方向强；那批"改注册表就能切 S3"的博客=**仅方向**。
+> **⑤ 赌注不对称（不建议赌的理由）**：代价 = 放弃**唯一可用**的 Deep Idle；目标 = **已实测坏的** S3；赌输 = **两头空**。上游把「禁止 S3」列为 AOAC 平台**标准解** ⇒ 我们现状**就是**标准解。
+> **⑥ 建议零风险探底**：Windows 管理员 CMD `powercfg /a` —— 出现 `Standby (S3)` ⇒ 固件给了、才值得谈；只报 `S0 Low Power Idle` ⇒ **彻底封板**。完整 → `docs/sleep-tests/tier-ladder-why.md` **附录 A**。
+>
+> ---
+>
+> 🪜🪜 **2026-09-18 16:2x【§七十二】—— 用户「为什么只能 deep idle？不能更进一档？」⇒ 一页纸固化：**声明层 ✅ / 选择层 ✅ / 执行层 ❌，卡点 = EC 固件（非 OpenCore 变量）****
 > **① 前两层都通（本轮一手直读）**：`docs/SysReport/ACPI/FACP-1.aml` `FLAGS@0x70 = A5 84 23 00` ⇒ **`LOW_POWER_S0_IDLE_CAPABLE`(bit21)=1**（平台自报 AOAC）+ `HW_REDUCED_ACPI`(bit20)=0（**完整 ACPI 与 AOAC 并存** ⇒ 这正是 `_S3` 还在菜单上的原因）；`DSDT.dsl:38257` `If (SS3) Name (_S3, …)` / `:38268` `If (SS4) Name (_S4, …)` + `:5708-5709` `SS3=One`/`SS4=One` + `:31312` `Local0 |= (SS3 << 0x03)`（固件**主动上报** OS）⇒ **"固件没实现 S3"是错的**。选择层：`SSDT-DeepIdle.dsl` 全文仅 **94 B**（`_SB.LPS0` + `_GPE.LXEN`，均 `_OSI("Darwin")` 门控），且这两个名字在**原厂 DSDT 里 0 命中**（= 我们补的）；**撤掉它 `IOPMDeepIdleSupported` 就从 Yes 翻 No ⇒ macOS 真会去选 S3**。
 > **② 断在 L3 执行层**：`EC OBF=1 poll timed out` = **S3 独有**（34/120 vs 噪声基线 1、Deep Idle 0/0）；`WakeTime` 2.4→**159.3 s（65×）**、PS2 457 ms→**157,735 ms（342×）**、本机历史**唯一**一次 panic。RTC 三件套被机制排除（坏的是 EC 的 I/O `0x62/0x66`，与 RTC 的 `0x70/0x71` **不相交**）。
 > **③ 再深一档（S4）更远**：30 条准入条件里**唯一真·结构性缺口 = `#28` RTC 断电期保持**（固件职责）；5 次武装休眠**全在恢复侧失败**、3 次 POST 005；AOAC 家族 **0 先例**（全球跑通的 4 台**全为 Legacy S3 世代**）。
