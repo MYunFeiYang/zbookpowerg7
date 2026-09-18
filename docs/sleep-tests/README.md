@@ -1,6 +1,17 @@
 # 睡眠档位调优测试记录
 
-> ✅✅ **2026-09-18 11:3x【§七十 · 最新】—— 用户答「关」⇒ A-1 续：关闭 `/Volumes/Common` 的索引（**工作区所在盘**，用户明确要求）**
+> 🧪🧪 **2026-09-18 16:2x【§七十一 · 最新】—— 用户「回到主线：优化睡眠功耗」⇒ 复核后定调：配置层已无牌，缺的是"真值" ⇒ 交付测量工具 + 三臂协议（**零配置改动**）**
+> **① 配置层复核（16:1x 实读）**：`pmset -g custom` 里 `powernap/tcpkeepalive/womp/proximitywake/standby/hibernatemode/networkoversleep` **全部已在省电侧**，`lowpowermode` 电池=1；⇒ **没有"把某开关改一下就能省电"的项了**。
+> **② 唤醒源普查（全量日志 / 17 段睡眠）**：10 次唤醒事件**全部用户触发**（`PWRB/UserActivity` ×5、`LPCB XDCI/Lid Open` ×2、`PWRB/Lid Open` ×1、`XDCI/UserActivity` ×1），**非用户唤醒 = 0**；10 段里 9 段 DarkWake = 0，唯一 1 段（`09-17 11:29:41`，`DarkWake from Normal Sleep` + `WakeTime 159.3 s`）落在**当天 S3 实测窗口**内 ⇒ 与既有 S3 结论自洽，**非新问题**。
+> **③ 一个只写观测不写成因的发现**：昨夜 11.0 h 连睡的 `Wake Requests` 里被选中项是 `*powerd request=CSPNEvaluation wakeAt=23:52:20`，但**日志里 23:52 没有任何 DarkWake**；今天 `pmset -g sched` 也挂着 3 条 `user-invisible` 计划唤醒 ⇒ 观测层面 **RTC 计划唤醒在本机没真把机器叫起来**（对功耗是好事）。
+> **④ 为什么还要测**：现有唯一本机实测 round3（50 min）有两个缺陷 —— **(a) 样本短**：前 ~10 min 是维护期，若按"10 min@20 W + 40 min@4 W"算出的平均正是 7.2 W，**与实测逐位吻合** ⇒ 11.2 %/h 很可能是瞬态均值，**稳态可能只有 ~4 W(≈5–6 %/h)**；**(b) 两口径矛盾**：同一次睡眠 `pmset Charge: 100→95%`(6 %/h) vs `ioreg mAh 520/5536`(11.2 %/h)，**差近 2×** ⇒ 真值应表述为 **6–11 %/h（≈4–7.5 W）区间**。
+> **⑤ 交付**：`tools/sleep-power-measure.sh`（`status` / `arm <标签>` / `report [--save]`）—— 自动出「时长 / 睡眠形态 / 唤醒原因 / DarkWake 数 / WakeTime / ΔmAh→%/h→W」，**并列 ioreg 与 pmset 双口径**，带 AC 守卫（AC 段直接标"数字无物理意义"）。数据落 `docs/sleep-tests/power-samples/arms.jsonl`。
+> **⑥ 三臂协议**：**A（必做）** 拔 AC + ≥4 h 裸机 + WiFi/BT 开 → 分离瞬态/稳态（判据：稳态 ≤6 %/h ⇒ 收手）；**B（可选·仅诊断）** 同 A 但关 WiFi/BT → 给已否决的大杠杆标价，**不作为策略采纳**；**C（可选）** 接 HDMI 外屏 + USB 鼠标睡 → 定价 desk 场景外设杠杆。⚠️ **不用 `pmset schedule wake`**（RTC 写 → HP POST 005 风险）。
+> **⑦ 杠杆账（收口）**：S4 已判死｜Wi-Fi/BT 已否决｜外设未测｜ASPM 已撞墙｜配置层无牌｜唤醒源已归零 ⇒ **可改项用尽，剩下只有"量准"**。完整记录 → `docs/sleep-tests/round4-power-measurement.md`。
+>
+> ---
+>
+> ✅✅ **2026-09-18 11:3x【§七十】—— 用户答「关」⇒ A-1 续：关闭 `/Volumes/Common` 的索引（**工作区所在盘**，用户明确要求）**
 > **已执行**：`mdutil -i off /Volumes/Common` ⇒ `.Spotlight-V100` **298 M → 512 K**、`mdutil -s` = disabled、卷可用空间 **112 → 113 Gi**、`mdfind -onlyin /Volumes/Common` **已搜不到**（直接路径 / git / IDE 搜索不受影响）。卷 = `disk0s5` ExFAT / UUID `C132AD3D-…`。
 > **⚠️ 本次刻意不做「卸载 → 重挂」验证**：`/Volumes/Common` 就是**工作区所在盘**，而本轮已实测 **`diskutil mount` 需 root、裸跑会失败** ⇒ 一旦卸载后挂不回来，工作区当场不可用 ⇒ **风险不对等，主动降级为"只读核对 + 重启后复核"**（已列入待办）。
 > **★ 机制查证，并更正我上一轮的错误推断**：禁用状态**不在**被改卷的 `VolumeConfiguration.plist` 里（两个卷关闭后 `Options` 仍 `Default`、`Stores` 记录仍在，只改 mtime 与 `ConfigurationModificationVersion`）。我上轮据此推断"记在 `/System/Volumes/Data/.Spotlight-V100/`（按卷 UUID）"，随之实测 **grep 两个 UUID 均 NO_MATCH**，而 `/var/db/Spotlight`、`/var/db/Spotlight-V100` **即使 root 也 `Permission denied`**（系统保护）⇒ **存储位置未查明，就写"未查明"**。判据只写实证两条：**ESP 经"卸载→重挂"仍 disabled** ＋ **长期 disabled 的 NTFS 卷根本没有 `.Spotlight-V100` 目录** ⇒ **跨挂载持久、不依赖卷上文件**。
