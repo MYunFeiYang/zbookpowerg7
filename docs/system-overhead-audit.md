@@ -361,3 +361,55 @@ ESP（`disk0s1`）那次做了，因为**卸载它不影响任何在用数据**�
 ---
 
 *本轮**改动共两处**（均为系统级、一条命令可逆）：`mdutil -i off /Volumes/ESP`、`mdutil -i off /Volumes/Common`。**EFI / pmset / config 零改动**，其余均为读取与落盘。回滚：`sudo mdutil -i on <卷>`。*
+
+---
+
+## §10（09-18 11:4x）CleanMyMac 5 卸载残留清点（B 组前置调查）
+
+**触发**：B 组"常驻软件重叠"（远程控制＝ToDesk+向日葵；清理工具＝腾讯柠檬+CleanMyMac5）待办。
+查 CMM5 现状时发现：**应用本体已不在 `/Applications`**（`ls /Applications` 44 项全列，无任何 clean/macpaw 条目）、**废纸篓也无** ⇒ 已被**拖拽删除，未走官方卸载器**。
+
+### 10.1 残留清单（全部实测，按权限分层）
+
+| # | 位置 | 体积 | 属主 | 性质 |
+|---|---|---|---|---|
+| 1 | `/Library/PrivilegedHelperTools/com.macpaw.CleanMyMac5.Agent` | **2.0 M** | `root:wheel` `r-xr--r--` | **root 特权助手二进制**（2026-05-08） |
+| 2 | `/Library/LaunchDaemons/com.macpaw.CleanMyMac5.Agent.plist` | 572 B | `root:wheel` | launchd **系统域已注册**（`launchctl print system/…` 可打印，`state = not running`） |
+| 3 | **BTM 登录项** `16.com.macpaw.CleanMyMac5.Agent` | — | 系统数据库 | `sfltool dumpbtm` 条目 #14，`Type: legacy daemon`，**`Disposition: [enabled, allowed, notified]`** |
+| 4 | `~/Library/Group Containers/S8EX82NJP6.com.macpaw.CleanMyMac5` | **9.3 M** | <REDACTED-USER> | 最大头（内部 `Library/` 独占 9.3 M） |
+| 5 | `~/Library/Group Containers/S8EX82NJP6.com.macpaw.CleanMyMac4` | 4 K | <REDACTED-USER> | **跨代残留**（CleanMyMac **4** 时代遗留） |
+| 6 | `~/Library/HTTPStorages/com.macpaw.CleanMyMac5{,.HealthMonitor,.Menu}` + 3×`.binarycookies` | ≈3.0 M | <REDACTED-USER> | 6 项 |
+| 7 | `~/Library/Preferences/com.macpaw.CleanMyMac5.Menu.plist` | 4 K | <REDACTED-USER> | 菜单栏组件偏好 |
+| 8 | `~/Library/Application Support/CleanMyMac_5_HealthMonitor` | 0 B | <REDACTED-USER> | 空目录 |
+| 9 | `~/Library/Application Scripts/{S8EX82NJP6.…CleanMyMac4, S8EX82NJP6.…CleanMyMac5, com.macpaw.CleanMyMac5.AppIntentsExtension}` | 0 B ×3 | <REDACTED-USER> | 沙箱脚本目录 |
+| 10 | `~/Library/Application Support/CrashReporter/CleanMyMac_5_Menu_416EF620-….plist` | 4 K | <REDACTED-USER> | 崩溃报告 |
+
+**合计 ≈ 14 MB / 12 处。**
+
+### 10.2 已核对干净的位置（避免误报"到处是残留"）
+
+`/Applications`（44 项全列无匹配）｜`~/.Trash`｜`~/Library/{Containers, Caches, Logs, LaunchAgents}`｜`/Library/{LaunchAgents, Application Support, Preferences, Caches, Logs, Receipts}`｜`/private/var/db/receipts`（无 ⇒ **非 pkg 安装**）｜用户域 `launchctl list`（无 macpaw）⇒ **确认不是 pkg 分发、也不是全盘开花**。
+
+### 10.3 影响判定（按"性能 vs 攻击面"分开说，不混为一谈）
+
+- ✅ **不耗 CPU、不占内存**（实测）：`launchctl print system/com.macpaw.CleanMyMac5.Agent` ⇒ `active count = 0`、`state = not running`；用户域无服务。
+  理由：plist 只声明 `MachServices`（**按需 XPC 启动**，无 `RunAtLoad`/`KeepAlive`/`StartInterval`），app 已删 ⇒ 无人请求 ⇒ 永不拉起。**所以这 14 MB 不是"性能问题"。**
+- ⚠️ **真正的代价有两条**：
+  1. **一个 root 特权二进制（2 MB）长期留在盘上**。任何本地进程仍可尝试连它的 Mach 端口，属**攻击面**而非开销；
+  2. **BTM 里一条 `enabled` 的 legacy daemon 登录项**留在登录项数据库，且日后若重装 CMM5 会**被复用**（而非干净重装）。
+
+### 10.4 清理方案（**未执行，待用户确认**）
+
+**系统级 3 处（需 root，`osascript … with administrator privileges`）**：
+```bash
+launchctl bootout system/com.macpaw.CleanMyMac5.Agent     # 先从 launchd 卸服务（顺序重要）
+rm /Library/LaunchDaemons/com.macpaw.CleanMyMac5.Agent.plist
+rm /Library/PrivilegedHelperTools/com.macpaw.CleanMyMac5.Agent
+```
+⚠️ **BTM 条目（#3）的两种处理**：
+- **推荐**：删掉 plist/二进制后**重启**，看 `sfltool dumpbtm` 里 #14 是否自动消失（legacy daemon 条目随 plist 消失而失效）。**代价 0**。
+- **兜底**：`sfltool resetbtm` —— ⚠️ **代价大**：会**重置整个登录项数据库**，连带清掉 Clash Verge / EcoPaste / Edge·Google 更新器 / OCLP-Mod 等**所有第三方登录项**，需逐个重建。**只在前者无效时用，且须先 `dumpbtm` 存一份现状备份。**
+
+**用户级 9 处（无需 root，走废纸篓 `trash`，不用 `rm`）**：清单见 10.1 的 #4~#10。
+⚠️ `~/Library/Group Containers/S8EX82NJP6.com.macpaw.CleanMyMac5`（9.3 M）删除前确认**没有别的 app 依赖该 group**（同 teamID `S8EX82NJP6` ⇒ 仅 MacPaw 自家产品，本机仅 CMM4/5）⇒ 安全。
+
