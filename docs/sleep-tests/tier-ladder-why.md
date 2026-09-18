@@ -313,3 +313,72 @@ Get-WmiObject -Namespace root/HP/InstrumentedBIOS -Class HP_BIOSSetting |
 | 全表搜不到任何 sleep/standby 相关项 | ⇒ **固件确实不暴露该开关 ⇒ ③ 彻底封板**（证据级别从"没试过"升到"**厂商自己的工具里也没有**"） |
 
 > **为什么这条要排在 A.5 的 ② 之前**：② 必须真的睡一次（可能醒不回来、要强关），而 ③a 是**纯查询**。⇒ **② 降级为"仅当 ③a 发现该项时才做"**。
+
+---
+
+## 附录 B · 「不能直接读固件？」—— 离线拆官方 BIOS 包实测（2026-09-18 17:1x）
+
+> 起因：用户问「**不能直接读固件**」。此题必须拆成两种"读"：**① 调用固件运行时接口**（macOS 做不到）／**② 离线拆固件包**（**不需要任何 OS**）。
+
+### B.1 ① 运行时读 —— macOS 侧做不到（三条一手证据）
+
+| # | 检查 | 结果 |
+|---|---|---|
+| 1 | `nvram -p` 全量 | **0 条** `Setup`/`HII`/`BIOS` 类变量 ⇒ 固件没把它暴露给用户态 NVRAM 白名单 |
+| 2 | `DSDT.dsl` 的 `_WDG`（WMI GUID 列表） | 命中 **3 处**，含标准 ACPI-WMI 接口 GUID ⇒ HP 的 BIOS 设置走 **ACPI-WMI（PNP0C14）** 机制 |
+| 3 | 机制 | ACPI-WMI 的消费方是 **Windows 的 `AcpiWmi.sys` + HP WMI provider**；macOS 无此驱动栈，**OpenCore 也不能执行 ACPI 方法**（它只做表注入/补丁） |
+
+⇒ **"会调 ACPI-WMI 的 OS"是必要条件**：Windows 有、Linux 有（`acpi_call`）、**macOS 没有**。这条路上没有绕法。
+
+### B.2 ② 离线读 —— **已跑通**（不需要 Windows、不需要 UEFI Shell、零硬件风险）
+
+| 步 | 动作 | 结果 |
+|---|---|---|
+| 1 | 定位 SoftPaq：HP 安全公告 **HPSBHF04043** 公布 `HP ZBook Power G7 BIOS` = **SP154814** | ✅ 已下载 **22,581,536 B**（`ftp.hp.com`，HTTP 200） |
+| 2 | PE 结构探测 | 尾部 overlay **22.27 MB**，内含真 **CAB**（`MSCF`@216064 是巧合；**真 CAB @331,559**，v1.3 / 1 folder / **17 files**） |
+| 3 | `bsdtar -xf`（macOS 自带，**不需要 7z**） | ✅ 解出 17 个文件 |
+| 4 | 固件镜像 | **`T75_01180100.bin` 32,315,326 B** ⇒ 内含 **`_FVH` × 34**（34 个 UEFI 固件卷） |
+| 5 | 版本核对 | 包内 `History.txt` = **01.18.01**（2024-09-09）；⚠️ **本机 01.24.02 ⇒ 落后 6 个修订，结论须按此打折** |
+
+同包副产品（**均未执行**）：`BCUsignature32/64.dll`（**HP BCU 的签名库**）、`HpqPswd.exe`、`HpFirmwareUpdRec64.exe`、`History.txt`（含 EC `34.2F.00`／GOP `9.0.1107`／ME `14.1.74.2355`／TB `62.0.1.2.1`／USB-C PD `CCG5 0.7.0` 各子固件版本）。
+
+### B.3 ★ 关键发现：**固件里存在 Modern Standby 配置结构**
+
+```
+HpCommonSetup                        ← HP 的 Setup 配置变量名
+├─ HpModernStandbyConfigurations     ← ★ 目标：Modern Standby 配置段
+├─ PlatformMiscDeviceConfigurations
+├─ SystemAudioDeviceConfigFlags
+├─ UsbPortsFactoryConfigFlags
+├─ CommonBuiltinDeviceConfigFlags
+├─ WirelessDevFactoryConfigFlags
+├─ MiscMobileKBCBuiltInConfig
+├─ MemoryConfig
+└─ FactoryConfig / FactoryConfigFlags
+```
+另命中：`S3MemoryVariable`、`FspS3Notify`、`$DeviceIdleEnabled`、`$DefaultIdleState`、`DefaultIdleTimeout`、`DeviceIdleIgnoreWakeEnable`、`PCH_SLP_S0IX#`。
+
+⇒ **两条硬结论**：
+1. **固件里确实有 Modern Standby 配置段**（`HpModernStandbyConfigurations`），且是 `HpCommonSetup` 这个 Setup 变量的**子结构** ⇒ 正是"隐藏设置项"的典型形态。
+2. **固件里有 S3 的代码/数据路径**（`FspS3Notify`、`S3MemoryVariable`）⇒ 与 §2 的 L1（`SS3=One`）互印，**"固件没实现 S3"彻底不成立**。
+
+### B.4 ⚠️ 方法论自曝（不写这条就会误判）
+
+本次做字符串扫描时，**正向对照全部 0 命中** —— 连 BIOS 实拍图里确凿存在的 `Runtime Power Management`、`Extended Idle Power States` 都搜不到。真因：**32 MB 镜像里绝大部分模块是压缩的**（裸扫只覆盖未压缩区，共提取 1,472 条 UTF-16 串 + 101,387 条 ASCII 串）。
+
+⇒ **铁律复用：本次只把"搜到了"当证据，绝不把"没搜到"当"不存在"。** 要拿**完整**清单必须先解那 34 个 FV（`uefi_firmware` 试解返回 `unknown` —— HP 是自研多组件容器，需 UEFITool 类工具或自写 FV 解析）。
+
+### B.5 这一步改了什么、没改什么
+
+| | 变化 |
+|---|---|
+| **撤回** | 附录 A 里"③ 固件隐藏层 = **无源之水**"、"HP 根本没做这个开关" —— **错**，固件里有 `HpModernStandbyConfigurations` |
+| **升级** | ③ 从"零先例的空想"升为"**有实锤结构 + 有已知访问路径**（`HpCommonSetup` 变量 / HP WMI / BCU）" |
+| **不变** | **"不赌"的结论不变** —— 仍不知道该项是否**可写**、写完是否真能关 AOAC、关了是否真能救回**已实测坏掉**的 S3。本轮只是把"未知"缩小了一圈 |
+
+### B.6 下一步（二选一，均零硬件风险）
+
+- **B-α（推荐 · 最省事）**：进 Windows 跑附录 A 的 `Get-WmiObject … HP_BIOSSetting`。表里若出现 `HpModernStandbyConfigurations` 一类项 ⇒ **直接锁定，且可按设置名写入**（可回滚、无偏移写错风险）。
+- **B-β（完全不碰 Windows）**：解那 34 个 FV（需引入 UEFITool / 自写 FV 解析）→ 提 `HpCommonSetup` 模块的 **IFR** → 得到含隐藏项的**完整清单 + 每项在变量里的偏移**。成本：需工具链；且应换成本机对应的 **01.24.02** 包（SP154814 只有 01.18.01）。
+
+> 本轮**零配置 / 零 EFI 改动**。固件包与解包产物仅落在 `/tmp/biosprobe/`（临时目录，未入库、未进工作区）。**其中所有 .exe 均已明确不执行。**

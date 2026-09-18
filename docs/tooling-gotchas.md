@@ -28,10 +28,21 @@
 ## grep / shell
 | 坑 | 正确做法 |
 |---|---|
-| `grep "A\|B"` 静默 0 命中 | **BSD grep 不支持 `\s` / `\|` / `\b`** ⇒ 一律 `grep -E`。"0 命中" ≠ "不存在"（本机已栽两次） |
+| `grep "A\|B"` 静默 0 命中 | **BSD grep 不支持 `\s` / `\|` / `\b`** ⇒ 一律 `grep -E`。"0 命中" ≠ "不存在"（本机已栽**三次**，2026-09-18 又栽一次） |
 | `iasl -d` 覆盖同名 `.dsl` | 反编译前先备份 / 换目录 |
 | zsh glob 无匹配会**直接中断**整条命令 | 加 `2>/dev/null` 或 `|| true`，或用 `(N)` 修饰符 |
 | `find ~/Library` 被沙箱 SIGTERM | 缩小路径、加 `-maxdepth`，或分段跑 |
+
+## 固件包 / 二进制字符串检索（2026-09-18 新增，离线拆 HP BIOS 包时沉淀）
+| 坑 | 正确做法 |
+|---|---|
+| 拿 `zipfile` 开 HP 的 BIOS SoftPaq（`sp*.exe`）→ `File is not a zip file` | 它是 **PE32 + 尾部 overlay 内嵌 MSCF CAB**。**不要用 exe 头判断格式**，直接找 `MSCF` |
+| 找到的第一个 `MSCF` 就当 CAB 头 → 字段全乱（versionMinor=110 / cFolders=101） | **必须校验头部字段**：`versionMajor ∈ {1,2,3}` 且 `1 ≤ cFolders ≤ 32` 且 `cbCabinet < 文件长`。本机真 CAB 在 **第二个** `MSCF`（@331,559 vs 巧合的 @216,064） |
+| 以为要装 `7z` / `cabextract` | **macOS 自带 `bsdtar`（libarchive）就能解 CAB**：`bsdtar -xf <cab>`。前提是偏移正确 |
+| 用 ASCII 字节串搜"明明存在"的字符串 → 0 命中 | UEFI / Setup 的名字多为 **UCS-2（UTF-16LE）**。用 `re.escape("名".encode("utf-16-le"))` 重搜。⚠️ macOS `strings` **没有 `-e`**（不支持 UTF-16），要自己写扫描 |
+| 裸扫固件镜像找设置项名 → 大批 0 命中 | 镜像**大部分模块是压缩的**（裸扫只覆盖未压缩区）。**必须先跑正向对照**（搜一个 UI 上确凿有的项名）；**对照不中 ⇒ 只能把"搜到"当证据，绝不能把"没搜到"当"不存在"** |
+| `uefi_firmware`（pip）解 HP BIOS 镜像 → `type() -> unknown` | HP 是**自研多组件容器**（EC/GOP/ME/TB/PD 各一份），非标准 FV 顶层。需先手工定位 `_FVH` 再逐个解（本机镜像里有 **34** 个） |
+| 用 `curl -I` 猜一个文件在不在 | 看 `Content-Length`；HP 的 404 会返回 `Content-Length: 10`（很小）⇒ 可据此判存在性 |
 
 ## Windows 侧（跨分区取证）
 | 坑 | 正确做法 |

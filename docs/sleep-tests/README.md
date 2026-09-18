@@ -1,6 +1,15 @@
 # 睡眠档位调优测试记录
 
-> 🧭🧭 **2026-09-18 17:0x【§七十四 · 最新】—— 「关 AOAC」实测判定：`powercfg /a` 落点＝中间态（S3 **声明存在**、被策略压住）＋ ★ 找到 HP 官方**零风险只读**入口**
+> 🧲🧲 **2026-09-18 17:2x【§七十五 · 最新】—— 用户问「不能直接读固件」⇒ 分两种"读"：① 运行时读（macOS **做不到**）／② **离线拆包（已跑通）**。结论**推翻了「HP 没做这个开关」**
+> **① 运行时读不到（三条一手证据）**：`nvram -p` **0 条** `Setup`/`HII` 类变量；`DSDT.dsl` 命中 **3 处 `_WDG`**（含标准 ACPI-WMI 接口 GUID）⇒ HP 设置走 **ACPI-WMI(PNP0C14)**，消费方是 **Windows 的 `AcpiWmi.sys` + HP WMI provider**；macOS 无此栈，**OpenCore 也不能执行 ACPI 方法** ⇒ 这条路上没有绕法。
+> **② 离线读已跑通（不需要 Windows / 不需要 UEFI Shell / 零硬件风险）**：HP 安全公告 HPSBHF04043 公布 `ZBook Power G7 BIOS` = **SP154814** → 下载 22.58 MB → PE overlay 内**真 CAB @331,559**（v1.3/17 files；`MSCF`@216064 是巧合）→ `bsdtar -xf`（**macOS 自带，不需要 7z**）→ **`T75_01180100.bin` 32,315,326 B**，内含 **`_FVH` × 34**（34 个固件卷）。⚠️ 包内 `History.txt`= **01.18.01**，本机 **01.24.02 ⇒ 落后 6 个修订**，结论按此打折。
+> **③ ★ 关键发现（推翻了上一轮的封板理由）**：固件里**确实有 Modern Standby 配置段** —— **`HpModernStandbyConfigurations`**，且它是 **`HpCommonSetup`** 这个 Setup 变量的**子结构**（同级还有 `PlatformMiscDeviceConfigurations`/`SystemAudioDeviceConfigFlags`/`UsbPortsFactoryConfigFlags` 等）；另有 **`S3MemoryVariable`**、**`FspS3Notify`** ⇒ 固件里有 **S3 代码路径**，与 §2 的 L1（`SS3=One`）互印。⇒ **附录 A 里"③ 固件隐藏层＝无源之水""HP 根本没做这个开关"退回**；③ 升级为"**有实锤结构 + 有已知访问路径**"。
+> **④ ⚠️ 方法论自曝**：本次裸扫字符串时**正向对照全部 0 命中**（连实拍图里确有的 `Runtime Power Management` 都搜不到）—— 真因是 **32 MB 镜像绝大部分模块被压缩** ⇒ **本次只把"搜到了"当证据，绝不把"没搜到"当"不存在"**。要拿完整清单必须先解那 34 个 FV（`uefi_firmware` 试解返回 `unknown`，HP 是自研多组件容器）。
+> **⑤ 但"不赌"的结论不变**：仍不知道该项是否**可写**、写完是否真能关 AOAC、关了是否真能救回**已实测坏掉**的 S3。本轮只是把"未知"缩小了一圈。
+> **下一步（二选一，均零风险）**：**B-α** 进 Windows 跑 §七十四 那条 WMI 查询（若表里出现该项 ⇒ 直接锁定，且可按名写入）；**B-β** 解 34 个 FV 提 `HpCommonSetup` 的 **IFR**（完全不碰 Windows，需工具链）。
+> 完整 → `docs/sleep-tests/tier-ladder-why.md` **附录 B**
+>
+> 🧭🧭 **2026-09-18 17:0x【§七十四】—— 「关 AOAC」实测判定：`powercfg /a` 落点＝中间态（S3 **声明存在**、被策略压住）＋ ★ 找到 HP 官方**零风险只读**入口**
 > **① BIOS 实拍坐实菜单层无解**：4 项（`Runtime Power Management`/`Extended Idle Power States`/`Power Control`/`Battery Health Manager`）——**无任何 `Modern Standby`/`S0ix`/`Sleep State`** ⇒ §七十三 ② 由"官网文档表"升级为**实拍**。
 > **② `powercfg /a` 的关键＝同一份输出的内部对照**：S1/S2 都带「**系统固件不支持此待机状态**」，**唯独 S3 没有** ⇒ S3 不是"固件没有"，而是"**固件声明了、被 AOAC 策略压住**"。
 > **③ ⇒ 修正 §七十三 两条推论**：④「两条**独立**路径、同一结果」**错** —— 撤 `LPS0`(macOS) 与 `PlatformAoAcOverride=0`(Win) 属**同一层**（OS 声明层），本来就该同结果，**推不出固件层结论**；⑥ 的二分判据（"没 S3 ⇒ 封板"）**不完整**，实测落在**中间态**。⇒ **"固件没有 S3"这个假设不成立**（第四重互印：FADT bit21 ＋ DSDT `SS3=One` ＋ macOS 撤 `LPS0` 后确实转 S3 ＋ 本次 `powercfg`）。
