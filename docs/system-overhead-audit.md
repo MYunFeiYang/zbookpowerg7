@@ -518,3 +518,105 @@ HAL 插件是**加载进 `coreaudiod` 进程内**运行的 ⇒ 其开销**全部
    - ⚪ 双浏览器并开（Edge＋Chrome）→ 留一个
    - ❌ 深信服：只能知情，不可动
    - ❌ WindowServer / kernel_task：必需
+
+---
+
+## §12 已卸载软件残留清理（2026-09-18 14:45~14:52）
+
+**用户指令**：「安装的软件那就别动了，卸载残留可以处理一下」⇒ 范围 = **app 本体已删除、只留下痕迹的软件**；
+在装软件（深信服/向日葵/ToDesk/搜狗/腾讯柠檬等）**一律不动**。
+
+### 12.1 扫描方法（两级判据 + 一次严重误报）
+
+| 判据 | 做法 | 结果 |
+|---|---|---|
+| ① launchd 孤儿 | plist 里 `Program`/`ProgramArguments[0]` 路径是否存在 | 37 条**全部存在**，0 孤儿 |
+| ② 关联 app 是否存在 | plist 里的 `/Applications/*.app` 引用是否还在 | 0 命中 |
+| ③ 库目录孤儿 | 库目录条目名 ↔ 存活集比对 | ⚠️ **第一版严重误报** |
+| ④ 特权助手反查 | `/Library/PrivilegedHelperTools/*` ↔ app | **2 个孤儿** |
+
+⚠️ **判据 ③ 的第一版几乎闯祸**：存活集只扫了 `/Applications`，结果把
+**搜狗输入法（`Sogou` 948 MB）**、**深信服 `aTrust`（365 MB）** 判成"孤儿"——
+它们装在 **`/Library/Input Methods/SogouInput.app`** 等**非 /Applications 位置**。
+⇒ **教训：判"某软件已卸载"必须先补全 app 的全部安装位置**，至少包括：
+`/Applications`、`/System/Applications{,/Utilities}`、`~/Applications`、
+**`/Library/Input Methods`（输入法！）**、`/Library/PreferencePanes`、`/Library/QuickLook`、
+`/Library/Internet Plug-Ins`、`/Library/Screen Savers`、`/Library/Spotlight`、`/Library/Services`、
+`/Library/Extensions`、`/Library/Audio/Plug-Ins/{HAL,Components}`。
+**再加一层交叉验证：当前活跃进程名**（最硬的存活证据）。
+修正后：候选从 **213 条 / 1753 MB → 146 条 / 405 MB**。
+
+### 12.2 CleanMyMac5 —— 已清理完毕
+
+**系统级（root，`rm` 不可逆 ⇒ 先备份到工作区）**
+
+| 对象 | 体积 | 处置 |
+|---|---|---|
+| `/Library/LaunchDaemons/com.macpaw.CleanMyMac5.Agent.plist` | 572 B | `launchctl bootout` → 删除 |
+| `/Library/PrivilegedHelperTools/com.macpaw.CleanMyMac5.Agent` | 2.0 MB | 删除 |
+
+备份：`docs/backups/cleanmymac5-residue-2026-09-18/`（含 plist + 二进制，
+二进制 sha256 `e783df0a5af5cbdf9cb67afcfbb701358ea41050cc0c5be2251d66e8c5a6e12a`）⇒ **可回滚**。
+
+**用户级（14 项 ≈ 12.6 MB）**：Group Containers（`CleanMyMac5` 9.3 M ＋ **跨代 `CleanMyMac4`**）、
+HTTPStorages ×7（`…CleanMyMac5`／`.HealthMonitor`／`.Menu` ＋ 各 `…binarycookies`）、
+Application Support（`CleanMyMac_5_HealthMonitor`）、Application Scripts ×3、
+Preferences（`…CleanMyMac5.Menu.plist`）、CrashReporter（`CleanMyMac_5_Menu_*.plist`）。
+
+**终检**：21 个目标目录（用户级 13 ＋ 系统级 8）**全部 0 命中** ✅
+
+**⚠️ 未闭项：BTM 登录项**
+
+删除文件后 `sfltool dumpbtm` 中 **`16.com.macpaw.CleanMyMac5.Agent` 仍在**，
+其 `URL: file:///Library/LaunchDaemons/com.macpaw.CleanMyMac5.Agent.plist`、
+`Executable Path: /Library/PrivilegedHelperTools/com.macpaw.CleanMyMac5.Agent` —— **两者均已不存在**。
+⇒ 按机制（legacy daemon 条目随 plist 消失而失效）应在**下次重启**时自行清除。
+**待验证**；若重启后仍在，再考虑 `sfltool resetbtm`（代价大，会清掉所有第三方登录项，不首选）。
+
+### 12.3 ★★ 过程中的重大发现：这台机器上「走废纸篓」不可靠
+
+按"personal files 走废纸篓而非 `rm`"的原则，用户级 14 项是先 `mv` 进
+`~/.Trash/CleanMyMac5-residue-20260918/` 的（当时 `du` 显示 12 M，命令全部返回成功）。
+**数分钟后复查：`~/.Trash` 整个为空（mtime = 14:48）** —— 那 12 项**已被清空**。
+
+**元凶（高度怀疑）**：常驻的**腾讯柠檬（`LemonDaemon` / `LemonMonitor`，进程表实读在跑）**、
+以及 `Sensei` —— 这类清理/优化工具会定期或触发式**清空废纸篓**。
+
+⇒ **结论：本机「走废纸篓 = 可恢复」这个前提不成立。**
+⇒ **后续在本机做任何删除，正确顺序改为：① 先 `cp` 到工作区 `docs/backups/` 存证 →
+② 再执行删除**（不要依赖废纸篓的暂存期）。
+
+### 12.4 剩余候选（**未执行**，待用户逐项确认）
+
+**A. 高置信「配置残留」（app 已不在，且属配置而非用户数据）**
+
+| 位置 | 体积 | 归属 |
+|---|---|---|
+| `~/Library/Group Containers/4C6364ACXT.com.parallels.toolbox` | 15.1 M | Parallels Toolbox |
+| `~/Library/Preferences/Parallels` | 39 K | 同上 |
+| `~/Library/HTTPStorages/io.tailscale.ipn.macsys` 等 | 338 K | Tailscale |
+| `~/Library/Group Containers/group.com.nektony.MacCleaner-PRO-SIII` | 1 K | **MacCleaner PRO**（另一个清理工具） |
+| `~/Library/HTTPStorages/org.altervista.mackie100projects.OpenCore-Configurator` + plist | 103 K | OpenCore Configurator |
+| `~/Library/HTTPStorages/fr.madrau.switchresx.app` | 52 K | SwitchResX |
+| `~/Library/Group Containers/D43XN356JM.com.charliemonroe.Permute-{3,setapp}` | 2 K | Permute |
+| `~/Library/HTTPStorages/{LaunchNext,MiniLauncher,msedge_crashpad_handler}` | ~350 K | 启动器类 |
+| `~/Library/Group Containers/88L2Q4487U.WeWorkMac` | 1.3 M | 企业微信旧版 |
+| `~/Library/HTTPStorages/com.anthropic.claudefordesktop` | 52 K | Claude Desktop |
+| `~/Library/Saved Application State/net.java.openjdk.java.savedState` | 17 K | Java 应用 |
+| `~/Library/Application Support/{Ollama, GitKrakenCLI, CodeBuddyExtension}` | ~1 M | ⚠️ 可能是 CLI 工具，**须先确认** |
+
+**B. ⚠️ 疑似「用户数据」—— 删除会丢内容，必须单独确认**
+
+| 位置 | 体积 | 风险 |
+|---|---|---|
+| `~/Library/Containers/com.hihonor.hihonornote`（＋ `.notifextension`） | **351 M** | **荣耀笔记：可能是笔记正文** |
+| `~/Library/Containers/com.bot.neotix.doubao` | 24.5 M | 豆包：可能是对话记录 |
+| `~/Library/Containers/is.follow` | 22.3 M | Follow RSS：订阅源／已读状态 |
+
+**C. 系统级需谨慎的一项**
+
+| 位置 | 体积 | 说明 |
+|---|---|---|
+| `/Library/PrivilegedHelperTools/com.dortania.opencore-legacy-patcher.privileged-helper` | 0.13 M | **原版 OCLP 的特权助手**；`/Applications` 只有 `OCLP-Mod` ⇒ 原版已卸。⚠️ 但 OCLP 与启动安全相关，**建议单独确认后再动** |
+
+> 合计可清理量级：A 档 ≈ 17 MB（安全）；B 档 ≈ 398 MB（**含用户数据，需本人判断**）。
