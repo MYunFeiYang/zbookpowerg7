@@ -620,3 +620,90 @@ Preferences（`…CleanMyMac5.Menu.plist`）、CrashReporter（`CleanMyMac_5_Men
 | `/Library/PrivilegedHelperTools/com.dortania.opencore-legacy-patcher.privileged-helper` | 0.13 M | **原版 OCLP 的特权助手**；`/Applications` 只有 `OCLP-Mod` ⇒ 原版已卸。⚠️ 但 OCLP 与启动安全相关，**建议单独确认后再动** |
 
 > 合计可清理量级：A 档 ≈ 17 MB（安全）；B 档 ≈ 398 MB（**含用户数据，需本人判断**）。
+
+---
+
+## §13 卸载残留清理 · A 档执行（2026-09-18 15:0x）
+
+**范围**：用户选「1」= 清 A 档（纯配置残留）。在装软件一律不动。
+
+### 13.1 执行结果：13 项已清，≈15.0 MB
+
+**备份先行**（本机废纸篓不可靠，见 §12.3）：
+`docs/backups/residue-uninstalled-2026-09-18/residue-A-2026-09-18.tar.gz`
+→ 15,668,023 字节 / 79 条目 / sha256 `829248954b53f1125a226e151e6df42801e0428a66117c485a9f59ee24a21d6`
+
+| # | 路径（相对 `~`） | 体积 | 归属 |
+|---|---|---|---|
+| 1 | `Library/Group Containers/4C6364ACXT.com.parallels.toolbox` | 15.1 M | Parallels Toolbox |
+| 2 | `Library/Preferences/Parallels` | 39 K | Parallels |
+| 3 | `Library/HTTPStorages/io.tailscale.ipn.macsys` | 338 K | Tailscale |
+| 4 | `Library/Group Containers/group.com.nektony.MacCleaner-PRO-SIII` | 1 K | MacCleaner PRO |
+| 5 | `Library/HTTPStorages/org.altervista…OpenCore-Configurator` | 88 K | OpenCore Configurator |
+| 6 | `Library/Preferences/org.altervista…OpenCore-Configurator.plist` | 15 K | 同上 |
+| 7 | `Library/HTTPStorages/fr.madrau.switchresx.app` | 52 K | SwitchResX |
+| 8 | `Library/Group Containers/D43XN356JM…Permute-3` | 1 K | Permute |
+| 9 | `Library/Group Containers/D43XN356JM…Permute-setapp` | 1 K | 同上 |
+| 10 | `Library/HTTPStorages/com.anthropic.claudefordesktop` | 52 K | Claude Desktop |
+| 11 | `Library/Saved Application State/net.java.openjdk.java.savedState` | 17 K | Java 应用 |
+| 12 | `Library/Application Support/Ollama` | 1.0 M | Ollama 配置（DB/日志） |
+| 13 | `Library/Application Support/GitKrakenCLI` | 6 K | **失败安装的残留** |
+
+**第 13 项定性**：`gk_cli_proxy.log` 显示 2026-09-08 反复
+`download failed … context deadline exceeded` → `core download backed off after 2 consecutive failures`，
+`versions/` 为空目录，`gk_install.lock.pid`(43752) 已死 ⇒ **一次从未成功过的安装留下的残骸**。
+
+**回滚**：`tar -xzf docs/backups/residue-uninstalled-2026-09-18/residue-A-2026-09-18.tar.gz -C ~`
+
+### 13.2 ★★ 两项误判纠正（原清单 15 项 → 实删 13）
+
+| 项 | 原判 | 实测推翻 |
+|---|---|---|
+| `Group Containers/88L2Q4487U.WeWorkMac` | 可清（目录 mtime 403 天前） | **企业微信活动容器** —— bundle id `com.tencent.WeWorkMac` 与 `企业微信.app` 的 `CFBundleIdentifier` 一致；容器内 `TencentMeetingLog/imsdk_C_20260915.xlog` **2026-09-15 16:19 仍在写** |
+| `Application Support/CodeBuddyExtension` | 可清（mtime 08-04） | **WorkBuddy 自身数据目录** —— `Data/Public/auth` mtime = **当天 14:43**；`WorkBuddy.app/…/cli/dist/{codebuddy,codebuddy-headless}.js` 引用它。那个 `auth` 读取被沙箱拒绝，正是保护凭据 |
+
+⚠️ **教训：目录 mtime 不可靠**（WeWorkMac 顶层显示 403 天前，子文件 3 天前刚写）
+⇒ 判"是否活跃"**必须下钻到文件级**。
+
+### 13.3 ★★★ 新发现：隐藏目录里另有 4.7 GB
+
+原 A 档只扫了 `~/Library/*`，**漏掉用户主目录的隐藏目录**。
+
+**确凿残留（app 与 CLI 双双不存在，且 WorkBuddy `app.asar` 0 引用）**
+
+| 目录 | 体积 | 最后活动 | 依据 |
+|---|---|---|---|
+| **`~/.ollama`** | **4466 M** | 2026-03-03 | `ollama` 命令不存在、`/Applications/Ollama.app` 不存在；`models/manifests/…/library/` 仅 `qwen2.5`，**闲置 6.5 个月** |
+| `~/.agent-reach-venv` | 354 M | 2026-03-17 | Python 3.10 venv（home=`/usr/local/opt/python@3.10`），bin 含 `agent-reach`；⚠️ **待确认**（可能是某项目环境，非纯残留） |
+| `~/.costrict` | 131 M | 2026-03-19 | Costrict；`/Applications` 无、`app.asar` 0 引用 |
+| `~/.parallels-desktop-vscode` | 38 M | 2025-06-22 | Parallels Desktop 的 VSCode 扩展数据；app 不在 ⇒ 与刚清的 Parallels Toolbox 同源 |
+| `~/.codebuddycn` | 36 M | 2025-09-16 | CodeBuddy IDE 用户数据（`argv.json` 明写 "pass permanent command line arguments to **CodeBuddy**"）；app 不在、`app.asar` 0 引用 |
+
+**判为活体（一律不动）**
+
+| 目录 | 体积 | 依据 |
+|---|---|---|
+| **`~/.qclaw`** | 40 M | **openclaw 家目录** —— `openclaw.json`（agents/gateway/channels/plugins/models/browser）+ `workspace/{SOUL,USER,MEMORY,IDENTITY,TOOLS}.md`；**= 股票系统的运行数据** |
+| `~/.sclaw` | 26 M | 同 openclaw 结构（`workspace/USER.md` 等） |
+| `~/.ocat` | 93 M | OCAuxiliaryTools 数据（含 `ocvalidate.exe`）；**该 app 在 `/Applications`**（虽 mtime 2025-06） |
+| `~/.nvm` | 2243 M | `~/.zshrc` source `nvm.sh`（文件存在） |
+| `~/.sdkman` | 476 M | `~/.zshrc` / `.bash_profile` source `sdkman-init.sh`（存在） |
+| `~/.local` | 331 M | 含活跃 CLI：`agent` `uv` `uvx` `skillhub` `cursor-agent` `oc-skills` `nano-pdf` `MicFix`… |
+| `~/.m2` | 399 M | Maven 本地仓库（Java 项目依赖，属数据） |
+| `~/.vscode` `.npm` `.cursor` `.qoder` `.trae` | 246/240/122/109/70 M | 对应 app/CLI 均在装 |
+
+### 13.4 ★ 方法论：判「已卸载」的第 3、4 条判据（§12.1 只列了两条）
+
+§12.1 的"全安装位置 + 活跃进程"**仍然不够**，本轮暴露两条新增：
+
+3. **必须下钻到文件级 mtime** —— 目录 mtime 不随子文件更新（WeWorkMac 顶层 403 天 vs 子文件 3 天）。
+4. **CLI 工具的「家目录」不能靠 app/CLI 存在性判** —— `~/.qclaw`（openclaw）、`~/.sclaw` 既无
+   `/Applications` app、`command -v` 也无命中，**几乎被误判为残留**；救回来靠的是**内容语义**
+   （`openclaw.json` + workspace 人格文件）。
+   ⇒ **凡 `~/.<name>` 内含 `*.json` 配置 + `workspace/` `memory/` `agents/` 类目录，一律先当活体处理。**
+
+### 13.5 未执行（待用户决定）
+
+- **`~/.ollama` 4.4 GB** —— 本轮最大单项。模型属"用户数据"（重装需重新 pull），但命令与 app 均已不存在、闲置 6.5 个月。
+- `~/.agent-reach-venv` 354 M、`~/.costrict` 131 M、`~/.parallels-desktop-vscode` 38 M、`~/.codebuddycn` 36 M
+- B 档（疑似用户数据：荣耀笔记 351 M / 豆包 24.5 M / Follow 22.3 M）、C 档（原版 OCLP helper 0.13 M）—— 状态不变
