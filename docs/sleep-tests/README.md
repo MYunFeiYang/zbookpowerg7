@@ -1,6 +1,16 @@
 # 睡眠档位调优测试记录
 
-> 🧪🧪 **2026-09-18 16:2x【§七十一 · 最新】—— 用户「回到主线：优化睡眠功耗」⇒ 复核后定调：配置层已无牌，缺的是"真值" ⇒ 交付测量工具 + 三臂协议（**零配置改动**）**
+> 🪜🪜 **2026-09-18 16:2x【§七十二 · 最新】—— 用户「为什么只能 deep idle？不能更进一档？」⇒ 一页纸固化：**声明层 ✅ / 选择层 ✅ / 执行层 ❌，卡点 = EC 固件（非 OpenCore 变量）****
+> **① 前两层都通（本轮一手直读）**：`docs/SysReport/ACPI/FACP-1.aml` `FLAGS@0x70 = A5 84 23 00` ⇒ **`LOW_POWER_S0_IDLE_CAPABLE`(bit21)=1**（平台自报 AOAC）+ `HW_REDUCED_ACPI`(bit20)=0（**完整 ACPI 与 AOAC 并存** ⇒ 这正是 `_S3` 还在菜单上的原因）；`DSDT.dsl:38257` `If (SS3) Name (_S3, …)` / `:38268` `If (SS4) Name (_S4, …)` + `:5708-5709` `SS3=One`/`SS4=One` + `:31312` `Local0 |= (SS3 << 0x03)`（固件**主动上报** OS）⇒ **"固件没实现 S3"是错的**。选择层：`SSDT-DeepIdle.dsl` 全文仅 **94 B**（`_SB.LPS0` + `_GPE.LXEN`，均 `_OSI("Darwin")` 门控），且这两个名字在**原厂 DSDT 里 0 命中**（= 我们补的）；**撤掉它 `IOPMDeepIdleSupported` 就从 Yes 翻 No ⇒ macOS 真会去选 S3**。
+> **② 断在 L3 执行层**：`EC OBF=1 poll timed out` = **S3 独有**（34/120 vs 噪声基线 1、Deep Idle 0/0）；`WakeTime` 2.4→**159.3 s（65×）**、PS2 457 ms→**157,735 ms（342×）**、本机历史**唯一**一次 panic。RTC 三件套被机制排除（坏的是 EC 的 I/O `0x62/0x66`，与 RTC 的 `0x70/0x71` **不相交**）。
+> **③ 再深一档（S4）更远**：30 条准入条件里**唯一真·结构性缺口 = `#28` RTC 断电期保持**（固件职责）；5 次武装休眠**全在恢复侧失败**、3 次 POST 005；AOAC 家族 **0 先例**（全球跑通的 4 台**全为 Legacy S3 世代**）。
+> **④ "半档"三项全排除**：`mode 3` 电气形态与 S3 同级（只是每次多写 8–16 GB 镜像）｜`standby` 的终点就是 S4（故 **`standby 0` = "不撞墙"，不是"省电没开"**）｜C-state 属 S0 内部维度（且本机 PMU 读数不可靠）。
+> **⑤ 新读数（含义待确认，★ 不作判据）**：`IOPMrootDomain` 的 `SystemPowerProfileOverrideDict`（Battery/UPS/AC 三份）里 `"Hibernate Mode"=3 / "Standby Enabled"=1 / "Standby Delay"=10800`（= 3 h），与**现役生效值** `0 / No` 并存 ⇒ 疑似 macOS 为该 SMBIOS 机型准备的**模板默认**。
+> **⑥ 本轮零改动零实测**（纯只读）。⚠️ 顺手再踩一次已固化坑：`grep "SS3\|SS4"` 在 BSD grep 下**静默 0 命中**（`\|` 不支持），必须 `grep -E`。完整 → **`docs/sleep-tests/tier-ladder-why.md`**。
+>
+> ---
+>
+> 🧪🧪 **2026-09-18 16:2x【§七十一】—— 用户「回到主线：优化睡眠功耗」⇒ 复核后定调：配置层已无牌，缺的是"真值" ⇒ 交付测量工具 + 三臂协议（**零配置改动**）**
 > **① 配置层复核（16:1x 实读）**：`pmset -g custom` 里 `powernap/tcpkeepalive/womp/proximitywake/standby/hibernatemode/networkoversleep` **全部已在省电侧**，`lowpowermode` 电池=1；⇒ **没有"把某开关改一下就能省电"的项了**。
 > **② 唤醒源普查（全量日志 / 17 段睡眠）**：10 次唤醒事件**全部用户触发**（`PWRB/UserActivity` ×5、`LPCB XDCI/Lid Open` ×2、`PWRB/Lid Open` ×1、`XDCI/UserActivity` ×1），**非用户唤醒 = 0**；10 段里 9 段 DarkWake = 0，唯一 1 段（`09-17 11:29:41`，`DarkWake from Normal Sleep` + `WakeTime 159.3 s`）落在**当天 S3 实测窗口**内 ⇒ 与既有 S3 结论自洽，**非新问题**。
 > **③ 一个只写观测不写成因的发现**：昨夜 11.0 h 连睡的 `Wake Requests` 里被选中项是 `*powerd request=CSPNEvaluation wakeAt=23:52:20`，但**日志里 23:52 没有任何 DarkWake**；今天 `pmset -g sched` 也挂着 3 条 `user-invisible` 计划唤醒 ⇒ 观测层面 **RTC 计划唤醒在本机没真把机器叫起来**（对功耗是好事）。
