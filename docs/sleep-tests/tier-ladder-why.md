@@ -187,7 +187,9 @@ OC-Little 父页《01-关于AOAC》（★ 我为漏读它付出过一次 panic �
 | **MS 问答区同一案例**（标题原文《WIN11 修改注册表为S3睡眠模式后无法唤醒》） | 用户执行 `reg add … PlatformAoAcOverride /t REG_DWORD /d 0` 关闭现代待机 ⇒ **"点击睡眠后无法唤醒"**；答复原文：*"**待机 (S0 低电量待机)是硬件级的功能，它和 S3 不可共存**，除非您的计算机厂商提供开关开启 S3 电源模式才能启用（同时 S0 会被关闭）"* | **方向强**（含 MSFT 员工回复、引官方文档） |
 | 网上"改注册表就能切 S3"的一批博客（positioniseverything / techbloat / geekchamp / wintips 等） | 口径一致，但它们**自己都写着**"若固件不暴露 S3 则无效" | ⚠️ **仅方向，不可当判据** |
 
-> **★★ 同形先例（本轮最有价值的一条）**：Windows 侧"强行让 OS 走 S3"的结果 = **睡下去醒不来**；我们在 macOS 侧做的（撤 `LPS0`）结果 = **只能强制关机 / `WakeTime` 159 s / EC 罢工**。**两条完全独立的路径，同一个结果** ⇒ 指向同一个原因：**固件层没有 S3 的物理路径**。
+> **★★ 同形先例**：Windows 侧"强行让 OS 走 S3"的结果 = **睡下去醒不来**；我们在 macOS 侧做的（撤 `LPS0`）结果 = **只能强制关机 / `WakeTime` 159 s / EC 罢工**。
+>
+> ⚠️ **2026-09-18 17:0x 修正（A.6 推翻了这里的一句推论）**：初版写的是"**两条完全独立的路径**，同一个结果 ⇒ 指向固件层没有 S3 的物理路径"。**这个推论是错的**——这两条**不是独立的**，它们是**同一层（OS 声明层）**的两次实验，本来就该得到同一个结果。真正独立的实验必须在**固件层**做。而且 `powercfg /a` 的实测（A.6）**证明固件层是有 `_S3` 声明的**⇒ **"固件没有 S3"这个假设不成立。**
 
 ### A.4 ★ 为什么我不建议赌那一刀：**赌注不对称**
 
@@ -202,10 +204,112 @@ OC-Little 父页《01-关于AOAC》（★ 我为漏读它付出过一次 panic �
 
 | 步 | 动作 | 风险 | 能定什么 |
 |---|---|---|---|
-| **①** | 管理员 CMD：`powercfg /a` | ✅ **纯只读** | **固件到底有没有把 S3 交给 OS**：出现 `Standby (S3)` ⇒ 有；只报 `Standby (S0 Low Power Idle)` 且注明 S3 不可用 ⇒ **没有 ⇒ 这一刀可彻底封板** |
+| **①** | 管理员 CMD：`powercfg /a` | ✅ 纯只读 | **✅ 已于 2026-09-18 17:0x 执行 —— 结果见 A.6**。落点是**三态里的中间态**（"固件声明了 S3、但被 AOAC 策略压住"），**不是**初版判据里的二分（"有 S3 可用" / "固件根本没有"）⇒ ① 的原判据不完整，已按三态重写 |
 | **②** | **仅当 ① 显示有 S3**：`reg add …PlatformAoAcOverride /t REG_DWORD /d 0` → 重启 → 睡一次 | ⚠️ 中（醒不回来就强制关机，与既有 S3 实测同形） | **隔离「固件不支持」vs「只有 macOS 不支持」** —— 用厂商自己的 OS + 驱动 + 固件路径测 S3，是最终裁决 |
 | **③** | 无论结果都 `reg delete …PlatformAoAcOverride /f` 还原 | — | 别把 Windows 也搞成"睡下去醒不来" |
 | **④** | 只有 ① 有 S3 **且** ② 能正常唤醒 ⇒ 才值得评估 ⑤ | — | — |
 | **⑤** | UEFI Shell 写隐藏 setup 变量（`setup_var_cv` 思路） | 🔴 **高** | 唯一能改到**固件层**的软件路径；**HP 无先例** |
 
-> **判据**：② 若 Windows 也醒不回来 ⇒ **固件层没有 S3 物理路径**，与 macOS 侧结论**互相封闭** ⇒ AOAC 这条线可**彻底封板**（不是"没试过"，而是**两套 OS 都测过**）。
+> ⚠️ **2026-09-18 17:0x 更正**：上面这句"② 若醒不回来 ⇒ 固件层没有 S3 物理路径"**不成立**（A.3 已修正、A.6 已证伪）。② 与 macOS 撤 `LPS0` 属**同一层**，无论醒来/醒不来都**推不出**固件层结论。**封板的真判据已换成 ③a（HP 官方只读查询，见 A.6）：厂商自己的工具里到底有没有这个开关项。**
+
+---
+
+### A.6 ★★ 2026-09-18 17:0x 实测判定（用户带图回报）—— 落点是「三态」的中间态
+
+> 用户提供两份一手材料：**① BIOS `Power Management Options` 菜单实拍**；**② Windows 管理员 CMD 的 `powercfg /a` 原始输出**。
+
+#### (1) BIOS 实拍 —— ② 菜单层无解，从"官网表"升级为"实拍"
+
+实拍可见 4 项：`[✓] Runtime Power Management`｜`[✓] Extended Idle Power States`｜`[✓] Power Control`｜`Battery Health Manager`（下拉）。**通篇仍无 `Modern Standby` / `S0ix` / `Sleep State` / `Low Power S0 Idle`** ⇒ A.1 的 ② 判定**由实拍直接坐实**（不再只是"依据 HP 官网文档表"）。
+
+#### (2) ★ `powercfg /a` —— 关键在于这份输出的**内部对照**
+
+```
+此系统上有以下睡眠状态:
+    待机 (S0 低电量待机) 连接的网络
+    休眠
+    快速启动
+
+此系统上没有以下睡眠状态:
+    待机 (S1)
+        系统固件不支持此待机状态。              ← ①原因
+        当支持 S0 低电量待机时，禁用此待机状态。    ← ②原因
+    待机 (S2)
+        系统固件不支持此待机状态。              ← ①原因
+        当支持 S0 低电量待机时，禁用此待机状态。    ← ②原因
+    待机 (S3)
+        当支持 S0 低电量待机时，禁用此待机状态。    ← 只有 ②原因 ！
+    混合睡眠
+        待机 (S3) 不可用。
+        虚拟机监控程序不支持此待机状态。
+```
+
+**同一份输出里，S1/S2 都带「系统固件不支持此待机状态」，唯独 S3 没有。** 这排除了"工具漏打/版本差异"的可能。两句话的语义（三来源口径一致）：
+
+| 措辞 | 语义 |
+|---|---|
+| `系统固件不支持此待机状态` | **BIOS/UEFI 没有把该睡眠模式提供给 OS**（ACPI 命名空间里无该 `_Sx`） |
+| `当支持 S0 低电量待机时，禁用此待机状态` | **被 Modern Standby 策略阻塞** —— 平台偏好 S0ix，Windows 把 S3 压住 |
+
+> 来源：MS 文档措辞经 techbloat / geekchamp / positioniseverything **三站口径一致**；techbloat 原文 *"the second **may mean S3 could become available only if Modern Standby is disabled** through supported firmware or Windows configuration"*。（分级：三家均为博客 ⇒ **仅方向**；但与本机**同一份输出的内部对照**互证，结论仍成立。）
+
+⇒ **结论：S3 不是"固件没有"，而是"固件声明了、被 AOAC 策略压住"。**
+
+**第四重互印**（前三条见正文 §三层判据）：
+
+| # | 证据 | 看到的 |
+|---|---|---|
+| 1 | `FACP FLAGS@0x70 = 0x002384A5` | bit21 AOAC=1 + bit20 `HW_REDUCED_ACPI`=0 ⇒ **完整 ACPI 与 AOAC 并存** |
+| 2 | `DSDT.dsl`：`If (SS3) Name (_S3,…)`、`SS3=One` | `_S3` 对象**存在且已启用** |
+| 3 | macOS 撤 `LPS0`（实测） | `IOPMDeepIdleSupported` Yes→No ⇒ macOS **确实看到 `_S3` 并转了过去** |
+| 4 | **Windows `powercfg /a`（本轮）** | S3 栏**无"固件不支持"字样** ⇒ 固件把 S3 交给了 OS |
+
+> 附注（旁证，与本议题无关）：`混合睡眠` 那栏写着"**虚拟机监控程序不支持此待机状态**" ⇒ 这台 Windows 开着 **VBS/Hyper-V 虚拟化**（与 `休眠`/`快速启动` 同时可用一致，`hiberfil.sys` 在）。
+
+#### (3) ③ 的画像因此要改 —— 但仍**不是**"该赌"
+
+| | 旧画像（A.4） | 修正后 |
+|---|---|---|
+| ③ 的理论依据 | 隐含"固件可能根本没 S3" ⇒ **无源之水** | **S3 的固件声明确实存在**（第四重证据）综上 ⇒ 依据成立；Dell 5410 的成功案例与本机在 `powercfg` 层面**形态完全相同**（同为 AOAC 平台、S3 同被策略压住） |
+| 风险 | 🔴 高（UEFI Shell 裸写隐藏变量） | **分化**：**只读探测 = ✅ 零风险**（见 (4)）；**写入**仍 🔴 高 |
+| 赌注不对称 | 成立 | **仍成立（未变）** |
+
+> ⚠️ **一条必须说清的负向修正**：`powercfg /a` 这个观测**不能区分**"救得回来的 AOAC 平台（Dell 那种）"与"救不回来的（本机）"—— **Dell 在改之前，`powercfg /a` 大概率也是这个输出。** ⇒ 它只把 ③ 从"无源之水"提到"有理论依据"，**没有给出任何"值得赌"的证据**。
+
+#### (4) ★★ 本轮最大产出：HP 的**零风险只读**官方入口（新路径 ③a）
+
+**HP 商用机（含 Z 系列 Workstation）把 BIOS 设置"全部"通过 `root/HP/InstrumentedBIOS` WMI 暴露给 Windows** —— HP 官方支持的接口，**不需要 UEFI Shell、不需要 USB 启动、不支持概率性写裸变量**。
+
+| 事实 | 依据（原文） | 分级 |
+|---|---|---|
+| 暴露的是 **"全部"** 设置（不限于 BIOS 菜单里显示的） | *"`HP_BIOSSetting` … is used to return a list of **all BIOS settings** on a device"*（对照：`HP_BIOSEnumeration` 只返回 *"commonly configurable"* 的） | 与 HP Wolf **官方文档** *"**The BIOS exposes all its configuration or settings through the acpi-wmi driver in Windows**"* 一致 ⇒ **可当判据** |
+| 有字段直接标"是否显示在 BIOS UI" | `HP_BIOSSetting` 输出含 `DisplayInUI`（1=显示，0=隐藏）、`IsReadOnly`、`RequiresPhysicalPresence` | 字段语义自解释 |
+| 适用机型含 **Z Workstation** | 前置条件原文 *"An HP Business-class computer (EliteDesk, ProDesk, ProBook, EliteBook, **Z-Workstation**)"* | **本机 = ZBook Power G7 ⇒ 在支持范围内** |
+| 官方工具同样支持全量导出 | *"`BiosConfigUtility64.exe /get:my-settings.txt`"*；`/dumpall` 可取各设置上下界 | **HP Wolf 官方文档（可当判据）** |
+
+⇒ **"③ 固件隐藏层到底有没有 AOAC 开关"这个问题，现在能用一条纯只读命令回答，不必赌。**
+
+**A 步（✅ 零风险 · 纯读）** —— Windows **管理员 PowerShell**：
+
+```powershell
+# 1) 全量导出（含隐藏项），落盘到 Windows 盘根目录，macOS 侧可直接读
+Get-WmiObject -Namespace root/HP/InstrumentedBIOS -Class HP_BIOSSetting |
+  Select-Object Name, Value, DisplayInUI, IsReadOnly, RequiresPhysicalPresence |
+  Sort-Object Name | Export-Csv C:\HPBIOS-all.csv -NoTypeInformation
+
+# 2) 直接筛相关项
+Get-WmiObject -Namespace root/HP/InstrumentedBIOS -Class HP_BIOSSetting |
+  Where-Object { $_.Name -match 'sleep|standby|s3|s0|idle|aoac|power' } |
+  Select-Object Name, Value, DisplayInUI | Format-Table -AutoSize
+```
+
+> WMI 类若不存在（HP 驱动未装/被禁用），退回官方工具：`BiosConfigUtility64.exe /get:C:\BIOSConfig.txt`（HP BCU，见 A.6 依据行）。
+
+**判据**（结果落在 `C:\HPBIOS-all.csv`；`/Volumes/TZBOOK` 在 macOS 下可直读 ⇒ **文件放那即可，我来看**）：
+
+| 看到什么 | 判定 |
+|---|---|
+| 有 `Sleep State` / `Modern Standby` / `Low Power S0 Idle` 一类项（尤其 `DisplayInUI=0` 的隐藏项） | ⇒ **③a 打通**：再用同一接口按**设置名**写入（单元语义化、可回滚、**没有"偏移写错"这种风险**），比裸写变量安全一个数量级 |
+| 全表搜不到任何 sleep/standby 相关项 | ⇒ **固件确实不暴露该开关 ⇒ ③ 彻底封板**（证据级别从"没试过"升到"**厂商自己的工具里也没有**"） |
+
+> **为什么这条要排在 A.5 的 ② 之前**：② 必须真的睡一次（可能醒不回来、要强关），而 ③a 是**纯查询**。⇒ **② 降级为"仅当 ③a 发现该项时才做"**。

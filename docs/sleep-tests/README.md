@@ -1,6 +1,16 @@
 # 睡眠档位调优测试记录
 
-> 🔌🔌 **2026-09-18 16:4x【§七十三 · 最新】—— 用户「不能关闭AOAC？」⇒ 三层开关：**OS 层已关过（无效）／固件菜单层 HP 没有／固件隐藏变量层从未试且无先例****
+> 🧭🧭 **2026-09-18 17:0x【§七十四 · 最新】—— 「关 AOAC」实测判定：`powercfg /a` 落点＝中间态（S3 **声明存在**、被策略压住）＋ ★ 找到 HP 官方**零风险只读**入口**
+> **① BIOS 实拍坐实菜单层无解**：4 项（`Runtime Power Management`/`Extended Idle Power States`/`Power Control`/`Battery Health Manager`）——**无任何 `Modern Standby`/`S0ix`/`Sleep State`** ⇒ §七十三 ② 由"官网文档表"升级为**实拍**。
+> **② `powercfg /a` 的关键＝同一份输出的内部对照**：S1/S2 都带「**系统固件不支持此待机状态**」，**唯独 S3 没有** ⇒ S3 不是"固件没有"，而是"**固件声明了、被 AOAC 策略压住**"。
+> **③ ⇒ 修正 §七十三 两条推论**：④「两条**独立**路径、同一结果」**错** —— 撤 `LPS0`(macOS) 与 `PlatformAoAcOverride=0`(Win) 属**同一层**（OS 声明层），本来就该同结果，**推不出固件层结论**；⑥ 的二分判据（"没 S3 ⇒ 封板"）**不完整**，实测落在**中间态**。⇒ **"固件没有 S3"这个假设不成立**（第四重互印：FADT bit21 ＋ DSDT `SS3=One` ＋ macOS 撤 `LPS0` 后确实转 S3 ＋ 本次 `powercfg`）。
+> **④ ★ 但 ③ 仍不该赌**：`powercfg /a` **区分不出**"救得回的 AOAC 平台（Dell 那种）"与"救不回的（本机）"—— Dell 改之前大概率也是这个输出 ⇒ 只把 ③ 从"无源之水"提到"有理论依据"，**没给出值得赌的证据**；赌注不对称**未变**。
+> **⑤ ★★ 本轮最大产出＝新路径 ③a（HP 官方零风险只读）**：HP 商用机（含 **Z Workstation**）把 BIOS 设置**全部**（含 BIOS 界面不显示的隐藏项 —— `HP_BIOSSetting` vs 只含常用项的 `HP_BIOSEnumeration`）经 `root/HP/InstrumentedBIOS` WMI 暴露给 Windows，并带 `DisplayInUI`（1=显示/0=隐藏）字段 ⇒ **"固件隐藏层到底有没有 AOAC 开关"现在能用一条纯只读命令回答**（管理员 PowerShell）：
+> `Get-WmiObject -Namespace root/HP/InstrumentedBIOS -Class HP_BIOSSetting | Select-Object Name,Value,DisplayInUI,IsReadOnly | Export-Csv C:\HPBIOS-all.csv -NoTypeInformation`
+> **判据**：有 sleep/standby 类项（尤其 `DisplayInUI=0`）⇒ **③a 打通**，可用**按设置名写入**（**无"偏移写错"风险**）；全表搜不到 ⇒ **③ 彻底封板**（证据升级为"厂商自己的工具里也没有"）。⇒ A.5 的 ②（改注册表睡一次）**降级为"仅当 ③a 发现该项时才做"**。
+> 完整 → `docs/sleep-tests/tier-ladder-why.md` **附录 A · A.6**
+>
+> 🔌🔌 **2026-09-18 16:4x【§七十三】（⚠️ 其中 ④「两条独立路径」与 ⑥「只报 S0 即封板」的推论已被 §七十四 修正）—— 用户「不能关闭AOAC？」⇒ 三层开关：**OS 层已关过（无效）／固件菜单层 HP 没有／固件隐藏变量层从未试且无先例****
 > **① OS 声明层 = 唯一能碰的一层，且已实测关过**：撤 `\_SB.LPS0`（`SSDT-DeepIdle=false`）⇒ `IOPMDeepIdleSupported` Yes→No、系统**确实转去走 S3** ⇒ **EC 罢工**。⇒「关 AOAC」在能关的那层**关了、没用**。
 > **② 固件菜单层 = HP 没有**：HP 官方《Power Management Options》全表 7 项（`Runtime Power Management`/`Extended Idle Power States`/`S5 Maximum Power Savings`/`SATA Power Management`/`Deep Sleep`/`PCI Express Power Management`/`PCIe Speed Power Policy`）**通篇无 `Modern Standby`/`S0ix`/`Sleep State`/`Low Power S0 Idle`**；唯一名字像的 `Extended Idle Power States` 官方定义是 **C-state 空闲省电**，同族 ZBook 用户实测原文 *"was indeed a dud"*。
 > **③ ★ 本轮新增一手证据（Windows 分区直读）**：`/Volumes/TZBOOK/Windows/System32/config/**system**`（⚠️ **必须小写**，大写 `SYSTEM` 会 `No such file` —— 这就是当初"读注册表失败"的真因）字节级检索：`PlatformAoAcOverride` **0 命中**（= 本机 Windows **从未设置过**；正向对照 `HiberbootEnabled`/`PowerSettings` 均命中 ⇒ 方法有效）；命中 `ConnectedStandbyPlatform`/`StandbyActivationEnergy`/`*ModernStandbyWoLMagicPacket` ⇒ **Windows 确实跑 Modern Standby**，与 **FADT bit21 AOAC=1** + **`SleepStudy/`（今天 14:05 仍在写）** 三重独立互印。
