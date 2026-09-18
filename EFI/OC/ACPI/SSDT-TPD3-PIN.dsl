@@ -14,27 +14,30 @@
  * macOS (VoodooI2C in GPIO interrupt mode) therefore installs the interrupt
  * on the wrong pad and the trackpad never reports any event.
  *
- * Windows reports the real line for the very same device as GPP_E2:
- * group index 4 in the GPCH package (elem1 = 13 pins, elem6 = 0x0100 base)
- * plus offset 2, i.e. pin 0x0102 = 258 in the VoodooGPIO numbering.
+ * The real line is GPP_E2 = 258 (VoodooGPIO CannonLake-H numbering).
  *
  * Why an SSDT override of _INI / _CRS does not work
  * ------------------------------------------------
  * DSDT already defines TPD3._INI, TPD3._CRS and TPD3.SBFG. Any SSDT that
  * declares the same names inside Scope(\_SB.PCI0.I2C0.TPD3) is rejected by
- * the interpreter with AE_ALREADY_EXISTS:
+ * the interpreter with AE_ALREADY_EXISTS. So the DSDT is patched instead:
+ * OpenCore ACPI/Patch rewrites the single "GNUM(GPDI)" call site in the
+ * DSDT into "TPNM(GPDI)" (TableSignature=DSDT, Count=1), and this SSDT
+ * supplies TPNM.
  *
- *   ACPI Error: [SBFG] Namespace lookup failure, AE_ALREADY_EXISTS
- *   ACPI Exception: AE_ALREADY_EXISTS, (SSDT:  CRSfix) while loading table
- *   ACPI Error: [_INI] Namespace lookup failure, AE_ALREADY_EXISTS
+ * *** Operating-system gating (2026-09-18) ***
+ * -------------------------------------------
+ * OpenCore applies ACPI/Patch to the DSDT handed to EVERY operating system,
+ * Windows included. Because of that, the DSDT that Windows sees also calls
+ * TPNM(GPDI) instead of GNUM(GPDI). The earlier revision of this table
+ * returned 258 unconditionally, which silently overwrote the interrupt pin
+ * that Windows' I2C HID stack uses as well - and the touchpad stopped
+ * responding under Windows.
  *
- * So the DSDT is patched instead. OpenCore ACPI/Patch rewrites the single
- * call site "GNUM(GPDI)" in the DSDT into "TPNM(GPDI)", and this SSDT
- * supplies TPNM. The ambiguous GNUM() group lookup (GPCH vs GPCL, selected
- * by PCHS) is bypassed completely, so the result is deterministic.
- *
- * Net effect: INT1 = 258 = GPP_E2. INT2 (the fallback APIC IRQ in SBFI) is
- * intentionally left untouched.
+ * TPNM is therefore branched on _OSI("Darwin"):
+ *   - Darwin/macOS : 258 (GPP_E2), what VoodooI2C needs.
+ *   - anything else : the stock result of GNUM(GPDI), i.e. byte-for-byte
+ *                    the pre-hackintosh behaviour. Windows is unaffected.
  *
  * Rollback: git revert this commit (config.plist) - this table alone is inert
  * without the matching ACPI/Patch entry.
@@ -45,9 +48,20 @@
 
 DefinitionBlock ("", "SSDT", 2, "HPTPD3", "PINfix", 0x00000003)
 {
+    External (_SB_.GNUM, MethodObj)    // 1 Arguments
+
     Method (TPNM, 1, NotSerialized)
     {
-        /* 0x0102 = 258 = GPP_E2 (VoodooGPIO CannonLake-H gpio_base table). */
-        Return (0x0102)
+        If (_OSI ("Darwin"))
+        {
+            /* 0x0102 = 258 = GPP_E2 (VoodooGPIO CannonLake-H gpio_base table). */
+            Return (0x0102)
+        }
+
+        /*
+         * Windows / any other OS: reproduce the untouched DSDT behaviour so
+         * the rename has no observable effect. GNUM still lives in \_SB.
+         */
+        Return (\_SB.GNUM (Arg0))
     }
 }
