@@ -1,6 +1,12 @@
 # 睡眠档位调优测试记录
 
-> 🏁🏁 **2026-09-18 08:5x【§六十七 · 最新】—— 用户问「结论呢」⇒ 给出 S4 整条线最终结论 = **不追（收手）****
+> 📊📊 **2026-09-18 09:2x【§六十八 · 最新】—— 用户问「还有优化的空间吗？」⇒ **换维度**：睡眠档位确实到头了，但**日常系统开销 + 内存**两处有实打实的空间，且此前六轮从没查过 → `docs/system-overhead-audit.md`**
+> **① 常驻**：第三方系统服务 **22 个** + LaunchAgents **15 个**；**功能重叠成对存在** —— 远程控制 **ToDesk(3 进程) + 向日葵 awesun(2)**、清理工具 **腾讯柠檬(3) + CleanMyMac5**。**② `/Volumes/ESP` 被 Spotlight 索引＝纯浪费**（铁证 `.Spotlight-V100` 4.1 MB、`mdutil -as` = enabled）：`com.oc.mountesp` 让它常挂载而它又是 FreeFileSync 镜像目标 ⇒ **每轮同步都触发重扫** ⇒ 修法 `sudo mdutil -i off /Volumes/ESP`。**③ 内存 16 GB 已吃紧**：`swap used 1426/2048 M = 70%`、free ≈136 MB、压缩页 626 万、wired 4.2 GB（⚠️ 开机 17 min 读数，待连续采样）；**HP 官方 QuickSpecs 明写 2×DDR4 SODIMM / 客户可更换 / 上限 64 GB** ⇒ `system_profiler` 的 `Upgradeable Memory: No` **是 OC 注入的假字段**。**④ CPU 告警锚点**：`WindowServer`(21:33) 与 `apfsd`(21:40) 于 09-17 **各触发一次 50% CPU × 180 s 超限**（`ThermalPressure -> 0`，非热问题）。**⑤ 不可动**：Sangfor 全家桶 10+ 进程，含 **`endpoint_security` 系统扩展**（公司软件）。
+> **顺带更正两处过期记录**：boot-args 里的 **`-wegnoegpu` 已移除**（`ebf6d5c` 09-17 17:29 连同 aspm 注入一并删，改由 `SSDT-dGPU-PowerOff-Darwin.aml` 调 `PEGP._OFF` 断电）｜**`rtcfx_exclude` 实为 `0E-FF`**（非旧记的 `80-FF`，`config` 与 `nvram` 两边一致）。
+>
+> ---
+>
+> 🏁🏁 **2026-09-18 08:5x【§六十七】—— 用户问「结论呢」⇒ 给出 S4 整条线最终结论 = **不追（收手）****
 > **三条腿全断**：**先例**（同机型报告只到 "Sleep"＝我们已有的 Deep Idle，全文零字提 S4；同代 `HPZBook-Fury-G7-Hackintosh` 跑 macOS 26 也只有 "Sleep/wake ✅" 靠 `igfxonln=1`，无 hibernation；**AOAC 家族 0 先例**；全球跑通 S4 的仅 4 台 —— T530 / Fujitsu Q958 / X250 / Yoga Duet 7 13IML05，**全为 Legacy S3 世代**。Dortania 原文 *"avoid the black magic that is S4"*）｜**配方**（唯一公开配方 T530 三件套对本机 **0/3 适用**）｜**机制**（真·没法满足仅 `#28` 一条，全在固件侧；唯一开口"刷 BIOS"已被 §六十六 的本机读数关掉）。
 > **剩余唯一未做实测 = B-1（`hibernatemode 3` 验写镜像），期望值判负 ⇒ 建议不做**：通过也只证"镜像能写"、后面仍撞 `#28` 固件墙；不通过只把"未验证"改写成"实测否定" —— **两条都不改变结论，却要再赌一次 RTC 写入 / HP POST 005**（§二十四 已证"四层防护全开仍 005"）。除非要"证据闭合"标签，否则不值。
 > **收手态＝现状零改动**：`hibernatemode 0` + `standby 0`。**新增昨夜实证**：`2026-09-17 21:51:50 → 2026-09-18 08:52:16` = **39,626 s ≈ 11.0 h 连睡、中途零唤醒**，`WakeTime 2.428 s`、`ApplePS2Controller SetState 2 = 451 ms`（对照 S3 的 **157,735 ms ⇒ 342×**）。
