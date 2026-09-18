@@ -434,3 +434,87 @@ rm /Library/PrivilegedHelperTools/com.macpaw.CleanMyMac5.Agent
 **用户级 9 处（无需 root，走废纸篓 `trash`，不用 `rm`）**：清单见 10.1 的 #4~#10。
 ⚠️ `~/Library/Group Containers/S8EX82NJP6.com.macpaw.CleanMyMac5`（9.3 M）删除前确认**没有别的 app 依赖该 group**（同 teamID `S8EX82NJP6` ⇒ 仅 MacPaw 自家产品，本机仅 CMM4/5）⇒ 安全。
 
+
+---
+
+## §11 ★ 空闲功耗归因（2026-09-18 14:20 / 14:36 两轮实测）
+
+**背景**：09-17 曾测出"静默 45 s 后仍 `package power ≈ 25 W`、`Package C-state 0.00%`"，
+但当时进程榜被自己的诊断命令污染（`lsof`/`seedusaged`/`system_profiler` 全是我跑的）⇒ 未定案。
+09-18 14:05 重启后趁干净窗口重测 **两轮**。
+
+**方法**：`powermetrics --samplers cpu_power,tasks --show-process-energy`（提权）。
+⚠️ `ps`/`top` 被沙箱硬禁（连 root 也 `Operation not permitted`）⇒ 进程数据**只能**来自 powermetrics 的 tasks 表。
+
+### 11.1 两轮读数
+
+| | 第一轮 14:20（重启后 15 min） | 第二轮 14:36 |
+|---|---|---|
+| `package power` | 19.16 ~ 22.45 W | 24.73 ~ 25.18 W |
+| `Package C-state` | **0.00%（C2~C10 全 0）** | **0.00%（同）** |
+| `System freq` | 135% of nominal (3521 MHz) | 114~135%（2959~3477 MHz） |
+| `Cores Active` | 82.9 ~ 86.2 % | 93.1 ~ 97.7 % |
+| `Avg Num of Cores Active` | 2.01 ~ 2.50 | **2.87 → 4.44（爬升）** |
+| `ALL_TASKS` 合计 | — | **2748 / 3702 / 4792 ms/s（≈2.7~4.8 核）** |
+| `load average` | — | **25.84** |
+
+### 11.2 ★ 关键更正：Spotlight 是**插曲**，不是常态
+
+第一轮进程榜上前列是 **7 个 `mdworker_shared`（PID 连号 12064~12070），各 ≈515~528 ms/s**
+（合计 ≈3.5 核）—— 形态是**批量启动、并行猛扫、批量退出**。
+
+**但第二轮它们全部消失**（只剩零星新 PID 12902/13135，CPU 仅 0.27~7.81 ms/s）⇒
+**这是重启后的一次性重建，不是无限循环**。⚠️ 上一轮"Spotlight 反复重索引"的判断在**本次重启周期内不成立**。
+
+（旁证：`mdutil -a -s` 全卷状态 = `/`、`/System/Volumes/Data`、`/Preboot` enabled；
+`Common`、`ESP`、`TZBOOK` disabled —— 与 09-18 上午的改动一致，无漂移。）
+
+### 11.3 25 W 的真实归因（以第二轮"最安静"快照 #2，合计 2652 ms/s ≈ 2.65 核）
+
+| 来源 | 实测 CPU ms/s | 性质 | 可否动 |
+|---|---|---|---|
+| `WindowServer` | 383 ~ 556 | 界面合成 | 必需 |
+| **深信服全家桶** | `sfservice.exten` 258~496 ＋ `saio_xtunnel` 156 ＋ `saio_agent` 41~53 ＋ `aTrust` 33 ＋ `CSMonitor` | 公司 EDR | ❌ **公司软件** |
+| `kernel_task` | 198 ~ 294 | 内核 | 必需 |
+| **`coreaudiod`** | **166 ~ 207** | ⚠️ **三个第三方虚拟声卡 in-process** | ✅ **可动** |
+| WorkBuddy（`Electron`＋Renderer＋GPU） | 95 ~ 818 | 本次诊断期间是我自己 | — |
+| Edge（3 进程）＋ Chrome | 80＋48＋44＋39＋17 ≈ 230 | 双浏览器 | ⚪ 可用性权衡 |
+| `mediaremoted` | 71 ~ 85 | 媒体远程服务 | ⚪ 待查 |
+| `SogouInput` | 39 ~ 47 | 输入法 | ⚪ 待查 |
+
+**另见**：第二轮出现了**不是本次诊断启动的** `ps`(PID 13795, 1040 ms/s)、`system_profiler`(13791, 351 ms/s)、
+`saio_dialog`(13865, 430 ms/s) —— 三者同一时段出现，形态符合**深信服定期资产盘点/扫描**（EDR 典型行为）。
+
+### 11.4 ★★ 真发现：三个远程控制虚拟声卡塞进了 coreaudiod
+
+```
+/Library/Audio/Plug-Ins/HAL/
+  OrayVirtualAudioDevice.driver   ← 向日葵（上海贝锐 oray）  2025-03-26
+  ToDeskOutputDriver.driver       ← ToDesk                  2026-08-11
+  ParrotAudioPlugin.driver        ← 远程音频插件             2026-08-13
+```
+
+HAL 插件是**加载进 `coreaudiod` 进程内**运行的 ⇒ 其开销**全部计入 coreaudiod 的 CPU 账**。
+`system_profiler SPAudioDataType` 里实际注册的虚拟设备 = `OrayVirtualAudioDevice`（制造商
+`Shanghai best oray information s&t co.,ltd`）；`coreaudiod` 日志中
+`AllowNegotiateAdaptInSetComposition` 与 `AXHearingHalPlugin` 反复出现 = HAL 持续协商音频上下文的形态。
+
+⇒ **`coreaudiod` 的 ~180 ms/s 不是音频子系统自身的病**，是三个远程控制塞进来的虚拟声卡开销。
+⇒ 与 §5-B「常驻软件重叠：ToDesk vs 向日葵」是**同一件事的两面** —— 卸掉其中一个远程控制，
+   同时省进程 + 省 coreaudiod 开销。**这是本节唯一"既省 CPU 又不损失功能"的动作。**
+
+### 11.5 结论
+
+1. **25 W 不是电源管理故障，也不是"待机异常"** —— 是**这台机器从未真正空闲**：
+   公司 EDR ＋ 界面合成 ＋ 三个虚拟声卡 ＋ 双浏览器 ＋ 输入法 ＋ Electron 叠加 ≈ 2.6~4.8 核。
+2. **`Package C-state 0.00%` 单独不能当判据**：合理（4.8 核在跑时封装难进深度态）但**极端**，
+   黑苹果上 powermetrics 读 PMU/C-state 的可靠性存疑 ⇒ 标记为**存疑、不作结论依据**；
+   高功耗结论由 `load average 25.84` ＋ `Avg Cores Active 4.44` ＋ 进程榜三方独立支撑。
+3. **与"睡眠待机功耗"是两条轴**：合盖睡眠实测 **≈4.1 W（6%/h）**，那条线已到头；
+   本节的 25 W 影响的是**开盖续航**，与合盖睡眠无关。
+4. **可行动项**（按收益/代价排序）：
+   - ✅ **卸掉 ToDesk / 向日葵之一**（顺带清三个虚拟声卡，省 coreaudiod ~180 ms/s）← 唯一"净赚"项
+   - ⚪ 查 `mediaremoted` 空转（Now Playing 会话残留？）
+   - ⚪ 双浏览器并开（Edge＋Chrome）→ 留一个
+   - ❌ 深信服：只能知情，不可动
+   - ❌ WindowServer / kernel_task：必需
