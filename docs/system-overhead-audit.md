@@ -707,3 +707,76 @@ Preferences（`…CleanMyMac5.Menu.plist`）、CrashReporter（`CleanMyMac_5_Men
 - **`~/.ollama` 4.4 GB** —— 本轮最大单项。模型属"用户数据"（重装需重新 pull），但命令与 app 均已不存在、闲置 6.5 个月。
 - `~/.agent-reach-venv` 354 M、`~/.costrict` 131 M、`~/.parallels-desktop-vscode` 38 M、`~/.codebuddycn` 36 M
 - B 档（疑似用户数据：荣耀笔记 351 M / 豆包 24.5 M / Follow 22.3 M）、C 档（原版 OCLP helper 0.13 M）—— 状态不变
+
+
+---
+
+## §14 隐藏目录残留清理 —— 用户选「1」（全清），实删 4 项 / 4.86 GB（2026-09-18 15:4x）
+
+### 14.1 执行结果
+
+**备份先行**（本机废纸篓不可靠，见 §12.3）：
+`docs/backups/residue-uninstalled-2026-09-18/homedir-2026-09-18.tar.gz`
+→ 130,289,005 字节 / 17,368 条目 / sha256 `62a870cd535ca3c50cab950b3d47f335692a5913f282ee50c49fb0f45d07e34d`
+（内含 `.agent-reach-venv`、`.parallels-desktop-vscode`、`.codebuddycn` 全量 + `.ollama` 的 history/密钥/日志/manifests）
+**回滚**：`tar -xzf docs/backups/…/homedir-2026-09-18.tar.gz -C ~`
+
+| # | 目录 | 体积 | 判据 | 结果 |
+|---|---|---|---|---|
+| 1 | `~/.ollama` | 4.4 G | `ollama` 命令不存在、`/Applications/Ollama.app` 不存在、launchd 无、shell rc 无引用；**文件级最后活动 2026-04-07**（`logs/server.log`） | 已删 |
+| 2 | `~/.agent-reach-venv` | 355 M | `pyvenv.cfg` home = `/usr/local/opt/python@3.10` → **该 python 已不存在 ⇒ venv 已废** | 已删 |
+| 3 | `~/.parallels-desktop-vscode` | 38 M | `profile/` mtime 2026-03-19；`/Applications/Parallels*.app` 不存在 | 已删 |
+| 4 | `~/.codebuddycn` | 37 M | 仅 `argv.json` + `extensions/`（2025-09-16）；app 不存在、app.asar 0 引用 | 已删 |
+
+**复查**：`ls -d` 四项全部不存在；`ls -la ~ | grep` 确认无同名系列遗漏（此步抓到 `~/.agent-reach`，见 14.3）。
+
+**⚠️ 两条口径修正**：
+1. §13.3 写"闲置 6.5 个月"是按 `~/.ollama` 顶层 mtime（03-03）；**文件级实测最后活动 = 2026-04-07** ⇒ 实为约 5.4 个月。又是"目录 mtime 不可信"。
+2. `models/blobs` 4.4 G **未整包备份**，改为 digest 清单存证
+   （`docs/backups/residue-uninstalled-2026-09-18/ollama-models-manifest.txt`）：仅 `qwen2.5:7b` 一个模型，
+   `layer model` = `sha256:2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730` / 4,683,073,952 B。
+   ollama 是内容寻址，`ollama pull qwen2.5:7b` 会按 digest 校验 ⇒ 拉回结果逐字节一致。**此替代仅对可复现产物成立，已向用户明示。**
+
+### 14.2 ★ 保留 `~/.costrict` 131 M —— 原判「可清」被新证据推翻
+
+| 项 | 上一轮判定 | 实测推翻 |
+|---|---|---|
+| `~/.costrict` | app 无、`app.asar` 0 引用 ⇒ 看似可清 | **`~/.bashrc` 第 1 行 `export PATH=$PATH:/Users/<REDACTED-USER>/.costrict/bin`**；`bin/` 内含 3 个真实可执行文件 `costrict`(32 M) `codebase-indexer`(35 M) `cotun`(12 M)；另有 `skills-security-review/` 技能包（2026-03-23） |
+
+⇒ **判据体系补第 5 条：shell 启动文件（`~/.zshrc`/`.zprofile`/`.bashrc`/`.bash_profile`）里的 PATH/source 引用也是活引用。**
+"存在性判据 + 宿主引用判据"**两条都做才算证据**，缺一条即无效证据 —— 上一轮的"0 引用"是漏查 shell rc 的不完整结论。
+（注：zsh 默认不 source `~/.bashrc`，实际未必在用；但属用户主动留下的配置，按活体处理。）
+**未清，待用户一句话。**
+
+### 14.3 复核时新发现（均未执行）
+
+| 项 | 体积 | 情况 |
+|---|---|---|
+| `~/.agent-reach` | 220 K | 与刚删的 `-venv` **成对**：内含 `tools/wechat-article-for-ai/`（含 `SKILL.md`、`.git`）、`tools/xiaoyuzhou/transcribe.sh`；文件级 mtime 2026-03-17。体积可忽略，未动 |
+| `~/Library/Parallels` | 956 K | Parallels Desktop 配置残留（`Windows Disks/{uuid}/[C] 我的 Boot Camp.hidden` = **曾把 Boot Camp 分区虚拟化**）；`Applications Menus/` 是 Windows 侧开始菜单镜像。主程序已不在 `/Applications` |
+| `~/Library/Logs/parallels.log` | 216 B | mtime **2026-07-06**（`ShortcutTool` 报 `Failed to load ProxyAppCore`）⇒ 7 月还动过 |
+| `~/Library/HTTPStorages/com.parallels.desktop.console.binarycookies`<br>`~/Library/Group Containers/4C6364ACXT.com.parallels.Desktop` | 各 4 K | Parallels Desktop 关联残留 |
+| `~/Parallels` | 0 B | 空目录，无 VM |
+| ⚠️ 未动 | — | **iCloud 云盘里仍有 `ParallelsDesktop20-激活助手`**（mdfind 命中）⇒ 用户可能日后重装 Parallels Desktop ⇒ 上述 4 项保留不删（且合计仅 ~1 MB，收益为零） |
+
+### 14.4 ★ 空间核账：`df /` 读的是**只读系统卷**，不是用户数据卷
+
+删除 4.86 GB 前后 `df -h /` **都是 `13Gi used / 184Gi avail`** —— 表面像"没释放"。
+真因：APFS 上 `/` = sealed system volume（`/dev/disk1s1s1`），**用户数据在 `/dev/disk1s4` (`/System/Volumes/Data`)**，
+删掉的是 Data 卷上的东西。删后 Data 卷读数：`93Gi used / 189Gi avail`。
+
+⇒ **判"是否真删掉"的最终依据只能是路径不存在**（`ls -d` 复查 / `du` 实测），**空间读数只作参考**。
+本轮 `df /` 前后两次读数还是**同一个卷**，属"代理指标当判据"的错误用法，已作为反面案例写入 skill。
+
+### 14.5 清理后主目录隐藏目录全貌（`du -sh ~/.[!.]*` 排序）
+
+```
+3.3G .workbuddy   2.2G .nvm   477M .sdkman   400M .m2   331M .local   246M .vscode
+240M .npm   131M .costrict←待定   122M .cursor   121M .cache   109M .qoder   93M .ocat
+70M .trae   41M .qclaw   39M .venv-html-to-docx   27M .sclaw   14M .config   13M .snipaste
+5.4M .docker   3.9M .trae-aicc   2.3M .claude   516K .codebuddy   460K .acpx   384K .sheetagent   220K .agent-reach
+```
+**其余全部判活**：`.nvm`/`.sdkman`（shell rc source）、`.m2`/`.local`（Maven 仓库 / 活跃 CLI 集）、
+`.vscode`/`.cursor`/`.qoder`/`.trae`（app 在装）、`.ocat`（OCAuxiliaryTools 在装）、`.qclaw`/`.sclaw`（openclaw 数据，见 13.3）、
+`.workbuddy`（WorkBuddy 自身，3.3 G）。
+⇒ **再往下已无"已卸载软件的残留"可清**；剩下的体积大户要么是在装软件、要么是活跃数据。

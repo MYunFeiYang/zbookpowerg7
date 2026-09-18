@@ -1,1 +1,4 @@
 .workbuddy/
+
+# 大体积二进制备份：留在本地不入库（路径登记在 docs/ 里），避免仓库历史被不可逆撑大
+docs/backups/**/*.tar.gz
