@@ -44,6 +44,19 @@
 | `uefi_firmware`（pip）解 HP BIOS 镜像 → `type() -> unknown` | HP 是**自研多组件容器**（EC/GOP/ME/TB/PD 各一份），非标准 FV 顶层。需先手工定位 `_FVH` 再逐个解（本机镜像里有 **34** 个） |
 | 用 `curl -I` 猜一个文件在不在 | 看 `Content-Length`；HP 的 404 会返回 `Content-Length: 10`（很小）⇒ 可据此判存在性 |
 
+## 固件卷解包 / IFR 判定（2026-09-18 追加）
+| 坑 | 正确做法 |
+|---|---|
+| `pip install uefi_firmware` 解 HP 镜像只能看到一层（FFS 里嵌的 FV image 不递归） | 用 **UEFITool NE 的 `UEFIExtract`**：`https://github.com/LongSoft/UEFITool/releases` 有 **`UEFIExtract_NE_A*_universal_mac.zip`**（macOS 通用二进制，零依赖）。解压后 `xattr -dr com.apple.quarantine .` + `chmod +x` 即可跑 |
+| `UEFIExtract <img> report` 好像没输出文件 | 报告写在**输入文件同目录**：`<img>.report.txt`（不是 stdout，也不是 cwd） |
+| `UEFIExtract <img> <GUID> -o out` 报 `failed with 34 code!` | 该 GUID 在**压缩段内**时单模块导出会失败。改用全量 `UEFIExtract <img> all`（生成 `<img>.dump/`，按 GUID 分层，含解压后内容） |
+| 在**未解包**镜像里搜 UI 字符串 → 0 命中 | UI 文本在**压缩段**内 ⇒ **必须先 `all` 解包再搜**。本机实测：未解包搜 `Modern Standby` = 0；解包后 = 9 个文件 |
+| 用启发式"opcode 走链"判定 IFR → 报出"首 op = `0x24`(VARSTORE)" | **假阳性**。回读落点字节发现是 `f3 a5`(rep movsd)/`c3`(ret)/`cc`(int3) = **x86 机器码**（0x24 + 合理长度在代码里太常见）。**凡走链类启发式，必须回读落点字节交叉验证** |
+| 想判定"这份固件到底有没有 IFR" | 用**三条独立的硬判据**：① `UEFIExtract report` 里 **HII section 计数**；② 全 dump 搜 **`EFI_HII_PACKAGE_END` 指纹 `06 00 00 00 DF 00`**；③ 严格 HII 包链扫描（≥3 包且以 `0xDF` 收尾）。本机三条全 0 ⇒ **无 IFR**（HP 自研 Setup 引擎） |
+| 看到 `HII_DATABASE_PROTOCOL` GUID 就以为"有 HII/IFR" | **协议 GUID 存在 ≠ 有 HII 包**。厂商常保留 EDK2 框架代码但 Setup 不走它。必须用上面 ② 的指纹实测 |
+| 想区分"UI 字符串包"与"代码里的宽字符串常量池" | 看**相邻性**：HII STRINGS 包的字符串前有 **SIBT 块头**（`0x10` = SIBT_STRING_UCS2）且总长含 ID；常量池里两个字符串**字节紧邻**（如 `Runtime Power Management` 50 B 后直接是 `Enables Runtime Power Management.`）⇒ **无 SIBT 结构 = 纯常量池** |
+| 把固件里扫出的字符串当"证据"前 | 先跑**正向对照锚点**：挑一个**在界面上亲眼见过**的项名。本机锚点 = BIOS 实拍图里的 `Runtime Power Management` / `Extended Idle Power States` / `Power Management Options` / `Power On When AC Detected` |
+
 ## Windows 侧（跨分区取证）
 | 坑 | 正确做法 |
 |---|---|

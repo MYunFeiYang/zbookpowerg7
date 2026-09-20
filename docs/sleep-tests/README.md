@@ -1,6 +1,14 @@
 # 睡眠档位调优测试记录
 
-> 🧲🧲 **2026-09-18 17:2x【§七十五 · 最新】—— 用户问「不能直接读固件」⇒ 分两种"读"：① 运行时读（macOS **做不到**）／② **离线拆包（已跑通）**。结论**推翻了「HP 没做这个开关」**
+> 🧰🧰 **2026-09-18 18:1x【§七十六 · 最新】—— 用户选 **B-β**（离线拆固件卷）⇒ **执行完毕：一半成功、一半是明确否定**
+> **✅ 核心成果**：`Modern Standby` 是固件里的**正式 Setup 项**（**Enable/Disable**，且有 **en-US / da-DK / es-ES 三语 UI**）—— 它的 help 文本**自曝互斥**：*"Deep Sleep has been gray out because Modern Standby is set to On."* ⇒ 这就是固件自己写的"AOAC 开着 ⇒ Deep Sleep 不可用"。
+> **❌ 明确否定**：**该固件没有 IFR**（三条判据：`UEFIExtract` section 统计 **HII=0**；全 dump 15,718 文件搜 HII 包结束指纹 `06 00 00 00 DF 00` **0 命中**；PE32 内严格 HII 包链扫描 **0 段**）⇒ **B.6 里"提 IFR 拿变量偏移"这条路本身不成立，本条划掉**。HP 是**自研 Setup 引擎**（UI 文本是裸宽字符串常量池，非 SIBT/无 string ID）。
+> **⚠️ 真因纠正**：上轮"裸扫 0 命中"**不是**"大部分模块被压缩"这么简单 —— 更直接的原因是 **UI 文本以 UTF-16LE 存储，且全在压缩段内**。解包后 `Modern Standby` 立刻 **9 个文件**命中。
+> **✅ 顺带交付**：含隐藏项的完整 Power 菜单字符串清单 → `docs/backups/bios-teardown-2026-09-18/hp-setup-power-strings.txt`
+> **下一步（仍不建议赌）**：① BIOS 里**主动找一次 `Modern Standby`**（它紧邻 `Deep sleep`/`Runtime Power Management`，且其后紧跟分类名 `Power Control`；已知**不在** `Power Management Options` 那张实拍图里）；② 进 Windows 跑附录 A ③a 那条 WMI 只读，**搜 `Modern Standby`**（现在有准确名字了）。
+> 完整 → `docs/sleep-tests/tier-ladder-why.md` **附录 C**
+>
+> 🧲🧲 **2026-09-18 17:2x【§七十五】—— 用户问「不能直接读固件」⇒ 分两种"读"：**① 运行时读（macOS **做不到**）／② **离线拆包（已跑通）**。结论**推翻了「HP 没做这个开关」**
 > **① 运行时读不到（三条一手证据）**：`nvram -p` **0 条** `Setup`/`HII` 类变量；`DSDT.dsl` 命中 **3 处 `_WDG`**（含标准 ACPI-WMI 接口 GUID）⇒ HP 设置走 **ACPI-WMI(PNP0C14)**，消费方是 **Windows 的 `AcpiWmi.sys` + HP WMI provider**；macOS 无此栈，**OpenCore 也不能执行 ACPI 方法** ⇒ 这条路上没有绕法。
 > **② 离线读已跑通（不需要 Windows / 不需要 UEFI Shell / 零硬件风险）**：HP 安全公告 HPSBHF04043 公布 `ZBook Power G7 BIOS` = **SP154814** → 下载 22.58 MB → PE overlay 内**真 CAB @331,559**（v1.3/17 files；`MSCF`@216064 是巧合）→ `bsdtar -xf`（**macOS 自带，不需要 7z**）→ **`T75_01180100.bin` 32,315,326 B**，内含 **`_FVH` × 34**（34 个固件卷）。⚠️ 包内 `History.txt`= **01.18.01**，本机 **01.24.02 ⇒ 落后 6 个修订**，结论按此打折。
 > **③ ★ 关键发现（推翻了上一轮的封板理由）**：固件里**确实有 Modern Standby 配置段** —— **`HpModernStandbyConfigurations`**，且它是 **`HpCommonSetup`** 这个 Setup 变量的**子结构**（同级还有 `PlatformMiscDeviceConfigurations`/`SystemAudioDeviceConfigFlags`/`UsbPortsFactoryConfigFlags` 等）；另有 **`S3MemoryVariable`**、**`FspS3Notify`** ⇒ 固件里有 **S3 代码路径**，与 §2 的 L1（`SS3=One`）互印。⇒ **附录 A 里"③ 固件隐藏层＝无源之水""HP 根本没做这个开关"退回**；③ 升级为"**有实锤结构 + 有已知访问路径**"。

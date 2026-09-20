@@ -1,0 +1,260 @@
+# HP ZBook Power G7 (T75) BIOS Setup —— Power 菜单 UI 字符串原始清单
+
+来源包   : SP169002  (BIOS 01.23.00 Rev2, HP ZBook Power G7)
+固件镜像 : T75_01230000.bin  (32,315,326 B, sha256 d5c521648d71d7281c0eb81c7340b0689b11cf721623177625edd830bde1c037)
+提取位置 : 卷 11 B73FE497-B92E-416E-8326-45AD0D270091
+           → 模块 151 081E / File 171 0147
+           → File GUID A0A3FEC9-FE9D-4CE7-8DB4-9C54F3F19E5A  (DXE driver, HpSetup)
+           → PE32 image section/body.bin (1,327,104 B)
+编码     : UTF-16LE（★ 用 ASCII 搜会 0 命中）
+提取时间 : 2026-09-20 09:03
+
+说明：这是 HP **自研 Setup 引擎**的宽字符串常量池（非 EDK2 HII 包，无 SIBT 结构、无 string ID）。
+      列出的顺序即池内物理顺序；其中「项名」后面通常紧跟「说明文本」，「选项值」成组出现。
+
+====================================================================================================
+区域 40,000 - 56,000（英文区，Power 菜单主体）
+====================================================================================================
+   1  @  41,545  English
+   2  @  41,562  Energy Efficient Turbo
+   3  @  41,612  Ambient Light Sensor
+   4  @  41,655  Power Management Options
+   5  @  41,706  PCIe and DisplayPort - No Security
+   6  @  41,777  PCIe and DisplayPort - User Authorization
+   7  @  41,862  PCIe and DisplayPort - Secure Connect
+   8  @  41,939  DisplayPort and USB
+   9  @  41,980  Daisy Chaining Disabled
+  10  @  42,029  Thunderbolt Disable
+  11  @  42,070  Thunderbolt Security Level
+  12  @  42,125      Thunderbolt function is disable due to Thunderbolt Type-C Ports or Thunderbolt Mode disabled
+  13  @  42,320  Thunderbolt PCIe Hot plug Mode
+  14  @  42,383  Thunderbolt Type-C Ports
+  15  @  42,434  Require BIOS PW to change Thunderbolt Security Level
+  16  @  42,541  Thunderbolt Mode
+  17  @  42,576  When Thunderbolt Mode is disabled, only DisplayPort and USB Type C devices will function on the Thunderbolt Port
+  18  @  42,803  Legacy Mode
+  19  @  42,828  Native Mode
+  20  @  42,853  Native + Lower Power Mode
+  21  @  42,906  Disable
+  22  @  42,923  Thunderbolt Options
+  23  @  42,964  Power On When AC Detected
+  24  @  43,017  Power On When Lid is Opened
+  25  @  43,074  Prompt on Battery Errors
+  26  @  43,125  Prompt on Memory Size Change
+  27  @  43,184  Prompt on Fixed Storage Change
+  28  @  43,247  Video memory size
+  29  @  43,284  Auto
+  30  @  43,295  32 MB
+  31  @  43,308  64 MB
+  32  @  43,321  128 MB
+  33  @  43,336  256 MB
+  34  @  43,351  512 MB
+  35  @  43,366  1024 MB
+  36  @  43,383  Graphics
+  37  @  43,402  Provide UMA Graphics, Hybrid Graphics, Discrete Graphics and Auto 4 selections. Auto option will base on OS to enable or disable Hybrid Graphics.
+  38  @  43,695  Provide UMA Graphics and Hybrid Graphics 2 selections.
+  39  @  43,806  Provide Hybrid Graphics, Discrete Graphics and Auto 3 selections. Auto option will base on OS to enable or disable Hybrid Graphics.
+  40  @  44,071  Provide Hybrid Graphics and Discrete Graphics 2 selections.
+  41  @  44,192  Provide UMA Graphics, Hybrid Graphics and Discrete Graphics 3 selection.
+  42  @  44,339  UMA Graphics
+  43  @  44,366  Discrete Graphics
+  44  @  44,403  Hybrid Graphics
+  45  @  44,436  Auto
+  46  @  44,447  Disabled
+  47  @  44,466  Audio Device
+  48  @  44,493  Hides the Audio device from OS
+  49  @  44,556  Internal Speakers
+  50  @  44,593  Microphone
+  51  @  44,616  Enable
+  52  @  44,631  Disable
+  53  @  44,648  Disable and Lock
+  54  @  44,683  Headphone Output
+  55  @  44,718  Intel Smart Sound
+  56  @  44,755  Mobile Network Device (WWAN)
+  57  @  44,814  GPS Device
+  58  @  44,837  Wireless Network Device (WLAN)
+  59  @  44,900  Embedded WiGig Device
+  60  @  44,945  Bluetooth
+  61  @  44,966  Lock Wireless Button
+  62  @  45,009  WWAN Quick Connect
+  63  @  45,048  HP LAN-Wireless Protection
+  64  @  45,103    LAN / WLAN Auto Switching
+  65  @  45,160    LAN / WWAN Auto Switching
+  66  @  45,217  Mobile Network Device (WWAN) and GPS Combo Device
+  67  @  45,318  Wake on WLAN
+  68  @  45,345  Wake on WiGig
+  69  @  45,374  BT Wake from S3
+  70  @  45,407  Tile Deactivate
+  71  @  45,440  This
+  72  @  45,450  option
+  73  @  45,464  deactivates
+  74  @  45,488  the
+  75  @  45,496  laptop
+  76  @  45,510  tile,
+  77  @  45,522  but does
+  78  @  45,540  not
+  79  @  45,548  remove
+  80  @  45,562  the
+  81  @  45,570  laptop
+  82  @  45,584  icon
+  83  @  45,594  from
+  84  @  45,604  the user
+  85  @  45,626  Tile
+  86  @  45,636  account.
+  87  @  45,654  When
+  88  @  45,664  the
+  89  @  45,672  deactivation
+  90  @  45,698  completes
+  91  @  45,718  successfully
+  92  @  45,744  the
+  93  @  45,752  laptop
+  94  @  45,766  tile
+  95  @  45,776  will
+  96  @  45,786  play
+  97  @  45,800  song.
+  98  @  45,813  Fan Always on while on AC Power
+  99  @  45,878  Backlit keyboard timeout
+ 100  @  45,929  5 secs.
+ 101  @  45,946  15 secs.
+ 102  @  45,965  30 secs.
+ 103  @  45,984  1 min.
+ 104  @  45,999  5 mins.
+ 105  @  46,016  Never
+ 106  @  46,029  Boost Converter
+ 107  @  46,062  Wake on LAN in Battery Mode
+ 108  @  46,119  Force enable HP Sure View
+ 109  @  46,172  Automatic Keyboard Backlit
+ 110  @  46,227  Integrated Camera
+ 111  @  46,264  HP Sure Shutter
+ 112  @  46,297  This setting helps to keep 
+ 113  @  46,353  HP Sure Shutter
+ 114  @  46,385   status as 
+ 115  @  46,409  close on every power up or resume
+ 116  @  46,477   or 
+ 117  @  46,487  stays in last known state
+ 118  @  46,544  Camera Shutter stays in last known state
+ 119  @  46,627  Camera Shutter closes on boot or resume
+ 120  @  46,708  Integrated Front Camera
+ 121  @  46,757  Integrated Rear Camera
+ 122  @  46,804  Fingerprint Device
+ 123  @  46,843  Touch Device
+ 124  @  46,870  NFC
+ 125  @  46,879  Disable battery on next shut down
+ 126  @  46,948  Next shut down
+ 127  @  46,979  Do not disable
+ 128  @  47,010  Set this item to 
+ 129  @  47,046  Next shut down
+ 130  @  47,076   to disconnect the battery.
+ 131  @  47,134  This is to maintain battery life in situations where the system will not be used for long periods of time.
+ 132  @  47,350  Once in this state, AC power must be disconnected and reconnected to turn the system back on.
+ 133  @  47,539  Runtime Power Management
+ 134  @  47,590  Enables Runtime Power Management.
+ 135  @  47,659  Extended Idle Power States
+ 136  @  47,714  Increases the OS's Idle Power Savings.
+ 137  @  47,793  Deep sleep
+ 138  @  47,816  Wake when Lid is Opened
+ 139  @  47,865  Wake When AC is Detected
+ 140  @  47,916  Wake on USB
+ 141  @  47,941      Warning!! Due to Deep Sleep is Enabled, if you remove AC power from the computer, Wake on USB function
+ 142  @  48,156      will be automatically disabled.
+ 143  @  48,229  Enable
+ 144  @  48,244  Disable
+ 145  @  48,261  Modern Standby
+ 146  @  48,292  Deep Sleep has been gray out because Modern Standby is set to On.
+ 147  @  48,425  Power Control
+ 148  @  48,454  Battery Management
+ 149  @  48,493  Battery Health Manager
+ 150  @  48,540  Maximize Battery Health Management
+ 151  @  48,611  Let HP Manage My Battery Health
+ 152  @  48,676  Minimize Battery Health Management
+ 153  @  48,747  This setting is ideal for users who primarily keep their notebook connected to AC power.
+ 154  @  48,926  This setting maximizes the long-term health of the battery by limiting its maximum charge capacity to 80% of the available full charge capacity (if the battery is currently charged above 80%, it can be discharged manually by disconnecting the device from AC or the system will discharge the battery slowly over time). Maximize Battery Health Management keeps the battery from entering a high state-of-charge which helps to slow the rate of natural degradation. As a result of this reduction, battery runtime between charges is reduced. As with all rechargeable batteries, the available full charge capacity of the battery will naturally decrease with time and usage.
+ 155  @  50,261  This setting is ideal for users who want to maximize battery runtime while also protecting their battery's health.
+ 156  @  50,492  This setting balances battery run-time and battery health. Over time, the available charge capacity of the battery is reduced. This reduction in available charge capacity limits the battery's ability to enter a high state-of-charge, which helps to slow the rate of natural degradation. As a result of this reduction, battery runtime will decrease over time as available charge capacity is reduced. As with all rechargeable batteries, the available full charge capacity of the battery will naturally decrease with time and usage.
+ 157  @  51,551  This setting is ideal for users who primarily use their notebook on battery power and want to maximize device runtime between charges.
+ 158  @  51,822  This setting disables those features designed to manage the long-term health of the battery and allows the battery to charge to its available full charge capacity. Disablement of these features will allow the battery to enter a high state-of-charge, which can increase the rate of the battery's natural degradation. As with all rechargeable batteries, the available full charge capacity of the battery will naturally decrease with time and usage.
+ 159  @  52,717  For more information, please see HP.COM/SUPPORT/BATTERY
+ 160  @  52,830  Configure Storage Controller for Intel Optane
+ 161  @  52,923      Optane is gray out due to Legacy Support Enable
+ 162  @  53,028  Turbo-boost
+ 163  @  53,053  Hyperthreading
+ 164  @  53,084  Permits the user to control the processor capability
+ 165  @  53,191  Virtualization Technology (VTx)
+ 166  @  53,256  Virtualization Technology for Directed I/O (VTd)
+ 167  @  53,355      VTx and VTd cannot be disabled while TXT is enabled.
+ 168  @  53,470      Hyperthreading and Multi-processor has been enabled and grayed out because Deep sleep is set to On.
+ 169  @  53,679  DMA Protection
+ 170  @  53,710  Pre-boot DMA protection
+ 171  @  53,759  Thunderbolt Only
+ 172  @  53,794  All PCIe devices with approved exceptions
+ 173  @  53,879  All PCIe devices
+ 174  @  53,914  Selecting The Device Scope For Pre-Boot DMA Protection
+ 175  @  54,025  Enhanced Hello Sign-in
+ 176  @  54,072  Enables enhanced Hello sign-in for supported versions of Windows by adding Secure Devices (SDEV) ACPI table.
+ 177  @  54,291  POST Prompt for RAID Configuration
+ 178  @  54,362  Secondary Battery Fast Charge
+ 179  @  54,423  Fast Charge
+ 180  @  54,448  On Battery Only
+ 181  @  54,481  Power Button Protection
+ 182  @  54,530  Never
+ 183  @  54,543  Always
+ 184  @  54,558  This feature ensures that unintentional activation of the power button while it is being transported in a bag does not cause the system to wake up.
+ 185  @  54,856  On Battery Only: Power button is only disabled when the lid is closed, the system is in a low power state, and no power external power source is present.
+ 186  @  55,166  Always: Power button is always disabled when the lid is closed.
+ 187  @  55,296  Never: Power button is enabled always when this lid is closed.
+ 188  @  55,423  USB Type-C Connector System Software Interface (UCSI)
+ 189  @  55,532  The UCSI option should be disabled if booting a Microsoft Windows 10 version before 1709 to avoid system stability issues.
+ 190  @  55,779  Enable High Resolution mode when connected to a USB-C DP alt mode dock 
+ 191  @  55,924  Special Keys mapped to Fn + keypress
+
+====================================================================================================
+★ 关键项：Modern Standby —— 五处出现（多语言）
+====================================================================================================
+
+--- @48,261 (en-US) ---
+      nction
+          will be automatically disabled.
+      Enable
+      Disable
+      Modern Standby
+      Deep Sleep has been gray out because Modern Standby is set to On.
+      Power Control
+      Battery Manag
+
+--- @48,366 (en-US(help 引用)) ---
+      isable
+      Modern Standby
+      Deep Sleep has been gray out because Modern Standby is set to On.
+      Power Control
+      Battery Management
+      Battery Health Manager
+      Maximize Battery Health
+
+--- @129,775 (da-DK 丹麦语) ---
+      rn standby
+      Dyb s
+      vn er blevet sl
+      et fra og nedtonet, fordi Modern Standby er indstillet til On.
+      Str
+      mstyring
+      Batteristyring
+      Tilstandsstyring af batteri
+
+--- @317,368 (es-ES 西班牙语) ---
+      mente
+      la funci
+      n Despertar en USB.
+      Habilitar
+      Deshabilitar
+      Modern Standby
+      La funci
+      n de suspensi
+
+--- @317,545 (es-ES 西班牙语) ---
+       suspensi
+      n profunda se ha deshabilitado y sombreado porque Modern Standby est
+       activado.
+      Control de energ
+      Administraci
+      n de la bater
+      Administrador de mantenimiento

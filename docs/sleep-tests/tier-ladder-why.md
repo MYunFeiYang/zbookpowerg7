@@ -382,3 +382,108 @@ HpCommonSetup                        ← HP 的 Setup 配置变量名
 - **B-β（完全不碰 Windows）**：解那 34 个 FV（需引入 UEFITool / 自写 FV 解析）→ 提 `HpCommonSetup` 模块的 **IFR** → 得到含隐藏项的**完整清单 + 每项在变量里的偏移**。成本：需工具链；且应换成本机对应的 **01.24.02** 包（SP154814 只有 01.18.01）。
 
 > 本轮**零配置 / 零 EFI 改动**。固件包与解包产物仅落在 `/tmp/biosprobe/`（临时目录，未入库、未进工作区）。**其中所有 .exe 均已明确不执行。**
+
+---
+
+## 附录 C · B-β 执行结果：离线拆固件卷（2026-09-18 18:1x）
+
+> 用户选 **B-β**（完全不碰 Windows）。**执行完毕：一半成功、一半是明确的否定结论。**
+> **✅ 拿到了含隐藏项的完整设置项清单，并坐实 `Modern Standby` 是固件里的正式 Setup 项（多语言 UI）。**
+> **❌ 但 B.6 里定的目标「提 `HpCommonSetup` 的 IFR、拿每项在变量里的偏移」本身不成立 —— 该固件没有 IFR。**
+
+### C.1 执行链条（全在 macOS，零 Windows、零硬件风险，`.exe` 一个都没执行）
+
+| # | 步骤 | 手段 | 产物 / 关键读数 |
+|---|---|---|---|
+| ① | 找**更新版本**的包 | HP 公告 `HPSBHF04087`（Intel 处理器固件 2026-02） | **`SP169002` = ZBook Power G7 BIOS 01.23.00 Rev2**（2026-08-27 更新）；旧包 `SP154814` = 01.18.01 留作对照 |
+| ② | 下载 | `curl` | 两个包：22,581,536 B / 23,033,544 B |
+| ③ | 找内嵌真 CAB | **按头部字段校验**（`vmaj∈1..3`、`cFolders≤32`、`cbCabinet` 不越界） | `sp154814` → **CAB@331,559**；`sp169002` → **CAB@330,678**。两包的 `MSCF@216,064` 都是**巧合命中**（v0.110 / 101 folders ⇒ 字段乱），靠校验剔掉 |
+| ④ | 解 CAB | `bsdtar -xf`（macOS 自带 libarchive，**不需要 7z/cabextract**） | `T75_01230000.bin` **32,315,326 B**（01.23.00）+ `History.txt` |
+| ⑤ | 解固件卷 | 下载 **UEFIExtract NE A75 universal_mac**（1.5 MB，`xattr -dr com.apple.quarantine` 后可直接跑） | `T75_01230000.bin.dump/` **302 MB / 15,718 个文件**；`_FVH` × 34，其中 **16 个合理 FV**（占镜像 49.8%） |
+| ⑥ | 定位目标模块 | `UEFIFind` 搜 body（**解压后**内容） | `HpModernStandbyConfigurations` + `HpSetup` **同属模块 `A0A3FEC9-FE9D-4CE7-8DB4-9C54F3F19E5A`** = 卷 `11 B73FE497…` / File **`171 0147`**，DXE driver，1.33 MB |
+
+**版本口径**：本机 **01.24.02**（BIOS 日期 2026-05-11）比手上最新的 **01.23.00 还要新一个修订**，HP 尚未在公告里列出对应 SoftPaq。两版镜像**同为 32,315,326 B、布局固定、42% 字节不同** ⇒ 结构跨版本稳定，用 01.23.00 的结构做判断是安全的（但不等于逐项等价）。
+
+### C.2 ★ 核心成果：`Modern Standby` 是固件里的**正式 Setup 项**
+
+模块 `171 0147` 只有 5 个段：**DXE dependency / Raw(120 B) / PE32(1,327,104 B) / UI / Version**。全部 UI 文本都在 **PE32 内的 UTF-16 宽字符串常量池**里。
+
+**正向对照（必须先跑，否则证据无效）** —— 用 BIOS 实拍图里**确凿存在**的项验证检索方法：
+
+| 对照项（实拍菜单里确有不疑） | 命中 |
+|---|---|
+| `Runtime Power Management` | ✅ 7 文件（UTF-16） |
+| `Extended Idle Power States` | ✅ 7 |
+| `Power Management Options` | ✅ 7 |
+| `Power On When AC Detected` | ✅ 7 |
+
+**目标项命中**：`Modern Standby` 在 HpSetup 里出现 **5 次**，跨 **3 种语言**：
+
+| 偏移 | 语言 | 上下文 |
+|---|---|---|
+| 48,261 | **en-US** | `… Enable / Disable / `**`Modern Standby`**` / Deep Sleep has been gray out because Modern Standby is set to On. / Power Control …` |
+| 48,366 | en-US | help 文本里再次引用 |
+| 129,775 | **da-DK** | `Aktiv` / `Deaktiv` |
+| 317,368 | **es-ES** | `Habilitar` / `Deshabilitar` |
+| 317,545 | es-ES | 同上 |
+
+⇒ **三项坐实**：
+1. **它是一个 Enable/Disable 二元设置项**（不是只读状态位）；
+2. **它是正式本地化项**（HP 为它准备了多语言 UI，不是遗留字符串）；
+3. **它的 help 自曝互斥关系**：*"**Deep Sleep has been gray out because Modern Standby is set to On.**"* —— 这正是"AOAC 开着则 S3/Deep Sleep 不可用"在**固件自己的 UI 文本里**的表述。
+
+它在字符串池里的物理位置**紧邻** Power 菜单核心项：
+
+```
+… Runtime Power Management | Enables Runtime Power Management.
+  | Extended Idle Power States | Increases the OS's Idle Power Savings.
+  | Deep sleep | Wake when Lid is Opened | Wake When AC is Detected | Wake on USB
+  | (Warning!! Due to Deep Sleep is Enabled, …) | Enable | Disable
+  | ★ Modern Standby | Deep Sleep has been gray out because Modern Standby is set to On.
+  | Power Control | Battery Management | Battery Health Manager …
+```
+
+### C.3 ❌ 明确否定：该固件**没有 IFR**（三条独立判据）
+
+| # | 判据 | 结果 |
+|---|---|---|
+| 1 | `UEFIExtract report` 的 section 类型统计 | **HII section = 0**（968 UI / 929 PE32 / 768 Version / 392 Raw / 377 DXE dep / 260 MM dep / 240 PEI dep / 26 Compressed / 24 TE / 5 GUID defined / 1 Volume image） |
+| 2 |全 dump **15,718 文件**搜 `EFI_HII_PACKAGE_END` 指纹 `06 00 00 00 DF 00` | **0 命中** |
+| 3 | 该 PE32 内**严格 HII 包链扫描**（≥3 包、且以 `END(0xDF)` 收尾） | **0 段** |
+
+两条旁证：
+- 字符串池里 `Runtime Power Management`（47,539，24 字符 = 50 B）**与它的说明文本（47,590）字节直接相邻** ⇒ **没有 SIBT 结构、没有 string ID** ⇒ 是**编译器生成的宽字符串常量池**，不是 HII STRINGS 包。
+- `HII_DATABASE_PROTOCOL` GUID 确实出现在 **12+ 个模块**里 ⇒ **EDK2 的 HII 框架代码在**，但**没有任何模块安装 HII 包**（框架被保留、Setup 不走它）。
+
+⇒ **HP 的 Setup 是自研引擎**，设置项定义与显示逻辑都在 PE32 代码里，**没有 IFR 可解**。
+
+⚠️ 一次自我纠错：中途我的"IFR 检测器"在 `151 081E` 报过"首 op = `0x24`(VARSTORE)"，dump 出来却是 `f3 a5`(rep movsd) / `c3`(ret) / `cc`(int3) —— **那是 x86 机器码的假阳性**（0x24 后跟合理长度在代码里很常见）。凡"走链检测"类启发式，**必须回读落点字节**才算数。
+
+### C.4 顺带拿到的东西
+
+- **完整 Power 菜单字符串清单**（含项名 + 说明 + 选项值）已存证 → **`docs/backups/bios-teardown-2026-09-18/hp-setup-power-strings.txt`**（12.6 KB）。里面能直接读到：`Energy Efficient Turbo` / `Ambient Light Sensor` / `Thunderbolt Options`（`Native + Lower Power Mode`）/ `Power On When AC Detected` / `Fan Always on while on AC Power` / `Backlit keyboard timeout`(5s–Never) / `Boost Converter` / `Wake on LAN in Battery Mode` / `Disable battery on next shut down`(Next shut down / Do not disable) / `Runtime Power Management` / `Extended Idle Power States` / `Deep sleep`(Wake on Lid/AC/USB) / **`Modern Standby`** / `Battery Health Manager`(三档) …
+- 结构化事实：`HpCommonSetup` 是固件里的 **UTF-16 变量名字符串**（16 个文件命中），**不是** IFR 的 ASCII `VarStore` 名 —— 与 C.3 相互印证。
+
+### C.5 这一轮改了什么 / 没改什么
+
+| | 内容 |
+|---|---|
+| **升级** | 附录 B 的"固件里有 `HpModernStandbyConfigurations` 结构" → **升级为"有完整的多语言 UI 的正式 Setup 项"**（B 阶段只能算"有实锤结构"，C 阶段是"**确认可操作项 + 知道它的名字**"） |
+| **升级** | **③a 路径的可操作性显著提高**：上一轮只能说"表里有 sleep 项就锁定"，现在**知道要搜的准确名字 = `Modern Standby`** |
+| **否定** | **"解 IFR 拿变量偏移"不适用**（无 IFR）。要偏移只剩**逆向 PE32**（成本高，且 HP 的设置未必存 NVRAM 变量 —— 也可能是 EC/ROM）⇒ **本条从"待办"划掉，不再作为路径** |
+| **不变** | **"不赌"不变**。仍然不知道：该项**能否写**、写完**能否真关掉 AOAC**、关掉后**能否救回已实测坏的 S3**；赌注仍不对称（代价＝唯一可用的 Deep Idle） |
+
+### C.6 下一步（只剩两条，都零风险；仍不建议赌）
+
+1. **BIOS 里主动找一次 `Modern Standby`** —— 它物理上紧邻 `Deep sleep` / `Runtime Power Management` / `Extended Idle Power States`，且字符串池里紧跟其后出现分类名 `Power Control`。已知它**不是**在 `Power Management Options` 那张实拍图里 ⇒ 优先看**其它分类/子菜单**（尤其含 `Power Control` 字样的地方），或菜单需要滚动的位置。**找到了 ⇒ 直接改，零风险、可回滚。**
+2. **HP 官方只读入口（附录 A ③a）** —— 下次进 Windows 顺手跑那条 `Get-WmiObject … HP_BIOSSetting`，**搜 `Modern Standby`**（现在有准确名字了）。带 `DisplayInUI` 字段 ⇒ 一次就能回答"这机器到底把它藏没藏"。
+
+⚠️ 即便 ①② 都指向"可以关"，**动手前仍应回到 A.4 的赌注账**：关 AOAC 的收益是**已实测坏掉的 S3**，代价是**唯一可用的 Deep Idle**。
+
+### C.7 方法论自曝（三条，都已写进 `docs/tooling-gotchas.md`）
+
+1. **UI 文本是 UTF-16LE**：用 ASCII 搜 → **0 命中**（本轮第一版就栽在这）。凡固件字符串检索，**必须双编码并跑**。
+2. **必须先解包再搜**：未解包的 32 MB 镜像里，`Runtime Power Management` / `Modern Standby` / `Deep Sleep has been gray out` **全部 0 命中**（它们在压缩段内）；解包后 `Modern Standby` 立刻 9 个文件命中。⇒ **"0 命中"≠"不存在"，这一条本轮又被验证一次。**
+3. **正向对照必须用"确凿存在"的锚点**：本次锚点 = BIOS 实拍图里看得见的 4 项。**没有对照的 0 命中不作数。**
+
+> 本轮**零配置 / 零 EFI 改动**。固件包与 302 MB 解包产物**只在 `/tmp/biosprobe/`**（未进工作区）；入库的只有**结论文档 + 12.6 KB 字符串清单**。
