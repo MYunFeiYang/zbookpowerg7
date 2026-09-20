@@ -785,3 +785,74 @@ HpCommonSetup                        ← HP 的 Setup 配置变量名
 - ⛔ **不建议**：拆机 SPI 刷写、逆向 PE32 patch、任何"解锁 BIOS"工具。
 
 > 本轮**零配置 / 零 EFI 改动 / Windows 侧写操作 = 0 / 固件零写入**。
+
+---
+
+## 附录 H · 2026-09-20 14:2x：**为什么 Windows 和黑苹果的 Deep Idle 功耗差这么多？**
+
+> 触发：用户问「**deep idle 呢？为什么 window 和 hackintosh 功耗差异这么大？**」
+> 详细分析见 **`docs/sleep-tests/round5-win-vs-hack-power.md`**（本轮新建）。本轮**零配置 / 零 EFI / 零固件写入**。
+
+### H.1 三句话结论
+
+1. **前提只有一半数据**：macOS 侧实测 **6–11 %/h（≈4–7.5 W）**；**Windows 侧从未测过** ⇒ "差多少"**未知**。
+2. **结构上最可能的主因是「档位差」，不是「同模式下的效率差」**：Windows 有 **S4** 兜底 + **Adaptive Hibernate 默认开**（12 h 内掉 ≥5% ⇒ 自动进 S4 ≈ 0 W）；macOS 侧 `standby 0` + `hibernatemode 0` ⇒ **只有 S0ix 一档**。
+3. **顺带推翻一个老假设**：外部实测显示 **Windows 保持 WiFi/BT 连接时 S0ix 仍只 ~0.3 W** ⇒ **5 W 不是"WiFi 没关"能解释的**。
+
+### H.2 两边档位对照（Windows 侧数据 = 本机 `powercfg /a` 一手原文）
+
+| 档位 | macOS（本机） | Windows（本机） |
+|---|---|---|
+| **S0ix / Deep Idle** | ✅ 唯一可用（靠 `SSDT-DeepIdle` 伪造 `LPS0`/`LXEN` 声明） | ✅ 可用（**厂商设计路径** = Modern Standby） |
+| **S3** | ❌ 实测坏（EC 罢工 → USB panic） | ❌ 被 AOAC 压住 |
+| **S4** | ⚠️ **进得去、出不来**（失败在**恢复侧** #27b） | ✅ **可用** |
+| 实测掉电 | **6–11 %/h** | 🔴 **未测** |
+
+> ⚠️ **措辞澄清**：`s4-requirements-audit.md` §6 的准确判定是 **#27a（断电 ✅）/#27b（恢复 ❌）**，而唯一"改配置改不出来"的 **#28 有 HP 官方"刷 BIOS 可能修"的说法** ⇒ **S4 是「不追」，不是「固件没实现」**。
+
+### H.3 差异的三个结构性来源
+
+| # | 来源 | 等级 | 依据 |
+|---|---|---|---|
+| **①** | **档位差** —— Microsoft 官方：Modern Standby **不按固定时间**转 Hibernate，但 **Adaptive Hibernate** 默认开（`StandbyBudgetPercent=5%` / `StandbyBudgetRefreshInterval=12 h`）⇒ 12 h 内掉 ≥5% **自动进 S4**。若 Windows 也 ~7 %/h ⇒ **约 45 min 就换档** ⇒ 睡 10 h 总掉电 ≈4%（vs macOS ≈50–70%） | 🟢 官方文档 + 🟢 社区独立确认 | MS Learn `Adaptive Hibernate Overview` / `display--sleep--and-hibernate-idle-timers`；Framework 社区：*"after using 5% of the battery **hibernate automatically**"* |
+| **②** | **平台级协调器** —— Windows 有 **Intel PEP（`intelpep.sys`）+ DPTF**（仲裁设备能否否决进低功耗，官方有 `PEP PRE-VETO COUNT` 指标）+ **DAM** 冻结应用 + **连接待机**（协议卸载/WoLAN）；macOS **无等价物** | 🟢 官方文档 | MS Learn `modern-standby-sleepstudy-common-problem-examples` |
+| **③** | **macOS 在"别人家的省电模式"里跑** —— 真 Intel Mac **从不使用 S0ix**；`SSDT-DeepIdle.dsl`（94 B）全文只有 `Method(LPS0)`/`Method(LXEN)` 各 `Return(One)` ⇒ **只声明、不改变任何下电行为** | 🟢 本机实测（反汇编） | `EFI/oc/ACPI/SSDT-DeepIdle.dsl` |
+
+### H.4 ★ 反直觉证据：5 W 不是 WiFi 的锅
+
+| 平台 | S0ix 实测 | 条件 |
+|---|---|---|
+| Windows 11（Lakefield / X1 Fold） | **0.5–0.6 %/h** | disconnected |
+| Windows 12 代（Framework 13） | **280–340 mW** | **WiFi/BT 保持连接** |
+| Fedora 36（同机） | ~0.4 %/h | 同上 |
+| **本机 macOS** | **6–11 %/h（≈4–7.5 W）** | WiFi/BT 开 |
+
+> 原帖：*"Windows **leaves BT connected** while sleeping. Also means the **WiFi card is still powered**."* ⇒ **保持连接都才 0.3 W**。
+> ⇒ 社区"关 WiFi/BT ⇒ 0.66 %/h"那个署名案例**不能直接照搬**；**5 W 的成因在"平台整体没进最深状态"**，不在无线网卡本身。
+> ⇒ macOS 侧"已用尽"清单见 `round2-tierB-result.md` **§38.2**（8 条全满足/不适用/被否）⇒ **5 W 是地板**。
+
+### H.5 ★ 一锤定音：用 Windows 的工具诊断 macOS 的问题
+
+`powercfg /sleepstudy`（管理员 + **必须电池供电真睡一次**）会给出 macOS **永远拿不到**的东西：
+
+| 输出 | 回答 |
+|---|---|
+| 每次待机**掉电率 %/h** | "差异到底多大" |
+| **DRIPS 直方图** | "它到底睡到多深" |
+| **Top offenders**（设备/驱动/进程 + Active Time %） | **"谁在阻止"** |
+| 有没有 **Hibernate 段** | 验证 ① 的"档位差" |
+| **PEP PRE-VETO COUNT** | 高 ⇒ 有驱动没加载 |
+
+**为什么有效**：**两边硬件完全相同** ⇒ Windows 点出的 offender **就是 macOS 也在耗的同一个设备**。
+已备好提示词：**`docs/windows-side-power-prompt.md`**（只读，不改任何设置；含强制脱敏步骤）。
+
+### H.6 未验证项（不许当结论）
+
+| 说法 | 等级 |
+|---|---|
+| "Windows 侧功耗比 macOS 低" | 🔴 **本机零数据** |
+| "Windows 实际触发了 Adaptive Hibernate" | 🟡 机制确定、**本机未验**（SleepStudy 一查即知） |
+| "5 W 主要来自平台没进最深 DRIPS" | 🟡 与外部数据吻合，本机缺 DRIPS 证据 |
+| "macOS 打开 `standby 1` 就能拿到 S4 那档" | 🔴 推断 —— 本机 S4 **恢复侧**失败，**开了也醒不回来** |
+
+> 本轮**零配置 / 零 EFI 改动 / Windows 侧写操作 = 0 / 固件零写入**。**「出远门直接关机」不变。**

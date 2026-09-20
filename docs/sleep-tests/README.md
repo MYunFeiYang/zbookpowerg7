@@ -1,6 +1,16 @@
 # 睡眠档位调优测试记录
 
-> 🛑 **2026-09-20 14:0x【§八十一 · 最新】—— 追问「有没有 BIOS 支持的？包括魔改的？」⇒ BIOS 层（含魔改）四层穷举，同样封板**（`tier-ladder-why.md` **附录 G**、台账 **§8.8**）
+> ❓❓ **2026-09-20 14:2x【§八十二 · 最新】—— 追问「deep idle 呢？为什么 window 和 hackintosh 功耗差异这么大？」⇒ 差异来源分层定案**（`tier-ladder-why.md` **附录 H**、专题 `round5-win-vs-hack-power.md`）
+> **① 前提只有一半数据**：macOS 侧实测 **6–11 %/h（≈4–7.5 W）**；**Windows 侧功耗从未测过** ⇒ "差多少"目前是**未知数**。
+> **② ★ 最可能的主因是「档位差」，不是「同一模式下的效率差」** —— Microsoft 官方：Modern Standby **不按固定时间**转 Hibernate，但有 **Adaptive Hibernate**（默认 `StandbyBudgetPercent=5%` / `StandbyBudgetRefreshInterval=12 h`）⇒ **12 h 内掉 ≥5% 就自动进 S4（≈0 W）**；Framework 社区独立确认原话 *"after using 5% of the battery **hibernate automatically**"*。⇒ 若 Windows 也 ~7 %/h，**约 45 min 就换档**：睡 10 h ≈ **4%** vs macOS ≈ **50–70%**。
+> **③ 本机 `powercfg /a` 一手原文**：Windows 侧 **S0 低电量待机（连接的网络）✅ ＋ 休眠(S4) ✅ ＋ 快速启动 ✅**（S1/S2「固件不支持」、S3「被 S0 压住」）⇒ **Windows 有两档，macOS 只有一档**。
+> **④ ★ 反直觉证据，推翻一个老假设**：外部实测 **Windows 保持 WiFi/BT 连接时 S0ix 仍只 280–340 mW** ⇒ **5 W 不是"WiFi 没关"能解释的**，是**平台整体没进最深状态**；社区"关 WiFi/BT ⇒ 0.66 %/h"不能直接照搬。
+> **⑤ 机制差异三条**：Windows 有 **Intel PEP（`intelpep.sys`）+ DPTF + DAM + 连接待机（协议卸载/WoLAN）**；macOS **无等价物**。且 macOS 在**"别人家的省电模式"**里跑 —— 真 Intel Mac **从不用 S0ix**；本机 `SSDT-DeepIdle.dsl`（94 B）全文只有 `Method(LPS0)`/`Method(LXEN)` 各 `Return(One)` ⇒ **只声明、不改变任何下电行为**。
+> **⑥ ★ 一锤定音**：`powercfg /sleepstudy`（**必须电池供电真睡一次**）会给 **掉电率 + DRIPS 直方图 + Top offenders + 有没有 Hibernate 段 + PEP PRE-VETO COUNT** —— 这些 **macOS 永远拿不到**；因**两边硬件相同**，Windows 点出的 offender **就是 macOS 也在耗的同一个设备**。提示词已备好 → **`docs/windows-side-power-prompt.md`**（只读，含强制脱敏）。
+> **⑦ ⚠️ 措辞澄清**：按 `s4-requirements-audit.md` §6，S4 的准确判定是 **#27a（断电 ✅）/#27b（恢复 ❌）**，唯一"改配置改不出来"的 #28 **有 HP 官方"刷 BIOS 可能修"的说法** ⇒ **S4 是「不追」，不是「固件没实现」**。
+> 本轮**零配置 / 零 EFI / 零固件写入 / Windows 侧写操作 = 0**。**「出远门直接关机」不变。**
+
+> 🛑 **2026-09-20 14:0x【§八十一】—— 追问「有没有 BIOS 支持的？包括魔改的？」⇒ BIOS 层（含魔改）四层穷举，同样封板**（`tier-ladder-why.md` **附录 G**、台账 **§8.8**）
 > **① 菜单层 ❌** 无此项（实拍 + HP 官方菜单表 + 258 项 WMI 三者一致）。**② 官方接口层 ❌** 有名字但 `IsReadOnly=1`。
 > **③ UEFI 变量层 ❌ 前提不成立**：`setup_var` 靠 IFR 的 `VarStore` 才知道偏移 ⇒ 本机**无 IFR** ⇒ 连地址都没有；网传"U 盘解锁"改的 `setuphide` **是 AMI 专有变量**（HP 自研引擎，变量不存在）；本机 `nvram -p` 仅 10 个变量、**0 个 HP/Setup 项**（⚠️ 弱证据 —— macOS 只见自己命名空间，实锤须 UEFI Shell `dmpstore -all`）。
 > **④ 固件本体层（真·魔改）⚠️ 唯一还开着的门，但有三道闸**：无 IFR ⇒ 不能"改可见性"、只能**逆向 PE32 机器码**；HP **自 2013 起 RSA 签名** ⇒ 改过的镜像官方刷新工具拒收；只剩**拆机 + 物理 SPI 刷写**。
