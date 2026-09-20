@@ -1,0 +1,19 @@
+﻿
+HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\BIOS
+    BiosMajorRelease    REG_DWORD    0x18
+    BiosMinorRelease    REG_DWORD    0x2
+    ECFirmwareMajorRelease    REG_DWORD    0x34
+    ECFirmwareMinorRelease    REG_DWORD    0x31
+    EnclosureType    REG_DWORD    0xa
+    BaseBoardManufacturer    REG_SZ    HP
+    BaseBoardProduct    REG_SZ    87EC
+    BaseBoardVersion    REG_SZ    KBC Version 34.31.00
+    BIOSReleaseDate    REG_SZ    05/11/2026
+    BIOSVendor    REG_SZ    HP
+    BIOSVersion    REG_SZ    T75 Ver. 01.24.02
+    SystemFamily    REG_SZ    103C_5336AN HP ZBook
+    SystemManufacturer    REG_SZ    HP
+    SystemProductName    REG_SZ    HP ZBook Power G7 Mobile Workstation
+    SystemSKU    REG_SZ    10J83AV
+    SystemVersion    REG_SZ    SBKPFV3
+

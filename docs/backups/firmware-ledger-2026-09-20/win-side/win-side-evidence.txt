@@ -1,0 +1,11 @@
+﻿=== Phase A 环境 ===
+PSVersion: 5.1.26100.9278 / Desktop
+IsAdmin: False (本次全部取证在【非管理员】下完成)
+Model: HP ZBook Power G7 Mobile Workstation
+BIOS: T75 Ver. 01.24.02  ReleaseDate 05/11/2026
+EC: 52.49  KBC: 34.31.00
+
+=== 固件镜像交叉验证 ===
+文件: C:\Windows\System32\DriverStore\FileRepository\t75_01240200.inf_amd64_42ecb2ad108e0833\T75_01240200.bin
+大小: 32315326 B (与 macOS 侧一致)
+SHA256: F89292026932BE691D59904311CB50B4FBC55379AA554F89479665E04AE6970B (与 macOS 侧 f8929202... 一致)

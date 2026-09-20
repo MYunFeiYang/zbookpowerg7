@@ -79,3 +79,24 @@
 ## 权限
 - 本机 `sudo` **无免密** ⇒ 需要提权的命令一律走 `osascript … with administrator privileges`（**间歇失败，需重试**）
 - `mdutil` / `pmset -g log` / `powermetrics` / `diskutil mount` 都需要提权
+
+## 临时产物与「卡住」报告（2026-09-20 追加）
+| 坑 | 正确做法 |
+|---|---|
+| 把中间产物放 `/tmp` 就以为留住了 | ⚠️ **macOS 重启即清 `/tmp`**。本机实测：10:44 还在的 302 MB 固件 dump、两个 `.exe`、UEFITool，到 12:04 **全没了**（`/private/tmp` 只剩本次启动创建的文件）⇒ **要留的产物一律落工作区或 exFAT 卷**（`docs/backups/…`），别放 `/tmp` |
+| 看到 `*.shutdownStall` 就当"关机卡死" | 它是 **spindump 二进制**（`base64` → `zlib` → `bplist`），**可本地解**：取 `Spindump binary format` 之后的内容 → base64 解码 → 找 `78 9c` → zlib 解压 → 得 NSKeyedArchiver plist（`plistlib.loads`）。关键字段：`_event`、**`_extraDuration`**、`_durationNote`、`_customOutput` |
+| 忽略 `_extraDuration` 的语义 | 本机三份报告 `_extraDuration = 2.0` ＋ `_durationNote = sampling started after 2 seconds` ⇒ **触发门槛只是"比预期多花 2 秒"** ⇒ **2 s 门槛的 "stall" ≠ 用户感知的卡死** |
+| 以为 `_customOutput` 写的就是"卡住的原因" | ⚠️ 它是**诊断系统自己挑的分析对象**。本机三份（09-18 16:40 / 09-18 17:53 / **09-20 11:46**）**全部指向 `logd`**（`heap --addresses=.*transaction.*`）⇒ 正确读法是「关机时 logd 处理日志事务慢了约 2 秒」，**与 EC / ACPI 无关**，不是我们担心的那类卡死 |
+| 想核 boot-args 但记不清 / NVRAM 已被覆盖 | spindump 里**原样存了 `_bootArgs`**（字符串）。本机：`nvram -p` ／ `config.plist` ／ shutdownStall 报告 **三方一致** ⇒ 再加一个可复验来源 |
+| 想核系统与硬件元数据 | 同一份 spindump 还带 `_osProductVersion` / `_osBuildVersion` / `_kernelVersion` / `_hardwareModel` / `_memSize` / `_numActiveCPUs` / `_numVnodes*`，全是只读秒取的 |
+
+## 存证入库前的脱敏（2026-09-20 追加）
+**背景**：本工作区 `origin` = **公开** GitHub 仓库（`github.com/MYunFeiYang/zbookpowerg7`）⇒ 任何 `git add` 的内容**可能被公开**。
+
+| 坑 | 正确做法 |
+|---|---|
+| 跨 OS 取证回传的原始产物**直接 `git add`** | ⚠️ `HP_BIOSSetting` 全表里混着**真机身份字段**：`Serial Number`、`System Board CT Number`、`Universally Unique Identifier (UUID)`（SMBIOS 系统 UUID）、引导路径里的 `NVMe(0x1,…)` EUI64 与 `GPT,…` 分区 GUID ⇒ **入库前一律替换为 `<REDACTED-…>` 占位符**（别删行，保留 `Name`/`DisplayInUI`/`IsReadOnly` 列，结论才可复算） |
+| 以为"没 push 就没关系" | 先跑 `git status -sb` 看 **ahead 几个 commit**；再看远端是不是公开：`curl -s -o /dev/null -w '%{http_code}' <repo-url>`（**200 = 公开**）。本机实测：本地领先 **99** 个 commit、远端停在 09-08 ⇒ 12 天工作全未公开 |
+| 想确认某个标识是否**已泄露** | `git log --all -S "<标识>" --oneline`（空 = 从未入库）；再对**公开快照**单独扫：`git grep -a -n -E "<正则>" origin/main -- '*.md' '*.plist' '*.txt' '*.sh'` ⚠️ 别用 `for f in $(git ls-tree …)` 逐文件 `git show` —— 会扫到 `.icns` 等二进制，**必被 SIGTERM 掐** |
+| 区分"真机标识"与"伪装 SMBIOS" | `config.plist` 里 `PlatformInfo/Generic` 的 `SystemSerialNumber`/`MLB`/`SystemUUID`/`ROM`（如 `C02GC2YFMD6T` / ROM `333333`）是**为 MacBookPro16,4 生成的伪装值，不是本机 HP 标识** ⇒ 本来就在公开仓库里，属黑苹果常态，**保留**；只有固件读出的**真机值**才需脱敏 |
+| 让脱敏只做这一次 | 把脱敏写进**采集端提示词**（`docs/windows-side-workbuddy-prompt.md`「落盘后必做」）⇒ 下次回传即为脱敏版；并在产物目录留 `REDACTION.md` 说明遮了哪些字段（**诚实可审计**，避免后人误读为"该字段原本为空"） |

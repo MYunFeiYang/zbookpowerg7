@@ -1,6 +1,17 @@
 # 睡眠档位调优测试记录
 
-> 📋📋 **2026-09-20 10:0x【§七十八 · 最新】—— 用户问「我的固件等信息你都完全确认了？」⇒ 建**固件事实台账**（按证据等级分档），同时**纠了 3 处记录错**、**新拿 2 条只读读取法**、**把固件结论坐实到本机实跑的那一版****
+> 🛑🛑 **2026-09-20 12:0x【§七十九 · 最新】—— 「Windows 侧提示词」跑完了 ⇒ **「关 AOAC」正式封板****（`tier-ladder-why.md` **附录 F**）
+> **① ★ `Modern Standby` = `Enable`，且 `DisplayInUI=0`（隐藏）＋ `IsReadOnly=1`（只读）** —— 固件把 AOAC 开着、从菜单里藏起来、并标成只读 ⇒ **"拿到名字就能按名写"这条假设作废**（HP 官方 WMI `SetBIOSSetting` / BCU 用的是同一个只读标志）。
+> **② 258 项全表里 `Deep Sleep` / `S3` / `S0ix` / `AOAC` / `Sleep State` 一条都没有**（正向对照 7 项全命中 ⇒ 这个 0 命中算数）。
+> **③ ★ `DisplayInUI` 的"另解"被数据自己否掉**：全表 258 项 = 隐藏 **7** 项 + 只读 **82** 项。若两者是一回事，82 个只读项应**全部**隐藏；实际只有 7 个 ⇒ **`DisplayInUI=0` 就是独立的"隐藏"标志**。且与固件字符串池邻接分析的预测吻合（同屏另 4 项 4/4）。
+> **④ `powercfg /a` 一手原文**：S1/S2 带「系统固件不支持」＋「支持 S0 低电量待机时禁用」**两条**理由，**S3 只有后一条** ⇒ S3 = 「声明了、但被 AOAC 压住」。**本条从"记录"升为"本机一手实测"。**
+> **⑤ `PlatformAoAcOverride` 确认不存在**（由 hive 字节级推断升为**直接 `reg query`**）⇒ Win 半场确实从未设过。
+> **⑥ ⚠️ 纠正对侧报告**：`Win32_BIOS` 报的 **EC 52.49 是"BCD 当十进制读"**（原始字节 `0x34`/`0x31`）⇒ 真值 = **`34.31.00`**（WMI 设置项 `Embedded Controller Firmware Version` + `KBC Version 34.31.00` 双证）。⇒ **新决策规则：将来出新 BIOS 包先比 EC 号；EC 号不变 ⇒ S3 不会好。**
+> **⑦ ★ 结论：此线封板，不做 Phase C** —— 固件层「隐藏＋只读」＝**没入口**（不是"不敢"）；剩下唯一的 `PlatformAoAcOverride` 是 **Windows 自己的键**、**对 macOS 零帮助**；其信息价值也已被三次独立证据覆盖（"声明 ≠ 可用"已在 macOS 半场证过）。**「出远门直接关机」不变，但现在有实测支撑。**
+> **⑧ 白拿资产**：`HPBIOS-all.csv`（258 项全表，含 7 个隐藏项）＋ `ME 14.1.79.2540` / `Thunderbolt 62.0.1.2.1` / `USB-C CCG5 0.7.0` / `Video BIOS GOP` 等版本号。**WMI 只读无需管理员、无需装 HPCMSL、无需重启。**
+> 完整 → `docs/firmware-facts-ledger.md` **§8**｜产物 `docs/backups/firmware-ledger-2026-09-20/win-side/`
+>
+> 📋📋 **2026-09-20 10:0x【§七十八】—— 用户问「我的固件等信息你都完全确认了？」⇒ 建**固件事实台账**（按证据等级分档），同时**纠了 3 处记录错**、**新拿 2 条只读读取法**、**把固件结论坐实到本机实跑的那一版****
 > **① ★ 新读取法 · macOS 侧直接读真实 BIOS 版本（不用进 Windows）**：`ioreg -p IODeviceTree -n efi -r -d 1 -w0` ⇒ `firmware-vendor = <480050000000>`（UTF-16 "HP"）、`firmware-revision = <00021801>`。⚠️ **`system_profiler` 的 `System Firmware Version` 是 OC 装的假值**（本机 `2094.80.5.0.0`）⇒ 以前"核版本必须进 Windows"的前提作废。
 > **② ★ 新读取法 · Windows 卷平时就是只读挂载** ⇒ 不必重启即可读 hive，且**本机实跑固件镜像就在盘上**：`…/Windows/System32/DriverStore/FileRepository/t75_01240200.inf_amd64_*/T75_01240200.bin`（32,315,326 B，sha256 `f8929202…`）。
 > **③ ★ 版本编码闭环**：`firmware-revision` 小端 UINT32 `0x01180200` = HP 官方 `.inf` 的 `FirmwareVersion`；字段是**原始字节值**（`0x18` = 24）⇒ **01.24.02**。与 hive `BIOSVersion`/`SystemBiosVersion` 三处互证。

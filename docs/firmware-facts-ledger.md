@@ -9,13 +9,15 @@
 
 ## 0 · 一句话结论
 
-**「不是全部确认。」** 今天把 **4 项**从二手记录升为一手实测，纠了 **3 处记录错误**，同时明确列出 **3 项我确实拿不到**的东西 —— 而不是含糊带过。
+**「不是全部确认。」** 10:0x 已把 **4 项**从二手记录升为一手实测、纠了 **3 处记录错误**。
+
+**★ 12:0x 更新（Windows 侧只读取证跑完，见 §8）**：§3 原来列的 3 项「拿不到」**补上 2 项**（EC 版本、`DisplayInUI`），只剩 **OpenCore 版本串**仍拿不到；「`PlatformAoAcOverride` 不存在」从 hive 字节级推断升为**直接查询**；并纠正一处 Windows 侧报告的 **EC 版本误读（52.49 → 34.31.00）**。⇒ **对「关 AOAC」这条线：正式封板。**
 
 ---
 
 ## 1 · 一级：本机一手实测（可当场复验）
 
-### 1.1 ★ 真实 BIOS 版本 = `T75 Ver. 01.24.02`（`T75_01240200`）—— **四个独立来源**
+### 1.1 ★ 真实 BIOS 版本 = `T75 Ver. 01.24.02`（`T75_01240200`）—— **五个独立来源**
 
 | # | 来源 | 读数 | 命令 / 文件 |
 |---|---|---|---|
@@ -23,6 +25,7 @@
 | ② | Windows SYSTEM hive `BIOSVersion` | `T75 Ver. 01.24.02` | `/Volumes/TZBOOK/Windows/System32/config/system` |
 | ③ | 同 hive `SystemBiosVersion`（REG_MULTI_SZ） | `HPQOEM - 0` ⟂ `T75 Ver. 01.24.02` ⟂ `HP - 1180200` | 同上 |
 | ④ | HP 自己的固件包 `.inf` | `DriverVer = 05/11/2026,1.24.2.0` ＋ `FirmwareVersion = 0x01180200` | DriverStore 里的 `T75_01240200.inf` |
+| ⑤ | **Windows WMI**（HP 自带，12:0x 新增） | `System BIOS Version = T75 Ver. 01.24.02  05/11/2026` | `root/hp/InstrumentedBIOS` → `HP_BIOSSetting` |
 
 **编码已闭环（不再靠猜）**：`0xMM mm PP 00`，每个字段是**原始字节值**（十进制语义、按十六进制书写）。
 本机 `0x01180200` → 主 `0x01`=1、次 `0x18`=**24**、补丁 `0x02`=2、保留 `00` ⇒ **1.24.2.0** ⇒ 与 ④ 的 `DriverVer` 逐字段吻合。
@@ -42,7 +45,8 @@
 | 实跑 boot-args | `-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1  -amfipassbeta -lilubetaall alctcsel=1 revpatch=sbvmm rtcfx_exclude=0E-FF -rtcfxdbg` | **NVRAM 与 config 一致**（`nvram -p`） |
 | SSDT 的 OS 门控 | 14 张**全部**含 `_OSI` + `Darwin` | 逐文件 `strings -a` |
 | 部署一致性 | 工作区 vs ESP `config.plist` sha256 **相同** `a9c01104…` | `shasum -a 256` |
-| Windows 侧 `PlatformAoAcOverride` | **不存在**（0 命中；正向对照 `BIOSVersion` 命中 ⇒ 方法有效） | hive 字节级检索 |
+| Windows 侧 `PlatformAoAcOverride` | **不存在**（12:0x 起为**直接查询**：`reg query` 报「系统找不到指定的注册表项或值」） | `reg query`；原 hive 字节级检索降为旁证 |
+| **★ EC / KBC 固件版本（本机实跑值）** | **`34.31.00`** | **三来源**：① WMI `Embedded Controller Firmware Version = 34.31.00`；② `BaseBoardVersion = KBC Version 34.31.00`；③ SMBIOS Type 0 `ECFirmwareMajorRelease/Minor = 0x34/0x31` ⇒ **BCD 读法 = 34.31**。⚠️ `Win32_BIOS` 报 `52/49` 是把 BCD 当十进制读的**显示产物**，不是另一个版本（详见 §8.2） |
 | 本机 CPU 是否 6 核 | 是（`system_profiler`：6-Core i7），**型号被 OC 伪装，读不到真型号** | — |
 
 ### 1.3 ★ 本机 **01.24.02** 固件复核（把 01.23.00 的旧结论坐实到本机版本）
@@ -96,11 +100,12 @@
 
 | 项 | 为什么拿不到（已穷尽尝试） | 唯一可能入口 |
 |---|---|---|
-| **EC 固件版本（本机实跑值）** | 镜像里没有它（EC 版本是运行时读的）。已查且**全部 0 命中**：7 个 Padding 区 body.bin、`software` hive（正向对照 `HP ZBook Power G7` 命中 ⇒ 方法有效）、`ProgramData/HP/**` 日志目录、Windows 卷上无 `HpFirmwareUpdRec.txt` | ① BIOS Setup → System Information 页（零风险，直接看）；② Windows `root/HP/InstrumentedBIOS` WMI |
+| ~~EC 固件版本（本机实跑值）~~ | — | ✅ **12:0x 已补上 = `34.31.00`**（§1.2 / §8.2）。原判"镜像里没有、WMI 未试"已过时：WMI 一条就能读到 |
 | **OpenCore 版本串** | `nvram 4D1FDA02-…:opencore-version` **不存在**（`nvram -p` 正向对照通过）＋ `OpenCore.efi` 内只有**构建占位符** `REL-XXX-YYYY-MM-DD` ⇒ 本机**无权威来源** | 打开 `Misc/Debug` 文件日志后从 OC 启动日志读 |
-| **`HpModernStandbyConfigurations` 的 `DisplayInUI`（藏没藏）** | 该固件**没有 IFR**（三判据全零）⇒ 可见性标志在 HP 自研结构数组里，**未逆向** | WMI `HP_BIOSSetting` 的 `DisplayInUI` 字段（只读） |
+| ~~`HpModernStandbyConfigurations` 的 `DisplayInUI`（藏没藏）~~ | — | ✅ **12:0x 已补上 = `0`（隐藏）＋ `IsReadOnly=1`（只读）**，见 §8.1 / §8.3 |
 
-> ⚠️ 三条都不影响任何现有结论（尤其"不赌 AOAC"）。列出来只是为了**不让它们装作已确认**。
+> ⚠️ 原三条里已补齐两条；剩下的那条（OC 版本串）**不影响任何结论**（尤其"不赌 AOAC"）。列出来只是为了**不让它装作已确认**。
+> ✅ **副产品**：「WMI 只读」这个入口已实测可行 —— **非管理员即可、无需装 HPCMSL、无需重启**（12:0x 实测）。以后凡"某 BIOS 设置是什么值/藏没藏"，直接用 `docs/windows-side-workbuddy-prompt.md` 那套走一遍即可。
 
 ---
 
@@ -131,13 +136,16 @@ ls /Volumes/TZBOOK/Windows/System32/DriverStore/FileRepository/t75_01240200.inf_
 
 ---
 
-## 5 · 本次修订（3 处，均为我的记录错，已改）
+## 5 · 本次修订（6 处：前 3 处是我的记录错，后 3 处为 12:0x 追加）
 
 | # | 旧记录 | 实测 | 影响 |
 |---|---|---|---|
 | **1** | `MEMORY.md` 第 16 行 boot-args 写作 `… igfxrpsc=1 -wegnoegpu -amfipassbeta … rtcfx_exclude=80-FF …` | 实跑（NVRAM 与 config **一致**）**没有 `-wegnoegpu`**，且是 `rtcfx_exclude=0E-FF` | 与同文件第 19 行「RTC 四层防护 = `0E-FF`」**自相矛盾** ⇒ 已改 16 行 |
 | **2** | 「`HpModernStandbyConfigurations` … 属 `HpCommonSetup` Setup 变量」 | 精确归属见 §1.4；是 **PEI 模块内标识符** | 不改结论，但**证据表述必须精确** |
 | **3** | 隐含假设「BIOS 版本只能从 Win hive 拿」 | macOS `ioreg` 可直接读（§4.1） | 核版本**不必再进 Windows** |
+| **4**（12:0x 追加） | 隐含「EC 版本拿不到」 | **拿得到**：WMI 一条即得 `34.31.00`（§1.2）；不是缺入口，是**没试那个入口** | 删掉 §3 那条"拿不到" |
+| **5**（12:0x 追加） | 「刷固件**不可回退**」 | **`BIOS Rollback Policy = Unrestricted Rollback` ＋ `Minimum BIOS Version = 00.00.00` ⇒ 策略上允许回退** | 不刷的真实理由 = **没收益＋变砖风险**，不是"回不去" |
+| **6**（12:0x 追加） | Windows 侧报告称 "EC = 52.49" | 那是 **BCD 当十进制读**的显示产物；真值 `34.31.00`（§8.2） | 别让这个假数字进任何结论 |
 
 ---
 
@@ -150,6 +158,13 @@ ls /Volumes/TZBOOK/Windows/System32/DriverStore/FileRepository/t75_01240200.inf_
 | `docs/backups/firmware-ledger-2026-09-20/03-hp-setup-varnames-01.24.02.txt` | 本机 01.24.02 的 Setup 变量名表 + UI 邻接 + 三语互斥文案 |
 | `docs/backups/firmware-ledger-2026-09-20/04-firmware-image-sha256.txt` | 镜像存证（sha256 / 大小 / 出处） |
 | `docs/backups/firmware-ledger-2026-09-20/README.txt` | 复验命令清单 + 来源分级 |
+| `docs/backups/firmware-ledger-2026-09-20/win-side/` | **12:0x Windows 侧取证产物**（原始证据，未加工） |
+| ├ `HPBIOS-all.csv` | `HP_BIOSSetting` **全量 258 项**（Name/Value/DisplayInUI/IsReadOnly/RequiresPhysicalPresence） |
+| ├ `HPBIOS-enum.csv` | `HP_BIOSEnumeration` 157 项（带 `PossibleValues`） |
+| ├ `powercfg-a.txt` / `powercfg-avail.txt` | `powercfg /a` 原文（两者逐字相同） |
+| ├ `reg-platformaoac.txt` / `reg-hardware-bios.txt` | 注册表原始查询输出 |
+| ├ `win-side-evidence.txt` | 环境、权限、BIOS/EC 摘要、固件镜像 sha256 交叉验证 |
+| └ `SUMMARY.md` | 对侧 agent 的报告（⚠️ 其中「EC 52.49」为误读，已由本台账 §8.2 纠正） |
 
 > 本轮**零配置 / 零 EFI 改动**。固件镜像与解包产物只在 `/tmp/bios12402/`（未进工作区）。
 
@@ -174,3 +189,101 @@ docs/windows-side-workbuddy-prompt.md
 | 边界 | 不许刷固件、不许改 BIOS 设置、不许碰 ESP/`EFI/`、不许睡眠/休眠、不许装第三方工具 |
 
 > 立场未变：这一步买到的是**「确定」**，不是**新能力**。看到 S3 出现也只是弱阳性——真判据仍是「睡下去能不能活着回来」。
+
+---
+
+## 8 · ★★ Windows 侧只读取证**结果**（2026-09-20 12:0x，用户执行完毕）
+
+执行方式：把 `docs/windows-side-workbuddy-prompt.md` 交给 Windows 侧 WorkBuddy。**全程非管理员、全程只读**（未写注册表、未改 BIOS、未装任何东西、未重启、未睡眠）。
+产物：`docs/backups/firmware-ledger-2026-09-20/win-side/`（258 项全表 CSV ＋ 原始输出）。
+
+### 8.1 三条硬结论（我从 CSV 自己复算过，不是照抄报告）
+
+| # | 事实 | 判据 |
+|---|---|---|
+| ① | **`Modern Standby` 当前 = `Enable`**，且 **`DisplayInUI=0`（隐藏）＋ `IsReadOnly=1`（只读）** | `HPBIOS-all.csv`（258 项） |
+| ② | **`Deep Sleep` / `S3` / `S0ix` / `AOAC` / `Sleep State` 一条都不存在** | 全表关键词筛选 ＋ 逐名精确探测（正向对照 7 项全命中） |
+| ③ | **`PlatformAoAcOverride` 不存在**（从未设过） | `reg query` 原文：「系统找不到指定的注册表项或值」 |
+
+`powercfg /a` **一手原文**：
+
+```
+此系统上有以下睡眠状态:
+    待机 (S0 低电量待机) 连接的网络 ／ 休眠 ／ 快速启动
+此系统上没有以下睡眠状态:
+    待机 (S1)   系统固件不支持此待机状态。 ＋ 当支持 S0 低电量待机时，禁用此待机状态。
+    待机 (S2)   同上两条
+    待机 (S3)   ← 只有「当支持 S0 低电量待机时，禁用此待机状态。」
+```
+
+⇒ **S3 的不可用理由里没有「固件不支持」，而 S1/S2 有** ⇒ S3 = 「固件声明了、但被 AOAC 压住」。**这条以前只是记录，现在升为本机一手实测。**
+
+### 8.2 ★ 纠正：Windows 侧报告的「EC 固件 52.49」是**误读**，正确 = `34.31.00`
+
+`Win32_BIOS` 报 `EmbeddedControllerMajorVersion=52 / Minor=49`；但**同一台机上**：
+
+| 来源 | 值 |
+|---|---|
+| WMI 设置项 `Embedded Controller Firmware Version` | **`34.31.00`** |
+| 注册表 `BaseBoardVersion` | **`KBC Version 34.31.00`** |
+| 注册表原始字节 `ECFirmwareMajorRelease/Minor` | `0x34` / `0x31` ⇒ **BCD 读法 = 34.31** |
+
+`0x34` 的十进制是 `52`、`0x31` 是 `49` —— **52.49 与 34.31 是同一对字节的两种读法**，不是两个版本。
+⇒ 正确值 = **`34.31.00`**（本仓 `docs/sleep-tests/bios-facts.md` 2026-09-17 记的 `KBC Version 34.31.00` 本来就是对的）。
+类比：`BiosMajorRelease = 0x18` 若按 BCD 读是 18、按十进制读是 **24** —— **BIOS 字段用十进制（24 正确）**，**EC 字段用 BCD（34 正确）**，同一张表里两种编码并存。⚠️ 遇到这种字段**必须先数出两种读法、再用独立来源裁决**，不能直接采信 OS 报的数字。
+
+**★ 派生出一条新决策规则**：01.23.00 包内记录同样是 `34.31.00` ⇒ **从 01.23.00 到 01.24.02，EC 固件没有变**。而 L3 卡点正在 EC ⇒ **将来 HP 若出新 BIOS 包，先比 EC 号：EC 号不变 ⇒ S3 不会好，不必折腾。**（⚠️ 该对比的记录源文件随 `/tmp` 清理已消失，属"记录级证据"；本机侧 EC = 34.31.00 是一手。）
+
+### 8.3 ★ `DisplayInUI` 的含义被数据自己钉死（否掉"另解"）
+
+Windows 报告提过一个替代读法：「`DisplayInUI=0` 也许只表示"不可改"，而非"不显示"」。**同一份 CSV 自己否掉了它**：
+
+| 统计项 | 数 |
+|---|---|
+| 全表 | **258** 项 |
+| `DisplayInUI=0`（隐藏） | **7** 项，且**全部** `IsReadOnly=1` |
+| `IsReadOnly=1`（只读） | **82** 项 —— 其中 **75 项 `DisplayInUI=1`（照常显示）** |
+
+⇒ 若 `DisplayInUI` 只是 `IsReadOnly` 的镜像，那 82 个只读项应**全部**隐藏；实际只有 7 个 ⇒ **`DisplayInUI=0` 是独立的"隐藏"标志**。
+⇒ 且与**固件侧的独立方法**吻合：字符串池邻接分析预测「`Modern Standby` 被隐藏」⇔ WMI 给 `DisplayInUI=0`（同屏另 4 项 4/4 吻合）。
+
+### 8.4 对「关 AOAC」这条线的影响 ⇒ **正式封板**
+
+| 层 | 12:0x 之前 | 12:0x 之后 |
+|---|---|---|
+| ① macOS 侧声明（撤 `LPS0`） | 已实测：转 S3 ⇒ EC 罢工 | 不变 |
+| ① Win 侧声明（`PlatformAoAcOverride`） | "从未设过"（hive 推断） | **确认从未设过**（直接查询）。仍可试，但**对 macOS 零帮助** |
+| ② 固件**菜单**层 | "没找到"（实拍 ＋ 字符串池推断） | **`DisplayInUI=0` 坐实：菜单里根本没有** |
+| ③ 固件**设置**层写入 | "不知能不能写" | **`IsReadOnly=1` ⇒ HP 官方写入路径（WMI `SetBIOSSetting` / BCU）自己也标它只读** ⇒ **"拿到名字就能按名写"这条假设作废**（⚠️ 这是 HP 自己的标志，非我们实测写入过） |
+
+⇒ **「厂商按 AOAC-only 出厂」现在有三次独立确认**：① 固件帮助文案自曝互斥；② 变量名表里 `DeepS3`/`HpModernStandbyConfigurations`/`PowerControl` 平级；③ WMI 报隐藏＋只读。
+⇒ 唯一剩下的软件动作只有 **Phase C（Windows 的 `PlatformAoAcOverride=0`）**：它**不碰固件**，只是让 Windows 忽略 AOAC。但 ① 它对 macOS 零帮助；② 它只能回答"固件留没留 S3 后门"；③ 即使答案=「有」，macOS 也走不了（"声明 ≠ 可用"已在 macOS 半场证过）。
+⇒ **建议：不做，此线封板。** 真做也无害（改的是 Windows 的键、可 `reg delete` 回滚、只看 `powercfg /a`、不睡）—— 只是期望值是"零新能力、只买到一句确定"。
+
+### 8.5 白拿的资产
+
+- **`HPBIOS-all.csv`（258 项全表）**＝ 一份可随时 grep 的本机固件设置清单（含 7 个隐藏项）；`HPBIOS-enum.csv` 另带 `PossibleValues`。
+- 顺带读到的只读版本号：`ME Firmware 14.1.79.2540`｜`Thunderbolt Controller 62.0.1.2.1`｜`USB Type-C CCG5 : 0.7.0`｜`Video BIOS Intel GOP`｜`Camera Controller 0004`｜`BIOS Build 0002`｜`Touch Controller Firmware`（**隐藏＋只读**）｜`Thunderbolt Controller Version`。
+- 两个安全项现值（旁证"没人乱动过"）：`Automatic BIOS Update Setting = Disable`、`BIOS Rollback Policy = Unrestricted Rollback`、`Lock BIOS Version = Disable`、`Minimum BIOS Version = 00.00.00`。
+  ⚠️ **顺带更正**：旧记录写"刷固件不可回退"不准确 —— **回退策略本身是允许的**（`Unrestricted Rollback`）。不刷的真实理由是"没有收益 ＋ 变砖风险"，不是"回不去"。
+
+### 8.6 顺带核实 boot-args（第三次独立确认）
+
+本次 `shutdownStall` 的 spindump 内**原样记录了 `_bootArgs`**：
+
+```
+-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall alctcsel=1 revpatch=sbvmm rtcfx_exclude=0E-FF -rtcfxdbg
+```
+
+⇒ **确实没有 `-wegnoegpu`、是 `rtcfx_exclude=0E-FF`**（与 `nvram -p`、`config.plist` 三方一致）⇒ §5 那处纠错再获一份独立证据。
+
+### 8.7 ★ 存证已脱敏（入库前，2026-09-20）
+
+本工作区**同步到公开 GitHub 仓库**（`github.com/MYunFeiYang/zbookpowerg7`）⇒ 回传产物入库前已把**与睡眠结论无关的真机身份字段**遮蔽：
+
+- `HPBIOS-all.csv` / `SUMMARY.md` 里的 `Serial Number`、`System Board CT Number`、两个 `UUID` 字段、引导路径中的 `NVMe(0x1,…)` EUI64 与 `GPT` 分区 GUID ⇒ 统一替换为 `<REDACTED-…>`（明细见 `docs/backups/firmware-ledger-2026-09-20/win-side/REDACTION.md`）。
+- **没有删行**：`Name` / `DisplayInUI` / `IsReadOnly` / `RequiresPhysicalPresence` 全保留 ⇒ §8.1 两条硬结论不受影响。
+- **未脱敏（属目标证据）**：BIOS `01.24.02`、EC `34.31.00`、机型 / SKU、`Modern Standby` 等设置项本身。
+- **历史清白**：`git log --all -S "<序列号>"` = 空 ⇒ 真机标识**从未进入 git 历史**；公开快照 `origin/main`（停在 2026-09-08）`git grep` 亦 0 命中。
+- **防复发**：脱敏步骤已写进 `docs/windows-side-workbuddy-prompt.md`（「落盘后必做」一节），下次在采集端处理。
+- ℹ️ 顺带记一条：本地 `main` **领先 `origin/main` 99 个 commit**（远端最后推到 09-08）⇒ 这 12 天的工作**都还没公开**；要 push 时注意先确认脱敏已生效。

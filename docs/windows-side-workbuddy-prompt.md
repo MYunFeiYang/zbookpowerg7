@@ -195,7 +195,47 @@ Get-ChildItem $out
 
 **兜底**：如果找不到那块 exFAT 盘或它不可写，就写到 `C:\Users\Public\`（macOS 侧也能以只读方式读到它），并在报告里说明用了兜底路径。
 
-**另外写一份 `win-side\SUMMARY.md`**（中文），内容 = 你下面第五节那份报告。
+### ⚠️ 落盘后必做：身份字段脱敏（强制，别跳过）
+
+这个工作区**会同步到一个公开的 GitHub 仓库**。所以落盘完成后，你必须把下面这些**真机身份字段**替换成占位符再交付（`HPBIOS-all.csv` 与 `SUMMARY.md` 里都要处理）：
+
+| 字段名（Name 列） | 处理方式 |
+|---|---|
+| `Serial Number` | 值 → `<REDACTED-SERIAL>` |
+| `System Board CT Number` | 值 → `<REDACTED-BOARD-CT>` |
+| `Universally Unique Identifier (UUID)` | 值 → `<REDACTED-UUID>` |
+| `UUID (standard format)` | 值 → `<REDACTED-UUID>` |
+| 任何含 `NVMe(0x1,…)` / `GPT,…` 的引导路径字符串 | 括号内那两串 ID → `<REDACTED-NVME-EUI>` / `<REDACTED-GPT-GUID>` |
+
+一条现成的 PowerShell 做法（按需改 `$out`）：
+
+```powershell
+$out = 'X:\workplace\zbookpowerg7\docs\backups\firmware-ledger-2026-09-20\win-side'
+$map = @{
+  'Serial Number'                        = '<REDACTED-SERIAL>'
+  'System Board CT Number'               = '<REDACTED-BOARD-CT>'
+  'Universally Unique Identifier (UUID)' = '<REDACTED-UUID>'
+  'UUID (standard format)'               = '<REDACTED-UUID>'
+}
+foreach ($f in 'HPBIOS-all.csv','SUMMARY.md') {
+  $p = Join-Path $out $f
+  if (-not (Test-Path $p)) { continue }
+  $t = Get-Content $p -Raw
+  foreach ($k in $map.Keys) {
+    # 该行形如  "字段名","值",...  →  保留字段名，只把引号内的值换掉
+    $t = [regex]::Replace($t, '("' + [regex]::Escape($k) + '",")[^"]*(")', '${1}' + $map[$k] + '${2}')
+    $t = [regex]::Replace($t, '(\| `' + [regex]::Escape($k) + '` \| )`[^`]*`', '${1}`' + $map[$k] + '`')
+  }
+  Set-Content $p -Value $t -Encoding UTF8 -NoNewline
+}
+foreach ($f in 'HPBIOS-all.csv','SUMMARY.md') {
+  Select-String -Path (Join-Path $out $f) -Pattern 'REDACTED' | ForEach-Object { $_.Line }
+}
+```
+
+脱敏是**强制的**：这些是这台机器的真实硬件序列号 / 固件 UUID，和本次睡眠结论无关，不需要留真值。**保留 `DisplayInUI` / `IsReadOnly` 这些列，只换身份字段的值**。
+
+**另外写一份 `win-side\SUMMARY.md`**（中文），内容 = 你下面第五节那份报告；**写完后同样要过一遍上面的脱敏**。
 
 ---
 

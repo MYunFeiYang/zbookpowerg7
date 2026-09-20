@@ -1,0 +1,13 @@
+﻿PlatformAoAcOverride (原始查询输出，含报错):
+
+
+reg : 错误: 系统找不到指定的注册表项或值。
+所在位置 行:455 字符: 7
++ $r1 = reg query "HKLM\SYSTEM\CurrentControlSet\Control\Power" /v Plat ...
++       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (错误: 系统找不到指定的注册表项或值。:String) [], R 
+   emoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+=> 结论: 该值不存在
