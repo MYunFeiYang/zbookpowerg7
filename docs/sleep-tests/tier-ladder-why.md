@@ -730,3 +730,58 @@ HpCommonSetup                        ← HP 的 Setup 配置变量名
 ⚠️ 但这会**持久改变固件设置**；且若成功，Windows 会从 Modern Standby 掉到已判死的 S3 ⇒ **可能弄坏 Windows 侧睡眠**。**不建议为此做这个测试。**
 
 > 本轮**零配置 / 零 EFI 改动**（Windows 侧写操作 = 0）。
+
+---
+
+## 附录 G · 2026-09-20 14:0x：**「BIOS 层还有没有路？含魔改」穷举** ⇒ 同样封板
+
+> 触发：用户问「**有没有 BIOS 支持的？包括魔改的？**」（在附录 F 封板 AOAC 之后）。
+> 结论：**BIOS 层（含魔改）没有一条能改变结局的路**。细节与来源见 `docs/firmware-facts-ledger.md` **§8.8**。本轮**零配置 / 零 EFI / 零固件写入**。
+
+### G.1 四层穷举 —— 三层已死，一层是"魔改"
+
+| 层 | 现状 | 一句话依据 |
+|---|---|---|
+| ① **菜单层**（BIOS 里点） | ❌ 无此项 | 实拍 + HP 官方菜单表 + 258 项 WMI 三者一致 |
+| ② **官方接口层**（WMI / BCU / CMSL） | ❌ 有名字写不进 | `IsReadOnly=1`，HP 官方原文 *"cannot be changed"* |
+| ③ **UEFI 变量层**（`setup_var` / `RU.EFI`） | ❌ **前提不成立** | 见 G.2 |
+| ④ **固件本体层**（改镜像 + 刷回） | ⚠️ 唯一开着的门，但有三道闸 | 见 G.3 |
+
+### G.2 ③ 为什么前提不成立（三层独立理由）
+
+1. **`setup_var` 靠 IFR 的 `VarStore` 才知道"写到哪个偏移"** → 本机**无 IFR**（三判据全 0，两版复验）⇒ **连地址都没有**。
+2. **网传"U 盘解锁"（改 `setuphide`）是 AMI BIOS 专有** → 本机是 HP 自研 Setup（全 GUI / 鼠标支持，Win-Raid 有同形案例）⇒ **那个变量不存在**。
+   ⚠️ 别把这个当"HP 也能解锁"：那是**机型错配**；且原视频自曝"有保护的机器重启就把 `setuphide` 改回 00"。
+3. **本机 NVRAM 实测**：`nvram -p` 仅 10 个变量，**0 个 HP/Setup 项**（弱证据 —— macOS 只覆盖自己可见的命名空间）。**要一锤定音须在 UEFI Shell 跑 `dmpstore -all`（只读、零风险、尚未做）。**
+   ➕ 旁证：HP 官方《Statement of memory volatility》把 **BIOS 设置**（独立 16 KB 非易失区）与 **BIOS 固件**（16 MB）**分列两行** ⇒ 设置本就不走通用 UEFI 变量机制。
+
+### G.3 ④ 的三道闸（真·魔改的成本）
+
+| 闸 | 内容 | 依据 |
+|---|---|---|
+| **1 改什么** | 老 HP 那套（IFR Extractor 改"隐藏位"）**因无 IFR 而失效** ⇒ 只剩**逆向 PE32 机器码** patch 分支（Win-Raid 案例改的是 `jnz→jmp`）。本机目标 = `172 0147` / PE32 1.33 MB | Win-Raid + 本机拆包 §C.3 |
+| **2 签名** | HP **自 2013 起**对 BIOS 启用 **RSA 签名校验** ⇒ 改过的镜像**官方刷新工具拒收**（软件路径堵死） | Win-Raid 两帖；"newer HPs aren't hackable from 2013 and onwards" |
+| **3 刷回去** | 只能**拆机 + 物理 SPI 编程**（CH341A / RT809F）。且 `SureStart Production Mode = **Enable**`（只读、**关不掉**）＋ `BIOS Data Recovery Policy = Automatic` ⇒ 校验失败**自动修复**；coreboot 记录 private flash 存 bootblock/**PEI**/microcode 副本 ⇒ **PEI 被改会恢复，无副本则拒启动（CapsLock 闪烁）** | coreboot 文档 + **本机 258 项实测** |
+
+**★ 本机保护状态的实测结论**（同一份 `HPBIOS-all.csv`，6 项）：
+- **固件本体有保护**：`SureStart Production Mode = Enable`（只读）、`BIOS Data Recovery Policy = Automatic`。
+- **但"设置项级"保护是关的**：`Sure Start BIOS Settings Protection = **Disable**`（该保护 = "设置被改就从备份恢复"）⇒ **保护不是挡魔改的门**。
+- ⚠️ `Verify Boot Block on every boot = Disable` **≠ 不校验** —— HP 官方定义：未勾选时**仍在 resume from Sleep/Hibernate/Off 前校验**，勾选才额外覆盖 warm reset。
+- 🔴 **未定**：`HpSetup` 是 **DXE** 模块，而 coreboot 点名的签名保护是 **bootblock/PEI/microcode** ⇒ **DXE 是否被校验，本机无法确定**（不许当结论用）。
+
+### G.4 ★ 决定项：**三道闸全打穿，终点仍是坏的**
+
+| 环节 | 状态 |
+|---|---|
+| 拿到 S3 | 🔴 未验证（三闸挡住了），但**理论上存在** |
+| **S3 之后会怎样** | 🟢 **已实测：EC 罢工**（撤 `\SB.LPS0` ⇒ 真进 S3 ⇒ `EC OBF=1 poll timed out` ⇒ USB 栈 panic） |
+
+⇒ 用「**拆机 + 物理刷写 + 变砖风险**」去赌一个「**已实测是坏**」的目标。**本机是唯一在用的生产力机 + 已调好的黑苹果 ⇒ 赌注比之前更差。**
+
+### G.5 结论
+
+- **不加新路径，不改变决定。** 「默认动作＝不改」继续成立，且现在**四层都有硬判据**（不再是"没试过"）。
+- **唯一零风险的收口动作**（可选）：UEFI Shell `dmpstore -all`。**即使证实"设置不在 UEFI 变量里"，结论也不变**（支柱在 G.4）。
+- ⛔ **不建议**：拆机 SPI 刷写、逆向 PE32 patch、任何"解锁 BIOS"工具。
+
+> 本轮**零配置 / 零 EFI 改动 / Windows 侧写操作 = 0 / 固件零写入**。

@@ -1,6 +1,13 @@
 # 睡眠档位调优测试记录
 
-> 🔍 **2026-09-20 12:42【§八十 · 最新】—— 追问「确认了？还是猜测？」⇒ 补了一轮**证据分级查证****（`tier-ladder-why.md` **附录 F.6**）
+> 🛑 **2026-09-20 14:0x【§八十一 · 最新】—— 追问「有没有 BIOS 支持的？包括魔改的？」⇒ BIOS 层（含魔改）四层穷举，同样封板**（`tier-ladder-why.md` **附录 G**、台账 **§8.8**）
+> **① 菜单层 ❌** 无此项（实拍 + HP 官方菜单表 + 258 项 WMI 三者一致）。**② 官方接口层 ❌** 有名字但 `IsReadOnly=1`。
+> **③ UEFI 变量层 ❌ 前提不成立**：`setup_var` 靠 IFR 的 `VarStore` 才知道偏移 ⇒ 本机**无 IFR** ⇒ 连地址都没有；网传"U 盘解锁"改的 `setuphide` **是 AMI 专有变量**（HP 自研引擎，变量不存在）；本机 `nvram -p` 仅 10 个变量、**0 个 HP/Setup 项**（⚠️ 弱证据 —— macOS 只见自己命名空间，实锤须 UEFI Shell `dmpstore -all`）。
+> **④ 固件本体层（真·魔改）⚠️ 唯一还开着的门，但有三道闸**：无 IFR ⇒ 不能"改可见性"、只能**逆向 PE32 机器码**；HP **自 2013 起 RSA 签名** ⇒ 改过的镜像官方刷新工具拒收；只剩**拆机 + 物理 SPI 刷写**。
+> **★ 本机保护状态一手实测**（同一份 CSV 查 6 项）：`SureStart Production Mode = **Enable 且只读**`（在位、关不掉）＋ `BIOS Data Recovery Policy = Automatic`（校验失败自动修复）；但 **`Sure Start BIOS Settings Protection = Disable`** ⇒ 设置项级保护**是关的**。⚠️ `Verify Boot Block on every boot = Disable` **≠ 不校验**（HP 官方定义：仍在 resume Sleep/Hibernate/Off 前校验，只是不覆盖 warm reset）。
+> **★★ 决定项**：**即便三闸全打穿，终点仍是坏的** —— 「拿到 S3 之后会怎样」已在 macOS 侧实测 = **EC 罢工** ⇒ 用「拆机＋物理刷写＋变砖风险」赌一个**已知是坏**的目标 ⇒ **不做**。⛔ 不建议拆机 SPI 刷写 / 逆向 patch / 任何"解锁 BIOS"工具。
+>
+> 🔍 **2026-09-20 12:42【§八十】—— 追问「确认了？还是猜测？」⇒ 补了一轮**证据分级查证****（`tier-ladder-why.md` **附录 F.6**）
 > 唯一一处**未实测、只靠推论**的环节被查掉了：**「`IsReadOnly=1` ⇒ 写不进去」现在有 HP 官方原文**（`dev.hp.com/…/understanding-hp-bios-settings`：*"A value of 1 indicates that this particular setting instance **cannot be changed**"*）⇒ 由 🔴 推断升为 🟢 官方文档。
 > 同时**纠正**一个我差点犯的错：`HP_BIOSEnumeration`(157 项) **不是"可写清单"**（官方 MOF 说它只是按**取值域类型**分的子类）—— 反例 `Modern Standby` 就在里面。**判可写只认 `IsReadOnly`。**
 > ⚠️ **仍留的 🔴 推断**（不许当结论）：只读项实际返回哪个码；「EC 号不变 ⇒ S3 不会好」。

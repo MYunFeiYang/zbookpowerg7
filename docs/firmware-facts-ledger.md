@@ -313,3 +313,79 @@ Windows 报告提过一个替代读法：「`DisplayInUI=0` 也许只表示"不�
 - **历史清白**：`git log --all -S "<序列号>"` = 空 ⇒ 真机标识**从未进入 git 历史**；公开快照 `origin/main`（停在 2026-09-08）`git grep` 亦 0 命中。
 - **防复发**：脱敏步骤已写进 `docs/windows-side-workbuddy-prompt.md`（「落盘后必做」一节），下次在采集端处理。
 - ℹ️ 顺带记一条：本地 `main` **领先 `origin/main` 99 个 commit**（远端最后推到 09-08）⇒ 这 12 天的工作**都还没公开**；要 push 时注意先确认脱敏已生效。
+
+### 8.8 ★★ BIOS 层（含**魔改**）路径尽调（2026-09-20 14:0x，触发：用户问「有没有 BIOS 支持的？包括魔改的？」）
+
+> 目的：把「BIOS 层面还有没有路」**穷举**，含魔改。**本轮仍零配置 / 零 EFI / 零固件写入。**
+
+#### (a) ★ 本机一手新事实：Sure Start 家族的真实状态（同一份 `HPBIOS-all.csv`，258 项里查出 6 项）
+
+| 设置项 | 值（`*` = 当前） | UI | 只读 | 需物理在场 |
+|---|---|---|---|---|
+| `SureStart Production Mode` | `Disable,*Enable` ⇒ **Enable** | 1 | **1** | 0 |
+| `Verify Boot Block on every boot` | `*Disable,Enable` ⇒ **Disable** | 1 | 0 | 0 |
+| `Dynamic Runtime Scanning of Boot Block` | `*Disable,Enable` ⇒ **Disable** | 1 | 0 | 0 |
+| `Sure Start BIOS Settings Protection` | `*Disable,Enable` ⇒ **Disable** | 1 | 0 | **1** |
+| `Sure Start Secure Boot Keys Protection` | `*Disable,Enable` ⇒ **Disable** | 1 | 0 | **1** |
+| `HP Sure Run Current State` | `Permanently Disabled` | 1 | 1 | 0 |
+| `Enhanced HP Firmware Runtime Intrusion Prevention and Detection` | `*Disable,Enable` ⇒ Disable | 1 | 0 | 1 |
+
+**读法（关键）**：**固件本体有保护，设置项级别的保护是关的。**
+- `SureStart Production Mode = Enable` 且**只读** ⇒ Sure Start **在跑、且关不掉**（= 固件完整性检测生效）。
+- `Sure Start BIOS Settings Protection = Disable` ⇒ **没有**"设置被改就从备份恢复"这一层（HP 官方手册定义：*"Protects critical BIOS Settings by saving a backup copy and restoring them if altered."*）⇒ **保护不是挡魔改的门**。
+- `Verify Boot Block on every boot = Disable` 的真实语义（**HP 官方手册表 14，别凭字面猜**）：未勾选 ≠ 不校验 —— 官方原文 *"When not checked, HP Sure Start verifies the integrity of HP firmware … **before resume from Sleep, Hibernate, or Off**"*；勾选才**额外**覆盖 warm reset。⇒ **当前仍在 S3/S4/关机恢复前校验**（只是频率低一档）。
+- `BIOS Data Recovery Policy = Automatic`（默认）⇒ 一旦校验失败会**自动修复**。
+
+#### (b) 外部来源（按判据分级）
+
+| 来源 | 关键内容 | 分级 |
+|---|---|---|
+| HP 官方《PC Commercial BIOS (UEFI) Setup》手册（ZBook Studio G5 表 14，同代商用机） | Sure Start 菜单逐项定义（见上）；`Sure Start BIOS Settings Protection` 默认 Unchecked | **可当判据** |
+| coreboot 文档 `doc.coreboot.org/mainboard/hp/hp_sure_start.html` | Sure Start = 芯片组/处理器无关的固件入侵检测 + 自动修复；2013 起装机。**private flash**（2 MB，挂 EC，OS 不可访问）存 `POLI` 策略头 / IFD 副本 / GbE 副本 / MUD / 三者哈希 / bootblock+**PEI**+microcode 副本；改 IFD ⇒ EC 恢复 IFD；**bootblock/PEI/microcode 用数字签名校验**；private flash 无有效副本且 PEI 被改 ⇒ **拒启动 + CapsLock 闪烁** | **可当判据**（但明确标注"method may no longer be applicable to more recent boards"，2013 案例） |
+| Win-Raid `[Solved] How to Unlock HP Insyde BIOSes` | 老 HP 的解锁**工具链依赖 IFR**（`Universal IFR Extractor` 读 ROM → 改隐藏项可见性）；且 *"many of these bios have an **RSA signature which makes changes impossible**"*；老机（HP 630）2011–2013 早期版本**无 RSA 可 mod**，F.19 起有 RSA | **可当判据**（含"工具依赖 IFR"这条关键限定） |
+| Win-Raid `HP Insyde RSA signed UEFI mod?` | 版主原话：*"this BIOS needs to be modified like a usual BIOS mod to unhide stuff, **but that brings into question RSA**"*；发帖人 *"changed a **jnz to jmp**"* 绕过检查；**"The newer HPs aren't hackable I think **from 2013 and onwards**"**；且 *"my BIOS **doesn't seem to be the standard InsydeH2O** because my BIOS has a full GUI with mouse support"*（**与本机同形**） | **可当判据** |
+| HP 支持社区员工回复（两例，InsydeH20） | *"there is **no supported method** to unlock hidden Advanced menus … HP does not provide an option, key combination, or supported procedure"* | **方向强**（官方口径） |
+| 网传"U 盘解锁 BIOS 高级选项"（B 站 / 各类短文） | 手法 = UEFI Shell 改 `setuphide` 变量为 `01` ⇒ 显示所有隐藏项。**这是 AMI BIOS 的专有变量**；且视频自曝 *"有些电脑BIOS有保护 … 重启电脑时BIOS就会把 setuphide 改回默认的 00"* | **不可当判据**（机型错配） |
+
+#### (c) 「BIOS 支持」的四层穷举 —— 哪层还活着
+
+| 层 | 现状 | 判据 |
+|---|---|---|
+| **① 菜单层**（BIOS 里点） | ❌ **无这一项** | BIOS 实拍 + HP 官方菜单全表 + 258 项 WMI 全表三证一致 |
+| **② 官方接口层**（WMI / BCU / CMSL） | ❌ **有名字但写不进** | `Modern Standby` = `IsReadOnly=1`；HP 官方原文 *"cannot be changed"* |
+| **③ UEFI 变量层**（`setup_var` / `RU.EFI` 直改变量） | ❌ **前提不成立** | 三层理由见下 |
+| **④ 固件本体层**（改镜像 + 刷回 = 真·魔改） | ⚠️ **唯一还开着的门**，但要过三道闸（见 d） | Win-Raid + coreboot + 本机保护状态 |
+
+**③ 为什么前提不成立（三层，逐层独立）**：
+1. **`setup_var` 依赖 IFR 的 `VarStore` 定义**（告诉工具"写到哪个变量的哪个偏移"）→ **本机固件无 IFR**（三判据全 0，已在两版独立复验）⇒ **连"写到哪里"都不知道**。
+2. **网传 `setuphide` 那招是 AMI 专有** → 本机是 HP 自研 Setup 引擎（全 GUI / 鼠标支持，与 Win-Raid 那个"非标准 InsydeH2O"案例同形）⇒ **变量名根本不存在**。
+3. **本机 NVRAM 实测**（`nvram -p`）：**仅 10 个变量，全是 macOS/OpenCore 自己的，0 个 HP/Setup 项**。
+   ⚠️ **这条是弱证据**（macOS 的 `nvram` 只覆盖它可见的命名空间，第三方厂商变量通常不可见）⇒ **要一锤定音必须在 UEFI Shell 跑 `dmpstore -all`**（只读，零风险，尚未做）。
+   ➕ 旁证：HP 官方《Statement of memory volatility》把 **"Permanent system BIOS settings"** 与 **"System boot ROM (BIOS)"** 分成两行 ⇒ 设置存**独立的 16 KB 非易失区**（≈16 MB 固件之外的专属区域），本就不走通用 UEFI 变量机制。
+
+#### (d) ④ 的**三道闸**（真·魔改的代价）
+
+1. **改什么 —— 没有"改可见性"这种便宜事。** 老 HP 那套（IFR Extractor 改隐藏位）**因本机无 IFR 而失效** ⇒ 只剩**逆向 PE32 机器码**去 patch 逻辑分支（Win-Raid 那位改的是 `jnz→jmp`）。本机 `HpSetup` = `172 0147`，PE32 **1.33 MB**，纯手工逆向。
+2. **签名 —— HP 自 2013 起对 BIOS 启用 RSA 签名校验。** 改过的镜像**官方刷新工具拒收**（软件路径堵死）。
+3. **刷回去 —— 只能物理 SPI 编程。** 拆机 + 编程器（CH341A / RT809F 等）夹/焊 SPI 芯片；且：
+   - `SureStart Production Mode = Enable`（**只读，关不掉**）⇒ 完整性检测在位；
+   - `BIOS Data Recovery Policy = Automatic` ⇒ 校验失败**自动修复**（= 你的 mod 可能被自动回滚）；
+   - coreboot 记录 **private flash**（挂 EC、OS 不可访问）存 bootblock/**PEI**/microcode 副本与哈希 ⇒ **PEI 段被改会从副本恢复；无副本则拒启动**。
+   - ⚠️ 未定项（🔴 **推断，不许当结论**）：`HpSetup` 是 **DXE** 模块，而 coreboot 明确点名的签名保护是 **bootblock/PEI/microcode** ⇒ **DXE 是否在 Sure Start 的校验范围内，本机无法确定**。（同代 G8 的维修 dump 为"32 MB + 32 MB"双芯片，与本机是否同构亦未查。）
+
+#### (e) ★★ 决定项：**即便三道闸全打通，终点仍是坏的**
+
+「关 AOAC ⇒ 拿到 S3 ⇒ 睡眠变好」这条链，**中间那段在本机已被实测否证**：
+
+| 环节 | 状态 |
+|---|---|
+| 拿到 S3 | 三道闸（逆向/签名/物理刷）—— 🔴 未验证，但**理论上**存在 |
+| **S3 之后会怎样** | 🟢 **已实测：EC 罢工** —— 撤 `\SB.LPS0` ⇒ `IOPMDeepIdleSupported` Yes→No ⇒ 系统**确实转 S3** ⇒ `AppleACPIEC EC OBF=1 poll timed out` 连绵 ⇒ PS2/SMBus 死等 ⇒ USB 栈 panic（本机唯一 panic） |
+
+⇒ **用「拆机 + 物理刷写 + 变砖风险（本机是唯一在用的生产力机 + 已调好的黑苹果）」去赌一个「已实测是坏」的目标** —— **赌注比之前更差，不是更好。**
+
+#### (f) 结论
+
+- **BIOS 层（含魔改）没有一条能改变结局的路。** ① ② ③ 已各自有硬判据；④ 技术上存在但要过三闸、且终点已判死。
+- **本轮唯一"未做且零风险"的收口动作**：进 UEFI Shell 跑 `dmpstore` 列全部 UEFI 变量（只读）⇒ 可把 ③ 从"弱证据"升级为"实测"。**但注意：即便 ③ 被证实"设置根本不在 UEFI 变量里"，也不改变结论**（决定的支柱是 (e)）。
+- **默认动作 = 不改。**
