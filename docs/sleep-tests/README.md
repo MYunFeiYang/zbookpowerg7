@@ -1,6 +1,17 @@
 # 睡眠档位调优测试记录
 
-> 🟡🟡🟡 **2026-09-20 17:5x【§八十八 · 最新】—— ★★★ Round 3 结果：`hbfx-ahbm` **生效了**，但被我自己设的 `standbydelay` 自毁**（`round3-kernel-trace.md` 全链 ＋ `round3-hbfx-ahbm-plan.md` §10）
+> 🟢🟢🟢 **2026-09-20 18:4x【§八十九 · 最新】—— ★★ 测试议程：还剩什么可测（用户问「那我们这几次再测什么？」）→ `next-test-agenda.md`（新建，唯一入口）**
+> **本轮零配置改动**（纯只读核查）。**结论：只剩 3 件事，其中只有 1 件能解锁 S4。**
+> **① Round 3b = `standbydelaylow/high 0`**（唯一解锁性测试）——前置**已全部就位**（`hibernatemode 3`✓ `standby 1`✓ `HibernationFixup` 在 `Kernel/Add`✓ `hbfx-ahbm=1` 在 `boot-args`✓ `NVRAM/WriteFlash`✓）⇒ **只需 2 条 `pmset`，不动 EFI、不重启**。风险 🔴：走到 `type 4/5` ⇒ `IOPM.cpp:5743` 关 Sleep 位 = 强制真休眠 = 09-16「睡下即断气」同档。⚠️ **`standbydelay 0` 期间每次睡眠都立即断内存电 ⇒ 测完必须立刻回滚，别留过夜。**
+> **② T4 = 开 OC 日志（`Misc/Debug/Target=0` → 非 0）核 `DevirtualiseMmio`** ——本轮实读配置**形态已就位**（`DevirtualiseMmio=true` / `MmioWhitelist=0 条`），缺的只是"证据"（`Target=0` ⇒ 无日志可判）。**① 失败后的下一步，不并行。**
+> **③ Win 侧功耗量准**（`powercfg /sleepstudy`）——macOS 6–11 %/h，**Win 从未测过** ⇒ 与 S4 无关的独立"量准"任务。
+> **④ `dmpstore -all` 查 `Modern Standby`/`CSM`** ——零风险只读，**但降级为"顺手捎带"**：★ 本轮合成判断 = **就算 AOAC 真能关掉，落点也是那条已判死的 S3** ⇒ 门后是死路，不值得专门重启。
+> **★ 本轮新增 2 条源码级排除**：① **`hbfx-ahbm=65`（bit64 `DoNotOverrideWakeUpTime`）不是捷径** —— 它让钩子**不安装**（`hbfx2.cpp:678`），但 `hbfx2.cpp:450-463` 随即在 `standbyTimer != 0` 时**主动 cancel hibernate** ⇒ 净效果相同；② `autopoweroff` **机型级不存在**（`pmset -g custom` 无此项）。
+> **★ 机制细化到行号（比 §八十八 更准）**：R3 的 type5→type7 **不是 OS 调钩子，是 HBFX 在 phase>0 自我推迟** —— `hbfx2.cpp:437-438` 自己调 `explicitlyCallSetMaintenanceWakeCalendar()` ⇒ 同一调用里 `:449` `setupHibernate` 变 false ⇒ `:468` 不覆盖。**phase0 为何成功？因 `:437` 有 `> kIOPMSleepPhase0` 门槛** ⇒ 完美解释"phase0 成功、1.58 s 后被翻"。⇒ **R3b 的新硬判据 = `phase 1` 是否保持 `type 5`**；`phase2` 期望 `type 4`（`hbfx2.cpp:477-484`）。
+> **★ 三处结案/纠错**：① `-hbfxdbg` **确定无效** —— `strings` 查 kext 二进制，`"Auto hibernate"` **0 命中** ⇒ 装的是 **RELEASE 版**，`DBGLOG` 被编译掉（上轮 🟡 待定）；② **"有无 sleepimage"是无效判据** —— `/var/vm/sleepimage` **一直存在**（1 GiB，`mtime`=开机 17:19 的占位文件）⇒ 必须看 **`mtime` 是否落在睡眠时刻**；③ **新实时判据** `sysctl kern.hibernatemode`（现 = **0**，而 `pmset` 偏好 = 3 ⇒ 正是 `hibernateDisabled` 清零的落点；成功时应 = 3）。
+> **★ `man pmset` 原文（新证据）**：`standbydelay` = "*delay … before **writing the hibernation image to disk and powering off memory** for Standby*" ⇒ **`0` = 睡后立即写镜像 + 断内存电**。⇒ ① 的"成功"与"是否断气"**不是两个赌注，是同一机制的两种结果**。
+
+> ⚪ **2026-09-20 17:5x【§八十八】（已被 §八十九 接续：结论仍成立，判据有 3 处被修正）—— ★★★ Round 3 结果：`hbfx-ahbm` **生效了**，但被我自己设的 `standbydelay` 自毁**（`round3-kernel-trace.md` 全链 ＋ `round3-hbfx-ahbm-plan.md` §10）
 > **★ 先纠错（上一轮的结论是错的）**：上次说「17:25 那次被观察者效应打断、是无效测试」—— **错了，那次真的睡着了**（17:25:37 入睡 → 17:28:32 用户按电源键唤醒，175 s；17:34 那次同样成功，101 s）。
 > 两个叠加错因：**① 读日志太早**（`pmset` 请求→入睡之间隔 **≈30 s**）；**② `pmset -g log | tail` 是陷阱** —— 它尾部是**「当前断言摘要」块**，不是最新电源事件，必须按时间/关键字过滤。
 > **★ 内核日志一手轨迹**（`log show --info --debug`，uid=0 抓的）：

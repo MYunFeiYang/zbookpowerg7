@@ -249,13 +249,29 @@ if (!powerOffEnabled) currentFactors |= kIOPMSleepFactorAutoPowerOffDisabled;
 
 ```bash
 sudo pmset -a standbydelaylow 0 standbydelayhigh 0
+pmset -g custom | grep -i standbydelay    # ★ 先读回：确认没被钳位（pmset 二进制里无范围校验串，只能读回验证）
 # 睡 ≥ 3 分钟
-# 判据 A：PMRD: sleep params v2, type 5（保持 5，不被打回 7）—— 说明 HBFX 的改写这次没被自己撤回
-# 判据 B：PMRD: hibernateMode 0x3（不是 0x0）—— 说明 hibernateDisabled 没被置真
-# 判据 C：/System/Volumes/VM/sleepimage 出现 + kern.hibernatecount > 0
+# 判据 A：PMRD: sleep params v2, type 5（**phase 1 也保持 5**，不被打回 7）← 最硬的一条
+# 判据 B：phase 2 的 type = 4（Hibernate，"hibernate now"）
+# 判据 C：PMRD: hibernateMode 0x3（不是 0x0）
+# 判据 D：sysctl kern.hibernatemode == 3（现为 0）← 不必翻日志的实时判据
+# 判据 E：/var/vm/sleepimage 的 **mtime** 是否落在本次睡眠时刻 + kern.hibernatecount > 0
 ```
 
+> ⚠️ **判据 E 的纠错（2026-09-20 18:4x）**：初稿写"`sleepimage` 出现"。**这条判据是无效的** —— `-r------T 1 root wheel 1073741824 2026-09-20 17:19`：文件**一直存在**，1 GiB、`mtime` = **开机时刻**，是 macOS **开机建的占位文件**。⇒ 必须改看 **`mtime` 是否等于本次睡眠时刻** + 判据 D。完整议程 → `next-test-agenda.md` §2.3。
+
 **为什么这次不一样（源码级，非实测）**：`standby_delay == 0` 使 `setupHibernate` 无条件为真，**完全绕过 `wakeCalendarSet`**；同时钩子的推迟分支要求 `standby_delay != 0`，故 `wakeCalendarSet` 也保持 `false` —— 两个条件同时满足，双保险。
+
+**★ 机制已细化到行号（2026-09-20 18:4x，比本节初稿更准）**：R3 的 `type5 → type7` **不是**「OS 调用了 HBFX 的钩子」，而是 **HBFX 在 `phase > 0` 时自我推迟** —— `hbfx2.cpp:437-438`：
+
+```cpp
+if (callbackHBFX->sleepPhase > kIOPMSleepPhase0) {
+    if (standby_delay != 0 && !forceHibernate && !callbackHBFX->wakeCalendarSet && !callbackHBFX->sleepServiceWake)
+        callbackHBFX->explicitlyCallSetMaintenanceWakeCalendar();   // ← 自己把 wakeCalendarSet 置 true
+}
+```
+同一个调用里紧接着 `hbfx2.cpp:449` `setupHibernate` 就变 false ⇒ `:468` 不覆盖 ⇒ 平台原值 `deepidle` 胜出。
+**`phase 0` 为什么反而成功？因为 `:437` 有 `> kIOPMSleepPhase0` 门槛** ⇒ 完美解释"phase0 设成 type5、1.58 s 后被翻回 type7"。
 
 **旁证**：第一次 phase 0 求值时（17:25:37.396）平台给出的 `standbyTimer = 0`，日志里就出现了 `StandbyNoDelay` 因子，而那一刻 HBFX **确实**设成了 `type 5`。说明"无 standby 延迟"这个状态在本机是可达的。
 
@@ -263,12 +279,17 @@ sudo pmset -a standbydelaylow 0 standbydelayhigh 0
 1. `pmset` 是否接受 `standbydelaylow 0`（若被拒绝/钳位，此路即封闭 —— 那就只剩"接受现状"）。
 2. 走到 `type 4/5` 后，XNU `IOPM.cpp:5743-5747` 会 `gIOHibernateMode &= ~kIOHibernateModeSleep`（**关掉 Sleep 位、强制真休眠**）⇒ 这一步就是 09-16 硬断电的那一步，**风险实打实**。
 
-### 4.3 风险不变（甚至更高）
+### 4.3 风险（比初稿写的更高）
 
-`standbydelay` 缩短 ⇒ 每一次普通睡眠都会在 2 分钟后走"写镜像 + RAM 断电"。**这正是要测的那一步，也正是 09-16 硬断电的那一步。** 测完立刻回滚：
+> ⚠️ **再修正一处**：初稿写"每一次普通睡眠都会在 **2 分钟后**走写镜像 + RAM 断电" —— 那是按 `120` 写的。**`0` 的语义是"立即"**（`man pmset` 原文：`standbydelay` = "*delay … before writing the hibernation image to disk and **powering off memory***"）⇒ **睡眠后立刻断内存电**。
+> ⇒ 这正是要测的那一步，也正是 09-16 硬断电的那一步。**而且它是个地雷**：`standbydelay 0` 生效期间，**之后每一次睡眠**（本机 `Clamshell.app` 让合盖睡眠可行）都会立即走这条路径 ⇒ **测完必须立刻回滚，别留过夜。**
+
+**回滚（只回滚这一个变量，保持"一次只动一个"的纪律）**：
 ```bash
-sudo pmset -a hibernatemode 0 standby 0 standbydelaylow 10800 standbydelayhigh 86400
+sudo pmset -a standbydelaylow 86400 standbydelayhigh 604800   # 回到 R3 测试态
+pmset -g custom | grep -i standbydelay                        # 复核
 ```
+（若要**整体退出 R3 测试态**回到基线，另做一次：`sudo pmset -a hibernatemode 0 standby 0 standbydelaylow 10800 standbydelayhigh 86400` —— 那是独立的一次改动，别混在同一步里。）
 
 ---
 

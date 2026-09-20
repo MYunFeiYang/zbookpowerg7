@@ -325,20 +325,32 @@ git revert <本轮 commit>                                                      
 
 ```bash
 sudo pmset -a standbydelaylow 0 standbydelayhigh 0
-# 睡 ≥ 3 分钟；盯三条判据：
-#   PMRD: sleep params v2, type 5   ← 是否保持 5（没被打回 7）
+pmset -g custom | grep -i standbydelay    # ★ 先读回，确认没被钳位
+# 睡 ≥ 3 分钟；盯判据（完整 8 条 → next-test-agenda.md §2.3）：
+#   PMRD: sleep params v2, type 5   ← **phase 1 也保持 5**（没被打回 7）← 最硬的一条
+#   phase 2 的 type = 4（Hibernate，"hibernate now"）
 #   PMRD: hibernateMode 0x3         ← hibernateDisabled 没被置真
-#   /System/Volumes/VM/sleepimage 出现 + kern.hibernatecount > 0
+#   sysctl kern.hibernatemode == 3  ← 现为 0；不必翻日志的实时判据
+#   /var/vm/sleepimage 的 **mtime** 落在本次睡眠时刻 + kern.hibernatecount > 0
 ```
+
+> ⚠️ **判据纠错（2026-09-20 18:4x）**：初稿写"`sleepimage` 出现"——**无效**。该文件**一直存在**（1 GiB，`mtime` = 开机时刻 17:19 的占位文件）⇒ 必须看 `mtime`。
 
 **为什么 `0` 能行（源码级推断，非实测）**：`standby_delay == 0` ⇒ `setupHibernate` 无条件为真；且钩子的推迟分支要求 `standby_delay != 0` ⇒ `wakeCalendarSet` 保持 `false` ⇒ 两个条件同时满足。
 **旁证**：17:25:37.396 那次 `standbyTimer = 0`（日志因子 `StandbyNoDelay`），HBFX **确实**设成了 `type 5` ⇒ "无待机延迟"状态在本机可达。
 
-⚠️ **两处待验坑**：
-1. `pmset` 是否接受 `standbydelaylow 0`（若被拒绝/钳位 ⇒ 此路封闭）。
-2. 走到 `type 4/5` 后，XNU `IOPM.cpp:5743-5747` 会 `gIOHibernateMode &= ~kIOHibernateModeSleep`（**关掉 Sleep 位、强制真休眠**）⇒ 正是 09-16 硬断电那一步，**风险实打实**。
+**★ 机制已细化到行号（18:4x）**：R3 的 `type5 → type7` 是 **HBFX 在 `phase > 0` 时自我推迟**（`hbfx2.cpp:437-438` 自己调 `explicitlyCallSetMaintenanceWakeCalendar()`），同一调用里 `:449` `setupHibernate` 即变 false ⇒ `:468` 不覆盖。**`phase 0` 反而成功，是因为 `:437` 有 `> kIOPMSleepPhase0` 门槛** ⇒ 这正好解释 R3 日志的"phase0 设成 5、1.58 s 后被翻回 7"。
 
-测完立刻回滚：`sudo pmset -a hibernatemode 0 standby 0 standbydelaylow 10800 standbydelayhigh 86400`
+⚠️ **两处待验坑**：
+1. `pmset` 是否接受 `standbydelaylow 0`（`pmset` 二进制**无范围校验串**，只能读回验证；若被拒绝/钳位 ⇒ 此路封闭）。
+2. 走到 `type 4/5` 后，XNU `IOPM.cpp:5743-5746` 会 `gIOHibernateMode &= ~kIOHibernateModeSleep`（**关掉 Sleep 位、强制真休眠**）⇒ 正是 09-16 硬断电那一步，**风险实打实**。
+
+⚠️ **`0` 的语义 = "立即"**（`man pmset`：*"…before writing the hibernation image to disk and **powering off memory**"*）⇒ **睡后立刻断内存电**，且**生效期间每一次睡眠都这样**（合盖也走）⇒ **测完必须立刻回滚，别留过夜。**
+
+**回滚（只回滚这一个变量）**：`sudo pmset -a standbydelaylow 86400 standbydelayhigh 604800`
+（要**整体退出 R3 测试态**回基线是**另一次**独立改动：`sudo pmset -a hibernatemode 0 standby 0 standbydelaylow 10800 standbydelayhigh 86400` —— 别混在一起。）
+
+> **★ 完整议程（还剩什么可测 / 什么已判死）→ `next-test-agenda.md`**（18:4x 新建；含 ①R3b ②T4(OC 日志核 MMIO) ③Win 功耗量准 ④`dmpstore` 顺带，以及本轮新增的 2 条源码级排除：`hbfx-ahbm=65` 无增量、`autopoweroff` 机型级不存在）。
 
 ## 10.5 本轮零配置改动
 
