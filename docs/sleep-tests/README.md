@@ -1,6 +1,17 @@
 # 睡眠档位调优测试记录
 
-> 🧰🧰 **2026-09-18 18:1x【§七十六 · 最新】—— 用户选 **B-β**（离线拆固件卷）⇒ **执行完毕：一半成功、一半是明确否定**
+> 🏗️🏗️ **2026-09-20 09:1x【§七十七 · 最新】—— 用户给「BIOS 实拍（图 2）+ 一篇知乎『改注册表开 S3』文章」⇒ 拿到 **HP 自研 Setup 变量名表**（新一手证据），同时**更正我自己一处记录错误****
+> **① ★ 新一手证据（D.2）**：HpSetup 模块（`171 0147`，body 1,327,374 B）里，**UTF-16 UI 文本之外还有一张 ASCII Setup 变量名表**（@1,282,343–1,288,343，~100 个标识符）。节选：`CpuPwrMgmt | ★DeepS3 | ★DeepS3Support | WakeOnUSB | ★HpModernStandbyConfigurations | ★PowerControl | MiscMobileKBCBatteryMgmt | SetupMemFlags | FactoryConfigFlags …` ⇒ **`Deep Sleep` 与 `Modern Standby` 是平级的两个命名 Setup 变量** ⇒ 「互斥」是**固件作者的设计**，不是 OS 驱动出来的现象。⇒ **"不赌"的理由升级**：不是我方配置没调对，而是**厂商按 AOAC-only 出厂**（与上游口径 *"Systems that support Modern Standby do not use S1-S3"* 完全一致）。
+> **② 实拍（图 2）的解读（D.1）**：与 §七十四 **同一屏**（4 项），**无新增结构**。但做了交叉验证 —— 固件字符串池顺序 `Runtime Power Management → Extended Idle Power States → **Deep sleep(+3 个 wake 源)** → **Modern Standby** → Power Control → Battery Health Manager` 对照实拍 = **首 2 项 + 后 2 项 4/4 吻合，中间两整组完全不存在**。⇒ 关键：**HP 会把"灰掉"的项照常显示**（同固件例：`Hyperthreading … grayed out because Deep sleep is set to On`）⇒ 故 `Deep sleep`/`Modern Standby` **是"隐藏"而非"灰化"**（强推断；最终仍需 `DisplayInUI` 字段确认）。
+> **③ ⚠️ 记录更正（D.4）**：我一直写的 **"OS 声明层已关过且无效"只对一半成立** —— **macOS `\_SB.LPS0` 真跑过**（转 S3 ⇒ EC 罢工）；**Windows `PlatformAoAcOverride=0` 从未设过**（hive 字节级 0 命中，正向对照通过）⇒ 那条"睡一次"的**裁决性测试至今是"未做"，不是"做过无效"**。**优先级提到最高。**
+> **④ 知乎文章评估（D.3）**：属已标注的**「仅方向」**类，方法 = `PlatformAoAcOverride=0`，**是 Windows 侧开关，帮不到 macOS 睡眠**。但它的"改之前" `powercfg -a` 输出**与本机 §七十四 逐条同形** ⇒ 说明我们卡在"固件是否真给 S3"这个前提上；MS 问答区同案例结果是**"点击睡眠后无法唤醒"**（与 macOS 侧同形，先验胜率不高，但本机未测）。
+> **⑤ 路径更正（D.5）**：HpSetup 真实位置 = 卷 `3 5473C07A-…` → `0 9E21FD93-…` → **LZMA 段** → Volume image → 卷 `0 A881D567-…` → `171 0147`。附录 C.1 写的「卷 `11 B73FE497…` / 模块 `151 081E`」**两处都错**。另：**`UEFIFind` 跑在原始 ROM 上会全 0 命中**（目标在 LZMA 段内）—— 今天靠正向对照才发现。
+> **⑥ History.txt 四条旁证（D.6）**：01.23.00 内含 **EC 固件 34.31.00**｜HP 官方用词 **"MSC(Modern Standby)"**｜**"Battery Health Manager … by BCU"** = HP 承认 **BCU 可按设置名写入**｜24 个修订里 **S3 相关修复 = 0 条**。
+> **⑦ BIOS 层找开关（§七十六 C.6 第 1 条）正式划掉** —— 用户已翻完，界面里没有。
+> **下一步（重排）**：**②a** 进 Windows `reg add …PlatformAoAcOverride=0` → 重启 → **只看** `powercfg /a`（**零风险，不睡眠**；仍无 S3 ⇒ 彻底封板）→ **②b** 仅当出现 S3 才睡一次（⚠️裁决"固件不支持"vs"只有 macOS 不支持"；若 Windows 能正常 S3 ⇒ ★ 必须推翻"卡点在 EC 固件"）→ **②c** `reg delete … /f` 还原；**③a′** WMI 只读关键词扩到 `Modern Standby`/`DeepS3`/`PowerControl`。
+> 完整 → `docs/sleep-tests/tier-ladder-why.md` **附录 D**
+>
+> 🧰🧰 **2026-09-18 18:1x【§七十六】—— 用户选 **B-β**（离线拆固件卷）⇒ **执行完毕：一半成功、一半是明确否定**
 > **✅ 核心成果**：`Modern Standby` 是固件里的**正式 Setup 项**（**Enable/Disable**，且有 **en-US / da-DK / es-ES 三语 UI**）—— 它的 help 文本**自曝互斥**：*"Deep Sleep has been gray out because Modern Standby is set to On."* ⇒ 这就是固件自己写的"AOAC 开着 ⇒ Deep Sleep 不可用"。
 > **❌ 明确否定**：**该固件没有 IFR**（三条判据：`UEFIExtract` section 统计 **HII=0**；全 dump 15,718 文件搜 HII 包结束指纹 `06 00 00 00 DF 00` **0 命中**；PE32 内严格 HII 包链扫描 **0 段**）⇒ **B.6 里"提 IFR 拿变量偏移"这条路本身不成立，本条划掉**。HP 是**自研 Setup 引擎**（UI 文本是裸宽字符串常量池，非 SIBT/无 string ID）。
 > **⚠️ 真因纠正**：上轮"裸扫 0 命中"**不是**"大部分模块被压缩"这么简单 —— 更直接的原因是 **UI 文本以 UTF-16LE 存储，且全在压缩段内**。解包后 `Modern Standby` 立刻 **9 个文件**命中。

@@ -2,8 +2,11 @@
 
 来源包   : SP169002  (BIOS 01.23.00 Rev2, HP ZBook Power G7)
 固件镜像 : T75_01230000.bin  (32,315,326 B, sha256 d5c521648d71d7281c0eb81c7340b0689b11cf721623177625edd830bde1c037)
-提取位置 : 卷 11 B73FE497-B92E-416E-8326-45AD0D270091
-           → 模块 151 081E / File 171 0147
+提取位置 : 卷 3 5473C07A-3DCB-4DCA-BD6F-1E9689E7349A          ← 2026-09-20 更正
+           → 0 9E21FD93-9C72-4C15-8C4B-E77F1DB2D792
+           → 0 EE4E5898-3914-4259-9D6E-DC7BD79403CF (LZMA 压缩段)
+           → 1 Volume image section / 0 A881D567-6CB0-4EEE-8435-2E72D33E45B5
+           → File 171 0147   (原文误作「卷 11 B73FE497… / 模块 151 081E」)
            → File GUID A0A3FEC9-FE9D-4CE7-8DB4-9C54F3F19E5A  (DXE driver, HpSetup)
            → PE32 image section/body.bin (1,327,104 B)
 编码     : UTF-16LE（★ 用 ASCII 搜会 0 命中）

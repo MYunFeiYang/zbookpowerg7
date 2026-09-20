@@ -56,6 +56,9 @@
 | 看到 `HII_DATABASE_PROTOCOL` GUID 就以为"有 HII/IFR" | **协议 GUID 存在 ≠ 有 HII 包**。厂商常保留 EDK2 框架代码但 Setup 不走它。必须用上面 ② 的指纹实测 |
 | 想区分"UI 字符串包"与"代码里的宽字符串常量池" | 看**相邻性**：HII STRINGS 包的字符串前有 **SIBT 块头**（`0x10` = SIBT_STRING_UCS2）且总长含 ID；常量池里两个字符串**字节紧邻**（如 `Runtime Power Management` 50 B 后直接是 `Enables Runtime Power Management.`）⇒ **无 SIBT 结构 = 纯常量池** |
 | 把固件里扫出的字符串当"证据"前 | 先跑**正向对照锚点**：挑一个**在界面上亲眼见过**的项名。本机锚点 = BIOS 实拍图里的 `Runtime Power Management` / `Extended Idle Power States` / `Power Management Options` / `Power On When AC Detected` |
+| **`UEFIFind <原始ROM> all list <串>` 全部 0 命中**（2026-09-20） | ⚠️ **假空**。`UEFIFind` 只搜**未压缩**内容；本机 HpSetup 在 **LZMA 压缩段**内 ⇒ 连 `HpSetup`、`"Modern Standby"` 都是空。**必须对 `UEFIExtract … all` 产出的 dump 检索**。今天靠"先跑正向对照"才发现——又一次验证：**0 命中必须配对照才作数** |
+| 在 302 MB / 15,718 文件的 dump 上跑 Python 全量 `os.walk` + 读文件搜串 | **被 `SIGKILL`（exit 137）**，两次都是死在扫描循环里。省力替代：① 按 **`info.txt` 反查 GUID** 直接定位模块目录 —— `grep -r "<模块GUID>" --include=info.txt <dump>`（每个模块目录都有 `info.txt`，含 `File GUID`/`Type`/`Full size`，纯文本、毫秒级）；② 只在**单个模块的 `body.bin`** 上搜（一般 1–2 MB，安全） |
+| 只搜 **UTF-16** 就以为"这个能力固件里没有" | 固件里**两套命名并存**：**UI 显示文本 = UTF-16LE**（如 `Modern Standby`、`Deep sleep`）、**内部 Setup 变量名 = ASCII**（如 `DeepS3`、`HpModernStandbyConfigurations`、`CpuPwrMgmt`）。本机 `HpModernStandbyConfigurations` 在模块 `171 0147` 的 **@1,282,343（ASCII 名字表）**，而 `Modern Standby` 在 **@48,501 起（UTF-16 常量池）** ⇒ **两者都搜**才算穷尽 |
 
 ## Windows 侧（跨分区取证）
 | 坑 | 正确做法 |

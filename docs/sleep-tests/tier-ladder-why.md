@@ -400,7 +400,7 @@ HpCommonSetup                        ← HP 的 Setup 配置变量名
 | ③ | 找内嵌真 CAB | **按头部字段校验**（`vmaj∈1..3`、`cFolders≤32`、`cbCabinet` 不越界） | `sp154814` → **CAB@331,559**；`sp169002` → **CAB@330,678**。两包的 `MSCF@216,064` 都是**巧合命中**（v0.110 / 101 folders ⇒ 字段乱），靠校验剔掉 |
 | ④ | 解 CAB | `bsdtar -xf`（macOS 自带 libarchive，**不需要 7z/cabextract**） | `T75_01230000.bin` **32,315,326 B**（01.23.00）+ `History.txt` |
 | ⑤ | 解固件卷 | 下载 **UEFIExtract NE A75 universal_mac**（1.5 MB，`xattr -dr com.apple.quarantine` 后可直接跑） | `T75_01230000.bin.dump/` **302 MB / 15,718 个文件**；`_FVH` × 34，其中 **16 个合理 FV**（占镜像 49.8%） |
-| ⑥ | 定位目标模块 | `UEFIFind` 搜 body（**解压后**内容） | `HpModernStandbyConfigurations` + `HpSetup` **同属模块 `A0A3FEC9-FE9D-4CE7-8DB4-9C54F3F19E5A`** = 卷 `11 B73FE497…` / File **`171 0147`**，DXE driver，1.33 MB |
+| ⑥ | 定位目标模块 | 在**解包后的 dump** 里找 | `HpModernStandbyConfigurations` + `HpSetup` **同属模块 `A0A3FEC9-FE9D-4CE7-8DB4-9C54F3F19E5A`** = File **`171 0147`**，DXE driver，1.33 MB（<br>⚠️ **路径于 09-20 更正，见 D.5**：实际在卷 `3 5473C07A-…` → `0 9E21FD93-…` → **LZMA 段** `0 EE4E5898-…` → Volume image → 卷 `0 A881D567-…` → `171 0147`。原文写的「卷 `11 B73FE497…` / 模块 `151 081E`」**两处都错**） |
 
 **版本口径**：本机 **01.24.02**（BIOS 日期 2026-05-11）比手上最新的 **01.23.00 还要新一个修订**，HP 尚未在公告里列出对应 SoftPaq。两版镜像**同为 32,315,326 B、布局固定、42% 字节不同** ⇒ 结构跨版本稳定，用 01.23.00 的结构做判断是安全的（但不等于逐项等价）。
 
@@ -487,3 +487,107 @@ HpCommonSetup                        ← HP 的 Setup 配置变量名
 3. **正向对照必须用"确凿存在"的锚点**：本次锚点 = BIOS 实拍图里看得见的 4 项。**没有对照的 0 命中不作数。**
 
 > 本轮**零配置 / 零 EFI 改动**。固件包与 302 MB 解包产物**只在 `/tmp/biosprobe/`**（未进工作区）；入库的只有**结论文档 + 12.6 KB 字符串清单**。
+
+---
+
+## 附录 D · 2026-09-20：实拍交叉验证 + **HP 自研 Setup 变量名表**（新一手证据）
+
+> 用户本轮给了两样东西：**① `Power Management Options` 第二张实拍**（含 `Battery Health Manager` 的 help 面板）；**② 一篇知乎文章**《Windows 11 设置开启 S3 深度睡眠…禁用现代待机》。
+> **产出仍然是"两条相反"**：✅ 拿到 **HP Setup 变量名表**（比 C 阶段的 UI 字符串强一档）；❌ 但 **BIOS 层"能找到开关"这条正式划掉**；⚠️ 并**更正了我自己一处记录错误**。
+
+### D.1 实拍（图 2）怎么读 —— 它证明的是「**完全隐藏**」，不是「灰掉」
+
+实拍 = 与 §七十四 **同一屏**（4 项：`Runtime Power Management` / `Extended Idle Power States` / `Power Control` / `Battery Health Manager`），**没有新增结构信息**。但它给了一次**决定性的交叉验证**：
+
+固件字符串常量池里那一段的**物理顺序**（附录 C.2）是 ——
+`Runtime Power Management` → `Extended Idle Power States` → **`Deep sleep`（+`Wake when Lid is Opened`/`Wake When AC is Detected`/`Wake on USB`/警告文本）** → `Enable`/`Disable` → **`Modern Standby`（+互斥 help）** → `Power Control` → `Battery Management` → `Battery Health Manager`
+
+对照实拍：**首 2 项与后 2 项位置 4/4 吻合，中间那两整组（`Deep sleep` 组 + `Modern Standby`）在 UI 上完全不存在。**
+
+⇒ **关键推理**：HP 自己**会把"灰掉"的项照样显示出来**并附 help —— 同固件里就有例子：
+- `Hyperthreading and Multi-processor has been enabled and grayed out because Deep sleep is set to On.`（@53,470）
+- `Optane is gray out due to Legacy Support Enable`（@52,923）
+
+所以 `Deep sleep` 若只是"因为 Modern Standby=On 而灰掉"，它**本该以灰行出现**。它没出现 ⇒ **是隐藏（`DisplayInUI=0`），不是灰化**。
+（⚠️ 口径：这是**强推断**，不是直接读数 —— 常量池相邻只说明"同属这一块菜单区"，最终仍需 `HP_BIOSSetting` 的 `DisplayInUI` 字段确认。故**不能**把"BIOS 里绝对没有"写成已证事实，只能写"**用户界面里没有**"。）
+
+### D.2 ★ 新一手证据：模块内那张 **ASCII Setup 变量名表**
+
+在同一个模块（`171 0147`，body 1,327,374 B）里，**"UI 文本"（UTF-16）之外还有一张 ASCII 名字表**，位于 **@1,282,343 – 1,288,343**（约 100 个标识符，间距 34–56 B ⇒ 编成固定步长的结构数组）。它是 **HP Setup 引擎的变量/配置名清单**，节选：
+
+```
+… SecurityMemFlags | SetupMemFlags | FactoryConfigFlags | RestoreApplyDisplay | PlatformPortOptions
+| PlatformMiscDeviceConfigurations | … | SWRF_LEDCTRL | WirelessDev_ID | …
+| DisableBatteryOnNextBoot | CpuPwrMgmt | ★ DeepS3 | ★ DeepS3Support
+| MiscMobileKBCPwrMgmt | MiscMobileKBCExtendPwrMgmt | WakeOnUSB
+| ★ HpModernStandbyConfigurations | ★ PowerControl | MiscMobileKBCBatteryMgmt
+| IntelOptaneOptions | … | HpRemoteDiagnosticsSettings | HpCpr | UefiCAState | ExtendedDHCPTimeout …
+```
+
+（`HpSetup` @1,319,872 与 `en-US` 单独出现在尾部 —— 那是模块/语言标识，不是本表。）
+
+**四项坐实**：
+1. **`DeepS3` + `DeepS3Support` + `HpModernStandbyConfigurations` + `PowerControl` 是平级的四个命名 Setup 变量** ⇒ 「Deep Sleep ↔ Modern Standby 互斥」**是固件作者写进变量结构里的设计**，不是 OS 驱动出来的现象。
+2. 名字表里的**邻接顺序**（`DeepS3` → `DeepS3Support` → … → `WakeOnUSB` → `HpModernStandbyConfigurations` → `PowerControl`）与 **UI 字符串池顺序、以及实拍菜单顺序三处同构** ⇒ 三者互为印证，这张表可信。
+3. ⇒ **UI 上那个 `☑ Power Control` 的真身就是 `PowerControl` 这个 Setup 变量的开关**（不是"子菜单标题"）。
+4. `CpuPwrMgmt` / `MiscMobileKBCPwrMgmt` / `MiscMobileKBCExtendPwrMgmt` / `MiscMobileKBCBatteryMgmt` 同族 ⇒ 整个电源块都是自研变量。
+
+**⇒ 对"不赌"的影响：理由升级（结论不变）。**
+之前只能说"固件里有结构、但我们不知道它是死是活"。现在可以说：**这两个变量成对存在、平级、名字表与 UI 同构 ⇒ 平台是"按 AOAC-only 出厂"的**（Modern Standby 有专属变量、默认生效；Deep Sleep 的变量在，但被策略压住且**界面不给**）。这与上游口径 *"Systems that support Modern Standby do not use S1-S3"* **完全一致** —— 即：**我们现在的状态不是"配置没调对"，而是"厂商就是这么设计的"。**
+
+⚠️ 仍**没有**拿到变量**偏移/尺寸/可见性标志**（名字表只给了名字）。要偏移只剩**逆向 PE32 的这张结构数组**（可做，但成本高、且不改变赌注账）⇒ **本轮就此收手，不再往下挖。**
+
+### D.3 那篇知乎文章怎么评估
+
+| 项 | 判定 |
+|---|---|
+| 内容 | `powercfg -a` 看状态 → `reg add HKLM\System\CurrentControlSet\Control\Power /v PlatformAoAcOverride /t REG_DWORD /d 0` → 重启 → 再看 `powercfg -a`；还原 = `reg delete` |
+| 来源分级 | **仅方向**（技术博客/知乎）。它就是 §七十三 ④ 里已标注的"那批『改注册表就能切 S3』的博客"之一 |
+| 能不能用在本机问题上 | **不能直接帮到 macOS 侧** —— 这是 **Windows 侧**开关。我们的痛点是 macOS S3 |
+| **但它有一处真价值** | 文章的 **"改之前" `powercfg -a` 输出** = `S1/S2 带「系统固件不支持」` + **`S3 只有「当支持 S0 低电量待机时，禁用此待机状态」`** —— **与本机 §七十四 实测输出逐条同形**。⇒ ① 证明我们那个"中间态"不是本机独有；② 说明文章的"改之后 S3 出现"是**有条件的**（前提是固件真给 S3），而我们**正是卡在这个前提上** |
+| 补充口径 | **MS 问答区同案例**（《WIN11 修改注册表为S3睡眠模式后无法唤醒》）里，执行同一操作的用户结果是 **"点击睡眠后无法唤醒"** —— 与 macOS 侧同形。⇒ 这条路在我们平台上的**先验胜率不高**，但本机**尚未实测** |
+
+### D.4 ⚠️ 记录更正（我自己的一处措辞错误）
+
+我在多处（`MEMORY.md`、本文件 §A 表头）写过：**"① OS 声明层（macOS `\_SB.LPS0`／Win `PlatformAoAcOverride=0`）已关过且无效"**。
+**这句话只有一半成立，必须拆开：**
+
+| 半场 | 状态 |
+|---|---|
+| **macOS `\_SB.LPS0`**（`SSDT-DeepIdle=false`） | ✅ **真跑过**：`IOPMDeepIdleSupported` Yes→No、系统确实转 S3 ⇒ **EC 罢工** |
+| **Windows `PlatformAoAcOverride=0`** | ❌ **从未设过**。§七十三 ③ 已用**字节级**查过 hive：`PlatformAoAcOverride` **0 命中**（正向对照 `HiberbootEnabled`/`PowerSettings` 均命中 ⇒ 方法有效）⇒ **本机 Windows 从没动过这个键** |
+
+⇒ 正确表述 = **"OS 声明层里，macOS 半场已实测关过（EC 罢工）；Windows 半场从未试过"**。
+⇒ 也正因为如此，**Windows 那条"睡一次"的裁决性测试（§A.4 的 ②）至今仍是"未做"，不是"做过无效"**。这条落进 §A 的下一步，优先级**提到最高**（见 D.7 的 ②a）。
+
+### D.5 路径更正（附录 C.1 第 ⑥ 行）
+
+| | 内容 |
+|---|---|
+| 原文 | 卷 `11 B73FE497-B92E-416E-8326-45AD0D270091` / 模块 `151 081E` / File `171 0147` |
+| **实测**（`grep -r … --include=info.txt` 反查 GUID，09-20） | 卷 `3 5473C07A-3DCB-4DCA-BD6F-1E9689E7349A` → `0 9E21FD93-9C72-4C15-8C4B-E77F1DB2D792` → **LZMA 段** `0 EE4E5898-3914-4259-9D6E-DC7BD79403CF` → `1 Volume image section` → 卷 `0 A881D567-6CB0-4EEE-8435-2E72D33E45B5` → **File `171 0147`** |
+| 模块 info | `File GUID A0A3FEC9-FE9D-4CE7-8DB4-9C54F3F19E5A`｜DXE driver｜body 1,327,374 B｜**5 段**：DXE dep / Raw / PE32 / UI / Version |
+| `151 081E` 是什么 | 是**另一支**（卷 11 里的一个 14 KB PEI 小模块），与 HpSetup 无关 ⇒ 那是**误记** |
+
+**顺带纠正一条工具用法**：**`UEFIFind` 直接跑在原始 32 MB ROM 上会全部 0 命中**（连 `HpSetup` / `"Modern Standby"` 都是空）—— 因为**目标模块在 LZMA 压缩段内**，`UEFIFind` 只搜未压缩内容。今天用它验证时**先跑正向对照才发现**。⇒ 正确做法：对 **`UEFIExtract` 解包后的 dump** 检索（或用 `grep info.txt` 反查 GUID 定位目录）。已写入 `docs/tooling-gotchas.md`。
+
+### D.6 顺带从固件包 `History.txt` 拿到的四条旁证
+
+| # | 事实 | 意义 |
+|---|---|---|
+| 1 | BIOS 01.23.00 内含 **Embedded Controller (EC) 固件 34.31.00** | L3 卡点在 EC ⇒ 至少拿到了**一个可比的 EC 版本号**（本机 01.24.02 的 EC 版本未取得，故只能作参照，不能作判据） |
+| 2 | HP 官方 changelog 亲口写 **"MSC(Modern Standby)"**（01.04.01：*Improved system resume time from MSC(Modern Standby) with WWAN device attached*） | 平台术语的**上游自证**：HP 把这台机器归在 Modern Standby 类 |
+| 3 | 01.04.01：*Fixes an issue where **Battery Health Manager** setting cannot apply to system immediately after setting **by BCU*** | ★ **HP 官方承认 BCU 可按设置名写入 Setup 项** ⇒ 「按名写入」这条通道在 HP 侧是存在的（但只对**已暴露**项；对隐藏项仍未知） |
+| 4 | 24 个 BIOS 修订的 changelog 里，**S3 / S3 resume 相关修复条数 = 0**（全篇只出现 Modern Standby） | 弱证据但方向一致：**这条平台从未把 S3 当受支持路径** |
+
+### D.7 下一步（重新排序）
+
+| # | 动作 | 风险 | 为什么 |
+|---|---|---|---|
+| **②a** | 进 Windows：`reg add … /v PlatformAoAcOverride /t REG_DWORD /d 0` → **重启** → **只看** `powercfg /a` | **零**（不睡眠） | 这是 D.4 更正后**唯一未做的裁决性测试**。**出现 `Standby (S3)` ⇒ 前提成立**，值得谈 ②b；**仍只报 `S0 Low Power Idle` ⇒ 本机彻底封板**（且这次是"厂商 OS + 厂商驱动 + 厂商固件"三重齐全下的封板） |
+| **②b** | 仅当 ②a 出现 S3：在 Windows 睡一次 | ⚠️ 中（醒不回来 → 强制关机） | **裁决"固件不支持 S3" vs "只有 macOS 不支持"**。若 Windows 能正常 S3 睡+醒 ⇒ ★ **必须推翻本文"卡点在 EC 固件"的结论**（改判为 macOS `AppleACPIEC` 与 HP EC 的握手问题）⇒ 出现新路子；若也醒不回来 ⇒ 结论坐实到最硬证据 |
+| **②c** | 无论结果都 `reg delete … /f` 还原 | — | 别把 Windows 也搞成"睡下去醒不来" |
+| **③a′** | WMI 只读，**关键词扩到三个**：`Modern Standby`、`DeepS3`、`PowerControl` | **零**（纯只读） | D.2 拿到内部名后，这次能一次问清"这台机器到底藏了哪些电源项"（`DisplayInUI` 字段直接给可见性） |
+
+> **BIOS 实拍找开关（C.6 的第 1 条）正式划掉** —— 用户已把该分类翻完，**界面里没有**。
+> **仍然不建议赌**：D.2 反而**加强**了"厂商按 AOAC-only 出厂"的判断；赌注账（代价=唯一可用的 Deep Idle，目标=已实测坏的 S3）**未变**。
