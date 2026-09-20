@@ -6,6 +6,28 @@
 
 ---
 
+## 🚀 17:2x **测试已发起** —— 环境核验全绿（重启后实测，一手）
+
+重启时间 `kern.boottime = Sun Sep 20 17:19:08 2026`。五项核验：
+
+| # | 项 | 实测值 | 判定 |
+|---|---|---|---|
+| 1 | boot-args 进内核（`nvram` ＋ `sysctl kern.bootargs` 双查） | `… rtcfx_exclude=0E-FF -rtcfxdbg hbfx-ahbm=1 -hbfxdbg` | ✅ |
+| 2 | pmset | `hibernatemode 3` / `standby 1` / `standbydelaylow 86400` / `standbydelayhigh 604800` | ✅ |
+| 3 | gate 属性（`IOPMrootDomain`） | `"Standby Enabled" = Yes`、`"Standby Delay" = 86400` | ✅ |
+| 4 | ★ **kext 真实效**（铁律①：`IOKitDiagnostics→Classes` **实例计数**，不用 `ioreg -c`） | **`HibernationFixup = 1`**、`RTCMemoryFixup = 1`、`Lilu = 1`、`AppleRTC = 1`；**hook 目标** `X86PlatformPlugin = 1`、`X86PlatformShim = 1` | ✅ |
+| 5 | 内存压力（§7.10f 担心的「8 GiB 镜像写入慢」前置） | **`swap = 0.00M`**（重启自动清零） | ✅ 前置解除 |
+
+**基线（唤醒后据此对齐）**：`kern.hibernatecount = 0`｜`/System/Volumes/VM/` **无 `sleepimage`**（仅 `kernelcore`）｜`nvram -p` **无 `hibernat*` 变量**｜时间戳 `17:22:46`。
+（这三条基线 = 与 09-16 那 5 次失败后的签名**完全一致** ⇒ 上次确实从未写盘。）
+
+**断言现状**：`PreventSystemSleep = 0`（关键 —— `pmset sleepnow` 不会被它拦）；`PreventUserIdleSystemSleep = 1` 的持有者是 **`Electron`（WorkBuddy 自身）** ⇒ 只挡 idle sleep，不挡显式命令；`Idle sleep preventers: IODisplayWrangler`（正常）。
+
+**触发方式**：`pmset sleepnow`（显式命令）。因实测 **`AppleClamshellCausesSleep = No`**，本轮**不需要物理合盖**。
+**唤醒后核验**：`bash docs/sleep-tests/round3-verify.sh`（只读，9 项判据 —— 含"是否出现 `Entering Hibernate`"这条核心判据）。
+
+---
+
 ## ⚠️ 17:0x 修正：`hbfx-ahbm` 取值 **3 → 1**（去掉 bit1「只在合盖时」）
 
 **原因（实测一手证据）**：
