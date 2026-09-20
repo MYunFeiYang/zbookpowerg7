@@ -1,0 +1,64 @@
+固件台账 · 证据 02：Windows SYSTEM hive + HP 固件包 .inf
+=========================================================
+采集：2026-09-20 10:1x（只读）
+前提：Windows 卷平时就是只读挂载
+  $ mount | grep TZBOOK
+    /dev/disk0s3 on /Volumes/TZBOOK (ntfs, local, nodev, nosuid, read-only, noowners, noatime, fskit)
+
+—— A. hive 文件（⚠️ 文件名是小写）——
+  /Volumes/TZBOOK/Windows/System32/config/system     21,757,952 B   mtime 2026-09-18 18:03
+  /Volumes/TZBOOK/Windows/System32/config/software   85,983,232 B
+  /Volumes/TZBOOK/Windows/System32/config/DEFAULT       786,432 B
+
+—— B. SystemInformation 键值块（解码后原文）——
+  SystemBiosVersion (REG_MULTI_SZ):
+      HPQOEM - 0
+      T75 Ver. 01.24.02
+      HP - 1180200
+  EnclosureType
+  SystemManufacturer     HP
+  SystemFamily           103C_5336AN HP ZBook
+  SystemProductName      HP ZBook Power G7 Mobile Workstation
+  SystemSKU              10J83AV
+  BIOSVendor             HP
+  BIOSVersion            T75 Ver. 01.24.02
+  BaseBoardManufacturer  HP
+  BaseBoardProduct       87EC
+  BIOSReleaseDate        05/11/2026
+  SystemVersion          SBKPFV3
+
+  注：`HP - 1180200` 是 HP 的内部编码形态，与 §1.1 的 0x01180200 同源（"01 18 02 00"）。
+
+—— C. 负向检索（带正向对照）——
+  在同一 hive 里搜 `PlatformAoAcOverride`：**0 命中**
+  正向对照（同一 hive、同一方法）：
+      "BIOSVersion"          → 命中（ASCII 名 + UTF-16 值）
+      "BIOSReleaseDate"      → 命中
+      "SystemManufacturer"   → 命中
+  ⇒ 方法有效 ⇒ "Windows 侧从未设过 PlatformAoAcOverride" 成立。
+
+—— D. 本机实跑固件包（Windows Update 固件驱动落地处）——
+  目录：/Volumes/TZBOOK/Windows/System32/DriverStore/FileRepository/
+        t75_01240200.inf_amd64_42ecb2ad108e0833/
+      T75_01240200.bin   32,315,326 B   2026-06-07 19:41
+      T75_01240200.cat       11,395 B   2026-06-09 09:52
+      T75_01240200.inf        1,405 B   2026-06-07 19:41
+
+  T75_01240200.inf 全文关键段：
+      [Version]
+      Class       = Firmware
+      ClassGuid   = {f2e7dd72-6468-4e36-b6f1-6488f42c1b52}
+      DriverVer   = 05/11/2026,1.24.2.0
+      CatalogFile = T75_01240200.cat
+      [Firmware.NTamd64.10.0...17134]
+      %FirmwareDesc% = Firmware_Install,UEFI\RES_{845f3b21-5cc4-4208-8d65-777656c53a30}
+      [Firmware_AddReg]
+      HKR,,FirmwareId,,{845f3b21-5cc4-4208-8d65-777656c53a30}
+      HKR,,FirmwareVersion,%REG_DWORD%,0x01180200
+      HKR,,FirmwareFilename,,%13%\T75_01240200.bin
+      [Strings]
+      Provider     = "HP Inc."
+      FirmwareDesc = "HP T75 System Firmware"
+
+  ⇒ 该 .inf 的 FirmwareVersion 与 macOS 侧 firmware-revision、hive 的 BIOSVersion
+    三处互证，版本 = 01.24.02。

@@ -1,0 +1,28 @@
+固件台账 · 证据 04：本机实跑固件镜像存证
+==========================================
+采集：2026-09-20 10:13（只读）
+
+—— 文件 ——
+路径：/Volumes/TZBOOK/Windows/System32/DriverStore/FileRepository/
+      t75_01240200.inf_amd64_42ecb2ad108e0833/T75_01240200.bin
+大小：32,315,326 B
+
+shasum -a 256 结果：
+  f89292026932be691d59904311cb50b4fbc55379aa554f89479665e04ae6970b
+
+—— 来源与身份 ——
+来源：Windows 卷上的 DriverStore（Windows Update 固件驱动落地目录）
+对应的 .inf：DriverVer = 05/11/2026,1.24.2.0 / FirmwareVersion = 0x01180200
+与 hive 的 BIOSVersion = "T75 Ver. 01.24.02"、macOS 侧 firmware-revision = 0x01180200 三方一致
+⇒ 这就是本机**正在跑的那一版固件镜像**。
+
+—— 与既有样本的差异 ——
+  /tmp/biosprobe/ext169002/T75_01230000.bin   32,315,326 B   01.23.00（SP169002）
+  cmp 结果：**与 01.23.00 不同**（预期）
+  ⇒ 以前所有固件结论取自 01.23.00，与实跑版本差一版；现已用本镜像复核（见 03 号证据），结论一致。
+
+—— 本地工作副本（临时，未进工作区）——
+  /tmp/bios12402/T75_01240200.bin                32,315,326 B   sha256 同上
+  /tmp/bios12402/T75_01240200.bin.dump/          解包产物（UEFIExtract all）
+  /tmp/bios12402/T75_01240200.bin.report.txt     572,603 B     结构报告
+  /tmp/bios12402/T75_01240200.bin.guids.csv       35,466 B

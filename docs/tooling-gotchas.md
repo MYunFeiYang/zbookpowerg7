@@ -59,6 +59,11 @@
 | **`UEFIFind <原始ROM> all list <串>` 全部 0 命中**（2026-09-20） | ⚠️ **假空**。`UEFIFind` 只搜**未压缩**内容；本机 HpSetup 在 **LZMA 压缩段**内 ⇒ 连 `HpSetup`、`"Modern Standby"` 都是空。**必须对 `UEFIExtract … all` 产出的 dump 检索**。今天靠"先跑正向对照"才发现——又一次验证：**0 命中必须配对照才作数** |
 | 在 302 MB / 15,718 文件的 dump 上跑 Python 全量 `os.walk` + 读文件搜串 | **被 `SIGKILL`（exit 137）**，两次都是死在扫描循环里。省力替代：① 按 **`info.txt` 反查 GUID** 直接定位模块目录 —— `grep -r "<模块GUID>" --include=info.txt <dump>`（每个模块目录都有 `info.txt`，含 `File GUID`/`Type`/`Full size`，纯文本、毫秒级）；② 只在**单个模块的 `body.bin`** 上搜（一般 1–2 MB，安全） |
 | 只搜 **UTF-16** 就以为"这个能力固件里没有" | 固件里**两套命名并存**：**UI 显示文本 = UTF-16LE**（如 `Modern Standby`、`Deep sleep`）、**内部 Setup 变量名 = ASCII**（如 `DeepS3`、`HpModernStandbyConfigurations`、`CpuPwrMgmt`）。本机 `HpModernStandbyConfigurations` 在模块 `171 0147` 的 **@1,282,343（ASCII 名字表）**，而 `Modern Standby` 在 **@48,501 起（UTF-16 常量池）** ⇒ **两者都搜**才算穷尽 |
+| **内置 `Grep` 工具对固件/二进制 dump 搜串**（2026-09-20） | ⚠️ **给出假否定**。它对二进制文件默认跳过 ⇒ 连 `Runtime Power Management`、`HpModernStandbyConfigurations` 这种**确实存在**的串都报 "No files found"。**当天靠"先跑正向对照"才发现**（第 5 次验证：0 命中必须配对照）。替代：Python 字节级 `bytes.find`，或 `grep -a` |
+| 在 dump 上跑**递归**扫描（Python `os.walk` 全量读 / `grep -r` / `find -exec`） | **被沙箱 `SIGKILL`（exit 137）**，当天连栽三次（15,718 文件、3,501 文件的卷都杀）。**按文件数设预算**：< 100 个文件随便扫；上千个必然被杀。省力替代见下行 |
+| 想给固件里的标识符**定位归属** | ① 直接对**原始镜像单文件**搜 —— 未压缩区的标识符是**明文**，命中后拿偏移；② 用 `.report.txt` 的 `Base`/`Size` 两列做区间反查（`base ≤ off < base+size`，取最内层）⇒ 得到「卷 / 模块 GUID / 段类型」三级归属。比解包后逐个搜**快且不触发 SIGKILL** |
+| 把"固件组件名"当成"可写的设置项名" | ⚠️ 本机 `FspS3Notify` 是 **PEI 模块自己的名字**（在它的 UI section 里）、`HpCommonSetup`/`S3MemoryVariable`/`HpModernStandbyConfigurations` 是 **PEI 模块 PE32 里的标识符** —— 都**不是 NVRAM Setup 变量名**。真正的 Setup 变量名在 **HpSetup 模块的 ASCII 名字表**里。混淆会导致"按名字写入"时找不到项 |
+| 想核**本机 BIOS 版本** | ★ **macOS 侧就能读真值**：`ioreg -p IODeviceTree -n efi -r -d 1 -w0` 的 `firmware-vendor`（`<480050000000>`=UTF-16 "HP"）与 `firmware-revision`（小端 UINT32 `0xMMmmPP00`，各字段为**原始字节值**，如 `0x01180200`=`0x18`=24 ⇒ 01.24.02）。⚠️ **`system_profiler` 的 `System Firmware Version` 是 OpenCore 装的假值**（本机 `2094.80.5.0.0`），不可用作判据 |
 
 ## Windows 侧（跨分区取证）
 | 坑 | 正确做法 |

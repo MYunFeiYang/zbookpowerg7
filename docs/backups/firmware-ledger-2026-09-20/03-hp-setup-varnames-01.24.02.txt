@@ -1,0 +1,92 @@
+固件台账 · 证据 03：本机实跑固件 01.24.02 的 HpSetup 复核
+============================================================
+采集：2026-09-20 10:1x（只读）
+镜像：T75_01240200.bin（sha256 f89292026932be691d59904311cb50b4fbc55379aa554f89479665e04ae6970b）
+解包：UEFIExtract NE A75（universal_mac） `UEFIExtract T75_01240200.bin all`
+
+—— A. 模块定位 ——
+路径（相对 .dump/）：
+  3 5473C07A-3DCB-4DCA-BD6F-1E9689E7349A/
+    0 9E21FD93-9C72-4C15-8C4B-E77F1DB2D792/
+      0 EE4E5898-3914-4259-9D6E-DC7BD79403CF/        ← LZMA 压缩段
+        1 Volume image section/
+          0 A881D567-6CB0-4EEE-8435-2E72D33E45B5/    ← 主 DXE 卷
+            172 0147/                                 ← ★ HpSetup（01.23.00 时是 171 0147）
+info.txt:
+  Type: File / Subtype: DXE driver / Text: 0147
+  File GUID: A0A3FEC9-FE9D-4CE7-8DB4-9C54F3F19E5A
+  Body size: 14450Eh (1328398)
+  （01.23.00 对照：body 1327374 B）
+
+—— B. 关键标识符命中（对 172 0147/body.bin 单文件检索）——
+  HpSetup                        ASCII ×1  @1320864
+  HpModernStandbyConfigurations  ASCII ×1  @1286143
+  DeepS3                         ASCII ×2  @1285954, 1285983
+  PowerControl                   ASCII ×1  @1286195
+  CpuPwrMgmt                     ASCII ×1  @1285921
+  WakeOnUSB                      ASCII ×1  @1286111
+  Modern Standby                 UTF-16 ×5 @48501, 48606, 130765, 318364, 318541
+  Deep sleep                     UTF-16 ×2 @48033, 53868
+  Runtime Power Management       UTF-16 ×4 @47779, 47846, 509251, 703677
+  Extended Idle Power States     UTF-16 ×1 @47899
+  Battery Health Manager         UTF-16 ×2 @48733, 758484
+  HpCommonSetup / S3MemoryVariable / FspS3Notify  ★ 0 命中（它们是 PEI 阶段模块，不在本模块，见 D 段）
+
+—— C. Setup 变量名表（ASCII @1,285,600–1,287,400，本窗口 42 个标识符）——
+  obileKBCBuiltInConfig | CommonBuiltInDevsConfig | CommonBuiltInDevsConfig2 | CommonBuiltInDevsSuppress
+  NfcConfigBuiltinOptions | NfcOptionImplemented | DisableBatteryOnNextBoot | CpuPwrMgmt
+  DeepS3 | DeepS3Support | MiscMobileKBCPwrMgmt | MiscMobileKBCExtendPwrMgmt
+  WakeOnUSB | HpModernStandbyConfigurations | PowerControl | MiscMobileKBCBatteryMgmt
+  IntelOptaneOptions | IntelOptaneOptionsImplemented | IntelTechnologiesOptions | TpmOptions
+  PromptRaidOROM | MiscMobileKBCDevConfig | MiscMobileKBCDevSwapConfig | MiscMobileKBCDevHighResConfig
+  MiscMobileKBCHiddenHotkeyConfig | MiscMobileKBCSwapKeysConfig | DptfOptions | FusionDriverSetup
+  FlashMediaReader | ExUsbPortConfig | ExUsbPortImplementation | SmartCard
+  HpStorageEnable | MeOptions | ElectronicLabel | HpHostBaseMacAddress
+  HpHBMAPriorityList | HpHBMAAddressSubmit | HpHBMAEmbeddedLanConfig | HpRemoteDiagnosticsSettings
+  HpRemoteDiagnosticsLastExecutionData | HP_UsbControlOptions
+（注：首项 42 项窗口起点截断了前一个标识符，原文即 "…obileKBCBuiltInConfig"，应为 MobileKBCBuiltInConfig 的尾段）
+
+—— D. UI 字符串池 · Power 菜单邻接（UTF-16，@47,700–49,100）——
+  Runtime Power Management      ← 项名
+    "Enables Runtime Power Management."
+  Extended Idle Power States    ← 项名
+    "Increases the OS's Idle Power Savings."
+  Deep sleep                    ← 项名
+    "Wake when Lid is Opened" / "Wake When AC is Detected" / "Wake on USB"
+    "Warning!! Due to Deep Sleep is Enabled, if you remove AC power from the computer,
+     Wake on USB function will be automatically disabled."
+    Enable / Disable
+  ★ Modern Standby              ← 项名
+    "Deep Sleep has been gray out because Modern Standby is set to On."   ← ★ 互斥自曝（en-US）
+  Power Control                 ← 分类名
+  Battery Management / Battery Health Manager / "Maximize Battery Health Management" …
+
+  三语互斥文案：
+    en @48,606 : "Deep Sleep has been gray out because Modern Standby is set to On."
+    da @130,765: "Dyb søvn er blevet slået fra og nedtonet, fordi Modern Standby er indstillet til On."
+    es @318,541: "La función de suspensión profunda se ha deshabilitado y sombreado porque Modern Standby está activado."
+  ⇒ 正式本地化项（非遗留字符串），且**互斥是固件作者写在 UI 文案里的设计**。
+
+—— E. HII / IFR 缺失（本机 01.24.02 独立复核）——
+  ① .report.txt 的 Section 类型直方图：
+       969 UI / 930 PE32 image / 768 Version / 396 Raw / 377 DXE dependency /
+       261 MM dependency / 240 PEI dependency / 26 Compressed / 24 TE image /
+       5 GUID defined / 1 Volume image        ← **没有任何 HII section**
+  ② 全报告字符串 "HII" 出现次数 = 0
+     正向对照（同文件同一方法）："PE32 image" = 932、"Volume image" = 2
+  ⇒ HP 自研 Setup 引擎，**没有 IFR ⇒ 拿不到变量偏移/可见性标志**。
+
+—— F. 明文标识符的精确归属（原始镜像未压缩区，UTF-16）——
+  在**未解包的 T75_01240200.bin** 上直接命中（无需解包）：
+    FspS3Notify                    @0xA62B40 (10890048), @0xDD4B40 (14502720)
+    HpCommonSetup                  @0xB3B188 (11776392), @0xEAD188 (15389064)
+    HpModernStandbyConfigurations  @0xB659D0 (11950544), @0xED79D0 (15563216)
+    S3MemoryVariable               @0xB76470, @0xB7A844, @0xEE8470, @0xEEC844
+  用 .report.txt 的 Base/Size 区间反查归属：
+    标识符                          卷                       模块                                       段
+    FspS3Notify                  1B5C27FE-F01C-4FBC-AEAE-341B2E992A17  EA7F0916-B5C8-493F-A006-565CC2041044  UI section（模块名）
+    HpCommonSetup                B73FE497-B92E-416E-8326-45AD0D270091  0556A9E4-C473-4524-BEA2-A609057A2959 (0303)  PE32 image
+    HpModernStandbyConfigurations B73FE497-…                          CBABDE7E-B367-649A-8FFA-1167E08422C3 (0A0D)  PE32 image
+    S3MemoryVariable             B73FE497-…                          EEEE611D-F78F-4FB9-B868-55907F169280 (0812) / 9FAAD0FF-0E0C-4885-A738-BAB4E4FA1E66 (081C)  PE32 image
+  ⇒ 这些是 **PEI 阶段模块代码里的标识符**，**不是可写的 NVRAM Setup 项名**。
+    （旧记录写作"属 HpCommonSetup Setup 变量"⇒ 已更正）

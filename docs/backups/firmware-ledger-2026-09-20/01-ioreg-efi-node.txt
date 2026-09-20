@@ -1,0 +1,53 @@
+固件台账 · 证据 01：macOS 侧读到的真实固件标识
+====================================================
+采集：2026-09-20 10:1x（只读）
+命令：
+  ioreg -p IODeviceTree -n efi -r -d 1 -w0
+  system_profiler SPHardwareDataType
+
+—— A. /efi 节点（EFI System Table，OpenCore 不重写这一处）——
+  "firmware-revision" = <00021801>
+  "firmware-abi"      = <"EFI64">
+  "name"              = <"efi">
+  "firmware-vendor"   = <480050000000>
+  （同节点另有超长的 "device-properties" 十六进制块，为 config.plist 的 DeviceProperties 注入，与本台账无关，已省略）
+
+解读：
+  firmware-vendor  48 00 50 00 00 00 = UTF-16LE "HP"      ⇒ 真实厂商（SpoofVendor=True 也没改掉）
+  firmware-revision                 = 小端 UINT32 0x01180200 = 01.24.02（见说明）
+
+  逐字节：
+    bytes      = [0x00, 0x02, 0x18, 0x01]
+    LE uint32  = 0x01180200
+    BE uint32  = 0x00021801
+    取 LE 值按 4 个字节字段读：01 | 18 | 02 | 00
+      主版本  0x01 = 1
+      次版本  0x18 = 24（十进制）
+      补丁    0x02 = 2
+      保留    0x00 = 0
+    ⇒ 1.24.2.0  ⇒ 显示为 01.24.02
+
+  ★ 交叉验证（同目录 02 号证据）：HP 官方固件包 T75_01240200.inf 里
+      DriverVer                = 05/11/2026,1.24.2.0
+      HKR,,FirmwareVersion,%REG_DWORD%,0x01180200
+    ⇒ DWORD 逐位相同，版本逐字段相同。编码方式至此**闭环**。
+
+—— B. 对照：system_profiler 显示的是【假值】——
+  $ system_profiler SPHardwareDataType
+      Model Name:             MacBook Pro
+      Model Identifier:       MacBookPro16,4
+      System Firmware Version: 2094.80.5.0.0      ← ★ 假值（Apple 模板）
+      OS Loader Version:      583~5906
+      Memory:                 16 GB
+      Serial Number (system): C02GC2YFMD6T        ← 假序列号（OC 注入）
+      Hardware UUID:          416EF620-7D77-5AD2-93E3-2F21A1042E97
+
+  为什么是假值（config.plist 自证）：
+      PlatformInfo/Automatic        = True
+      PlatformInfo/UpdateSMBIOSMode = Custom
+      PlatformInfo/Generic/SpoofVendor       = True
+      PlatformInfo/Generic/SystemProductName = MacBookPro16,4
+      PlatformInfo/Generic/ProcessorType     = 1793
+
+  ⇒ 结论：查真实固件版本读 /efi 节点的 firmware-revision；
+           system_profiler 的 "System Firmware Version" 在本机是 Apple 假身，不可用作判据。

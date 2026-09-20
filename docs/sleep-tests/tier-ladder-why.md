@@ -591,3 +591,54 @@ HpCommonSetup                        ← HP 的 Setup 配置变量名
 
 > **BIOS 实拍找开关（C.6 的第 1 条）正式划掉** —— 用户已把该分类翻完，**界面里没有**。
 > **仍然不建议赌**：D.2 反而**加强**了"厂商按 AOAC-only 出厂"的判断；赌注账（代价=唯一可用的 Deep Idle，目标=已实测坏的 S3）**未变**。
+
+---
+
+## 附录 E · 2026-09-20 10:0x：把固件结论**坐实到本机实跑的那一版**（+ 固件事实台账）
+
+> 起因：用户问「我的固件等信息你都完全确认了？」
+> 正文与全部证据 → **`docs/firmware-facts-ledger.md`** ＋ `docs/backups/firmware-ledger-2026-09-20/`。本附录只记对**本文**的影响。
+
+### E.1 影响本文的只有一条：**"版本落差"这个保留意见可以划掉**
+
+附录 A–D 的所有固件读数都取自 **01.23.00（SP169002）**，而本机实跑 **01.24.02** —— 差一版，之前只能标注为保留意见。现在**拿到了本机实跑的那一版镜像本体**（`T75_01240200.bin`，32,315,326 B，sha256 `f8929202…`）并复核：
+
+| 复核项 | 01.24.02（本机实跑） | 01.23.00（旧读数） | 结论 |
+|---|---|---|---|
+| HpSetup 模块位置 | `…/0 A881D567-…/**172 0147**` | `…/**171 0147**` | 只是序号挪一位，GUID 不变（`A0A3FEC9-…`） |
+| `HpModernStandbyConfigurations` | ASCII @1,286,143 | @1,282,343 | ✔ 一致 |
+| `DeepS3` / `DeepS3Support` / `PowerControl` / `CpuPwrMgmt` / `WakeOnUSB` | 全部命中 | 全部命中 | ✔ 一致 |
+| `Modern Standby` UI | UTF-16 ×5（en/da/es） | ×5 | ✔ 一致 |
+| 三语互斥文案 | en/da/es 三句都在 | 同 | ✔ 一致 |
+| UI 邻接顺序 | `Runtime Power Management → Extended Idle Power States → Deep sleep(+3 wake 源) → **Modern Standby** → Power Control → Battery Management → Battery Health Manager` | 同 | ✔ 一致 |
+| **无 HII/IFR** | Section 直方图无 HII（969 UI / 930 PE32 / 768 Version…）；全报告 `HII` = 0 次（正向对照 `PE32 image`=932） | 三判据全零 | ✔ 一致 |
+
+⇒ **D.2 的结论一字未变**：`Deep Sleep` 与 `Modern Standby` 是**平级的两个命名 Setup 变量**，互斥是固件作者写进变量结构的设计。**"不赌"的理由照旧成立**，且现在不再有版本落差的余地。
+
+### E.2 新增一条可用于**上游定性**的证据（不改结论，但加厚）
+
+原始镜像的**未压缩区**里，`FspS3Notify` / `S3MemoryVariable` 是**明文 UTF-16**，用 `.report.txt` 的 Base/Size 反查可精确归属：
+
+| 标识符 | 所属卷 | 所属模块 | 段 |
+|---|---|---|---|
+| `FspS3Notify` | `1B5C27FE-…` | PEI 模块 `EA7F0916-B5C8-493F-A006-565CC2041044` | **UI section**（= 模块名本身） |
+| `HpCommonSetup` | `B73FE497-…` | PEI 模块 `0556A9E4-…`（0303） | PE32 image |
+| `HpModernStandbyConfigurations` | `B73FE497-…` | PEI 模块 `CBABDE7E-…`（0A0D） | PE32 image |
+| `S3MemoryVariable` | `B73FE497-…` | PEI 模块 `EEEE611D-…`（0812）／`9FAAD0FF-…`（081C） | PE32 image |
+
+两条读法：
+1. **平台在 PEI 阶段确有 S3 相关代码路径**（`FspS3Notify` 是个 PEI 模块）⇒ 与"S3 从未被当作受支持路径"**不矛盾**：路径存在 ≠ 该路径在本机可用（L3 只能实测，判据纪律 #4）。本机 macOS 半场**已实测**它在 EC 上死掉。
+2. ⚠️ **它们是"固件组件名"，不是"可写的 NVRAM 设置项名"** —— 附录 B 里"固件里有 `HpModernStandbyConfigurations`＋`S3MemoryVariable`/`FspS3Notify`"这句话容易被误读成"有可写的设置项"，**已更正**。真正的 Setup 变量名在 **HpSetup 模块的 ASCII 名字表**里。
+
+### E.3 一条方法学收获（可直接复用）
+
+**核本机 BIOS 版本不再需要进 Windows**：`ioreg -p IODeviceTree -n efi -r -d 1 -w0` 的 `firmware-revision` 就是真值（本机 `<00021801>` → LE `0x01180200` → 01.24.02）；`firmware-vendor` = `HP`。
+⚠️ 反过来，`system_profiler SPHardwareDataType` 的 `System Firmware Version`（本机 `2094.80.5.0.0`）**是 OpenCore 装的假值**，永远不要拿它当判据。
+
+### E.4 下一步
+
+**完全不变**（D.7 的 ②a → ②b → ②c 顺序照旧）：
+**②a** 进 Windows `reg add …PlatformAoAcOverride=0` → 重启 → **只看** `powercfg /a`（零风险，不睡眠；仍无 S3 ⇒ 彻底封板）→ **②b** 仅当出现 S3 才睡一次 → **②c** `reg delete … /f` 还原。
+新增一条可选：**③a′** 的 WMI 只读现在还能顺手把 **EC 固件版本**与 **`DisplayInUI`** 一起问出来（这两项是我目前唯一拿不到的本机固件信息）。
+
+> 本轮**零配置 / 零 EFI 改动**；镜像与解包产物只在 `/tmp/bios12402/`（未进工作区）。

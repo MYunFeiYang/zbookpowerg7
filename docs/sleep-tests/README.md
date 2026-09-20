@@ -1,6 +1,16 @@
 # 睡眠档位调优测试记录
 
-> 🏗️🏗️ **2026-09-20 09:1x【§七十七 · 最新】—— 用户给「BIOS 实拍（图 2）+ 一篇知乎『改注册表开 S3』文章」⇒ 拿到 **HP 自研 Setup 变量名表**（新一手证据），同时**更正我自己一处记录错误****
+> 📋📋 **2026-09-20 10:0x【§七十八 · 最新】—— 用户问「我的固件等信息你都完全确认了？」⇒ 建**固件事实台账**（按证据等级分档），同时**纠了 3 处记录错**、**新拿 2 条只读读取法**、**把固件结论坐实到本机实跑的那一版****
+> **① ★ 新读取法 · macOS 侧直接读真实 BIOS 版本（不用进 Windows）**：`ioreg -p IODeviceTree -n efi -r -d 1 -w0` ⇒ `firmware-vendor = <480050000000>`（UTF-16 "HP"）、`firmware-revision = <00021801>`。⚠️ **`system_profiler` 的 `System Firmware Version` 是 OC 装的假值**（本机 `2094.80.5.0.0`）⇒ 以前"核版本必须进 Windows"的前提作废。
+> **② ★ 新读取法 · Windows 卷平时就是只读挂载** ⇒ 不必重启即可读 hive，且**本机实跑固件镜像就在盘上**：`…/Windows/System32/DriverStore/FileRepository/t75_01240200.inf_amd64_*/T75_01240200.bin`（32,315,326 B，sha256 `f8929202…`）。
+> **③ ★ 版本编码闭环**：`firmware-revision` 小端 UINT32 `0x01180200` = HP 官方 `.inf` 的 `FirmwareVersion`；字段是**原始字节值**（`0x18` = 24）⇒ **01.24.02**。与 hive `BIOSVersion`/`SystemBiosVersion` 三处互证。
+> **④ ★ 固件结论已坐实到本机版本**：以前所有固件读数取自 **01.23.00**（差一版）。现用 **01.24.02** 复核 —— HpSetup 从 `171 0147` 挪到 **`172 0147`**（body 1,328,398 B）；`HpModernStandbyConfigurations`/`DeepS3`/`PowerControl`/`CpuPwrMgmt`/`WakeOnUSB` 全命中；`Modern Standby` UTF-16 ×5（en/da/es 三语互斥文案原文）；**无 HII/IFR**（Section 直方图 + 全报告 `HII` 0 命中，正向对照通过）⇒ **结论一字未变，但"版本落差"这个保留意见可以划掉**。
+> **⑤ ⚠️ 更正 · 明文标识符的归属**：原始镜像未压缩区即可读到 `FspS3Notify` / `HpCommonSetup` / `HpModernStandbyConfigurations` / `S3MemoryVariable`（UTF-16 明文），用 `.report.txt` 的 Base/Size 反查 ⇒ 它们是 **PEI 阶段模块里的标识符**（`FspS3Notify` 甚至就是一个 **PEI 模块自己的名字**），**不是可写的 NVRAM Setup 项名**。旧记录笼统写成"属 `HpCommonSetup` Setup 变量"**不准确**。
+> **⑥ ⚠️ 更正 · 记录自相矛盾**：`MEMORY.md` 第 16 行的 boot-args 写了 `-wegnoegpu` 与 `rtcfx_exclude=80-FF`，但**实跑（NVRAM 与 config 一致）没有 `-wegnoegpu`、且是 `rtcfx_exclude=0E-FF`**（= 同文件第 19 行的"四层防护"值）。已改。
+> **⑦ ⚠️ 3 项确实拿不到（明确列出，不许含糊）**：**EC 固件版本**（镜像里没有；Padding 区/`software` hive/HP 日志全 0 命中）｜**OpenCore 版本串**（`nvram …:opencore-version` 不存在 + `OpenCore.efi` 只有占位符 `REL-XXX-YYYY-MM-DD`）｜**`DisplayInUI`（藏没藏）**（无 IFR，可见性标志未逆向）。
+> 完整 → `docs/firmware-facts-ledger.md`（+ 存证 `docs/backups/firmware-ledger-2026-09-20/`）
+>
+> 🏗️🏗️ **2026-09-20 09:1x【§七十七】—— 用户给「BIOS 实拍（图 2）+ 一篇知乎『改注册表开 S3』文章」⇒ 拿到 **HP 自研 Setup 变量名表**（新一手证据），同时**更正我自己一处记录错误****
 > **① ★ 新一手证据（D.2）**：HpSetup 模块（`171 0147`，body 1,327,374 B）里，**UTF-16 UI 文本之外还有一张 ASCII Setup 变量名表**（@1,282,343–1,288,343，~100 个标识符）。节选：`CpuPwrMgmt | ★DeepS3 | ★DeepS3Support | WakeOnUSB | ★HpModernStandbyConfigurations | ★PowerControl | MiscMobileKBCBatteryMgmt | SetupMemFlags | FactoryConfigFlags …` ⇒ **`Deep Sleep` 与 `Modern Standby` 是平级的两个命名 Setup 变量** ⇒ 「互斥」是**固件作者的设计**，不是 OS 驱动出来的现象。⇒ **"不赌"的理由升级**：不是我方配置没调对，而是**厂商按 AOAC-only 出厂**（与上游口径 *"Systems that support Modern Standby do not use S1-S3"* 完全一致）。
 > **② 实拍（图 2）的解读（D.1）**：与 §七十四 **同一屏**（4 项），**无新增结构**。但做了交叉验证 —— 固件字符串池顺序 `Runtime Power Management → Extended Idle Power States → **Deep sleep(+3 个 wake 源)** → **Modern Standby** → Power Control → Battery Health Manager` 对照实拍 = **首 2 项 + 后 2 项 4/4 吻合，中间两整组完全不存在**。⇒ 关键：**HP 会把"灰掉"的项照常显示**（同固件例：`Hyperthreading … grayed out because Deep sleep is set to On`）⇒ 故 `Deep sleep`/`Modern Standby` **是"隐藏"而非"灰化"**（强推断；最终仍需 `DisplayInUI` 字段确认）。
 > **③ ⚠️ 记录更正（D.4）**：我一直写的 **"OS 声明层已关过且无效"只对一半成立** —— **macOS `\_SB.LPS0` 真跑过**（转 S3 ⇒ EC 罢工）；**Windows `PlatformAoAcOverride=0` 从未设过**（hive 字节级 0 命中，正向对照通过）⇒ 那条"睡一次"的**裁决性测试至今是"未做"，不是"做过无效"**。**优先级提到最高。**
