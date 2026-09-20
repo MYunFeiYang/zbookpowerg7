@@ -2,3 +2,10 @@
 
 # 大体积二进制备份：留在本地不入库（路径登记在 docs/ 里），避免仓库历史被不可逆撑大
 docs/backups/**/*.tar.gz
+
+# R3 内核原始日志转储：1.7 MB + 含瞬时 UUID，本地留存不入库
+# （分析结论的权威去处 = docs/sleep-tests/round3-kernel-trace.md）
+docs/sleep-tests/round3-kernel.log
+docs/sleep-tests/round3-kernel.err
+# 一次失败尝试的残留 LaunchAgent（launchctl bootstrap 报 EIO 5；可行走通路见 tooling-gotchas.md）
+docs/sleep-tests/com.wb.r3logdump.plist

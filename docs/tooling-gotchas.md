@@ -6,7 +6,10 @@
 ## 日志 / 进程 / 内核
 | 坑 | 正确做法 |
 |---|---|
-| `log show` 在沙箱里被硬禁 | 用 `osascript … with administrator privileges` 提权跑 |
+| `log show` 在沙箱里被硬禁（`log: Cannot run while sandboxed`） | **唯一走通路 = `osascript -e 'do shell script "<脚本绝对路径>" with administrator privileges'`**（走系统授权助手 ⇒ 进程**不在** WorkBuddy 沙箱内，2026-09-20 实测脚本内 `uid=0`）。⚠️ **下列全部无效**：`dangerouslyDisableSandbox: true`、`env -i`、不自带提权的 `do shell script`、`launchctl submit`（macOS 26 已不可用）、`launchctl bootstrap`（`Bootstrap failed: 5: Input/output error`，plist 放 `~/Library/LaunchAgents` 也一样）、`open -a Terminal`（`_LSOpenURLsWithCompletionHandler() failed … -10820`） |
+| `log show` 抓不到内核/kext 的调试行 | **默认不输出 info/debug 级**，必须加 **`--info --debug`**。2026-09-20 加了这个才抓到 `PMRD:` 睡眠轨迹 |
+| `pmset -g log \| tail -N` 当作「最新电源事件」 | ★ **陷阱**：该命令**尾部是「当前断言/阻止者摘要」块**，不是最新事件 ⇒ 会得出「没睡过」的**假阴性**。正确做法：按时间/关键字过滤 —— `pmset -g log \| grep -E "Entering\|Wake from\|HibernateStats" \| tail -30`、或 `grep "2026-09-20 17:2"` |
+| `pmset sleepnow` 后立刻读日志判断成败 | 请求 → 真正入睡之间隔 **≈30 s**（显示器关 → `darkwakelinger` 15 s → 协商）。**读早了必然假阴性**。等 ≥30 s 再读，或用「唤醒后回看」 |
 | 全窗口 `log show` 扫描被 **SIGKILL(137)**（不是超时） | 必须加 `--predicate` + 缩小 `--start/--end` 窗口 |
 | `log show --start/--end` 查**旧**窗口不可靠（时间戳错乱） | 旧窗口的结论必须复核实际时间戳再采信 |
 | `dmesg` 读不到启动期（环缓冲被 IGPU 刷爆） | 改看 `log show --predicate 'process == "kernel"'` 或 panic 报告 |

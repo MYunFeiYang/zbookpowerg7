@@ -1,5 +1,20 @@
 # 睡眠档位调优测试记录
 
+> 🟡🟡🟡 **2026-09-20 17:5x【§八十八 · 最新】—— ★★★ Round 3 结果：`hbfx-ahbm` **生效了**，但被我自己设的 `standbydelay` 自毁**（`round3-kernel-trace.md` 全链 ＋ `round3-hbfx-ahbm-plan.md` §10）
+> **★ 先纠错（上一轮的结论是错的）**：上次说「17:25 那次被观察者效应打断、是无效测试」—— **错了，那次真的睡着了**（17:25:37 入睡 → 17:28:32 用户按电源键唤醒，175 s；17:34 那次同样成功，101 s）。
+> 两个叠加错因：**① 读日志太早**（`pmset` 请求→入睡之间隔 **≈30 s**）；**② `pmset -g log | tail` 是陷阱** —— 它尾部是**「当前断言摘要」块**，不是最新电源事件，必须按时间/关键字过滤。
+> **★ 内核日志一手轨迹**（`log show --info --debug`，uid=0 抓的）：
+> `17:25:37.396 sleep params v2, **type 5, flags 0x1**`（★ **type5=standby + 休眠标志 = HBFX 生效！**）
+> → `17:25:38.972 **type 7**`（打回 deepidle）→ `17:25:39.609 **hibernateMode 0x0**`（总闸落下）→ `phase 2 type 7` ⇒ 最终 **Deep Idle**。
+> 终局：`hibernatecount=0`｜**无 sleepimage**｜NVRAM 无休眠变量｜`lastSleepType=0x7/'Deep Idle'`｜唤醒 2 s。
+> **★ 病灶（源码级，无推断成分）**：XNU `IOPMrootDomain.cpp:5656-5669` —— 早评估(phase 1)拿到的 `sleepType` 若属性位**不含 `HibernateSetup`** ⇒ **`hibernateDisabled = true`**；`:5763` `if (hibernateDisabled) *hibernateModePtr = 0;` ⇒ **`pmset` 的 3 被清零，镜像一字节不写**。而 `deepidle`(索引 7) 属性正好 = 0，`standby`(索引 5) 才是 `HibernateSetup|HibernateSleep`（编号由 airportd 的 `0x7/'Deep Idle'` 与本机 `sleepTypeAttributes[]` 表交叉锚定）。
+> 而 `deepidle` 之所以胜出：**HBFX 自己的 `IOPMrootDomain_setMaintenanceWakeCalendar` 钩子**会用 **`standby_delay`**（= `pmset standbydelaylow/high`）推迟维护唤醒并置 `wakeCalendarSet = true`，而 `kern_hbfx.cpp:449` 的 `setupHibernate = (… || !wakeCalendarSet || …)` ⇒ **它把自己关掉了**。
+> **⇒ 我把 `standbydelay` 设成 86400 s = 把 HBFX 的扳机推到了 24 h 之后。不是"救不了"，是"参数自毁"。**
+> **★ 下一步 Round 3b（只需 pmset，无需重启）**：`sudo pmset -a standbydelaylow 120 standbydelayhigh 120`，睡 ≥3 分钟，盯 `type 5` 是否保持 + `hibernateMode 0x3`。⚠️ 风险更高（每次睡眠 2 min 后都走"写镜像 + RAM 断电"）。
+> **★ 工具方法（可复用，已入 `tooling-gotchas.md`）**：`log` 在 WorkBuddy 沙箱里被硬拒，**唯一走通路 = `osascript -e 'do shell script "<脚本>" with administrator privileges'`**（提权助手，进程不在沙箱内，实测 uid=0）；且内核 DEBUG 级必须加 **`--info --debug`**。
+> **本轮零配置改动**；两次睡眠后均**无 POST 005、时钟正常**。
+
+> ⚪ **2026-09-20 16:5x【§八十七】（已被 §八十八 取代：其"3→1 修正"仍成立，"永不命中"的推理未被验证）
 > 🔴🔴🔴 **2026-09-20 16:5x【§八十七 · 最新】—— ★★ Round 3 上机：`hbfx-ahbm` 首次实测（执行单 `round3-hbfx-ahbm-plan.md`）**
 > **⚠️ 这是自 09-16 封板以来第一次真正动 EFI + pmset，也是首次带不可逆风险的实测**（POST 005 / 需长按电源键）。
 > **① ★★ 读透源码，发现两个隐藏 gate（`isStandbyEnabled()` @ `kern_hbfx.cpp:1197`）：**

@@ -274,3 +274,61 @@ git revert <本轮 commit>                                                      
       而本轮正是要推翻它。硬闸是 `FORCE_HIBERNATE=1`，**不拦直接 `pmset -a`**（所以本轮能set上）。
 - [ ] 若成功 ⇒ `s4-requirements-audit.md` §7.10(c) 由 🟡 升为 🟢，并改写"出远门关机"的默认结论。
 - [ ] 若失败 ⇒ 「所有已知手段均已试过」，**"没解"才算真正闭环**。
+
+---
+
+# 🔬 10. 结果（2026-09-20 17:5x）—— **`hbfx-ahbm` 生效了，但被我设的参数自毁**
+
+> 完整因果链（含内核日志与源码引用）→ **`round3-kernel-trace.md`**
+
+## 10.1 先纠正一条上一轮的错误结论
+
+**上一轮说的「17:25 那次被观察者效应打断、是无效测试」——错了。那次真的睡着了。**
+
+| | 上一轮（错） | 实测 |
+|---|---|---|
+| 17:25:08 `pmset sleepnow` | 被打断 | ✅ 17:25:37 入睡 → 17:28:32 用户按电源键唤醒（175 s） |
+| 17:34 那次（用户手动） | — | ✅ 17:34:48 入睡 → 17:36:29 唤醒（101 s） |
+| 「没有 `Entering Sleep`」 | 当作没睡成的证据 | ⚠️ **假阴性** |
+
+**两个叠加的错因**：
+1. **读日志太早**：`pmset` 请求 → 真正入睡之间隔 **≈30 s**（显示器关 → `darkwakelinger` 15 s → 协商）。我在 17:25:14 就读了。
+2. **`pmset -g log | tail` 是陷阱**：该命令**尾部是「当前断言摘要」块**，不是最新电源事件。必须按时间/关键字过滤（`grep "2026-09-20 17:2"`），不能用 `tail`。
+
+## 10.2 实际发生了什么（内核日志一手）
+
+```
+17:25:37.396 PMRD: sleep params v2, type 5, flags 0x1   ← ★ HBFX 生效！type5=standby + 休眠标志
+17:25:38.9xx （维护唤醒日历被设 ⇒ HBFX 钩子把它推迟 +86400 s ⇒ wakeCalendarSet 置真）
+17:25:38.972 PMRD: sleep params v2, type 7, flags 0x0   ← ★ 打回 type7=deepidle（HBFX 不再覆盖）
+17:25:39.609 PMRD: hibernateMode 0x0                    ← ★★★ 总闸：hibernatemode 被清零
+17:25:39.841 PMRD: phase 2, ..., type 7                 ← 最终 = Deep Idle
+```
+
+**终局判据**：`kern.hibernatecount = 0`｜**无 `sleepimage`**｜`nvram` 无休眠变量｜`lastSleepType = 0x7/'Deep Idle'`｜唤醒 2 s。
+
+## 10.3 病灶（源码级）
+
+- XNU `IOPMrootDomain.cpp:5656-5669`：早评估(phase 1)拿到的 `sleepType` **属性位不含 `HibernateSetup`** ⇒ **`hibernateDisabled = true`**
+- XNU `:5763`：`if (hibernateDisabled) *hibernateModePtr = 0;` ⇒ 就是日志那句 `hibernateMode 0x0`，**镜像一个字节都不写**
+- `deepidle`（索引 7）的属性正是 `0`；`standby`（索引 5）才是 `HibernateSetup|HibernateSleep`
+- HBFX `kern_hbfx.cpp:449`：`setupHibernate = (forceHibernate || !wakeCalendarSet || sleepServiceWake || standby_delay == 0)`
+- HBFX 的 `IOPMrootDomain_setMaintenanceWakeCalendar` 钩子会用 **`standby_delay`** 推迟维护唤醒，并置 **`wakeCalendarSet = true`** ⇒ 反过来让 `setupHibernate = false`
+
+**⇒ 我把 `standbydelay` 设成 86400 s，等于把 HBFX 强制休眠的扳机推到了 24 h 之后。这次不是"救不了"，是"参数自毁"。**
+
+## 10.4 下一步（Round 3b，**只需 pmset，无需重启**）
+
+```bash
+sudo pmset -a standbydelaylow 120 standbydelayhigh 120
+# 睡 ≥ 3 分钟；盯两条新判据：
+#   PMRD: sleep params v2, type 5   ← 是否保持 5（没被打回 7）
+#   PMRD: hibernateMode 0x3         ← hibernateDisabled 没被置真
+```
+
+⚠️ 风险高于本轮：`standbydelay 120` ⇒ **每一次普通睡眠**都会在 2 分钟后走"写镜像 + RAM 断电"。
+测完立刻回滚：`sudo pmset -a hibernatemode 0 standby 0 standbydelaylow 10800 standbydelayhigh 86400`
+
+## 10.5 本轮零配置改动
+
+纯只读取证。EFI 与 pmset 仍为 R3 测试态。**两次睡眠后均无 POST 005、时钟正常。**
