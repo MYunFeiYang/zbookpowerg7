@@ -1,6 +1,14 @@
 # 睡眠档位调优测试记录
 
-> ❓❓ **2026-09-20 14:2x【§八十二 · 最新】—— 追问「deep idle 呢？为什么 window 和 hackintosh 功耗差异这么大？」⇒ 差异来源分层定案**（`tier-ladder-why.md` **附录 H**、专题 `round5-win-vs-hack-power.md`）
+> 🔵🔵 **2026-09-20 15:2x【§八十三 · 最新】—— 追问「window 侧休眠能用、Linux 也能休眠，为什么 macOS 就不行？」⇒ 三系统休眠契约分层定案**（`tier-ladder-why.md` **附录 I**、`s4-requirements-audit.md` **§7**）
+> **① ★ 前提要先纠正**：三种系统的"休眠"**不是同一种契约**。Windows 的 `hiberfil.sys`（本机现场 = **6.14 GiB**，`mtime` **今天 11:47**）由 **Windows Boot Manager 自己读回**；Linux 的 swap 头由 **initramfs `resume=`** 读回 ⇒ 这两者**不向固件要任何东西**，固件只是电源开关。而 macOS 的 `sleepimage` 由 **`boot.efi`** 恢复，它必须**先被平台告知"这次是从休眠镜像回来的"** ⇒ **「Windows 能 ⇒ macOS 应该能」这个推理不成立**（Microsoft 官方原文已录）。
+> **② 加难项 ①：macOS 被逼上"必须碰 CMOS"那条路**（本机 DSDT 实读，互补对）—— `AWAC`(`ACPI000E`) `_STA` = `If (STAS == Zero)`；`RTC`(`PNP0B00`) `_STA` = `If (STAS == One)`；我们的 `SSDT-AWAC` 只对 Darwin 设 `STAS = One` ⇒ **macOS 走老式 CMOS RTC，Windows 走 AWAC**。Dortania 官方：*"macOS **does not include native support for AWAC clocks**"*。而 macOS 的休眠密钥（`APPLE_RTC_HIBERNATION_KEY_ADDR = 0x80`，长 `0x2C`）**就写在 CMOS `0x80–0xAB`**（本机 `AppleRTC.kext` 反汇编实证）⇒ **macOS 是三者里唯一"必须碰 CMOS 才能休眠"的；Windows 一点都不碰。**
+> **③ 加难项 ②：AOAC 与 S3/S4 结构性冲突**（🟢 同代同配先例）—— Dell Latitude 5410 EFI 仓库原话 *"Low Power S0 Idle … **conflicts S3 Sleep wake up and S4 Sleep**"*，处方是 `setup_var` **关掉 AOAC**；本机 `FADT bit21 = 1` ＋ 有 `LPIT` 双证在冲突侧，而 HP 把 AOAC 锁在 SMM/固件里（ACPI 侧只有只读镜像 `S0ID`）⇒ **社区标准处方正好是本机封死的那道门**。
+> **④ ★ 但实测失败点比这些理由更"早"**：5 次武装休眠 **5/5 有 `Entering Sleep`、0/5 有 `Entering Hibernate`、0/5 有 `Wake from`、时长栏空、`kern.hibernatecount = 0`、失败后 `nvram` 里**无**休眠变量（⇒ `HibernationFixup` **根本没轮到执行**）、断电发生在 `Entering Sleep` 后 **≈0.2 s**（日志戛然而止 3 分钟）⇒ **不是"醒不回来"，是"还没走到休眠就被硬切断电"。**
+> **⑤ 决定性对照（整类排除"硬件不行"）**：同日 **9 次睡眠** = 5 次武装休眠**全败** vs 4 次普通睡眠**全成**（含**连睡 12.6 h**，RTC 无恙）；当日所有正常关机/重启时钟**全对** ⇒ **RTC 电池弱 / CMOS 被写花 / 固件普遍性问题 = 整类排除，坏的只是"武装休眠"这一条路。**
+> **⑥ 唯一零成本判别问题（一直没问）**：**Windows 休眠→开机有没有出现过 POST 005 / 时间不对？** 无 ⇒ 问题只在 macOS/OpenCore 侧；有 ⇒ 平台级。
+>
+> ❓❓ **2026-09-20 14:2x【§八十二 —— 追问「deep idle 呢？为什么 window 和 hackintosh 功耗差异这么大？」⇒ 差异来源分层定案】**（`tier-ladder-why.md` **附录 H**、专题 `round5-win-vs-hack-power.md`）
 > **① 前提只有一半数据**：macOS 侧实测 **6–11 %/h（≈4–7.5 W）**；**Windows 侧功耗从未测过** ⇒ "差多少"目前是**未知数**。
 > **② ★ 最可能的主因是「档位差」，不是「同一模式下的效率差」** —— Microsoft 官方：Modern Standby **不按固定时间**转 Hibernate，但有 **Adaptive Hibernate**（默认 `StandbyBudgetPercent=5%` / `StandbyBudgetRefreshInterval=12 h`）⇒ **12 h 内掉 ≥5% 就自动进 S4（≈0 W）**；Framework 社区独立确认原话 *"after using 5% of the battery **hibernate automatically**"*。⇒ 若 Windows 也 ~7 %/h，**约 45 min 就换档**：睡 10 h ≈ **4%** vs macOS ≈ **50–70%**。
 > **③ 本机 `powercfg /a` 一手原文**：Windows 侧 **S0 低电量待机（连接的网络）✅ ＋ 休眠(S4) ✅ ＋ 快速启动 ✅**（S1/S2「固件不支持」、S3「被 S0 压住」）⇒ **Windows 有两档，macOS 只有一档**。

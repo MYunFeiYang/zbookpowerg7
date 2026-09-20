@@ -856,3 +856,74 @@ HpCommonSetup                        ← HP 的 Setup 配置变量名
 | "macOS 打开 `standby 1` 就能拿到 S4 那档" | 🔴 推断 —— 本机 S4 **恢复侧**失败，**开了也醒不回来** |
 
 > 本轮**零配置 / 零 EFI 改动 / Windows 侧写操作 = 0 / 固件零写入**。**「出远门直接关机」不变。**
+
+---
+
+## 附录 I · 2026-09-20 15:2x：**为什么 Windows/Linux 能休眠而 macOS 不能** ⇒ "要不要跟固件握手"之差
+
+> 触发：用户问「**window侧休眠是可以用的，之前安装 Linux 时也可以使用休眠，为什么之前 macOS 试过休眠就没法正常唤醒？**」
+> 完整分层回答与证据分级见 `s4-requirements-audit.md` **§7**。本轮**零配置 / 零 EFI / 零固件写入**。
+
+### I.1 三句话
+
+1. **三种系统的"休眠"不是同一种契约**：Windows/Linux 的镜像是**普通磁盘文件**、由**它们自家的引导器**读回 ⇒ **固件只是个电源开关**；macOS 的 `sleepimage` 由 **`boot.efi`** 恢复，必须先被平台告知"这次是恢复" ⇒ **要跟固件握手**。
+2. **本机固件是 AOAC-only**，而"AOAC 与 S3/S4 冲突"是同代平台的公开结论，**标准处方是关掉 AOAC —— 恰好是本机被 HP 封死的那道门**（附录 F/G）。
+3. **实测失败点比上面两条更早**：5 次武装休眠**没有一次走到"进入休眠"**（`hibernatecount=0`、NVRAM 无变量、`Entering Sleep` 后 ≈0.2 s 就被硬切断电）⇒ **不是"醒不回来"，是"没睡成"。**
+
+### I.2 三种契约对照
+
+| | 镜像 | 谁恢复 | 固件要做什么 | 本机现场 |
+|---|---|---|---|---|
+| **Windows** | `hiberfil.sys` | **Windows Boot Manager** 自读 | 关机 ＋ 正常冷启动 | `hiberfil.sys` = **6.14 GiB**，`mtime` **2026-09-20 11:47**（full 型 ≈ 40% RAM）⚠️ Fast Startup 也写此文件 |
+| **Linux** | swap 分区/文件头 | **initramfs `resume=`**（内核自己） | 同上 | 曾可用（用户经历） |
+| **macOS** | `sleepimage` | **`boot.efi`**（需平台先告知"恢复") | 同上 **＋ 休眠状态交接通道** | **5 次全败**，失败点在交接之前 |
+
+Microsoft 官方（🟢）：*"A resume from hibernation starts with a **system POST that's similar to an S5 shutdown**. **The OS boot manager** determines that a resume from hibernation is required **by detecting a valid hibernation file**."*
+
+⇒ **「Windows 能 ⇒ macOS 也应该能」不成立** —— 它把两个契约当成了一个。
+
+### I.3 两条本机专属加难项
+
+| # | 加难项 | 证据 |
+|---|---|---|
+| ① | **macOS 被逼上"必须碰 CMOS"那条路**：`AWAC`(`ACPI000E`) 与 `RTC`(`PNP0B00`) 是 `STAS` 互补对，我们的 `SSDT-AWAC` 只对 Darwin 设 `STAS = One` ⇒ macOS 用**老式 CMOS RTC**、Windows 用 **AWAC**；而 macOS 的休眠密钥就写在 **CMOS `0x80–0xAB`**（`APPLE_RTC_HIBERNATION_KEY_ADDR = 0x80` / LEN `0x2C`） | 本机 DSDT `9386/9396-9406` vs `29670/29684-29694` 实读；`AppleRTC.kext 2.0.1` 反汇编；Dortania 官方 *"macOS does not include native support for AWAC clocks"* |
+| ② | **AOAC 与 S3/S4 结构性冲突**，而本机 AOAC 关不掉（HP 做在 SMM/固件，ACPI 侧只有只读 `S0ID`） | Dell Latitude 5410 EFI 仓库 *"Low Power S0 Idle … **conflicts S3 Sleep wake up and S4 Sleep**"*；本机 `FADT bit21 = 1` ＋ `LPIT-1.aml` |
+
+### I.4 ★ 失败签名：比结构理由更"早"
+
+| 观测 | 值 |
+|---|---|
+| `Entering Sleep` | ✅ 5/5 |
+| `Entering Hibernate` / `Wake from` / `secs` | ❌ **0/5** |
+| `kern.hibernatecount` | **0** |
+| 失败后 `nvram \| grep -i hiber` | **空** ⇒ `HibernationFixup` **没轮到执行** |
+| 断电时点 | `Entering Sleep` 后 **≈0.2 s**，之后连续 **3 分钟 0 行** |
+| panic / `ShutdownCause` | ❌ 无 ⇒ **硬断电**，不是崩溃/正常关机 |
+| POST 005（RTC 掉电） | 3/5 |
+
+### I.5 决定性对照
+
+同日 **9 次睡眠**：**武装休眠 5 次全败** vs **普通睡眠 4 次全成**（含连睡 **12.6 h**）；当日所有正常关机/重启时钟**全对**。
+⇒ **RTC 电池弱 / CMOS 被写花 / 固件普遍性问题 = 整类排除。**
+
+### I.6 证据分级
+
+| 说法 | 等级 |
+|---|---|
+| Windows/Linux 恢复链不依赖固件 | 🟢 Microsoft 官方原文 |
+| macOS 不支持 AWAC，被逼用 PNP0B00 | 🟢 Dortania 官方 ＋ 本机 DSDT 实读 |
+| macOS 休眠密钥写 CMOS `0x80–0xAB` | 🟢 本机 `AppleRTC` 反汇编 |
+| AOAC 与 S3/S4 结构性冲突 | 🟢 同代先例 ＋ 本机 FADT/LPIT 双证 |
+| 失败点在休眠事务提交之前 | 🟢 5/5 签名 ＋ `hibernatecount=0` ＋ NVRAM 无变量 |
+| Windows 侧实际走 AWAC | 🟡 机制推断（其 `STAS` 默认值未实测） |
+| "平台按 AOAC/S0ix 语义直接切电" | 🟡 机制假设，与全部观测一致但未直接证实 |
+| RTC 电池弱 / CMOS 被写花 | ⚪ **已排除** |
+
+### I.7 结论与动作
+
+- **不加新路径，不改变决定**：`SSDT-DeepIdle` 与 AOAC 封板结论**都不动**「出远门直接关机」。
+- **唯一零成本动作（建议）**：问一句 **"Windows 休眠→开机有没有出现过 POST 005 / 时间不对？"** ⇒ 无 = 问题只在 macOS/OpenCore 侧；有 = 平台级。
+- **T2（`hibernatemode 3` 验写镜像）风险重估为低**（mode 3 不断电 ⇒ 按 §二十五 不该 005），但**仍不建议**：它**不解锁任何东西**（即便镜像能写，mode 25 仍在切换点死）。
+- **HP 那条"更新 BIOS 可能修"已无收益**：本机实录 `T75 Ver. 01.24.02`（2026-05-11）比该文档时代的 `01.20.00` 新。
+
+> 本轮**零配置 / 零 EFI 改动 / Windows 侧写操作 = 0 / 固件零写入**。
