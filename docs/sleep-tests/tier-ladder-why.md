@@ -944,3 +944,26 @@ Microsoft 官方（🟢）：*"A resume from hibernation starts with a **system 
 - **病灶定位（收口）**：不是固件、不是 AOAC、不是缺件（`HibernationFixup` 在 09-16 第 4/5 次尝试时**在场仍失败**，git 台账见 §7.8d）—— 卡在 **macOS 侧"睡眠 → 休眠"的换档**（5/5 `Entering Sleep`、**0/5 `Entering Hibernate`**）。
 - **剩余唯一未验的官方点名项**：`DevirtualiseMmio = true` ＋ `MmioWhitelist` 空（OC 官方 *"proper NVRAM **and hibernation** functionality"*）⇒ 要验需开 OC 日志；**但验证也改变不了"换档过不去"** ⇒ **不做**。
 - **动作 = 不改**（默认动作不变）。
+
+### I.9 · 2026-09-20 16:1x **再深一层：为什么"只有" macOS 要走这三道关**（权威版在 `s4-requirements-audit.md` §7.9）
+
+| 层 | 关卡 | 谁有这个要求 | 本机状态 |
+|---|---|---|---|
+| 1 | 平台告知"本次是恢复"（**恢复侧**） | **仅 macOS** | 🚫 平台被 AOAC 锁在 Modern Standby |
+| 2 | 入睡前先过 S3 语义转换（**保存侧**） | **仅 macOS**（`mode 25`） | 🚫 S3 实测坏 |
+| 3 | 休眠密钥写 CMOS RTC `0x80–0xAB` | **仅 macOS**（被 `SSDT-AWAC` 逼去） | 🚫 该段归 HP 校验和管 |
+| — | —— | Win / Linux：**零关** | ✅ |
+
+**(a) 根因 = 引导器职责边界，不是"能力"**：`winload.efi` 自己读 `hiberfil.sys`；GRUB/initramfs 按 `resume=` 读 swap 头；而 **`boot.efi` 找的是"平台留下的休眠状态"**（eclecticlight.co：*"This phase also looks for any saved hibernation state … Hibernation Resume … will override the rest of the boot process"*）⇒ **只有 macOS 要问固件**。
+
+**(b) ★ 自证**：OC 专为 macOS 有 `Misc/Boot/HibernateMode` ＋ `HibernationSkipsPicker`（上游：*"By default, OpenCore will not look for hibernated images of macOS"*）—— **OC 从不需要为 Win/Linux 提供同类开关** ⇒ **配置项的存在 = 需求的存在**。
+⚠️ 但它是**恢复侧**的钥匙；本机失败在**保存侧**（镜像根本没写）⇒ **§I.1 里 `HibernateMode=NVRAM ✅` 与"5/5 失败"不矛盾**（管的是不同半场）。
+
+**(c) 保存侧"必须先睡一次"**：**硬证据 = I.4 的实测签名**（每次都有 `Entering Sleep`、一次都没有 `Entering Hibernate`）⇒ 路径上确实先有一次 Sleep 转换。Win = S0→S4 直通、Linux 内核直接 `hibernate()` ⇒ **只有 macOS 要"先睡一次"**；本机 S3 = ❌。（"`mode 25` 先过 S3 语义"只是 🟡 机制解释 —— 唯一引用 chrultrabook 那句有歧义，**不作证据**）
+
+**(d) 备选通道也被锁**：`SSDT-AWAC` 让 Darwin 下 `STAS=One` ⇒ 只能用老式 CMOS RTC（实读 `DSDT.dsl:6756`/`9398`/`29686`）；而休眠密钥写 `0x80–0xAB`（`AppleRTC` 常量 `APPLE_RTC_HIBERNATION_KEY_ADDR=0x80`、`LEN=0x2C`）⇒ 正落在 HP 校验和区。**Windows 走 AWAC，这段一点都不碰。**
+⚠️ **极性坑**：社区里 `STAS=One/Zero` 两种写法互相矛盾 ⇒ **必须读本机 `_STA` 定极性**。
+
+**一句话**：**不是 "macOS 不会休眠"，而是它的休眠设计上要求平台中途握一次手 —— 而本机每条握手通道都被另一套设计（AOAC ＋ SSDT-AWAC ＋ RTC 校验和区）占用或封死；Windows / Linux 根本不需要那次握手。**
+
+- **动作 = 不改**；零配置 / 零 EFI / 零固件写入。

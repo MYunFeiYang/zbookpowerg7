@@ -419,3 +419,72 @@ Device (RTC) {                                     // 29670
 | 那为什么 macOS 不行？ | 失败点在 **macOS 侧"睡眠→休眠"的换档**：5/5 有 `Entering Sleep`、**0/5 有 `Entering Hibernate`**，随后硬断电 ⇒ **病灶不在固件，在 macOS/OpenCore 这一侧** |
 | 有没有新的修法？ | **没有。** 唯一"官方点名 hibernation 而本机未验"的是 `DevirtualiseMmio`/`MmioWhitelist`，但**即便验证了也改变不了"换档过不去"** |
 | 默认动作 | **不改。** 出远门**关机**（0 W、零 RTC 风险、开机 30–40 s ≈ 休眠唤醒耗时）不变 |
+
+## 7.9 ★ 再深一层：为什么**只有** macOS 要走这三道关（2026-09-20 16:1x）
+
+用户就同一方向追问到第三次 ⇒ 说明 §7.1–§7.8 只回答了"差异**是什么**"，没回答"差异**为什么存在**"。本节补这一层，**不新增动作**。
+
+### (a) 根因：引导器的**职责边界**不同 —— 不是"能力"不同
+
+上游原文（`eclecticlight.co/2018/08/21/booting-the-mac-efi-firmware`，作者 Howard Oakley，macOS 引导流程的公开权威）：
+
+> "**This phase also looks for any saved hibernation state**: if the Mac is to be restored to that state, **Hibernation Resume** will be initiated and will then override the rest of the boot process."
+
+"This phase" = **boot.efi / EFI 阶段**。⇒ macOS 的休眠恢复由 `boot.efi` **在引导阶段**判断，而它的判断依据来自**平台留下的状态**。
+
+| | 谁负责"认出这次是恢复" | 要不要问固件 |
+|---|---|---|
+| Windows | `winload.efi` 自己读 `hiberfil.sys` | ❌ |
+| Linux | GRUB / initramfs 按 `resume=` 读 swap 头 | ❌ |
+| macOS | `boot.efi` 找**平台留下的休眠状态** | ✅ |
+
+**★ 自证（不需要外部资料）**：OpenCore 专门为 macOS 提供了 `Misc/Boot/HibernateMode`（`None`/`Auto`/`RTC`/`NVRAM`）与 `HibernationSkipsPicker` 两个选项 —— 上游 chrultrabook 文档原话：*"**By default, OpenCore will not look for hibernated images of macOS**"*。**OC 从不需要为 Windows / Linux 提供任何同类开关** ⇒ **配置项的存在 = 需求的存在**。
+
+⚠️ **但这层是"恢复侧"的钥匙。** 本机的失败点在**保存侧**（换档过不去，镜像**根本没写**）⇒ `HibernateMode=NVRAM` 再正确也救不了。这解释了为什么 §1 表里 `HibernateMode=NVRAM ✅` 与"实测 5/5 失败"**并不矛盾** —— 两者管的是不同的半场。
+
+### (b) 保存侧：macOS 独有的"必须先睡一次"
+
+**🟢 实测（硬）**：§7.4 的 5 次签名 —— **每次都有 `Entering Sleep`，一次都没有 `Entering Hibernate`** ⇒ **macOS 的休眠路径上确实先发生了一次 Sleep 转换**（不是"直奔 S4 然后失败"）。
+
+**🟡 设计解释（软，不作证据）**：`pmset` 对 `mode 25` 的表述是 "Hibernates instead of S3 sleep"，但从实测看它**并不是"跳过 S3"**。⚠️ 曾拟引上游 chrultrabook 的 *"macOS enters S3 sleep instead of shutting down"* 作证，**但该句有歧义**（语境更像"mode 25 失效时反而退化成 S3"）⇒ **降级为 🟡，结论方向不依赖它**。
+
+- Windows：**S0 → S4 直通**
+- Linux：内核直接 `hibernate()`
+- macOS：**先做一次 S3 语义的 `Software Sleep` 转换**
+
+**都不需要"先睡一次"的，只有 macOS 需要。** 本机 S3 = ❌（AOAC 压住 ⇒ `AppleACPIEC EC OBF=1 poll timed out` 连绵 ⇒ EC 恢复后不响应）⇒ 与 §7.4 实测签名（`Entering Sleep` **5/5**、`Entering Hibernate` **0/5**）**完全吻合**。
+
+### (c) 备选通道：也被锁
+
+即便绕开 S3 换档，macOS 还得有地方写"我要休眠"这个意图：
+
+1. **首选 AWAC，但本机 DSDT 里 AWAC 与 RTC 是互补对**（本轮实读行号）：
+   - `DSDT.dsl:6756` → `STAS, 8,`（变量声明）
+   - `DSDT.dsl:9398` → `AWAC._STA` 内 `If ((STAS == Zero))` ⇒ Return `0x0F`
+   - `DSDT.dsl:29686` → `RTC._STA` 内 `If ((STAS == One))` ⇒ Return `0x0F`
+   - `SSDT-AWAC.aml` 对 **Darwin** 设 `STAS = One` ⇒ **macOS 只能用老式 CMOS RTC，AWAC 归 Windows**
+2. **而 macOS 的休眠密钥恰恰写在 CMOS `0x80`–`0xAB`**（`AppleRTC.kext 2.0.1` 反汇编常量 `APPLE_RTC_HIBERNATION_KEY_ADDR = 0x80`、`LEN = 0x2C`）
+3. 这段正是 **HP 固件设校验和的区** ⇒ **结构性冲突**
+4. **Windows 走 AWAC，这段 CMOS 它一点都不碰** ⇒ 无冲突
+
+⚠️ **极性坑（可纠正的旧表述）**：社区里 `STAS = One/Zero` 的写法**互相矛盾**（Dortania 与若干教程不一致）⇒ **判极性只能读本机 DSDT `_STA`**，不能照抄。本机实读结论如上。
+
+### (d) 收口：一张表 + 一句话
+
+| 层 | 关卡 | 谁有这个要求 | 本机状态 |
+|---|---|---|---|
+| 1 | 平台告知"本次是恢复"（恢复侧） | **仅 macOS** | 🚫 平台被 AOAC 锁在 Modern Standby |
+| 2 | 入睡前先过 S3 语义转换（保存侧） | **仅 macOS**（`mode 25`） | 🚫 S3 实测坏 |
+| 3 | 休眠密钥写 CMOS RTC | **仅 macOS**（被 `SSDT-AWAC` 逼去） | 🚫 该段归 HP 校验和管 |
+| — | —— | Win / Linux：**零关** | ✅ |
+
+> **不是 "macOS 不会休眠"，而是 macOS 的休眠设计上要求平台中途握一次手 —— 而本机的每一条握手通道，都恰好被另一套设计（HP 的 AOAC ＋ `SSDT-AWAC` ＋ RTC 校验和区）占用或封死。Windows / Linux 根本不需要那次握手。**
+
+### (e) 证据分级 + 边界
+
+- 🟢 **上游文档原文**：`boot.efi` 在 **EFI 阶段**查休眠状态并接管引导（eclecticlight）；OC **默认不找休眠镜像**（chrultrabook）
+- 🟡 **机制解释**："`mode 25` 要先过 S3 语义"这句**只由歧义引用支撑**（见 (b)）⇒ **不作证据**；结论只依赖 🟢 实测签名（有 `Entering Sleep`、无 `Entering Hibernate`）
+- 🟢 **本机实读**：DSDT 三处行号、`AppleRTC` 常量、`SSDT-AWAC` 对 Darwin 设 `STAS=One`
+- 🟢 **自证**：OC 有 `HibernateMode` / `HibernationSkipsPicker`，而 Win/Linux 无任何同类开关
+- 🟡 **机制推断**："Win/Linux 引导器各自扫盘"属通识，**未逐条找上游原文**（不影响结论方向）
+- ⚪ 本节**不新增任何动作**、不改变"默认动作 = 不改"、**零配置 / 零 EFI / 零固件写入**
