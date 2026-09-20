@@ -120,7 +120,7 @@
 |---|---|---|---|
 | **T1** | 进 BIOS(F10) → Boot Options / Power Management：核 **Legacy CSM 是否关**、**UEFI Boot 是否唯一**、Secure Boot 状态、以及 A 案那几项电源项 | 拍照留证 | **零风险**，6 分钟 |
 | **T2** | ~~`sudo pmset -c hibernatemode 3` → 插电 `pmset sleepnow` 睡 ~30 s → 唤醒 → 查 sleepimage 是否 ≥8 GiB~~ | ⛔ **2026-09-20 15:3x 判定 T2 设计本身有误 ⇒ 作废**：**`hibernatemode 3` 不在入睡时写镜像** —— `round1-tierA-result.md` 实测（mode 3 ＋ `standbydelay 300`、睡 338 s）：`sleepimage` mtime **未变（❌ 未执行）**。mode 3 的镜像是**进 standby 时**才写，而 `standby` 的四个前提在本机 AC ＋ 外接屏下天然不满足 ⇒ **按原设计跑必然得出"没写"，是假阴性**（详见 §7.8e-2）。**⇒ 本机已不存在"低风险的能否写镜像"判据。** | ⚠️ 原判"低"仍对，但**跑不出结论** | ⛔ **作废，不要跑** |
-| **T3** | `HibernationFixup` 加回 `Kernel/Add` + `mode 25` | `Entering Hibernate` 出现 + 能醒回来 | **中高**（写 RTC `0x80–0xAB`，有再触发 POST 005 的概率） |
+| **T3** | ★ **16:3x 改判（见 §7.10c）**：`HibernationFixup` 加回 `Kernel/Add` ＋ **`hbfx-ahbm=1`**（"**hibernate instead of regular sleep**" ⇒ 绕开常规睡眠那一步）＋ 保留 `rtcfx_exclude=0E-FF` | `Entering Hibernate` 出现 + 能醒回来 | **中**（休眠密钥改走 NVRAM ⇒ 理论上避开 CMOS `0x80–0xAB`）｜⚠️ 旧文写的"`mode 25`"是**旧方案**，且 **`ahbm` 从未测过** |
 | **T4**（可选） | `Misc/Debug/Target=0x43` 开一次 OC 日志，核 MMIO 有没有被 devirtualise | 日志里 `Devirtualised MMIO regions` 列表 | 低（需同步 ESP + 重启） |
 
 **判死线**：**T2 不过 ⇒ S4 直接判死**。连镜像都写不出来，说明卡在固件/OS 边界，与"配方抄没抄对"无关，T3 不必赌。
@@ -362,11 +362,11 @@ Device (RTC) {                                     // 29670
 ⇒ **"硬件不行"这条整类现在有跨 OS 对照背书，不再只是"同日 9 次睡眠"的间接推断。**
 ⇒ 同时**方向翻转**：`POST 005` 从"固件缺陷的证据"变成"**macOS 侧行为的证据**"（写坏 CMOS 的只有 macOS 一家）。
 
-### (b) 必须撤回的一条机制假设
+### (b) 【**部分**撤回 · 2026-09-20 16:3x 加限定，见 §7.10a】一条机制假设
 
 | 原说法（§7.6 🟡 / §7.4） | 处置 |
 |---|---|
-| "**平台按 AOAC/S0ix 语义直接切电，而不执行 S4 的保存-交接流程**" | ⚪ **撤回**。反证 = 同一台机器 Windows/Linux **完成了 S4**。原假设只是"与观测一致"，被跨 OS 对照**直接否掉** |
+| "**平台按 AOAC/S0ix 语义直接切电，而不执行 S4 的保存-交接流程**" | ⚠️ **只撤回一半**（16:3x 修正）：反证 = 同机 Windows/Linux **完成了 S4**，**但那只覆盖 `S0→S4` 直通** —— 两者都**不经过 S3 语义** ⇒ **「平台不支持 S4」❌ 已排除；「平台在 S3 语义下异常」⚠️ 仍可疑**（而 macOS 恰恰必须先走这段 S3 语义）|
 | 连带：§7.3 那个"**唯一修法是关 AOAC ⇒ 关不掉 ⇒ 修法不存在**"的闭环 | **半塌**：只对 **macOS 的换档路径**成立。**AOAC 压的是 S3/传统睡眠语义，它没有阻断平台级 S4。** ⇒ ⛔ 不要为了让 macOS 休眠回头去关 AOAC（那条门本来也关不上） |
 
 ### (c) 但有一条差异**被这次对照提纯了**
@@ -488,3 +488,70 @@ Device (RTC) {                                     // 29670
 - 🟢 **自证**：OC 有 `HibernateMode` / `HibernationSkipsPicker`，而 Win/Linux 无任何同类开关
 - 🟡 **机制推断**："Win/Linux 引导器各自扫盘"属通识，**未逐条找上游原文**（不影响结论方向）
 - ⚪ 本节**不新增任何动作**、不改变"默认动作 = 不改"、**零配置 / 零 EFI / 零固件写入**
+
+## 7.10 ★★ 追问「确定没解？」⇒ **不确定，改口三处**（2026-09-20 16:3x）
+
+用户追问「确定没解？」⇒ 按「引用 N 次失败前先对齐当时配置」的纪律重核 ⇒ **发现上一轮有两处过度**，且**找出一条从未测过的路径**。本轮**零配置 / 零 EFI / 零固件写入**（只读核查）。
+
+### (a) 【修正】上一轮的「撤回」撤过头了 —— AOAC 对 **S3 路径**的影响**未被排除**
+
+§7.8(b) 以「同机 Win/Linux 完成了 S4」为反证，撤回了「平台按 AOAC/S0ix 语义直接切电」。**但那个反证只覆盖 `S0→S4` 直通** —— Windows 是 S0→S4 直通、Linux 内核直接 `hibernate()`，**两者都不经过 S3 语义**。
+
+⇒ 「平台在 **S3 语义**下行为异常（异常切电）」**并没有被这个对照否定**；而 macOS 恰恰**必须**先走一段 S3 语义（§7.9b）。
+
+⇒ 正确表述应是：**「平台不支持 S4」❌ 已排除；「平台在 S3 语义下异常」⚠️ 仍可疑。** §7.8(b) 需按此限定。
+
+### (b) 【修正】`4ceea3a` **不是**"自相矛盾配置" —— 它的假设**成立**
+
+本轮初查时曾怀疑：`4ceea3a` 用 `rtcfx_exclude=80-FF` **禁写 RTC 第二 bank**，而 macOS 休眠密钥正在 `0x80–0xAB` ⇒ 拟判第 4/5 次测试"自相矛盾、应剔除"。
+
+**查 `HibernationFixup` 上游 README 后此怀疑被推翻**（原文）：
+
+> *"An open source kernel extension providing **a sync between RTC variables and NVRAM**."*
+> *"…**Somehow this value has to be written into RTC (or SMC) in order the boot.efi could read it. But in case if you have to limit your RTC memory to 1 bank (128 bytes), it doesn't work**… **Fortunately, boot.efi can read key `IOHibernateRTCVariables` from NVRAM!** This kext detects entering into "hibernate" power state, reads variable `IOHibernateRTCVariables` from the system registry and **writes it to NVRAM**."*
+
+⇒ `HibernationFixup` **就是为"RTC 被限制在一个 bank"这个场景写的** —— 与本机「禁写第二 bank」**完全对应**。
+⇒ 第 4/5 次的配置**逻辑自洽，是有效测试，不应剔除**。
+⇒ **但它仍失败**，原因据 README 即可判定：它要 **"detects entering into 'hibernate' power state"** 才动手 ⇒ 而本机 **0/5 从未进入该状态** ⇒ **鸡生蛋** —— 它要救的正是那个从未发生的时刻。
+
+### (c) ★★【新发现】一条**从未测过**的路径：`hbfx-ahbm`（休眠**代替**常规睡眠）
+
+`HibernationFixup` 的 boot-arg 表（acidanthera README；OC-Little-Translated 的 boot-args 表同文）：
+
+> **`hbfx-ahbm=1` → `EnableAutoHibernation`: "If this flag is set, system will hibernate instead of regular sleep"**
+
+**★ 本机从未用过它**：09-16 那 5 次测试的 boot-args 里**都没有** `hbfx-ahbm`。历史里出现过 `-hbfx-patch=auto`（08-04），而 README 中**没有 `hbfx-patch` 这个参数**（只有 `hbfx-patch-pci`）⇒ 那是**无效参数**。
+
+**为什么这条路值得试**：
+- 本机卡点 = **"必须先过一段 S3 语义转换"**（§7.9b）⇒ `hbfx-ahbm` 的语义正是 **"hibernate **instead of** regular sleep"** ⇒ **绕开常规睡眠那一步**
+- 且它把休眠密钥走 **NVRAM**（见 (b) 引文）⇒ 同时绕开 CMOS `0x80–0xAB` ⇒ 理论上**连 POST 005 也能避开**
+- ⇒ **同时直击关②与关③**，是现存的**唯一**一条这样的手段
+
+⚠️ **诚实标注**：
+- 🟢 **文档语义**：acidanthera README ＋ OC-Little-Translated 表（两份互相印证）
+- 🟡 **零实测记录**：本轮搜社区（`hbfx-ahbm` × 休眠）**没有找到成功或失败的实测反馈** ⇒ "能否真跳过 S3 转换"**只有文档语义支撑，未验证**
+- ⚠️ **不能保证**：`ahbm` 走的仍是内核休眠事务；若平台在 hibernate 事务本身也有问题，同样会失败
+
+### (d) 另外两个未测点（保留，优先级低）
+
+| 项 | 依据 | 代价 |
+|---|---|---|
+| `DevirtualiseMmio = true` ＋ `MmioWhitelist` 空 | OC 官方明文 *"proper NVRAM **and hibernation** functionality"* | 需开 OC 日志 |
+| **UEFI 变量层**查 `Modern Standby`（`dmpstore -all`） | WMI `IsReadOnly=1` **不等于** UEFI 变量只读 ⇒ 唯一没探过的"关 AOAC"的门 | **零成本（只读）** |
+
+### (e) 结论：必须区分「已试空间」与「绝对」
+
+| 命题 | 判定 |
+|---|---|
+| **在已试过的配置空间里，休眠没解** | ✅ **成立**（有效测试 3 批次：11:16 / 12:04「件齐 ＋ RTC 放行」、18:09 / 19:29「件齐 ＋ RTC 禁写 ＋ NVRAM 通路」，**全部失败**） |
+| **绝对没解 / 已无手段可用** | ❌ **不成立** —— `hbfx-ahbm` **从未测过** |
+| 撤 `SSDT-AWAC` 让 macOS 走 AWAC | ⛔ **不是出路**：Dortania 原文 *"SSDT-AWAC tries to **re-enable the old RTC clock that is compatible with macOS**"* ⇒ 老式 RTC 是 macOS **需要**的，撤掉是反方向 |
+| 编程器改 SPI / 换主板 | 代价不可接受，**不算解** |
+
+### (f) 建议（不急，需用户拍板）
+
+**值得针对 `hbfx-ahbm` 做一次受控测试**：装回 `HibernationFixup`（1.5.4）＋ boot-arg `hbfx-ahbm=1`（或 `3` = 1＋2 合盖触发），**保留** `rtcfx_exclude=0E-FF`，观察 `pmset -g log` 是否出现 `Entering Hibernate`。
+
+- 回滚点：移除 boot-arg ＋ kext（一条 git revert）
+- ⚠️ 若仍失败，则"所有已知手段均已试过"，**"没解"才算真正闭环**
+- ⚠️ 前置：内存压力（swap 75 %）下 8 GiB sleepimage 写入会很慢，测试前先腾内存

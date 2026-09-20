@@ -967,3 +967,19 @@ Microsoft 官方（🟢）：*"A resume from hibernation starts with a **system 
 **一句话**：**不是 "macOS 不会休眠"，而是它的休眠设计上要求平台中途握一次手 —— 而本机每条握手通道都被另一套设计（AOAC ＋ SSDT-AWAC ＋ RTC 校验和区）占用或封死；Windows / Linux 根本不需要那次握手。**
 
 - **动作 = 不改**；零配置 / 零 EFI / 零固件写入。
+
+### I.10 · 2026-09-20 16:3x **追问「确定没解？」⇒ 改口**（权威版在 `s4-requirements-audit.md` §7.10）
+
+| 项 | 上一轮 | 本轮修正 |
+|---|---|---|
+| 「平台按 AOAC/S0ix 语义直接切电」 | ⚪ 撤回 | ⚠️ **只撤回一半** ⇒ **I.6 表末尾那行的 ⚪ 应读作 ⚠️**。反证（同机 Win/Linux 完成 S4）**只覆盖 `S0→S4` 直通** —— 两者**都不经过 S3 语义** ⇒ **「平台不支持 S4」❌ 已排除；「平台在 S3 语义下异常」⚠️ 仍可疑**（而 macOS **恰恰必须先走 S3 语义**）。连带：§I.3「关 AOAC 那条门关不上」仍成立，但**「平台在 S3 路径上没问题」这个结论撤回** |
+| `4ceea3a` 的 `rtcfx_exclude=80-FF`（禁写 RTC 第二 bank） | —（本轮初查曾疑为"自相矛盾配置"、拟剔除第 4/5 次） | ✅ **假设成立、不是自相矛盾**：`HibernationFixup` 上游 README 原文 *"**a sync between RTC variables and NVRAM**"*、*"in case if you have to **limit your RTC memory to 1 bank (128 bytes)**, it doesn't work… **boot.efi can read key `IOHibernateRTCVariables` from NVRAM**"* ⇒ 该 kext **就是为这个场景写的** ⇒ 第 4/5 次是**有效测试**。它仍失败的原因：README 说它 *"**detects entering into 'hibernate' power state**"* 才写 NVRAM ⇒ 本机 **0/5 从未进入该状态** ⇒ **鸡生蛋** |
+| **未测路径** | 无 | ★★ **`hbfx-ahbm=1`**（`HibernationFixup` boot-arg）：*"**EnableAutoHibernation = 1**: If this flag is set, **system will hibernate instead of regular sleep**"* ⇒ **绕开"必须先过一段 S3 语义"这个卡点**；且密钥**改走 NVRAM** ⇒ **同时直击关②与关③**（理论上连 POST 005 也避得开）。⚠️ 本机 **5 次测试的 boot-args 里从未出现**；社区**零实测记录** ⇒ 🟡（仅文档语义） |
+
+**结论分层**：
+- **「在已试过的配置空间里，休眠没解」✅ 成立**（3 批次有效测试：11:16 / 12:04「件齐＋RTC 放行」、18:09 / 19:29「件齐＋RTC 禁写＋NVRAM 通路」，全败）
+- **「绝对没解」❌ 不成立** —— `hbfx-ahbm` 从未测过
+- ⛔ 撤 `SSDT-AWAC` 走 AWAC = **反方向**（Dortania：*"SSDT-AWAC tries to **re-enable the old RTC clock that is compatible with macOS**"*）
+
+**建议（需拍板）**：装回 `HibernationFixup` 1.5.4 ＋ `hbfx-ahbm=1`（或 `3`＝合盖触发），**保留** `rtcfx_exclude=0E-FF`，看 `pmset -g log` 是否出现 `Entering Hibernate`。回滚 = 一条 git revert。⚠️ 若仍失败，「没解」才算真正闭环。
+**动作 = 不改**；本轮**零配置 / 零 EFI / 零固件写入**（纯只读核查）。

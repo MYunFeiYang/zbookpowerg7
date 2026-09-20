@@ -1,6 +1,17 @@
 # 睡眠档位调优测试记录
 
-> 🟣 **2026-09-20 16:1x【§八十五 · 最新】—— 追问「**为什么只有 macOS 没法休眠？**」⇒ 补上**根因层**：三家差别不在"能力"，在 **引导器的职责边界**（`s4-requirements-audit.md` **§7.9**、`tier-ladder-why.md` **附录 I.9**）
+> 🟠 **2026-09-20 16:3x【§八十六 · 最新】—— 追问「确定没解？」⇒ ⚠️ **改口：不确定**，并找出一条**从未测过**的路径**（`s4-requirements-audit.md` **§7.10**）
+> **① 【修正】上一轮的「撤回」撤过头了**：以「同机 Win/Linux 完成了 S4」为反证、撤回「平台按 AOAC/S0ix 语义直接切电」—— **但那只覆盖 `S0→S4` 直通**（Windows 直通、Linux 内核直接 `hibernate()`，**都不经过 S3 语义**）⇒ **「平台不支持 S4」❌ 已排除；「平台在 S3 语义下异常」⚠️ 仍可疑** —— 而 macOS **恰恰必须先走这段 S3 语义**。
+> **② 【修正】`4ceea3a` 不是"自相矛盾配置"**：本轮初查曾怀疑 `rtcfx_exclude=80-FF`（禁写 RTC 第二 bank）把休眠密钥（`0x80–0xAB`）封死了 ⇒ 拟剔除第 4/5 次。**查 `HibernationFixup` 上游 README 后推翻** —— 它**就是为"RTC 只给一个 bank"这个场景写的**（*"providing a sync between RTC variables and NVRAM"*、*"boot.efi can read key `IOHibernateRTCVariables` **from NVRAM**"*）⇒ 配置**逻辑自洽、是有效测试**。它仍失败的原因：该 kext 要 **"detects entering into 'hibernate' power state"** 才动手 ⇒ 本机 **0/5 从未进入该状态** ⇒ **鸡生蛋**。
+> **③ ★★【新发现】一条从未测过的路 = `hbfx-ahbm`**（`HibernationFixup` 的 boot-arg）：上游原文 *"**EnableAutoHibernation = 1**: If this flag is set, **system will hibernate instead of regular sleep**"* ⇒ **绕开"必须先过一段 S3 语义"这个卡点**；且休眠密钥**改走 NVRAM** ⇒ **同时直击关②与关③**（理论上连 POST 005 也避得开）。
+> ⚠️ **本机从未用它**：09-16 那 5 次测试的 boot-args 里**没有** `hbfx-ahbm`；历史里的 `-hbfx-patch=auto` 是**无效参数**（README 只有 `hbfx-patch-pci`）。
+> ⚠️ 证据分级：🟢 **文档语义**（acidanthera README ＋ OC-Little-Translated 表，互相印证）｜🟡 **零实测记录**（社区搜不到成功/失败反馈）⇒ "能否真跳过 S3"**只有文档支撑、未验证**。
+> **④ 撤 `SSDT-AWAC` 让 macOS 走 AWAC = 反方向**（Dortania 原文：*"SSDT-AWAC tries to **re-enable the old RTC clock that is compatible with macOS**"* ⇒ 老式 RTC 是 macOS **需要**的）。
+> **⑤ 结论必须分两层**：**「在已试过的配置空间里，没解」✅ 成立**（3 批次有效测试全部失败）；**「绝对没解」❌ 不成立** —— `hbfx-ahbm` 从未测过。
+> **⑥ 建议（需拍板）**：装回 `HibernationFixup` 1.5.4 ＋ `hbfx-ahbm=1`（或 `3` = 合盖触发），**保留** `rtcfx_exclude=0E-FF`，看 `pmset -g log` 是否出现 `Entering Hibernate`。回滚 = 一条 git revert；⚠️ 若仍失败，"没解"才算真正闭环。
+> **动作 = 不改**（本轮**零配置 / 零 EFI / 零固件写入**，纯只读核查）。
+
+> ⚪ **2026-09-20 16:1x【§八十五】（已被 §八十六 补充）—— 追问「**为什么只有 macOS 没法休眠？**」⇒ 补上**根因层**：三家差别不在"能力"，在 **引导器的职责边界**（`s4-requirements-audit.md` **§7.9**、`tier-ladder-why.md` **附录 I.9**）
 > **① 根因 = 谁负责"认出这次是恢复"**：**Windows** 的 `winload.efi` **自己读** `hiberfil.sys`｜**Linux** GRUB/initramfs 按 `resume=` 读 swap 头｜**macOS** 的 `boot.efi` 找**平台留下的休眠状态** ⇒ **只有 macOS 需要问固件**。（上游原文：*"This phase [EFI / boot.efi] also looks for any saved hibernation state … **Hibernation Resume** will be initiated and will then override the rest of the boot process"* —— eclecticlight.co）
 > **② 自证（不需要外部资料）**：OC 专为 macOS 设了 `Misc/Boot/HibernateMode`（`None`/`Auto`/`RTC`/`NVRAM`）＋ `HibernationSkipsPicker`（上游原话 *"**By default, OpenCore will not look for hibernated images of macOS**"*）—— **OC 从不需要为 Win/Linux 提供任何同类开关** ⇒ **配置项的存在 = 需求的存在**。
 > **③ ★ 一个易踩的坑**：`HibernateMode` 是**恢复侧**的钥匙，而本机失败在**保存侧**（镜像根本没写）⇒ **§1 表里它 ✅ 与"实测 5/5 失败"不矛盾** —— 两者管的是不同半场。
