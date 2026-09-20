@@ -152,3 +152,25 @@ ls /Volumes/TZBOOK/Windows/System32/DriverStore/FileRepository/t75_01240200.inf_
 | `docs/backups/firmware-ledger-2026-09-20/README.txt` | 复验命令清单 + 来源分级 |
 
 > 本轮**零配置 / 零 EFI 改动**。固件镜像与解包产物只在 `/tmp/bios12402/`（未进工作区）。
+
+---
+
+## 7 · ★ 未确认项的下一步：Windows 侧只读取证提示词（2026-09-20）
+
+台账里 §3 那三项（EC 版本 / `DisplayInUI` 可见性 / OC 版本串）**本机 macOS 侧拿不到**，最短路径是进 Windows 跑一次 HP 官方 WMI 只读。
+
+已写好一份**可直接粘贴给 Windows 侧 WorkBuddy 的自包含提示词**：
+
+```
+docs/windows-side-workbuddy-prompt.md
+```
+
+| 项 | 说明 |
+|---|---|
+| 目标 | `root/hp/instrumentedBIOS` 的 `HP_BIOSSetting`（**含隐藏项**，带 `DisplayInUI` / `IsReadOnly`）/ `HP_BIOSEnumeration`（带 `PossibleValues`）全量导出 + `powercfg /a` + `PlatformAoAcOverride` 现状 |
+| 接口依据 | HP 官方：`HP_BIOSSetting` 返回 *all BIOS settings*（对照 `HP_BIOSEnumeration` 只返 *commonly configurable*）⇒ **可当判据**；`DisplayInUI` 直接回答「藏没藏」 |
+| 产物回传路径 | **exFAT 共享卷**（macOS = `/Volumes/Common`，Windows = 某盘符）⇒ `X:\workplace\zbookpowerg7\docs\backups\firmware-ledger-2026-09-20\win-side\`；兜底 `C:\Users\Public\`（macOS 经 `/Volumes/TZBOOK/Users/Public/` 只读可读） |
+| 默认权限 | **Phase A/B 全只读**；Phase C（`PlatformAoAcOverride=0` + 重启 + **只看 `powercfg /a` 不睡** + 立刻回滚）**须用户明确授权** |
+| 边界 | 不许刷固件、不许改 BIOS 设置、不许碰 ESP/`EFI/`、不许睡眠/休眠、不许装第三方工具 |
+
+> 立场未变：这一步买到的是**「确定」**，不是**新能力**。看到 S3 出现也只是弱阳性——真判据仍是「睡下去能不能活着回来」。
