@@ -669,7 +669,7 @@ HpCommonSetup                        ← HP 的 Setup 配置变量名
 | ① macOS 声明（撤 `LPS0`） | ✅ 已实测：转 S3 ⇒ **EC 罢工** | 不变 |
 | ① Win 声明（`PlatformAoAcOverride`） | "从未设过"（推断） | **确认从未设过**（直接查询）。可试，但**对 macOS 零帮助** |
 | ② 固件**菜单**层 | "翻完没有"＋字符串池推断 | **`DisplayInUI=0` 坐实：菜单里根本没有** |
-| ③ 固件**设置**层写入 | "不知能不能写" | **`IsReadOnly=1` ⇒ 连 HP 官方写入路径（WMI `SetBIOSSetting` / BCU）自己都标它只读** ⇒ **"拿到名字就能按名写"作废** |
+| ③ 固件**设置**层写入 | "不知能不能写" | **`IsReadOnly=1` ⇒ HP 官方文档原文："1 indicates that this particular setting instance cannot be changed"（即不支持 `SetBIOSSetting()`）** ⇒ **"拿到名字就能按名写"作废**（来源见 F.6） |
 
 ⇒ **「厂商按 AOAC-only 出厂」= 三次独立确认**（① 固件帮助文案自曝互斥 ② 变量名表平级结构 ③ WMI 隐藏＋只读）。
 
@@ -704,4 +704,29 @@ HpCommonSetup                        ← HP 的 Setup 配置变量名
 
 > 唯一还开着的门（**明确不建议**）：若 HP 哪天发布**改了 EC 号**的新固件包，理论上可以再评估一次。判据用 F.4 那条规则；刷新固件本身的收益仍是**已判死的 S3**，代价是变砖风险。**默认动作＝不改。**
 
-> 本轮**零配置 / 零 EFI 改动**。
+### F.6 ★ 证据分级（用户追问「确认了？还是猜测？」后补的一轮查证）
+
+被封板结论引用的每一条，按**证据强度**摊开 —— **凡标"推断"的都不许当结论用**：
+
+| 说法 | 等级 | 来源 / 判据 |
+|---|---|---|
+| 258 项全表**无** `Deep Sleep` / `S3` / `AOAC` | 🟢 **实测** | 当场复算 `HPBIOS-all.csv`（258 项），正则正向对照仅命中 3 项且均非睡眠状态项 |
+| `Modern Standby` = `Enable` ＋ 隐藏 ＋ 只读 | 🟢 **实测** | 同一份 CSV；且 `*` 的含义由 **HP 官方**确认（见下） |
+| `DisplayInUI` 与"能不能写"**无关** | 🟢 **实测 ＋ 官方** | 计数：258 ＝ 7 隐藏（全只读）＋ 82 只读（**75 项照常显示**）；官方定义："Flag indicating this component should be visible within a BIOS configuration user interface application" |
+| **`IsReadOnly=1` ⇒ 改不了** | 🟢 **官方文档**（此前是 🔴 推断） | HP 开发者站 `Understanding HP BIOS Settings`：**"A value of 1 indicates that this particular setting instance cannot be changed"** ＋ "if this setting is supported by … `SetBIOSSetting()`" |
+| `PlatformAoAcOverride` 不存在 | 🟢 **实测** | `reg query` 报错原文 |
+| `powercfg /a`：S3 缺"固件不支持" | 🟢 **实测** | 原文照录（台账 §8.1 表下） |
+| 撤 `LPS0` ⇒ macOS 真进 S3 ⇒ EC 罢工 | 🟢 **实测** | macOS 半场已跑过（附录 A） |
+| `HP_BIOSEnumeration`(157) **不是**"可写清单" | 🟢 **实测 ＋ 官方** | 反例：`Modern Standby` **在** 157 项里；官方 MOF 说它只是 `HP_BIOSSetting` 按**取值域类型**分的子类 ⇒ 判定可写**只认 `IsReadOnly`** |
+| 只读项实际返回哪个码（`1 Not Supported`？） | 🔴 **推断** | 官方返回码表里**没有**"只读"专属码；**我们没真去写** |
+| "改固件设置 ⇒ macOS 就会看到无 AOAC 的机器" | 🟡 **弱**（部分实测） | "S3 出现后 macOS 会进 S3"已实测；但"固件设置项 → ACPI 表变化"这一步在本机**无法实测**（因为写不进去） |
+| "EC 号不变 ⇒ S3 不会好" | 🔴 **推断** | F.4 的规则，合理但未验证 |
+
+**★ 关键结构**：**「不做」这个结论不依赖上面任何一条推断。**
+即使 `IsReadOnly` 那条推错了（即真能写进固件），终点还是坏的 —— 因为 **"拿到 S3 之后会怎样"已经在 macOS 侧实测过了：EC 罢工**。
+⇒ 所以**决定是硬的**；这轮查证提升的是**措辞的准确度**（把"没入口"从推断升级为官方坐实），不是决定本身。
+
+若哪天想彻底关掉最后那条推断，唯一做法是**真发一次 `SetBIOSSetting("Modern Standby","Disable")` 并读返回码** ——
+⚠️ 但这会**持久改变固件设置**；且若成功，Windows 会从 Modern Standby 掉到已判死的 S3 ⇒ **可能弄坏 Windows 侧睡眠**。**不建议为此做这个测试。**
+
+> 本轮**零配置 / 零 EFI 改动**（Windows 侧写操作 = 0）。

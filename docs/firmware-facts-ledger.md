@@ -201,9 +201,35 @@ docs/windows-side-workbuddy-prompt.md
 
 | # | 事实 | 判据 |
 |---|---|---|
-| ① | **`Modern Standby` 当前 = `Enable`**，且 **`DisplayInUI=0`（隐藏）＋ `IsReadOnly=1`（只读）** | `HPBIOS-all.csv`（258 项） |
-| ② | **`Deep Sleep` / `S3` / `S0ix` / `AOAC` / `Sleep State` 一条都不存在** | 全表关键词筛选 ＋ 逐名精确探测（正向对照 7 项全命中） |
+| ① | **`Modern Standby` 当前 = `Enable`**，且 **`DisplayInUI=0`（隐藏）＋ `IsReadOnly=1`（只读）** | `HPBIOS-all.csv`（258 项）＋ **HP 官方定义**（见 8.1a） |
+| ② | **`Deep Sleep` / `S3` / `S0ix` / `AOAC` / `Sleep State` 一条都不存在** | 全表 258 项逐名扫；正则 `standby\|sleep\|s3\|aoac\|modern\|deep` 作正向对照，仅命中 **3 项**（`Modern Standby`、`Disable Charging Port in sleep/off…`、`Power button delay… system sleep or power down`）—— **均非睡眠状态项** |
 | ③ | **`PlatformAoAcOverride` 不存在**（从未设过） | `reg query` 原文：「系统找不到指定的注册表项或值」 |
+
+#### 8.1a ★ 三个字段的**官方语义**（此前是我按惯例读的，现已查到 HP 原文坐实）
+
+来源（**可当判据**）：HP 开发者站 `dev.hp.com/hp-client-management/doc/understanding-hp-bios-settings`
+（`Understanding HP BIOS Settings`，含 `HP_BIOSSetting` 的 **MOF 定义**与逐属性说明）。原文引用：
+
+| 字段 | HP 官方原文 | 对我们的意义 |
+|---|---|---|
+| **`IsReadOnly`** | "Value indicating **if this setting is supported by the interface method `HP_BIOSSettingInterface.SetBIOSSetting()`**. A value of **1 indicates that this particular setting instance cannot be changed**, otherwise the property is 0." | ★★ **"写不进去"由官方措辞直接坐实**（此前只是我的推断） |
+| **`DisplayInUI`** | "Flag indicating this component **should be visible within a BIOS configuration user interface application**. This property field is used by some utilities to filter elements that are **not applicable to a given platform**." | 它就是**界面可见性**标志 ⇒ 官方层面也证明**与"能不能写"无关**（否掉"另解"） |
+| **`Value` 里的 `*`** | "Enumeration selections are designated by the **presence of an asterisk** character (ex: `"*Enable, Disable"` denotes a setting is enabled)" | `Disable,*Enable` ⇒ **当前值 = Enable**，官方定义，不是我的约定解读 |
+| **`RequiresPhysicalPresence`** | "A value of 1 indicates that attempts to modify this setting will require interactive acknowledgement during the next system startup." | 本机 `Modern Standby` 该项 = **0** ⇒ **不是**"物理在场"在挡，就是 `IsReadOnly` 在挡 |
+
+`SetBIOSSetting` 的官方返回码（MOF `ValueMap`）：`0 Success`｜`1 Not Supported`｜`2 Unspecified Error`｜`3 Timeout`｜`4 Failed`｜`5 Invalid Parameter`｜`6 Access Denied`
+⇒ ⚠️ **注意：没有"只读"专属返回码**，只读项大概率落 `1 Not Supported`（**这一句仍是推断**；我们**没有真去写**，因为写固件设置会改变持久状态）。
+
+#### 8.1b ★ 顺手纠正一个我差点犯的错：`HP_BIOSEnumeration` **不是"可写清单"**
+
+我一度以为 `HP_BIOSEnumeration`（157 项）＝"可配置项集合"，若 `Modern Standby` **不在**里面就是独立证据。
+**实测反了**：`Modern Standby` **在** 157 项表里（`PossibleValues = Disable ~ Enable`）。
+
+按官方 MOF，真相是：`HP_BIOSEnumeration` 是 `HP_BIOSSetting` 的**子类**（"Extension of HP_BIOSSetting to support … **enumerations are collections of possible values**"）
+⇒ 它按 **取值域类型**（枚举型 vs 字符串/整数型）划分子类，**与可写性无关**。
+旁证：258 项里没进 157 表的 101 项，正是 `Serial Number`、`Batt_LTemp`（值 `01 00` 十六进制）、`Touch Controller Firmware`（值空）这类**非枚举型**字段。
+
+⇒ **教训**：`HP_BIOSEnumeration` 只能告诉你"这项的取值是个固定清单"，**不能**用来判"能不能改"。判可写**只认 `IsReadOnly`**。
 
 `powercfg /a` **一手原文**：
 

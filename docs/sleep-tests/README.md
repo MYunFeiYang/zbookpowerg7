@@ -1,8 +1,14 @@
 # 睡眠档位调优测试记录
 
-> 🛑🛑 **2026-09-20 12:0x【§七十九 · 最新】—— 「Windows 侧提示词」跑完了 ⇒ **「关 AOAC」正式封板****（`tier-ladder-why.md` **附录 F**）
-> **① ★ `Modern Standby` = `Enable`，且 `DisplayInUI=0`（隐藏）＋ `IsReadOnly=1`（只读）** —— 固件把 AOAC 开着、从菜单里藏起来、并标成只读 ⇒ **"拿到名字就能按名写"这条假设作废**（HP 官方 WMI `SetBIOSSetting` / BCU 用的是同一个只读标志）。
-> **② 258 项全表里 `Deep Sleep` / `S3` / `S0ix` / `AOAC` / `Sleep State` 一条都没有**（正向对照 7 项全命中 ⇒ 这个 0 命中算数）。
+> 🔍 **2026-09-20 12:42【§八十 · 最新】—— 追问「确认了？还是猜测？」⇒ 补了一轮**证据分级查证****（`tier-ladder-why.md` **附录 F.6**）
+> 唯一一处**未实测、只靠推论**的环节被查掉了：**「`IsReadOnly=1` ⇒ 写不进去」现在有 HP 官方原文**（`dev.hp.com/…/understanding-hp-bios-settings`：*"A value of 1 indicates that this particular setting instance **cannot be changed**"*）⇒ 由 🔴 推断升为 🟢 官方文档。
+> 同时**纠正**一个我差点犯的错：`HP_BIOSEnumeration`(157 项) **不是"可写清单"**（官方 MOF 说它只是按**取值域类型**分的子类）—— 反例 `Modern Standby` 就在里面。**判可写只认 `IsReadOnly`。**
+> ⚠️ **仍留的 🔴 推断**（不许当结论）：只读项实际返回哪个码；「EC 号不变 ⇒ S3 不会好」。
+> ★ **但「不做」这个结论不依赖任何推断** —— 「拿到 S3 之后会怎样」已在 macOS 侧实测（EC 罢工）。**决定是硬的，这轮只提升措辞准确度。**
+
+> 🛑🛑 **2026-09-20 12:0x【§七十九】—— 「Windows 侧提示词」跑完了 ⇒ **「关 AOAC」正式封板****（`tier-ladder-why.md` **附录 F**）
+> **① ★ `Modern Standby` = `Enable`，且 `DisplayInUI=0`（隐藏）＋ `IsReadOnly=1`（只读）** —— 固件把 AOAC 开着、从菜单里藏起来、并标成只读 ⇒ **"拿到名字就能按名写"这条假设作废**（依据 = HP 官方对 `IsReadOnly` 的定义，见 §八十；`*` 号位置也由官方定义确认为"当前值"）。
+> **② 258 项全表里 `Deep Sleep` / `S3` / `S0ix` / `AOAC` / `Sleep State` 一条都没有**（同正则正向对照仅命中 3 项，且均非睡眠状态项 ⇒ 这个 0 命中算数）。
 > **③ ★ `DisplayInUI` 的"另解"被数据自己否掉**：全表 258 项 = 隐藏 **7** 项 + 只读 **82** 项。若两者是一回事，82 个只读项应**全部**隐藏；实际只有 7 个 ⇒ **`DisplayInUI=0` 就是独立的"隐藏"标志**。且与固件字符串池邻接分析的预测吻合（同屏另 4 项 4/4）。
 > **④ `powercfg /a` 一手原文**：S1/S2 带「系统固件不支持」＋「支持 S0 低电量待机时禁用」**两条**理由，**S3 只有后一条** ⇒ S3 = 「声明了、但被 AOAC 压住」。**本条从"记录"升为"本机一手实测"。**
 > **⑤ `PlatformAoAcOverride` 确认不存在**（由 hive 字节级推断升为**直接 `reg query`**）⇒ Win 半场确实从未设过。
