@@ -1,6 +1,20 @@
 # 睡眠档位调优测试记录
 
-> 🟠 **2026-09-20 16:3x【§八十六 · 最新】—— 追问「确定没解？」⇒ ⚠️ **改口：不确定**，并找出一条**从未测过**的路径**（`s4-requirements-audit.md` **§7.10**）
+> 🔴🔴🔴 **2026-09-20 16:5x【§八十七 · 最新】—— ★★ Round 3 上机：`hbfx-ahbm` 首次实测（执行单 `round3-hbfx-ahbm-plan.md`）**
+> **⚠️ 这是自 09-16 封板以来第一次真正动 EFI + pmset，也是首次带不可逆风险的实测**（POST 005 / 需长按电源键）。
+> **① ★★ 读透源码，发现两个隐藏 gate（`isStandbyEnabled()` @ `kern_hbfx.cpp:1197`）：**
+> `pmset_default_mode = (latestHibernateMode == (kIOHibernateModeOn|kIOHibernateModeSleep))` ⇒ **`hibernatemode` 必须 == 3，不是 25**；
+> `standbyEnabled = deepSleepEnabled || autoPowerOffEnabled`。**两条不满足，ahbm 的 `while` 循环一次都不进**。
+> ⇒ **09-16 那 5 次用的是 `hibernatemode 25` ⇒ `pmset_default_mode` 恒 false ⇒ 即便当时开了 ahbm 也一次都不会触发。**
+> ⇒ **三条独立证据收敛**：① 源码 ② 现场 ioreg（设前 `"Standby Enabled"=No` 且 **`AutoPowerOff` 属性根本不存在**）③ 本机 `pmset-hibernate.sh` 注释（「`hibernatemode` 单独设了不管用，必须同时给 `standby`」）。
+> **② 机制澄清**：ahbm 是在 `X86PlatformPlugin_sleepPolicyHandler` 里**直接改写 `params->sleepType`**（`kIOPMSleepTypeStandby`→`kIOPMSleepTypeHibernate`，`sleepFlags |= kIOPMSleepFlagHibernate`），**不是"先睡完再转"** ⇒ 机制上正好绕开"必须先过一段 S3 语义"这个卡点。
+> **③ 版本无虞**：`HibernationFixup` **1.5.4 就是 Latest**，release note 原文 **"Added constants for macOS 26 support"（2025-07-07）**。
+> **④ 已落地配置**：`Kernel/Add` 加回 `HibernationFixup.kext`（30→31 个，紧跟 Lilu）；`boot-args` 追加 **`hbfx-ahbm=3 -hbfxdbg`**（`3` = 只在合盖时触发 ⇒ **`pmset sleepnow` 仍走常规 Deep Idle，保留安全网**；主动**不用** bit6，因源码里它会取消休眠）；保留 `rtcfx_exclude=0E-FF`。pmset 已设 `hibernatemode 3` + `standby 1` + `standbydelay 86400/604800`（调大以防转入已知会挂的 standby 路径），`ioreg "Standby Enabled"` 实测 **No → Yes**。
+> **⑤ 同步通道实测**：RealTimeSync（`Delay=3` 秒、**单向** 工作区 → ESP）**已自动推送**，`diff -rq EFI/oc /Volumes/ESP/EFI/oc` **零差异** ⇒ **无需手动点**（与旧记"自动触发会滞后"不符，已更正）。
+> **⑥ 判据**：成功 = `pmset -g log` 出现 `Entering Hibernate` + 断电 + 开盖可恢复；失败 A = 同 09-16 签名（进休眠前硬断电）；失败 B = POST 005（进 BIOS 改时间）；失败 C = ahbm 没生效（看 `-hbfxdbg` 日志定位）。回滚见执行单 §6。
+> **动作 = 已改（EFI + pmset）**，等重启后闭环。
+>
+> ⚪ **2026-09-20 16:3x【§八十六】（已被 §八十七 接续）—— 追问「确定没解？」⇒ ⚠️ **改口：不确定**，并找出一条**从未测过**的路径**（`s4-requirements-audit.md` **§7.10**）
 > **① 【修正】上一轮的「撤回」撤过头了**：以「同机 Win/Linux 完成了 S4」为反证、撤回「平台按 AOAC/S0ix 语义直接切电」—— **但那只覆盖 `S0→S4` 直通**（Windows 直通、Linux 内核直接 `hibernate()`，**都不经过 S3 语义**）⇒ **「平台不支持 S4」❌ 已排除；「平台在 S3 语义下异常」⚠️ 仍可疑** —— 而 macOS **恰恰必须先走这段 S3 语义**。
 > **② 【修正】`4ceea3a` 不是"自相矛盾配置"**：本轮初查曾怀疑 `rtcfx_exclude=80-FF`（禁写 RTC 第二 bank）把休眠密钥（`0x80–0xAB`）封死了 ⇒ 拟剔除第 4/5 次。**查 `HibernationFixup` 上游 README 后推翻** —— 它**就是为"RTC 只给一个 bank"这个场景写的**（*"providing a sync between RTC variables and NVRAM"*、*"boot.efi can read key `IOHibernateRTCVariables` **from NVRAM**"*）⇒ 配置**逻辑自洽、是有效测试**。它仍失败的原因：该 kext 要 **"detects entering into 'hibernate' power state"** 才动手 ⇒ 本机 **0/5 从未进入该状态** ⇒ **鸡生蛋**。
 > **③ ★★【新发现】一条从未测过的路 = `hbfx-ahbm`**（`HibernationFixup` 的 boot-arg）：上游原文 *"**EnableAutoHibernation = 1**: If this flag is set, **system will hibernate instead of regular sleep**"* ⇒ **绕开"必须先过一段 S3 语义"这个卡点**；且休眠密钥**改走 NVRAM** ⇒ **同时直击关②与关③**（理论上连 POST 005 也避得开）。
