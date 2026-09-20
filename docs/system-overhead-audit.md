@@ -780,3 +780,63 @@ Preferences（`…CleanMyMac5.Menu.plist`）、CrashReporter（`CleanMyMac_5_Men
 `.vscode`/`.cursor`/`.qoder`/`.trae`（app 在装）、`.ocat`（OCAuxiliaryTools 在装）、`.qclaw`/`.sclaw`（openclaw 数据，见 13.3）、
 `.workbuddy`（WorkBuddy 自身，3.3 G）。
 ⇒ **再往下已无"已卸载软件的残留"可清**；剩下的体积大户要么是在装软件、要么是活跃数据。
+
+---
+
+## 15. 2026-09-20 复查：panic 记账更正 + WindowServer 告警复发 + 常驻实况（全程只读，零改动）
+
+### 15.1 ★★「panic 总数 = 1」是**代理指标**：计数没变，盘上那个换了
+
+| | 文档一直引用的 | 09-20 盘上实际唯一的 |
+|---|---|---|
+| 文件 | `Kernel-2026-09-17-114214.panic` | **`Kernel-2026-09-18-165628.panic`** |
+| 形态 | NMIPI/TLB timeout，落 `IOUSBHostFamily`/`IntelBluetoothFirmware` | **`type 13 = general protection`**，落 **`com.apple.driver.X86PlatformShim`** |
+| 场景 | S3 醒来卡死（睡眠实验） | **开机后 24.9 s**（`System uptime in nanoseconds: 24897449031`） |
+| 与睡眠关系 | 是 | **否** —— `Last Sleep` 三个字段全 `0x0`、`Hibernation exit count: 0` |
+
+- 佐证：`/Library/Logs/DiagnosticReports/*.panic` **只有 1 个**；同目录 `Retired/` 创建于 **09-18 17:02**（现为空）⇒ 那段时间确有一次报告轮转，09-17 那个多半在此被归档清掉。
+- 09-18 那次崩溃本身**从未入账**：全仓 grep `X86PlatformShim`／`165628`／`2026-09-18-16` = **0 命中**（对照：`shutdown_stall`、`WindowServer_2026` 能命中 ⇒ 方法本身有效）。
+- ⇒ **教训（已升为 MEMORY 铁律）：`wc -l` 这类计数不能当判据，必须逐个认文件 + 读内容。** 与「`df /` 前后同一个数 ≠ 没删掉」是**同族错误**。
+
+### 15.2 `09-18 下午`有一个小事件簇（时间轴 = `last reboot` + 报告文件名）
+
+```
+09-18 14:06  wtmp 起点（更早记录已滚掉）
+09-18 16:40  shutdown  ← 伴 shutdown_stall 报告
+09-18 16:56  开机 → 24.9 s 后 panic（X86PlatformShim）
+09-18 17:05  WindowServer cpu_resource 告警
+09-18 17:53  shutdown  ← 伴 shutdown_stall 报告
+09-18 18:04  开机（＝当前会话，至今 ~1 d 16 h 无复发）
+```
+
+- **两次 `shutdown_stall` = 已知归因（深信服 aTrust）**，`memory-archive-2026-09.md` 已写明"**应用层干扰、勿误诊为 EFI**" ⇒ **不是新问题**。
+- **X86PlatformShim 那一次 = 新发现、未归因**；当前会话已连跑 1 d 16 h 无复发 ⇒ 记为**观察项，不做动作**。
+- 继续查需提权读 `*.shutdownStall` / `*.diag`（权限 `root:_analyticsusers 660`）。对齐手法仍是 `last reboot` × `git log -- EFI/OC/config.plist`：config 最后一次改动 = **09-17 17:29 `ebf6d5c`** ⇒ **09-18 的崩溃不是 EFI 改动引入**。
+
+### 15.3 WindowServer CPU 告警**已复发**（原文档写明"后续复发即观察点"）
+
+| 报告 | 时间窗 | 状态 |
+|---|---|---|
+| `WindowServer_2026-09-17-213618` | 21:33→21:36 | 已记（09-17） |
+| **`WindowServer_2026-09-18-170548`** | 17:05→ | **新** |
+| **`WindowServer_2026-09-20-091626`** | 09:16→ | **新（今天）** |
+
+同期背景（09-20 09:54 实测）：`uptime` load avg **7.78/6.59/7.91**、swap **1546/2048 M（75%）**、`Pages occupied by compressor` **878,664**（≈3.4 G）、`Swapins` **341,365**、`Pages free` **34,819**。
+⇒ 与"内存 16 G 吃紧"高度吻合，**方向指向内存压力 + 常驻 Electron 实例**（非热：`ThermalPressure -> 0`）。**处置 = 加内存（唯一花钱买确定性）或减少常驻**。
+
+### 15.4 常驻实况（09-20 `pgrep -fl`，与旧记录的差异）
+
+- `/Library` LaunchDaemons **20** ＋ LaunchAgents **9** ＋ `~` LaunchAgents **7**。
+- 实跑大户：**aTrust（深信服 SDP）7 个进程**（3× Helper + crashpad；**公司软件不可动**）｜**ToDesk 3**（含 `ToDeskOutputDriver` 音频驱动）｜**腾讯柠檬 3**（`LemonDaemon` + `Tencent Lemon` + `LemonMonitor`）。
+- ⚠️ **旧记录的"重叠成对（ToDesk+向日葵、腾讯柠檬+CleanMyMac5）"是过时描述**：**向日葵与 CleanMyMac 当前都没在跑** ⇒ **无重叠可清**，别再当"机会"。
+- ⚠️ **AC 上"永不自动睡"的断言持有者已点名 = `WorkBuddy` 自己**：`pmset -g assertions` 中 `pid 683(/Applications/WorkBuddy.app/Contents/MacOS/Electron)` 的 `NoIdleSleepAssertion` 自开机起**从未释放**（实测已持续 **39:50:03**）；`pmset -g` 亦直接写 `sleep 0 (sleep prevented by Electron, sharingd)`。⇒ **省电侧唯一可操作项：不用时退出它。**
+
+### 15.5 顺手复核（全部合格，无需动作）
+
+- `IOPMDeepIdleSupported = Yes`；`sleep 0` / `standby 0` / `hibernatemode 0` / `powernap 0` / `proximitywake 0` / `womp 0` / `disksleep 0` ⇒ 省电侧确实全开。
+- Spotlight：`/Volumes/Common`、`/Volumes/ESP` **均 disabled 且跨重启保持** ✅；`/` 正常开着。
+- SSDT 门控：`SSDT-TPD3-PIN` / `SSDT-DeepIdle` / `SSDT-EC` **均含 `_OSI` + `Darwin`** ✅。
+- **工作区 vs ESP `config.plist` sha256 一致**（`a9c01104…`）⇒ **无待部署项**；git 工作区干净。
+- ⚠️ **两处判据/工具失效（已写进 MEMORY 铁律）**：
+  1. **`nvram 4D1FDA02-…:opencore-version` 在本机不存在** —— `nvram -p` 仅 10 个变量、`csr-active-config` 与 `boot-args` 均在（**正向对照通过**），且 `ExposeSensitiveData = 2`；回退判据也拿不到（`OpenCore.efi` 内只有占位符 `REL-XXX-YYYY-MM-DD`）⇒ **"以 NVRAM 为权威"这条在本机不成立**。
+  2. **终端沙箱会拒 `ps` / `top`**（`operation not permitted`）⇒ 查进程改用 `pgrep -fl` / `lsof -p <pid>` / `launchctl list`。
