@@ -916,14 +916,31 @@ Microsoft 官方（🟢）：*"A resume from hibernation starts with a **system 
 | AOAC 与 S3/S4 结构性冲突 | 🟢 同代先例 ＋ 本机 FADT/LPIT 双证 |
 | 失败点在休眠事务提交之前 | 🟢 5/5 签名 ＋ `hibernatecount=0` ＋ NVRAM 无变量 |
 | Windows 侧实际走 AWAC | 🟡 机制推断（其 `STAS` 默认值未实测） |
-| "平台按 AOAC/S0ix 语义直接切电" | 🟡 机制假设，与全部观测一致但未直接证实 |
+| ~~"平台按 AOAC/S0ix 语义直接切电"~~ | ⚪ **已撤回（附录 I.8 / `s4-requirements-audit.md` §7.8）** —— 反证：同机 Windows/Linux 休眠正常 |
 | RTC 电池弱 / CMOS 被写花 | ⚪ **已排除** |
 
 ### I.7 结论与动作
 
 - **不加新路径，不改变决定**：`SSDT-DeepIdle` 与 AOAC 封板结论**都不动**「出远门直接关机」。
-- **唯一零成本动作（建议）**：问一句 **"Windows 休眠→开机有没有出现过 POST 005 / 时间不对？"** ⇒ 无 = 问题只在 macOS/OpenCore 侧；有 = 平台级。
-- **T2（`hibernatemode 3` 验写镜像）风险重估为低**（mode 3 不断电 ⇒ 按 §二十五 不该 005），但**仍不建议**：它**不解锁任何东西**（即便镜像能写，mode 25 仍在切换点死）。
+- ~~**唯一零成本动作（建议）**：问一句 "Windows 休眠→开机有没有出现过 POST 005 / 时间不对？"~~ ⇒ **已问、已答，见 I.8。**
+- ~~**T2（`hibernatemode 3` 验写镜像）风险重估为低**~~ ⇒ **⛔ T2 判据本身作废**（见 I.8-④）。
 - **HP 那条"更新 BIOS 可能修"已无收益**：本机实录 `T75 Ver. 01.24.02`（2026-05-11）比该文档时代的 `01.20.00` 新。
 
 > 本轮**零配置 / 零 EFI 改动 / Windows 侧写操作 = 0 / 固件零写入**。
+
+---
+
+### I.8 · 2026-09-20 15:3x **Q1 答复定案：平台级整类排除，三处改判**（权威版在 `s4-requirements-audit.md` §7.8）
+
+> 答复原文（用户一手）：「**问题只在 macOS/OpenCore 侧，Windows 和 Linux 都可以正常休眠。**」
+
+| # | 改判 | 依据 |
+|---|---|---|
+| ① | **L5 三条判据由 ❌/未测 → ✅ 平台级已证成**：#27 固件实现 S4、#28 RTC/CMOS 穿过 S4 断电期有效、#29 EC 穿过 S4 进出正常 | 同机同固件 Windows/Linux 休眠-恢复正常 ⇒ **"硬件不行"整类有跨 OS 对照背书** |
+| ② | **`POST 005` 的归因翻转**：从"固件缺陷的证据"→"**macOS 侧行为的证据**"（写坏 CMOS 的只有 macOS：`AppleRTC` 密钥 `0x80–0xAB` ＋ 校验和 `0x58/0x59`） | 与 I.2/D 阶段机制自洽；Windows 不碰 CMOS |
+| ③ | **撤回**「平台按 AOAC/S0ix 语义直接切电」（I.6 表末已标 ⚪）⇒ §I.3「唯一修法是关 AOAC」的闭环**只对 macOS 换档路径成立**；**AOAC 压 S3，不阻 S4** | 反证 = 同机 Windows/Linux 完成 S4 |
+| ④ | **T2 作废** + `rtc-blacklist` 记录纠错 | T2：`hibernatemode 3` **不在入睡时写镜像**（`round1-tierA-result.md` 实测 mtime 未变）⇒ 假阴性；blacklist：实测 `242 B` = **`0x0E–0xFF`（含休眠区）**，旧记录 `0x0E–0x73` 是 102 B 过期值 |
+
+- **病灶定位（收口）**：不是固件、不是 AOAC、不是缺件（`HibernationFixup` 在 09-16 第 4/5 次尝试时**在场仍失败**，git 台账见 §7.8d）—— 卡在 **macOS 侧"睡眠 → 休眠"的换档**（5/5 `Entering Sleep`、**0/5 `Entering Hibernate`**）。
+- **剩余唯一未验的官方点名项**：`DevirtualiseMmio = true` ＋ `MmioWhitelist` 空（OC 官方 *"proper NVRAM **and hibernation** functionality"*）⇒ 要验需开 OC 日志；**但验证也改变不了"换档过不去"** ⇒ **不做**。
+- **动作 = 不改**（默认动作不变）。

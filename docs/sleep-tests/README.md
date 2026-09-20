@@ -1,6 +1,16 @@
 # 睡眠档位调优测试记录
 
-> 🔵🔵 **2026-09-20 15:2x【§八十三 · 最新】—— 追问「window 侧休眠能用、Linux 也能休眠，为什么 macOS 就不行？」⇒ 三系统休眠契约分层定案**（`tier-ladder-why.md` **附录 I**、`s4-requirements-audit.md` **§7**）
+> 🔵🔵🔵 **2026-09-20 15:3x【§八十四 · 最新】—— Q1 答复回来了：「问题只在 macOS/OpenCore 侧，Windows 和 Linux 都可以正常休眠」⇒ 平台级整类排除，三处结论改判**（`s4-requirements-audit.md` **§7.8**、`tier-ladder-why.md` **附录 I.8**）
+> **① ★ 主要产出 = L5（硬件/固件结构层）三条判据改判**：#27「固件实现 S4 的断电＋冷启动恢复」❌ → **✅ 平台级已证成**；#28「RTC/CMOS 在 S4 断电期保持有效」❌ → **✅ 平台保证**；#29「EC 在 S4 进出正常」⚠️未测 → **✅（S4 场景）已证成**。⇒ **"硬件不行"这条整类现在有跨 OS 对照背书**（不再只是"同日 9 次睡眠"的间接推断）。
+> **② ★ 方向翻转**：`POST 005` 从"固件缺陷的证据"变成"**macOS 侧行为的证据**" —— **写坏 CMOS 的只有 macOS 一家**（`AppleRTC` 休眠密钥 `0x80–0xAB` ＋ 校验和 `0x58/0x59`，Windows 一点都不碰）⇒ 与 §7.2 机制解释自洽。
+> **③ 撤回一条机制假设**：§7.6 的 🟡「平台按 AOAC/S0ix 语义直接切电」**撤回**（反证 = 同机 Windows/Linux 完成了 S4）。⇒ 连带：§7.3 那个「唯一修法是关 AOAC ⇒ 关不掉 ⇒ 修法不存在」闭环**只对 macOS 换档路径成立**；**AOAC 压的是 S3/传统睡眠语义，它没有阻断平台级 S4** ⇒ ⛔ **别再拿它当"关 AOAC 就能修好休眠"的理由。**
+> **④ 被提纯的那条差异**：本机 macOS 卡在**"睡眠 → 休眠"换档**（5/5 `Entering Sleep`、**0/5 `Entering Hibernate`**）。对照休眠起点：**Windows 是 S0→S4 直通、Linux 内核直接 hibernate()，都不需要先睡一次；只有 macOS `hibernatemode 25` 要先做一次 `Software Sleep` 转换**（🟡 机制假设）⇒ **不是平台不会 S4，是 macOS 要先走一段本机做不了的 S3 语义睡眠。**
+> **⑤ 剩余嫌疑全部落到 macOS/OpenCore 侧**，唯一"官方点名 hibernation 而本机未验"的项 = **`DevirtualiseMmio = true` ＋ `MmioWhitelist` 空**（OC 官方明文 *"proper NVRAM **and hibernation** functionality"*）—— ⚠️ **但即便验证了也改变不了"换档过不去"**。
+> **⑥ ★ git 台账（把"缺桥"这条排除坐硬）**：`2f5c047`(09-16 09:03 `HibernateMode`→`NVRAM`) → `85888f6`(10:42 装 `HibernationFixup`) → `4ceea3a`(13:39 `rtcfx_exclude` 配对) → **18:09/19:29 第 4/5 次尝试＝桥已全副武装仍同签名失败** ⇒ **5 次失败不是"缺件"造成的无效测试。**
+> **⑦ 顺带两处记录纠错**：**(a)** `rtc-blacklist` 实测 = `<data 242B>` ⇒ **`0x0E–0xFF`（含休眠区）**，旧记录写的 `0x0E–0x73` 是 102 B 过期值 ⇒ 结论**换个理由变强**：**内核与固件两级都挡住了休眠区，RTC 路线彻底关闭，NVRAM 是唯一路线**。**(b)** **T2 判据作废** —— `hibernatemode 3` **不在入睡时写镜像**（`round1-tierA-result.md`：睡 338 s，`sleepimage` mtime 未变），它在进 standby 时才写，而 standby 四前提在本机 AC＋外接屏下天然不满足 ⇒ 按原设计必得"没写"，**是假阴性**。
+> 本轮**零配置 / 零 EFI / 零固件写入 / Windows 侧写操作 = 0**。**「出远门直接关机」不变。**
+
+> 🔵🔵 **2026-09-20 15:2x【§八十三】—— 追问「window 侧休眠能用、Linux 也能休眠，为什么 macOS 就不行？」⇒ 三系统休眠契约分层定案**（`tier-ladder-why.md` **附录 I**、`s4-requirements-audit.md` **§7**）
 > **① ★ 前提要先纠正**：三种系统的"休眠"**不是同一种契约**。Windows 的 `hiberfil.sys`（本机现场 = **6.14 GiB**，`mtime` **今天 11:47**）由 **Windows Boot Manager 自己读回**；Linux 的 swap 头由 **initramfs `resume=`** 读回 ⇒ 这两者**不向固件要任何东西**，固件只是电源开关。而 macOS 的 `sleepimage` 由 **`boot.efi`** 恢复，它必须**先被平台告知"这次是从休眠镜像回来的"** ⇒ **「Windows 能 ⇒ macOS 应该能」这个推理不成立**（Microsoft 官方原文已录）。
 > **② 加难项 ①：macOS 被逼上"必须碰 CMOS"那条路**（本机 DSDT 实读，互补对）—— `AWAC`(`ACPI000E`) `_STA` = `If (STAS == Zero)`；`RTC`(`PNP0B00`) `_STA` = `If (STAS == One)`；我们的 `SSDT-AWAC` 只对 Darwin 设 `STAS = One` ⇒ **macOS 走老式 CMOS RTC，Windows 走 AWAC**。Dortania 官方：*"macOS **does not include native support for AWAC clocks**"*。而 macOS 的休眠密钥（`APPLE_RTC_HIBERNATION_KEY_ADDR = 0x80`，长 `0x2C`）**就写在 CMOS `0x80–0xAB`**（本机 `AppleRTC.kext` 反汇编实证）⇒ **macOS 是三者里唯一"必须碰 CMOS 才能休眠"的；Windows 一点都不碰。**
 > **③ 加难项 ②：AOAC 与 S3/S4 结构性冲突**（🟢 同代同配先例）—— Dell Latitude 5410 EFI 仓库原话 *"Low Power S0 Idle … **conflicts S3 Sleep wake up and S4 Sleep**"*，处方是 `setup_var` **关掉 AOAC**；本机 `FADT bit21 = 1` ＋ 有 `LPIT` 双证在冲突侧，而 HP 把 AOAC 锁在 SMM/固件里（ACPI 侧只有只读镜像 `S0ID`）⇒ **社区标准处方正好是本机封死的那道门**。

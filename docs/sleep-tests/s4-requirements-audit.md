@@ -9,13 +9,17 @@
 ## 0. 一句话结论
 
 > ⚠️ **本节已于 2026-09-17 21:3x 修正**（用户追问「是暂时没满足还是没法满足？」⇒ 重核时间线与证据后，§1 的 #27 / #30 两处判定不成立）。**修正后的账在 §6。**
+>
+> ⚠️⚠️ **2026-09-20 15:3x 二次修正** —— §7.7 的 Q1 得到答复（**用户一手：Windows/Linux 休眠都正常，问题只在 macOS/OpenCore 侧**）⇒ **#27 / #28 / #29 三条从「❌ 不满足 / ⚠️ 未测」改判为「✅ 平台级已证成」**（跨 OS 对照，详见 **§7.8**）。
+> **⇒ 「结构性不满足」这一档目前为空；失败点收敛到 macOS 侧的「睡眠 → 休眠」换档。**
 
-**30 条准入条件：19 条已满足 · 2 条对本机不适用 · 5 条待验证 · 5 条不满足。**
+**30 条准入条件（2026-09-20 15:3x 重算）：21 条已满足 · 2 条对本机不适用 · 4 条待验证 · 3 条不满足。**
+（原始口径为 19 / 2 / 5 / 5。）原「5 条不满足」里的两条结构性项（#27、#28）已改判为 ✅。
 
-- 5 条不满足里，**4 条是开关**（`hibernatemode`、`standby`、把 `HibernationFixup` 加回来、内存压力重启即解）⇒ 能凑；
-- **只有 1 条真正结构性**：`#28` RTC 在 S4 断电期保持有效 ⇒ **改配置改不出来**，但 **HP 官方文档说"更新 BIOS 应该可能会解决该问题"** ⇒ 它也不是绝对判死。
+- 3 条不满足里：**#17 / #18 是纯开关**（`hibernatemode`、`standby`）；**#12 `HibernationFixup` 未在 `Kernel/Add`** —— 但它**已被实测排除为主因**（§7.8d 台账：2026-09-16 桥在场时同样失败）。
+- **结构性不满足 = 0 条。** ⇒ 本机 macOS 休眠的问题**不再是"某个条件永远凑不齐"，而是"凑齐了也过不去某一层"**（该层在 macOS 侧，见 §7.8）。
 
-⇒ **"条件能不能凑齐" = 能凑到约 97%，凑不齐的那 3% 只有 1 条，且 HP 官方给了可能解法（刷 BIOS，代价是不可回退）。**
+⇒ **"条件能不能凑齐" = 能凑齐**（结构性障碍归零）；**但 2026-09-16 的实测已证：条件凑齐（桥在场）仍失败** ⇒ **瓶颈不在清单的满足率上，而在 macOS 侧的换档那一层**（§7.8）。**⇒ 结论从"条件凑不齐"改为"条件不是瓶颈"，行动仍然是"不改"。**
 
 ---
 
@@ -48,7 +52,7 @@
 |---|---|---|---|---|
 | 12 | **`HibernationFixup.kext` 必须加载**（把 `IOHibernateRTCVariables` 从 registry 写进 NVRAM，让 `boot.efi` 能读到） | HibernationFixup README 原文：*"Somehow this value has to be written into RTC (or SMC) in order the boot.efi could read it. But in case if you have to limit your RTC memory to 1 bank (128 bytes), **it doesn't work** … Fortunately, **boot.efi can read key `IOHibernateRTCVariables` from NVRAM**"* | `Kexts/HibernationFixup.kext` **在**，但 `Kernel/Add` **引用数 = 0**（`a3cd5f7` 移出） | ❌ **缺失** |
 | 13 | `NVRAM/WriteFlash` = true（否则写不进） | OC 官方 §WriteFlash | `true` | ✅ |
-| 14 | `UEFI/ProtocolOverrides/AppleRtcRam` 开 + `rtc-blacklist` **不含** `0x80–0xAB` | OC 官方 L9062-9071：builtin 版会 *"filter out I/O attempts to certain RTC memory addresses … specified in `rtc-blacklist`"* | `AppleRtcRam = true`；`rtc-blacklist` = **`0x0E–0x73`**（不含休眠区） | ✅ |
+| 14 | `UEFI/ProtocolOverrides/AppleRtcRam` 开 ＋ `NVRAM/Add/4D1FDA02-…/rtc-blacklist` 覆盖 `0x80–0xAB` | OC 官方 L9062-9071：builtin 版会 *"filter out I/O attempts to certain RTC memory addresses … specified in `rtc-blacklist`"* | `AppleRtcRam = true`；**实测 `rtc-blacklist` = `<data 242B>`，逐字节展开第 1 字节 = `0x0E`、长度 242 ⇒ 覆盖 `0x0E–0xFF`（0x0E + 242 = 0x100）⇒ ★ 含休眠区** | ✅ **但理由与旧记录相反（2026-09-20 15:3x 更正）**：旧记录写"`0x0E–0x73`（不含休眠区）"是 **102 B 的过期值**。真相 = **两级都挡了休眠区**（内核 `rtcfx_exclude=0E-FF` ＋ 固件 `rtc-blacklist=0E-FF`）⇒ **RTC 路线彻底关闭，NVRAM 路线是唯一路线**（= T530 设计，但依据不是"没挡"） |
 | 15 | `rtcfx_exclude` 与休眠区（`0x80–0xAB`）的关系 | 见 **§2 更正** | `rtcfx_exclude=0E-FF`（⊃ `80-AB`）+ `HibernateMode=NVRAM` | ✅ **条件式**（须与 #12 打包） |
 | 16 | 无 SMC 后备时必须走 NVRAM | HibernationFixup README：*"there are no any variables in SMC/NVRAM/RTC (actually FakeSMC)"* | `AppleSmcIo = false` + `HibernateMode = NVRAM` | ✅（与 #12 同属一个包） |
 
@@ -76,9 +80,9 @@
 
 | # | 条件 | 依据 | 本机实测 | 判定 |
 |---|---|---|---|---|
-| 27 | 固件真的实现 S4 的"断电 + 冷启动恢复" | 无文档可查，**只能实测** | **6 次武装休眠全失败**，其中 **3 次触发 HP POST 005** | ❌ **仅一半成立（21:3x 修正）** ⇒ **必须拆两半**：**27a「断电动作」✅ 已实测发生**（5 次全是"睡下即断气"、`Wake from` 全无、时长栏为空）；**27b「冷启动恢复」❌ 失败**。⇒ **失败点在恢复侧，不是"固件没有 S4"** |
-| 28 | RTC/CMOS 在 S4 断电期间保持有效 | — | `README.md:179`：*"三层软件防护（`rtcfx_exclude=0E-FF` ＋ `AppleRtcRam=true` ＋ `rtc-blacklist` 242 B）**全开仍报 005**，本就不矛盾 —— **掉电不是"写"**"* | ❌ **HP 固件不保证** ← ★ **但 HP 官方文档说"更新 BIOS 应该可能会解决"（见 §6）** |
-| 29 | EC 在 S4 进出时正常 | — | 未单独测；但同一 EC 在 S3 恢复后已证 `EC OBF=1 poll timed out` 连绵 | ⚠️ **未测** |
+| 27 | 固件真的实现 S4 的"断电 + 冷启动恢复" | 无文档可查，**只能实测** | **6 次武装休眠全失败**，其中 **3 次触发 HP POST 005** | ❌ **→ ★ 2026-09-20 15:3x 改判：✅ 平台级已证成** —— 同机同固件 **Windows/Linux 休眠-恢复正常**（§7.8）⇒ **固件确实实现 S4**；失败在 **macOS 那一侧**。（原拆分的"27a 断电 ✅ / 27b 冷启动恢复 ❌"只描述 **macOS 尝试**的结果，不再是固件判据） |
+| 28 | RTC/CMOS 在 S4 断电期间保持有效 | — | `README.md:179`：*"三层软件防护（`rtcfx_exclude=0E-FF` ＋ `AppleRtcRam=true` ＋ `rtc-blacklist` 242 B）**全开仍报 005**，本就不矛盾 —— **掉电不是"写"**"* | ❌ **HP 固件不保证** ← ★ **但 HP 官方文档说"更新 BIOS 应该可能会解决"（见 §6）** ⇒ ⚪ **→ ★ 2026-09-20 15:3x 改判：✅ 平台保证，那 3 次 005 是 macOS 自己写坏的** —— Windows 休眠周期**无 005、时钟正确** ⇒ 真正原因是 `AppleRTC` 在休眠时写 **CMOS `0x80–0xAB`（休眠密钥）＋ `0x58/0x59`（校验和）**（见 7.2），而该区域同时是 HP 放设置项与校验和的地方 ⇒ **与固件无关，是"两家抢同一块 CMOS"** |
+| 29 | EC 在 S4 进出时正常 | — | 未单独测；但同一 EC 在 S3 恢复后已证 `EC OBF=1 poll timed out` 连绵 | ✅ **2026-09-20 15:3x 在 S4 场景已证成**：Windows 休眠-恢复成功 ⇒ **EC 能安然穿过 S4 断电-上电**；⚠️ 但 **S3 恢复**场景仍是坏的 ⇒ **S3 与 S4 的 EC 行为不可互推**（此前用 S3 的 EC 结论去推 S4 是越界） |
 | 30 | **镜像能写出来**（S4 的第一道门） | — | ⚠️ **原判据作废（21:3x 修正）**：`/var/vm/` 空、`/System/Volumes/VM` 无 sleepimage 是在 **`hibernatemode = 0`** 下核的 —— **mode 0 本来就不写镜像，"看不到"是档位的预期行为，不构成任何证据**。史实：`sleepimage` 只见过两种形态 —— **1 GiB（macOS 自建，尺寸异常小）** 与 **16 GiB 全零（人工 `mkfile` 造的，非真镜像）**；**macOS 自己写出合格镜像的场面从未出现，但也从未被专门测过** | ⚠️ **未验证**（原判 ❌ 是方法学错误；只有 **T2（mode 3）** 能判） |
 
 ---
@@ -115,7 +119,7 @@
 | 阶段 | 做什么 | 判据 | 风险 |
 |---|---|---|---|
 | **T1** | 进 BIOS(F10) → Boot Options / Power Management：核 **Legacy CSM 是否关**、**UEFI Boot 是否唯一**、Secure Boot 状态、以及 A 案那几项电源项 | 拍照留证 | **零风险**，6 分钟 |
-| **T2** | `sudo pmset -c hibernatemode 3` → 插电 `pmset sleepnow` 睡 ~30 s → 唤醒 → 查 sleepimage | `/System/Volumes/VM/sleepimage`（或 `/var/vm/sleepimage`）是否变成 **≥8 GiB** | **低**（mode 3 不断电） |
+| **T2** | ~~`sudo pmset -c hibernatemode 3` → 插电 `pmset sleepnow` 睡 ~30 s → 唤醒 → 查 sleepimage 是否 ≥8 GiB~~ | ⛔ **2026-09-20 15:3x 判定 T2 设计本身有误 ⇒ 作废**：**`hibernatemode 3` 不在入睡时写镜像** —— `round1-tierA-result.md` 实测（mode 3 ＋ `standbydelay 300`、睡 338 s）：`sleepimage` mtime **未变（❌ 未执行）**。mode 3 的镜像是**进 standby 时**才写，而 `standby` 的四个前提在本机 AC ＋ 外接屏下天然不满足 ⇒ **按原设计跑必然得出"没写"，是假阴性**（详见 §7.8e-2）。**⇒ 本机已不存在"低风险的能否写镜像"判据。** | ⚠️ 原判"低"仍对，但**跑不出结论** | ⛔ **作废，不要跑** |
 | **T3** | `HibernationFixup` 加回 `Kernel/Add` + `mode 25` | `Entering Hibernate` 出现 + 能醒回来 | **中高**（写 RTC `0x80–0xAB`，有再触发 POST 005 的概率） |
 | **T4**（可选） | `Misc/Debug/Target=0x43` 开一次 OC 日志，核 MMIO 有没有被 devirtualise | 日志里 `Devirtualised MMIO regions` 列表 | 低（需同步 ESP + 重启） |
 
@@ -272,6 +276,9 @@ Device (RTC) {                                     // 29670
 ⇒ **社区对"AOAC 与 S4 冲突"的标准处方就是「关掉 AOAC」（Dell 先例的 `setup_var`）—— 而那正是 HP 在固件层封死的门**（见 **附录 F/G**：`Modern Standby` 隐藏＋只读、无 IFR、无 UEFI 变量入口）。
 ⇒ 形成一个闭环：**唯一被验证有效的修法是关 AOAC；本机 AOAC 关不掉；所以"修好 macOS 休眠"的修法在本机不存在。**
 
+> ⚠️ **★ 本条的适用范围已在 §7.8 缩小（2026-09-20 15:3x）**：**同一台机器**的 Windows/Linux 休眠-恢复**实测正常** ⇒ **AOAC 并没有阻断"平台级 S4"**，它压住的是 **S3／传统睡眠语义**（以及 macOS 那条"先睡一次、再转 S4"的路）。
+> ⇒ 上面这个闭环**只对 macOS 的换档路径成立**；**不要**再把它当作"关掉 AOAC 就能修好休眠"的理由（那条门本来也关不上）。
+
 ### 7.4 ★ 但实测的失败点，比上面这些理由还要"早"
 
 （必须讲清楚，否则就是拿结构理由去解释一个更早期的现象。）
@@ -319,7 +326,7 @@ Device (RTC) {                                     // 29670
 | **AOAC 与 S3/S4 结构性冲突** | 🟢 | 同代同配先例（Dell 5410 / X1C6）＋ 本机 `FADT bit21`＋`LPIT` 双证 |
 | 失败点在**休眠事务提交之前**（硬断电，非唤醒失败、非崩溃） | 🟢 | 5/5 日志签名 ＋ `hibernatecount=0` ＋ NVRAM 无变量 |
 | Windows 侧实际走 AWAC | 🟡 | 机制推断（其 `STAS` 默认值未直接实测） |
-| **"平台按 AOAC/S0ix 语义直接切电，而不执行 S4 的保存-交接流程"** | 🟡 | 机制假设：与全部观测一致（0.2 s 断电、无交接、非确定性 005），但**未直接证实** |
+| ~~"平台按 AOAC/S0ix 语义直接切电，而不执行 S4 的保存-交接流程"~~ | ⚪ **已撤回（§7.8）** | 反证：**同一台机器** Windows/Linux 休眠-恢复**正常** ⇒ 平台**会**执行 S4。原假设只是"与观测一致"，被跨 OS 对照**直接否掉** |
 | RTC 电池弱 / CMOS 被写花 | ⚪ **已排除** | 7.5 的对照 |
 
 ⇒ **给用户的一句话**：
@@ -330,6 +337,85 @@ Device (RTC) {                                     // 29670
 | # | 动作 | 价值 | 风险 | 建议 |
 |---|---|---|---|---|
 | **T2** | `sudo pmset -c hibernatemode 3` → 手动 `pmset sleepnow` → 查 `sleepimage` 是否变 ≥8 GiB | 回答"macOS 到底能不能在本机写出合格镜像" | **重估为低**：按 §二十五（005 = **断电期间** RTC 掉电），**mode 3 不断电 ⇒ 不该 005**（旧记录的"高风险"是 §二十五 之前的判断） | ⚠️ **仍不建议** —— 它**不解锁任何东西**（即便镜像能写，mode 25 仍在切换点死），属"证据闭合"而非"打开新路" |
-| **Q1** | 一句话问用户：**Windows 休眠→开机有没有出现过 POST 005 / 时间不对？** | **零成本、直接二分**：无 ⇒ 问题只在 macOS/OpenCore 侧；有 ⇒ 平台级 | 🟢 零 | ✅ **建议问**（`round2-tierB-result.md` §二十六.6 早就写好，一直没问） |
+| **Q1** | 一句话问用户：**Windows 休眠→开机有没有出现过 POST 005 / 时间不对？** | **零成本、直接二分**：无 ⇒ 问题只在 macOS/OpenCore 侧；有 ⇒ 平台级 | 🟢 零 | ✅ **已问、已答（2026-09-20 15:3x）** ⇒ 答案 = **「问题只在 macOS/OpenCore 侧，Windows 和 Linux 都可以正常休眠」** ⇒ 见 **§7.8** |
 
 **HP 那条"更新 BIOS 可能修"现在没有收益**：本机实录 BIOS = **`T75 Ver. 01.24.02`（2026-05-11）**，比 HP 文档时代的 `01.20.00` 新；且 AOAC 封板（附录 F/G）已把这条路覆盖。
+
+---
+
+## 7.8 ★ 定案：Q1 答复回来了 ⇒ **平台级整类排除**，三处结论修正（2026-09-20 15:3x）
+
+> 触发 = §7.7 **Q1 的答复**（**用户一手回报**）：
+> > 「**问题只在 macOS/OpenCore 侧，Windows 和 Linux 都可以正常休眠。**」
+>
+> 语义展开（🟢，用户一手）：Windows/Linux 的休眠**功能可用**（⇒ 无 POST 005、时钟正确；有这两样就不叫"正常"）。
+> 本轮**零配置 / 零 EFI / 零固件写入**；新增内容 = 1 次现场核对（`config.plist` 六级实读）＋ 1 次 git 时间线对齐 ＋ 2 份官方手册原文 ＋ 1 处**旧记录纠错**。
+
+### (a) L5（硬件/固件结构层）三条判据要改 —— 本节主要产出
+
+| 判据 | 原判 | **改判** | 依据 |
+|---|---|---|---|
+| **#27** 固件真的实现 S4 的"断电＋冷启动恢复" | ❌（拆 27a/27b） | **✅ 平台级已证成** | 同机同固件：Windows/Linux 休眠-恢复**成功** |
+| **#28** RTC/CMOS 在 S4 断电期间保持有效 | ❌「HP 固件不保证」 | **✅ 平台保证** | Windows 休眠周期**无 005、时钟正确** ⇒ **我们那 3/5 的 POST 005 是 macOS 自己写坏的**（`AppleRTC` 密钥 `0x80–0xAB` ＋ 校验和 `0x58/0x59`），**不是固件固有缺陷** —— 与 §7.2 的机制解释**自洽** |
+| **#29** EC 在 S4 进出时正常 | ⚠️ 未测 | **✅（S4 场景）已证成** | 同上；⚠️ 但 **S3 恢复**仍是坏的 ⇒ **S3 的 EC 结论不能外推到 S4**（此前是越界） |
+
+⇒ **"硬件不行"这条整类现在有跨 OS 对照背书，不再只是"同日 9 次睡眠"的间接推断。**
+⇒ 同时**方向翻转**：`POST 005` 从"固件缺陷的证据"变成"**macOS 侧行为的证据**"（写坏 CMOS 的只有 macOS 一家）。
+
+### (b) 必须撤回的一条机制假设
+
+| 原说法（§7.6 🟡 / §7.4） | 处置 |
+|---|---|
+| "**平台按 AOAC/S0ix 语义直接切电，而不执行 S4 的保存-交接流程**" | ⚪ **撤回**。反证 = 同一台机器 Windows/Linux **完成了 S4**。原假设只是"与观测一致"，被跨 OS 对照**直接否掉** |
+| 连带：§7.3 那个"**唯一修法是关 AOAC ⇒ 关不掉 ⇒ 修法不存在**"的闭环 | **半塌**：只对 **macOS 的换档路径**成立。**AOAC 压的是 S3/传统睡眠语义，它没有阻断平台级 S4。** ⇒ ⛔ 不要为了让 macOS 休眠回头去关 AOAC（那条门本来也关不上） |
+
+### (c) 但有一条差异**被这次对照提纯了**
+
+本机 macOS 真正做不动的是**"睡眠 → 休眠"的换档**（5/5 有 `Entering Sleep`、0/5 有 `Entering Hibernate`）。对照两个系统的**休眠起点**：
+
+| | 休眠从哪开始 | 是否要先走一段 S3 语义的睡眠 |
+|---|---|---|
+| **Windows** | **S0 直接 → S4**（Modern Standby 的 Adaptive Hibernate 也是 S0→S4） | ❌ 不需要 |
+| **Linux** | 内核直接 `hibernate()` → S4（`pm_hibernation`） | ❌ 不需要 |
+| **macOS `hibernatemode 25`** | **先做一次 `Software Sleep` 转换，再转 S4** | ✅ **需要**（这正是 5/5 有 `Entering Sleep` 的原因） |
+
+> ⚠️ 分级：Windows/Linux 侧 = 🟢（机制明确）；**"macOS 必须先过一段 S3 语义"= 🟡 机制假设** —— 它解释了"平台被排除后为什么 Windows 能而 macOS 不能"，但**没有逐行源码/上游文档坐实**，不许当结论引用。
+
+⇒ 一句话：**不是平台不会 S4，是 macOS 要先走一段本机做不了的 S3 语义睡眠。**
+
+### (d) 剩余嫌疑 —— **全部落在 macOS / OpenCore 侧**（按"文档强度 × 代价"排序）
+
+| # | 嫌疑 | 上游依据 | 本机状态 | 代价 |
+|---|---|---|---|---|
+| **1** | `Booter/Quirks/DevirtualiseMmio = true` ＋ **`MmioWhitelist` 0 条**，而 `Misc/Debug/Target = 0` ⇒ 无 OC 日志 | OC 官方 L1549-1552 明文：*"a list of addresses that need virtual addresses for proper NVRAM **and hibernation** functionality may be required"* | ⚠️ **从未验证** —— 全清单里**唯一一条"官方点名 hibernation 而本机没验"**的项 | 开一次 OC 日志（`Target=0x43`＋重启）即可判，零功能改动 |
+| 2 | macOS 休眠**镜像写盘路径**本身 | 无 | ⚠️ **从未单独测过**（原判 ❌ 是方法学错误；新造的 T2 也作废，见 §4） | **已无低风险判据**（唯一能测的入口就是那条会断电的路） |
+| 3 | ~~L2 桥缺失（`HibernationFixup` / `HibernateMode=NVRAM`）~~ | — | **已实测排除**，见下方台账 ⇒ 不是"缺桥" | — |
+| 4 | `Misc/Boot/HibernateMode` 取值是否合法 | OC 官方手册取值域 = **`None` / `Auto` / `RTC` / `NVRAM`**（🟢 已核原文） | `NVRAM` **合法** ✅；且失败发生在 **boot 侧检测之前**，与本项无关 | — |
+
+#### 台账：为什么"缺桥"这条排除是硬的（git 时间线对齐，2026-09-20 15:3x）
+
+| 时刻（09-16） | 提交 | 作用 |
+|---|---|---|
+| **09:03** | `2f5c047` | `HibernateMode` None → **`NVRAM`**（桥的**读侧**配对） |
+| **10:42** | `85888f6` | **装入 `HibernationFixup` 1.5.4**，`Kernel/Add` 插在 Lilu 之后（桥 **在**） |
+| **13:39** | `4ceea3a` | `RTCMemoryFixup` ＋ `rtcfx_exclude=80-FF`（桥的**写侧**配对） |
+| **18:09 / 19:29** | ← 第 4、5 次武装休眠 | **桥已全副武装，仍同签名失败**（`hibernatecount=0`、`nvram` 无休眠变量） |
+| 18:39 | `22b8d3f` | 定案「真休眠路线证伪并停用」＋ **拆地雷**（回滚 `hibernatemode 0` / `standby 0`） |
+| **09-17 16:44** | `a3cd5f7` | 桥已无用，随"删减 3 个无效 kext"移除（理由 = "S3/S4 已判死") |
+
+⇒ **结论成立的前提（桥在场）经 git 核对为真**，5 次失败**不是"缺件"造成的无效测试。**（这一条必须写下来 —— 否则下次又会有人怀疑"是不是没装 kext"。）
+
+### (e) 顺带查出的两处**记录错误**（与休眠失败无因果，但会误导判断）
+
+1. **`rtc-blacklist` 的实际范围写错了** —— 文档与 MEMORY 一直记 `0x0E–0x73`（102 B），**实测 = `<data 242B>` ⇒ `0x0E–0xFF`（含休眠区 `0x80–0xAB`）**。
+   ⇒ 更正后结论**更强也换了个理由**：内核（`rtcfx_exclude=0E-FF`）与固件（`rtc-blacklist=0E-FF`）**两级都挡住了休眠区** ⇒ RTC 路线是**彻底关闭**的，**NVRAM 路线是唯一路线**（= T530 设计，但依据不是"固件层没挡"）。已改 §1 #14。
+2. **T2 的判据设计错误** —— `hibernatemode 3` **不在入睡时写镜像**（`round1-tierA-result.md` 实测：mode 3 ＋ `standbydelay 300`，睡 338 s，`sleepimage` mtime **未变**）。mode 3 是在**进 standby 时**才写，而 `standby` 四前提在本机 AC ＋ 外接屏下天然不满足 ⇒ **按原设计跑必然得"没写"，是假阴性**。已把 §4 的 T2 标 **⛔ 作废**。
+
+### (f) 结论
+
+| 问题 | 答案 |
+|---|---|
+| 平台/固件/EC/RTC 能不能做 S4？ | **能**（Windows/Linux 实测，跨 OS 对照） |
+| 那为什么 macOS 不行？ | 失败点在 **macOS 侧"睡眠→休眠"的换档**：5/5 有 `Entering Sleep`、**0/5 有 `Entering Hibernate`**，随后硬断电 ⇒ **病灶不在固件，在 macOS/OpenCore 这一侧** |
+| 有没有新的修法？ | **没有。** 唯一"官方点名 hibernation 而本机未验"的是 `DevirtualiseMmio`/`MmioWhitelist`，但**即便验证了也改变不了"换档过不去"** |
+| 默认动作 | **不改。** 出远门**关机**（0 W、零 RTC 风险、开机 30–40 s ≈ 休眠唤醒耗时）不变 |
