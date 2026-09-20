@@ -26,6 +26,46 @@
 **触发方式**：`pmset sleepnow`（显式命令）。因实测 **`AppleClamshellCausesSleep = No`**，本轮**不需要物理合盖**。
 **唤醒后核验**：`bash docs/sleep-tests/round3-verify.sh`（只读，9 项判据 —— 含"是否出现 `Entering Hibernate`"这条核心判据）。
 
+### ⚠️ 17:25 **首次触发的实际结果：被「观察者效应」打断 ⇒ 无效测试（非失败）**
+
+`pmset sleepnow` 于 **17:25:08** 发出（发出前实测确认 `hibernatemode 3` / `standby 1`）。`pmset -g log` 实录：
+
+```
+17:25:07  Notification   Display is turned off                                  ← ★ 睡眠流程第一步已执行
+17:25:07  powerd Created InternalPreventSleep "…darkwakelinger" 00:00:00       ← 15s linger 期开始
+17:25:14  ← 我执行 round3-verify.sh                                             ✗ 打断
+17:25:22  powerd TimedOut InternalPreventSleep "…darkwakelinger" 00:00:15
+17:25:26  ← 我执行断言诊断                                                       ✗ 打断
+17:28:30  Notification   Display is turned on                                   ← 系统被活动吵醒
+```
+
+**三条独立判据一致**：
+
+| 判据 | 实测 | 含义 |
+|---|---|---|
+| `kern.boottime` | 仍 = `17:19:08` | **没有重启、没有成功休眠** |
+| pmset log 有无 `Entering Sleep` / `Entering Hibernate` | **两者皆无** | 睡眠**从未完成** |
+| 有无 `Display is turned off` ＋ `darkwakelinger` | **两者皆有** | 睡眠流程**确实启动过** |
+
+⇒ **这是无效测试，不是失败。** 原因 = 我在 `pmset sleepnow` 后**仅 6 秒**就跑诊断命令，而 powerd 的 `darkwakelinger` 有 **15 秒 linger 期** —— 期间任何进程活动都被判为"系统仍在使用"，从而**中止睡眠协商**。
+
+**★ 教训（须记牢）**：**触发睡眠后，在 linger 期内（≥30 秒）不得执行任何命令**，否则测试必被自己打断。
+**★ 附带收益**：本次拿到一个**比 `Entering Sleep` 更早的阶段判据** —— `Display is turned off` ＋ `darkwakelinger` 证明 `pmset sleepnow` 的请求**成功进入了睡眠协商**（09-16 那批连这个都没有）。已加进 `round3-verify.sh` §[1b]。
+
+### ✅ 修正后的触发方式（避免观察者效应）
+
+**由用户在独立终端手动触发，触发后立刻停手** —— 不碰键盘、不碰鼠标、不操作 WorkBuddy：
+
+```bash
+sudo pmset sleepnow
+```
+
+- ⛔ **不要在 WorkBuddy 里让我触发**：我的诊断命令会在 linger 期内打断睡眠（本轮实测代价）
+- ⛔ 触发后**至少 60 秒内不要有任何输入**（含动鼠标、切窗口）
+- ✅ 睡下去后，**按一下电源键或键盘**唤醒
+- ✅ 唤醒回来后说一声，我再跑核验（此时已远离 linger 期，安全）
+
+
 ---
 
 ## ⚠️ 17:0x 修正：`hbfx-ahbm` 取值 **3 → 1**（去掉 bit1「只在合盖时」）

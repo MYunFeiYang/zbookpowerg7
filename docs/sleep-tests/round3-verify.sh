@@ -11,6 +11,15 @@ echo "=== [1] ★ 核心判据：本次睡眠的类型（成功 = 出现 Enterin
 pmset -g log 2>/dev/null | grep -E "Entering Sleep|Entering Hibernate|Entering Standby|Wake from|Hibernate|Sleep  " | tail -40
 echo
 
+echo "=== [1b] ★ 睡眠流程是否「真的启动过」——比上一条更早的阶段 ==="
+echo "  判据：'Display is turned off' = 睡眠流程第一步已执行"
+echo "       'darkwakelinger'      = powerd 进入睡眠协商（15s linger）"
+echo "       'DarkWake'            = 曾经睡下去又被唤醒"
+pmset -g log 2>/dev/null | grep -iE "Display is turned|darkwakelinger|acwakelinger|Entering DarkWake|Wake from" | tail -12
+echo "  ⚠️ 若只看到 Display is turned off + darkwakelinger、没有 Entering Sleep"
+echo "     ⇒ 睡眠流程启动了但被【打断】（常见原因：有人在 linger 期内操作机器 / 跑命令）"
+echo
+
 echo "=== [2] kern.hibernatecount（>0 = 内核侧真发生过休眠）==="
 sysctl -n kern.hibernatecount 2>/dev/null
 echo
@@ -40,6 +49,8 @@ ls -la /Library/Logs/DiagnosticReports/*.panic 2>/dev/null | tail -5 || echo "  
 echo
 
 echo "=== [9] HibernationFixup 实例计数（确认 kext 仍在跑）==="
-ioreg -d 0 -l -w0 2>/dev/null | grep -oE '"HibernationFixup" = [0-9]+' | sort -u
+echo "  ⚠️ 注意：ioreg 的 Classes 段格式是 \"HibernationFixup\"=1（等号两侧【无空格】）"
+ioreg -d 0 -l -w0 2>/dev/null | grep -oE '"HibernationFixup"=[0-9]+' | sort -u
+ioreg -d 0 -l -w0 2>/dev/null | grep -oE '"(RTCMemoryFixup|Lilu|X86PlatformPlugin|X86PlatformShim)"=[0-9]+' | sort -u
 echo
 echo "########## 核验结束 ##########"
