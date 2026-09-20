@@ -6,6 +6,40 @@
 
 ---
 
+## ⚠️ 17:0x 修正：`hbfx-ahbm` 取值 **3 → 1**（去掉 bit1「只在合盖时」）
+
+**原因（实测一手证据）**：
+
+```
+ioreg -rn IOPMrootDomain -d 1
+  "AppleClamshellCausesSleep" = No      ← 本机合盖【不会】触发睡眠
+  "AppleClamshellState"        = No
+```
+
+本机是靠 **`Clamshell.app`**（`com.kovrazhkin.Clamshell` 2.3）**显式发 `Software Sleep`** 来睡的，**盖子始终是开的**。
+
+而源码里 bit1 的判断是：
+
+```cpp
+bool lidIsOpen = OSDynamicCast(OSBoolean, getPMRootDomain()->getProperty(kAppleClamshellStateKey)) != kOSBooleanTrue;
+if (!forceHibernate && whenLidIsClosed && lidIsOpen) { ...; break; }   // 开盖 ⇒ 不改写
+```
+
+⇒ **`hbfx-ahbm=3` 在本机的日常入口上是 100% 不会触发的**（盖子开着 ⇒ `lidIsOpen = true` ⇒ `break`）。
+
+**为什么改用 `1` 反而更安全**：既然合盖**不触发睡眠**（`CausesSleep = No`），那 `1` 的"任何睡眠都改写"
+实际只落在**显式睡眠命令**上（`pmset sleepnow` / Clamshell.app），**完全可控** —— 不存在"合盖不小心撞上"的风险。
+同时这也意味着 **§3 的第 4–5 步（物理合盖）作废**，本轮改为**显式触发睡眠**。
+
+**未采用的两条替代路**（记录在此，避免后人重走）：
+
+- 开 `Clamshell.app` 的「合盖睡眠」再用 `3` ⇒ 改用户工具设置、多一个变量，且失败时会影响用户日常
+- 用 `3` 但物理合盖后再想办法触发 ⇒ 合盖后无法操作
+
+**§2.1 与 §3 的 `hbfx-ahbm=3` / 「物理合盖」表述以本节为准。**
+
+---
+
 ## 1. 假设与目的
 
 **假设**：`hbfx-ahbm` 能让 macOS 在**睡眠策略选择阶段**就把 `sleepType` 改写成 Hibernate，

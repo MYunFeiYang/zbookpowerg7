@@ -9,7 +9,7 @@
 > ⇒ **三条独立证据收敛**：① 源码 ② 现场 ioreg（设前 `"Standby Enabled"=No` 且 **`AutoPowerOff` 属性根本不存在**）③ 本机 `pmset-hibernate.sh` 注释（「`hibernatemode` 单独设了不管用，必须同时给 `standby`」）。
 > **② 机制澄清**：ahbm 是在 `X86PlatformPlugin_sleepPolicyHandler` 里**直接改写 `params->sleepType`**（`kIOPMSleepTypeStandby`→`kIOPMSleepTypeHibernate`，`sleepFlags |= kIOPMSleepFlagHibernate`），**不是"先睡完再转"** ⇒ 机制上正好绕开"必须先过一段 S3 语义"这个卡点。
 > **③ 版本无虞**：`HibernationFixup` **1.5.4 就是 Latest**，release note 原文 **"Added constants for macOS 26 support"（2025-07-07）**。
-> **④ 已落地配置**：`Kernel/Add` 加回 `HibernationFixup.kext`（30→31 个，紧跟 Lilu）；`boot-args` 追加 **`hbfx-ahbm=3 -hbfxdbg`**（`3` = 只在合盖时触发 ⇒ **`pmset sleepnow` 仍走常规 Deep Idle，保留安全网**；主动**不用** bit6，因源码里它会取消休眠）；保留 `rtcfx_exclude=0E-FF`。pmset 已设 `hibernatemode 3` + `standby 1` + `standbydelay 86400/604800`（调大以防转入已知会挂的 standby 路径），`ioreg "Standby Enabled"` 实测 **No → Yes**。
+> **④ 已落地配置**：`Kernel/Add` 加回 `HibernationFixup.kext`（30→31 个，紧跟 Lilu）；`boot-args` 追加 **`hbfx-ahbm=1 -hbfxdbg`**（★17:0x 由 `3` 改 `1`：实测 **`AppleClamshellCausesSleep = No`** ⇒ 本机合盖**不触发睡眠**、靠 `Clamshell.app` 显式 `Software Sleep`（**盖子始终开着**）⇒ bit1「只在合盖时」在本机入口上 **100% 不触发**；而正因合盖不睡，用 `1` 只落在**显式睡眠命令**上、**完全可控**；主动**不用** bit6，因源码里它会取消休眠）；保留 `rtcfx_exclude=0E-FF`。pmset 已设 `hibernatemode 3` + `standby 1` + `standbydelay 86400/604800`（调大以防转入已知会挂的 standby 路径），`ioreg "Standby Enabled"` 实测 **No → Yes**。
 > **⑤ 同步通道实测**：RealTimeSync（`Delay=3` 秒、**单向** 工作区 → ESP）**已自动推送**，`diff -rq EFI/oc /Volumes/ESP/EFI/oc` **零差异** ⇒ **无需手动点**（与旧记"自动触发会滞后"不符，已更正）。
 > **⑥ 判据**：成功 = `pmset -g log` 出现 `Entering Hibernate` + 断电 + 开盖可恢复；失败 A = 同 09-16 签名（进休眠前硬断电）；失败 B = POST 005（进 BIOS 改时间）；失败 C = ahbm 没生效（看 `-hbfxdbg` 日志定位）。回滚见执行单 §6。
 > **动作 = 已改（EFI + pmset）**，等重启后闭环。
