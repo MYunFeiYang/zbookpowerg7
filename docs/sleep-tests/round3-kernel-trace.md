@@ -26,9 +26,42 @@
 
 ## 1. 一句话结论
 
-> **这次测试的配置是"自相矛盾"的：`hbfx-ahbm=1` 确实生效了（内核日志抓到它设的 `type 5 / standby`），但我在同一个配置里把 `standbydelay` 设成了 86400 s —— 而 HBFX 恰恰用 `standby_delay` 来推迟它自己的维护唤醒日历。这个推迟把它自己的"强制休眠"开关关掉了，于是内核最终把 `hibernateDisabled` 置真、**把 `hibernatemode` 清零**，一个字节的镜像都没写。**
+> **`hbfx-ahbm=1` 确实生效了（内核日志抓到它设的 `type 5 / standby + flags 0x1`），但它紧接着把自己关掉了。精确机制不是"扳机被推到 24 h 之后"，而是：**
+>
+> 只要 `standbydelay ≠ 0`，HBFX 的 `setMaintenanceWakeCalendar` 钩子就会把维护唤醒日历往后推、并把 `wakeCalendarSet` 置真；而
+> `setupHibernate = (forceHibernate || !wakeCalendarSet || sleepServiceWake || standby_delay == 0)`
+> ⇒ `wakeCalendarSet = true` 且 `standby_delay ≠ 0` ⇒ **`setupHibernate = false`，HBFX 当场撤回自己的改写**，平台原值 `deepidle` 胜出。
+>
+> 随后内核按 `deepidle` 走：属性位为 0（无 `HibernateSetup`）⇒ `hibernateDisabled = true` ⇒ **`hibernatemode` 被清零** ⇒ 一个字节的镜像都没写。
 
-**这不是「救不了」，是「被我自己设的参数挡死了」。**
+**这不是「救不了」，是「被参数挡死了」—— 但挡路的不是"86400 太大"，而是"不等于 0"这件事本身。**
+
+### 1.1 直接回答：「当前配置会不会进 S4？」
+
+> **不会 —— 当前配置进的就是 Deep Idle。** 这不是推断，是实测。
+
+当前（R3 测试态）配置，2026-09-20 18:0x 用 `pmset -g custom` 实读：
+
+| 键 | 值 | 说明 |
+|---|---|---|
+| `hibernatemode` | **3** | 写镜像 + 保 RAM（对休眠最"友好"的一档） |
+| `standby` | **1** | 待机闸门**已开** |
+| `standbydelaylow` | **86400** | → `vars->standbyDelay` |
+| `standbydelayhigh` | **604800** | → `vars->standbyTimer` |
+
+**这已经是本机能给出的最有利于休眠的配置了**，而两次实测结果都是 **Deep Idle**：
+
+```
+17:25:37.396  type 5, flags 0x1   ← HBFX 曾把策略改成 standby+hibernate
+17:25:38.972  type 7, flags 0x0   ← 被它自己撤回，平台原值 deepidle 胜出
+17:25:39.609  hibernateMode 0x0   ← hibernatemode 3 被清零
+17:25:39.841  type 7              ← phase 2 最终 = Deep Idle
+⇒ lastSleepType = 0x7 / 'Deep Idle'；kern.hibernatecount = 0；无 sleepimage
+```
+
+⇒ **不是"配置还不够好"。恰恰相反：配置已经拉满，卡点在 `setupHibernate` 那一行。**
+
+> ⚠️ **这个机制有一条重要推论（我上一轮说反了，§4.2 已修正）**：`standbydelay` 缩到 120 s **照样命中同一条路**（120 ≠ 0 ⇒ 钩子照样推迟 ⇒ `wakeCalendarSet` 照样置真 ⇒ `setupHibernate` 照样 false）。**唯一不依赖 `wakeCalendarSet` 的分支是 `standby_delay == 0`。**
 
 ---
 
@@ -182,7 +215,7 @@ else if (sleepPhase == kIOPMSleepPhase2) {
 | 5 | 17:25:39.609 | `IOHibernateSystemSleep` → `getHibernateMode()` | | | → **`hibernateMode 0x0`** ⇒ 不写镜像 |
 | 6 | 17:25:39.841 | phase 2 求值 = type 7 | | | **最终 = Deep Idle** |
 
-**一句话：`standby_delay` 越大 ⇒ 维护唤醒推得越远 ⇒（在这个窗口内）HBFX 反而越不会强制休眠。我把 `standbydelay` 设成 24 h，等于把 HBFX 的扳机推到了 24 h 之后。**
+**一句话：`standby_delay ≠ 0` ⇒ 钩子推迟唤醒日历 ⇒ `wakeCalendarSet = true` ⇒ `setupHibernate = false`。与 `standbydelay` 是 86400 还是 120 无关 —— 只有 `standby_delay == 0` 才绕过这条。**
 
 ### 3.4 还有一个恒在的不利因子
 
@@ -207,22 +240,28 @@ if (!powerOffEnabled) currentFactors |= kIOPMSleepFactorAutoPowerOffDisabled;
 | 命题 | 判定 |
 |---|---|
 | `hbfx-ahbm` 在本机**能**生效吗 | ✅ **能** —— 内核日志抓到了 `type 5 / standby / flags 0x1`，正是 HBFX 的赋值签名 |
-| 这次为什么没休眠 | ⛔ **`standbydelay = 86400 s` 把 HBFX 的维护唤醒推到了 24 h 后**，同时把 `hibernateDisabled` 顶成真 |
-| 「所有已知手段都试过了」 | ❌ **还不能这么说** —— **`standbydelay` 短值 + 睡够时长** 这一组合从未测过 |
+| 这次为什么没休眠 | ⛔ **`standbydelay ≠ 0` ⇒ HBFX 的维护唤醒推迟钩子把 `wakeCalendarSet` 置真 ⇒ `setupHibernate = false` ⇒ 它撤回改写 ⇒ 平台原值 `deepidle` 胜出 ⇒ `hibernateDisabled = true`** |
+| 「所有已知手段都试过了」 | ❌ **还不能这么说** —— **`standbydelay = 0`**（即 `standby_delay == 0` 分支）这一组合从未测过 |
 
 ### 4.2 Round 3b 的最小改动（**只需 pmset，无需重启**）
 
+> ⚠️ **修正**：本节初稿写的是 `standbydelaylow/high = 120`。**按 §3.3 的源码，120 无效**（≠ 0 ⇒ 钩子照样推迟）。正确的旋钮是让它 **等于 0**。
+
 ```bash
-sudo pmset -a standbydelaylow 120 standbydelayhigh 120
-# 然后睡 ≥ 3 分钟（等维护唤醒/standby 换档真正发生）
-# 判据：pmset -g log 出现 Entering Standby / Entering Hibernate；sleepimage 出现
+sudo pmset -a standbydelaylow 0 standbydelayhigh 0
+# 睡 ≥ 3 分钟
+# 判据 A：PMRD: sleep params v2, type 5（保持 5，不被打回 7）—— 说明 HBFX 的改写这次没被自己撤回
+# 判据 B：PMRD: hibernateMode 0x3（不是 0x0）—— 说明 hibernateDisabled 没被置真
+# 判据 C：/System/Volumes/VM/sleepimage 出现 + kern.hibernatecount > 0
 ```
 
-**为什么这次可能不一样**：`standby_delay = 120` ⇒ 维护唤醒在 2 分钟后 ⇒ 时间尺度进入"可测试窗口"；且 macOS 自身的 standby 换档（写镜像 + RAM 断电）本来就由 `standbydelay` 决定。
+**为什么这次不一样（源码级，非实测）**：`standby_delay == 0` 使 `setupHibernate` 无条件为真，**完全绕过 `wakeCalendarSet`**；同时钩子的推迟分支要求 `standby_delay != 0`，故 `wakeCalendarSet` 也保持 `false` —— 两个条件同时满足，双保险。
 
-**要盯的新判据**（本机日志里新增可读项）：
-- `PMRD: sleep params v2, type 5, ...` 是否**保持在 5**（而不是被打回 7）
-- `PMRD: hibernateMode 0x3`（而不是 `0x0`）⇒ 说明 `hibernateDisabled` 没被置真
+**旁证**：第一次 phase 0 求值时（17:25:37.396）平台给出的 `standbyTimer = 0`，日志里就出现了 `StandbyNoDelay` 因子，而那一刻 HBFX **确实**设成了 `type 5`。说明"无 standby 延迟"这个状态在本机是可达的。
+
+⚠️ **两个待验证的坑**：
+1. `pmset` 是否接受 `standbydelaylow 0`（若被拒绝/钳位，此路即封闭 —— 那就只剩"接受现状"）。
+2. 走到 `type 4/5` 后，XNU `IOPM.cpp:5743-5747` 会 `gIOHibernateMode &= ~kIOHibernateModeSleep`（**关掉 Sleep 位、强制真休眠**）⇒ 这一步就是 09-16 硬断电的那一步，**风险实打实**。
 
 ### 4.3 风险不变（甚至更高）
 

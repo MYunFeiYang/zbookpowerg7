@@ -9,8 +9,9 @@
 > 终局：`hibernatecount=0`｜**无 sleepimage**｜NVRAM 无休眠变量｜`lastSleepType=0x7/'Deep Idle'`｜唤醒 2 s。
 > **★ 病灶（源码级，无推断成分）**：XNU `IOPMrootDomain.cpp:5656-5669` —— 早评估(phase 1)拿到的 `sleepType` 若属性位**不含 `HibernateSetup`** ⇒ **`hibernateDisabled = true`**；`:5763` `if (hibernateDisabled) *hibernateModePtr = 0;` ⇒ **`pmset` 的 3 被清零，镜像一字节不写**。而 `deepidle`(索引 7) 属性正好 = 0，`standby`(索引 5) 才是 `HibernateSetup|HibernateSleep`（编号由 airportd 的 `0x7/'Deep Idle'` 与本机 `sleepTypeAttributes[]` 表交叉锚定）。
 > 而 `deepidle` 之所以胜出：**HBFX 自己的 `IOPMrootDomain_setMaintenanceWakeCalendar` 钩子**会用 **`standby_delay`**（= `pmset standbydelaylow/high`）推迟维护唤醒并置 `wakeCalendarSet = true`，而 `kern_hbfx.cpp:449` 的 `setupHibernate = (… || !wakeCalendarSet || …)` ⇒ **它把自己关掉了**。
-> **⇒ 我把 `standbydelay` 设成 86400 s = 把 HBFX 的扳机推到了 24 h 之后。不是"救不了"，是"参数自毁"。**
-> **★ 下一步 Round 3b（只需 pmset，无需重启）**：`sudo pmset -a standbydelaylow 120 standbydelayhigh 120`，睡 ≥3 分钟，盯 `type 5` 是否保持 + `hibernateMode 0x3`。⚠️ 风险更高（每次睡眠 2 min 后都走"写镜像 + RAM 断电"）。
+> **⇒ `standbydelay ≠ 0`（不管 86400 还是 120）⇒ 钩子必然置 `wakeCalendarSet = true` ⇒ 它把自己关掉。不是"救不了"，是"被参数挡死了"。**
+> **★ 直接回答「当前配置会不会进 S4？」= 不会**：当前已是**最利休眠档**（`hibernatemode 3` / `standby 1` / `standbydelaylow 86400` / `standbydelayhigh 604800`，`pmset -g custom` 实读）**仍然**走 Deep Idle ⇒ **卡点不在配置"够不够好"，在 `setupHibernate` 那一行**（`round3-kernel-trace.md` §1.1）。
+> **★ 下一步 Round 3b（只需 pmset，无需重启）**：`sudo pmset -a standbydelaylow 0 standbydelayhigh 0`（⚠️**参数已由 120 修正为 0**：`120 ≠ 0` 命中同一条死路；`== 0` 才是唯一绕过 `wakeCalendarSet` 的分支），睡 ≥3 分钟，盯 `type 5` 是否保持 + `hibernateMode 0x3` + `sleepimage` 出现。⚠️ 风险更高（走到 `type 4/5` 时 XNU `IOPM.cpp:5743` 会关掉 Sleep 位 = 强制真休眠，即 09-16 硬断电那一步）。两处待验坑：`pmset` 是否接受 `0`；若被钳位则此路封闭。
 > **★ 工具方法（可复用，已入 `tooling-gotchas.md`）**：`log` 在 WorkBuddy 沙箱里被硬拒，**唯一走通路 = `osascript -e 'do shell script "<脚本>" with administrator privileges'`**（提权助手，进程不在沙箱内，实测 uid=0）；且内核 DEBUG 级必须加 **`--info --debug`**。
 > **本轮零配置改动**；两次睡眠后均**无 POST 005、时钟正常**。
 

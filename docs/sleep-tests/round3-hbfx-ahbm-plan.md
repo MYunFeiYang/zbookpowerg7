@@ -315,18 +315,29 @@ git revert <本轮 commit>                                                      
 - HBFX `kern_hbfx.cpp:449`：`setupHibernate = (forceHibernate || !wakeCalendarSet || sleepServiceWake || standby_delay == 0)`
 - HBFX 的 `IOPMrootDomain_setMaintenanceWakeCalendar` 钩子会用 **`standby_delay`** 推迟维护唤醒，并置 **`wakeCalendarSet = true`** ⇒ 反过来让 `setupHibernate = false`
 
-**⇒ 我把 `standbydelay` 设成 86400 s，等于把 HBFX 强制休眠的扳机推到了 24 h 之后。这次不是"救不了"，是"参数自毁"。**
+**⇒ 我 `standbydelay` 设成 86400 s 之所以致命，不是"数值太大"，而是"不等于 0"** —— 只要 `standby_delay ≠ 0`，HBFX 的推迟钩子必然把 `wakeCalendarSet` 置真，`setupHibernate` 就翻成 false，它当场撤回自己的改写。**这次不是"救不了"，是"被参数挡死了"。**
+
+> ⚠️ **修正（2026-09-20 18:1x，用户追问「确定当前配置会进 S4？」后复读源码）**：上一稿把机制写成"扳机被推到 24 h 之后"，**说法不准确**，并由此推出了错误的 §10.4 参数（120）。详见 `round3-kernel-trace.md` §1/§3.3/§4.2。
 
 ## 10.4 下一步（Round 3b，**只需 pmset，无需重启**）
 
+> ⚠️ **参数已修正：`120` → `0`。** `standby_delay` 必须**等于 0** 才能走 `setupHibernate` 里那条不依赖 `wakeCalendarSet` 的分支；`120 ≠ 0`，命中同一条死路。
+
 ```bash
-sudo pmset -a standbydelaylow 120 standbydelayhigh 120
-# 睡 ≥ 3 分钟；盯两条新判据：
+sudo pmset -a standbydelaylow 0 standbydelayhigh 0
+# 睡 ≥ 3 分钟；盯三条判据：
 #   PMRD: sleep params v2, type 5   ← 是否保持 5（没被打回 7）
 #   PMRD: hibernateMode 0x3         ← hibernateDisabled 没被置真
+#   /System/Volumes/VM/sleepimage 出现 + kern.hibernatecount > 0
 ```
 
-⚠️ 风险高于本轮：`standbydelay 120` ⇒ **每一次普通睡眠**都会在 2 分钟后走"写镜像 + RAM 断电"。
+**为什么 `0` 能行（源码级推断，非实测）**：`standby_delay == 0` ⇒ `setupHibernate` 无条件为真；且钩子的推迟分支要求 `standby_delay != 0` ⇒ `wakeCalendarSet` 保持 `false` ⇒ 两个条件同时满足。
+**旁证**：17:25:37.396 那次 `standbyTimer = 0`（日志因子 `StandbyNoDelay`），HBFX **确实**设成了 `type 5` ⇒ "无待机延迟"状态在本机可达。
+
+⚠️ **两处待验坑**：
+1. `pmset` 是否接受 `standbydelaylow 0`（若被拒绝/钳位 ⇒ 此路封闭）。
+2. 走到 `type 4/5` 后，XNU `IOPM.cpp:5743-5747` 会 `gIOHibernateMode &= ~kIOHibernateModeSleep`（**关掉 Sleep 位、强制真休眠**）⇒ 正是 09-16 硬断电那一步，**风险实打实**。
+
 测完立刻回滚：`sudo pmset -a hibernatemode 0 standby 0 standbydelaylow 10800 standbydelayhigh 86400`
 
 ## 10.5 本轮零配置改动
