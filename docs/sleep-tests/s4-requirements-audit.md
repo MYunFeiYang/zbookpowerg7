@@ -555,3 +555,80 @@ Device (RTC) {                                     // 29670
 - 回滚点：移除 boot-arg ＋ kext（一条 git revert）
 - ⚠️ 若仍失败，则"所有已知手段均已试过"，**"没解"才算真正闭环**
 - ⚠️ 前置：内存压力（swap 75 %）下 8 GiB sleepimage 写入会很慢，测试前先腾内存
+
+---
+
+## 7.11 ★ 确定度审计：哪些是实锤、哪些只是推的（2026-09-21 10:4x）
+
+> 触发：用户第 4 次就同一方向追问「**确定？还是只是猜测？**」
+> 本轮**零配置 / 零 EFI / 零固件写入**；新增 = **三条外部引用逐字复核（带 URL）** ＋ **两条本机一手证据复验** ＋ **三处自曝「此前说得比证据硬」**。
+> 目的：把 §7.1–§7.10 混在一个叙事里的三级证据拆开，**防止今后继续拔高**。
+
+### (a) 外部引用逐字复核（2026-09-21 10:4x 实测 fetch）
+
+| # | 来源 | 逐字原文 | 结论 |
+|---|---|---|---|
+| 1 | `learn.microsoft.com/en-us/windows/win32/power/system-power-states` | *"A resume from hibernation starts with a system POST that's similar to an S5 shutdown. **The OS boot manager determines that a resume from hibernation is required by detecting a valid hibernation file.** Then it directs the system to resume…"* | ✅ 逐字一致。恢复六步（POST → 解压恢复 → 设备初始化 → 驱动 → 服务 → 可登录）**完全没有固件交接** |
+| 2 | `github.com/acidanthera/HibernationFixup` README | *"By design the mach kernel encrypts hibernate sleepimage and writes the encryption key to variable "IOHibernateRTCVariables" in the system registry (PMRootDomain). **Somehow this value has to be written into RTC (or SMC) in order the boot.efi could read it.**"* | ✅ 逐字一致 ← **三条里最硬的一条** |
+| 3 | `eclecticlight.co/2018/08/21/booting-the-mac-efi-firmware` | *"**This phase** [EFI / boot.efi] **also looks for any saved hibernation state**: if the Mac is to be restored to that state, Hibernation Resume will be initiated…"* | ✅ 逐字一致 ⚠️ **但原文没说这个 state 存在哪里** |
+
+### (b) ★★ 由 (a) 得到的一处**表述收紧**（此前说过头了）
+
+| 说法 | 判定 |
+|---|---|
+| ~~"macOS 的休眠恢复**必须**由平台交接"~~ | ⚠️ **要收紧** —— 来源 3 只说 boot.efi **会去找**"saved hibernation state"，**没说它必须来自固件** |
+| ✅ 准确表述 | **macOS 的休眠密钥（`IOHibernateRTCVariables`）设计上要落在 RTC/SMC，boot.efi 才能读到**（来源 2 逐字） |
+| ✅ 而且**存在官方后备通道** | 同一篇 README 紧接着：*"**Fortunately, boot.efi can read key "IOHibernateRTCVariables" from NVRAM!**"* ⇒ **NVRAM 是被上游承认的替代通路，不是"三条路全死"** |
+
+⇒ **对 §7.9(d)「三道关」表的修正**：关 ① 应读作「设计上**期望**在 RTC/SMC 留一个交接点（NVRAM 可替代）」——
+**本机真正的死角不在"没有通道"，而在"从未走到需要交接的那一步"**（保存侧就没写出镜像，见 (c) 🟢#1）。
+⇒ **这也解释了 `HibernationFixup` 装了为什么白装**：README 明说它 **"detects entering into 'hibernate' power state"** 才动手 ⇒ **鸡生蛋** —— 它要救的正是那个从未发生的时刻。
+
+### (c) 三代证据分级（逐条，引用前照抄）
+
+**🟢 实锤 · 一手实测（本机可当场复现）**
+
+| # | 事实 | 来源 |
+|---|---|---|
+| 1 | **5 次武装休眠：`Entering Sleep` 5/5、`Entering Hibernate` 0/5、`Wake from` 0/5、`hibernatecount=0`、NVRAM 无变量** | `pmset -g log` 全量实读 |
+| 2 | 同日 9 次睡眠：武装 5 次**全失败**（3 次 005）／普通 4 次**全正常**（含连睡 12.6 h） | 同上 |
+| 3 | **S3 实测坏**：`EC OBF=1` 34/120 次（Deep Idle 为 **0**）；唤醒 **159.3 s** vs 2.4 s；PS2 恢复 **157,735 ms** vs 457 ms；1 次 panic | 同上 ＋ 内核日志 |
+| 4 | `FACP-1.aml` `FLAGS@0x70 = 0x002384A5` ⇒ **bit21 AOAC = 1**、bit20 = 0；`LPIT-1.aml` 在 | **本轮复验**（二进制直读） |
+| 5 | `SSDT-AWAC.aml` = **73 B**，`STAS`×2，**`_OSI("Darwin")` 门控在** | **本轮复验** |
+| 6 | `AppleRTC.kext` 反汇编：`APPLE_RTC_HIBERNATION_KEY_ADDR = 0x80`、LEN `0x2C` | 反汇编（前轮） |
+| 7 | DSDT `AWAC._STA`(`STAS==Zero`) 与 `RTC._STA`(`STAS==One`) 是**互补对** | DSDT 实读 |
+| 8 | R3b：`standbydelay 0` ⇒ 睡下即内核停摆、`sleepimage` 前 16 B **全 0**、**POST 005** | 实读 ＋ 用户确认 |
+| 9 | 内核日志 `type 5 → type 7 → hibernateMode 0x0` | `log show --info --debug` |
+| 10 | Windows 侧休眠文件 **full 型 6.14 GiB** | `hiberfil.sys` 现场 |
+
+**🟢 实锤 · 上游原文**：(a) 的来源 1/2/3 ＋ XNU 行号（`IOPMrootDomain.cpp:5656/5758`、`hbfx2.cpp:437/449`）＋ Dortania《Fixing System Clocks》＋ 自证（OC 有 `HibernateMode`/`HibernationSkipsPicker`，Win/Linux 无任何同类开关）。
+
+**🟡 推断 · 有支撑但不是实锤（引用时必须标）**
+
+| # | 说法 | 支撑 | 缺什么 |
+|---|---|---|---|
+| 1 | **「两套契约」这个框架本身** | 来源 1（Win 不问固件）＋ 来源 2（macOS 密钥要进 RTC）**两条 🟢 的合成** | ⚠️ **不是任何单一原文的直述** —— 是我把两条并起来讲的 |
+| 2 | 「macOS 必须**先过一段 S3 语义**转换才会失败」 | 只有**歧义引用**；但"有 `Entering Sleep`、无 `Entering Hibernate`"是 🟢 | **因果那半未坐实** ⇒ 只报实测签名，别推因果 |
+| 3 | 「关 ① 被 **AOAC** 锁在 Modern Standby」 | 关 ① 通道存在（来源 2/3 🟢）；"被 AOAC 锁"是机制推断 | 无逐行证据 |
+| 4 | 「Win/Linux 引导器**各自扫盘**」 | 通识（来源 1 只覆盖 Windows） | **Linux 侧未找上游原文** |
+| 5 | 「失败形态 = **硬断电**」 | 日志戛然而止 ＋ 无 panic ＋ 无正常关机记录 | 但 **POST 005 已是独立实锤**（BIOS 层 RTC 掉电）⇒ 本条实际够硬 |
+
+**⚪ 未知 / 已撤回（不得再引用）**
+
+| # | 内容 |
+|---|---|
+| 1 | ~~"平台按 AOAC/S0ix 语义直接切电、不执行 S4"~~ ⇒ **已撤回**（跨 OS 对照直接否掉） |
+| 2 | **Linux 本机从未实测** —— "Linux 可以休眠"是**用户一手回报**，机器上无一手证据 |
+| 3 | 「平台在 **S3 语义**下行为异常」⇒ ⚠️ **仍可疑、未被排除**（Win 是 S0→S4 直通、Linux 内核直接 `hibernate()`，**两者都不经过 S3 语义** ⇒ 跨 OS 对照覆盖不到这一条） |
+
+### (d) 一句话回答「确定吗」
+
+> **确定三件事**：① 本机**从未写出过休眠镜像**（保存侧就没过；10 条一手证据）② **S3 在本机实测坏**（EC 不回话）③ **Windows/Linux 的恢复不依赖固件**（微软原文逐字）。
+> **不确定两件事**：「两套契约」这个**框架表述**、以及「**必须**先过 S3 语义」这个**因果** —— 是推断，引用必须标。
+> **完全不知道一件事**：**Linux 在本机到底能不能休眠**（没测过）。
+
+### (e) 本轮影响
+
+- **不改变结论方向**：S4 判不通**不依赖** 🟡 那几条 —— 它只依赖 (c) 🟢#1/#2/#8（**保存侧从未成功**）。
+- **一处收紧**：§7.9(d) 关 ① 的表述改为「设计上期望在 RTC/SMC 留交接点，NVRAM 为官方后备」。
+- 零配置 / 零 EFI / 零固件写入；**默认动作仍为「不改」**。

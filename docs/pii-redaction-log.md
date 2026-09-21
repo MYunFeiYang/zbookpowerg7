@@ -41,6 +41,7 @@
 | 项 | 位置 | 理由 |
 |---|---|---|
 | `SystemSerialNumber` / `MLB` / `SystemUUID` / `ROM=333333` | `EFI/OC/config.plist` `PlatformInfo` | 为 MacBookPro16,4 **生成的伪装值**，非本机 HP 标识（黑苹果常态） |
+| 同上（**同值副本**） | `docs/backups/oldConfig-2026-09-17.plist`、`docs/backups/hbfx-ahbm-2026-09-20/config.plist.before`、`docs/backups/config.plist.pre-rollback-0921-1043` | 回滚快照，值**与 `config.plist` 逐一相同**（2026-09-21 实读核查）⇒ **不新增暴露面** |
 | `Acidanthera\thinkway` | `EFI/OC/config.plist` `Misc/Boot/PickerVariant` | OpenCore **主题变体目录名**（`Resources/Image/Acidanthera/thinkway/` 实际存在，删了会坏引导主题）；且自 `init` commit 起**已公开** ⇒ 改动=功能风险 > 隐私收益 |
 | `/Users/runner`（135 处）、`/Users/zxystd`（85 处）、`/Users/dhinak` | kext 二进制 / 头文件 / CI 产物 | **上游作者 / GitHub Actions** 的路径，**非本机** |
 

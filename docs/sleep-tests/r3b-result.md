@@ -140,6 +140,44 @@ sudo pmset -a hibernatemode 0 standby 0 standbydelaylow 10800 standbydelayhigh 8
 读回：`standbydelaylow 10800 / standbydelayhigh 86400 / standby 0 / hibernatemode 0`（= 基线）。
 ⇒ **"睡后立即断内存电"这个地雷已解除。**
 
+### 5.1 ⚠️ 补记：EFI 侧的测试残留当时**没有回滚**（09-21 10:43 清掉）
+
+**发现**：09-21 10:43 核查 EFI 时发现，R3 上机加进 `config.plist` 的两处**一直留着**：
+
+| 位置 | 残留内容 | 遗留时长 |
+|---|---|---|
+| `NVRAM/Add/7C436110-…/boot-args` | 尾部 ` hbfx-ahbm=1 -hbfxdbg` | R3（09-20 17:05）→ 09-21 10:43 |
+| `Kernel/Add` | `HibernationFixup.kext`（30 → 31 个） | 同上 |
+
+**为什么漏了**：R3b 执行单写明"**只需 2 条 `pmset`，不动 EFI、不重启**" ⇒ §5 那次回滚**只覆盖 `pmset`**；而 R3 计划 §6 的 EFI 回滚点（`docs/backups/hbfx-ahbm-2026-09-20/config.plist.before`）**从未执行**。
+
+**残留的实际影响（源码级，🟢）**：`standbydelay = 10800/86400 ≠ 0` ⇒ `hbfx2.cpp:437` 在 `sleepPhase > 0` 时调用 `explicitlyCallSetMaintenanceWakeCalendar()` ⇒ **每次睡眠都写一次 RTC 闹钟**（`RTCAlarmScheduled` 因子），随后 `:449` 把 `setupHibernate` 置假、撤回改写。
+
+- 功能上**仍是 Deep Idle**（无功能损失）—— 这正是它不易被察觉的原因；
+- 但**多了一条零收益的 RTC 写路径** —— 而 RTC 写正是 POST 005 的来源（铁律"不许 `pmset schedule wake`"就是这个原因）；
+- **尾部风险**：一旦撤回链条某次失手（phase 1 拿到 `type 5` 未撤回）⇒ 命中 `IOPM.cpp:5743` 关 Sleep 位 ⇒ **09-16 / R3b 硬断电档**。
+
+**已清理**（09-21 10:43，改的是工作区真源）：
+
+```bash
+cp docs/backups/hbfx-ahbm-2026-09-20/config.plist.before EFI/oc/config.plist
+```
+
+| 验证项 | 结果 |
+|---|---|
+| 逐区块键级核对 | **只有这两处差异** —— `ACPI`/`Booter`/`DeviceProperties`/`Kernel/Block,Emulate,Force,Patch,Quirks`/`Misc`/`NVRAM`/`PlatformInfo`/`UEFI` **全部一致** ⇒ 精确回滚（`Kernel/Add` 索引整体位移是假差异，按 `BundlePath` 对齐后顺序也一致） |
+| `plutil -lint` | **OK** |
+| `boot-args` | 已无 `hbfx-*` ✅ |
+| `Kernel/Add` | 回到 **30 个** ✅ |
+| RTC 防护 / OTA 四件套 | `RTCMemoryFixup` ✅ `RestrictEvents` ✅ `Lilu` ✅ **均保留** |
+| `HibernationFixup.kext` 文件 | **保留**在 `EFI/oc/Kexts/`（未删）⇒ 要复现只需加回配置条目 |
+
+- ⚠️ **生效条件**：FreeFileSync 同步到 ESP（手动点"开始"）＋ **重启一次**
+- 备份（回滚前的态）：`docs/backups/config.plist.pre-rollback-0921-1043`
+- ⚠️ **路径大小写坑（新）**：APFS 大小写不敏感 ⇒ `EFI/oc/` 与 `EFI/OC/` 是**同一个目录**，但 **git 索引里是大写 `EFI/OC/`** ⇒ `git diff EFI/oc/config.plist` 会**静默返回空**（不报错、看着像"没改动"），必须写 `EFI/OC/config.plist`。
+
+**教训（已并入 `MEMORY.md` 铁律）**：**危险实验的回滚必须两侧都做 —— `pmset` ＋ EFI（`boot-args` / `kext`）**；只回一边 = 留一条无人看管的风险路径，而且它**不影响功能**、极难在日常使用中察觉。
+
 ---
 
 ## 6. 对 S4 这件事的净影响
