@@ -1,0 +1,334 @@
+=== R3b 事后取证 2026-09-21 09:57:34  uid=0  BASE=/Volumes/Common 1/workplace/zbookpowerg7 ===
+
+--- [1] 当前系统 ---
+kern.boottime: { sec = 1789951972, usec = 193275 } Mon Sep 21 08:52:52 2026
+kern.hibernatemode: 0
+kern.hibernatecount: 0
+ 9:57  up  1:05, 2 users, load averages: 10.04 11.81 11.56
+
+--- [2] sleepimage 真实元数据（判据⑤）---
+/var/vm/sleepimage size=1073741824 mtime=2019-01-01 08:01:05
+-rw------T  1 root  wheel  1073741824 Jan  1  2019 /var/vm/sleepimage
+
+--- [3] 本轮启动是不是「从休眠恢复」？（找 IOHibernateState / Hibernate）---
+(若上面为空 ⇒ 本段无休眠恢复痕迹)
+
+--- [4] 09-20 19:01~19:12 内核轨迹（R3b 那次睡眠）---
+2026-09-20 19:08:23.036833+0800 0x470      Default     0x0                  0      0    kernel: PMRD: assertionsUser 0x0->0x1
+2026-09-20 19:08:23.705666+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 5 args 0xf55be0fda0d7e581 0x0
+2026-09-20 19:08:23.708364+0800 0x46c      Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 19:08:23.708386+0800 0x46c      Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToDim = 15
+2026-09-20 19:08:23.761937+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 5 args 0xf55be0fda0d7e581 0x0
+2026-09-20 19:08:23.764020+0800 0x46c      Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 19:08:23.764040+0800 0x46c      Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToDim = 15
+2026-09-20 19:08:23.770570+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 5 args 0xf55be0fda0d7e581 0x0
+2026-09-20 19:08:23.772547+0800 0x46c      Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 19:08:23.772567+0800 0x46c      Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToDim = 15
+2026-09-20 19:08:23.779854+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 5 args 0xf55be0fda0d7e581 0x0
+2026-09-20 19:08:23.781595+0800 0x46c      Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 19:08:23.781618+0800 0x46c      Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToDim = 15
+2026-09-20 19:08:23.788315+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 5 args 0xf55be0fda0d7e581 0x0
+2026-09-20 19:08:23.790477+0800 0x46c      Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 19:08:23.790512+0800 0x46c      Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToDim = 15
+2026-09-20 19:08:23.797542+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 5 args 0xf55be0fda0d7e581 0x0
+2026-09-20 19:08:23.799727+0800 0x46c      Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 19:08:23.799748+0800 0x46c      Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToDim = 15
+2026-09-20 19:08:24.840703+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 7 args 0xf55be1026dbb00d1 0x0
+2026-09-20 19:08:24.840716+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x302) tag 0x3b0064
+2026-09-20 19:08:26.268323+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2026-09-20 19:08:26.268393+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: delayChildNotification for 0x100000309
+2026-09-20 19:08:26.268401+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: AppleIntelFramebuffer tag flags 200
+2026-09-20 19:08:26.268444+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: delayChildNotification for 0x100000315
+2026-09-20 19:08:26.268447+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: AppleHDADriver tag flags 400
+2026-09-20 19:08:26.268469+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: delayChildNotification for 0x100000309
+2026-09-20 19:08:26.268472+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: AppleIntelFramebuffer tag flags 200
+2026-09-20 19:08:26.268496+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: delayChildNotification for 0x100000309
+2026-09-20 19:08:26.268502+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: AppleIntelFramebuffer tag flags 200
+2026-09-20 19:08:26.268575+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 7 args 0xf55be1026dbb82b1 0x0
+2026-09-20 19:08:26.268582+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x302) tag 0x3c0064
+2026-09-20 19:08:26.268602+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2026-09-20 19:08:26.268918+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 5 args 0xf55be0fda0d7e581 0x0
+2026-09-20 19:08:26.270903+0800 0x316      Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 19:08:26.270920+0800 0x316      Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToDim = 15
+2026-09-20 19:08:26.276951+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 5 args 0xf55be0fda0d7e581 0x0
+2026-09-20 19:08:26.278712+0800 0x316      Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 19:08:26.278723+0800 0x316      Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToDim = 15
+2026-09-20 19:08:29.245604+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 3 args 0x0 0x0
+2026-09-20 19:08:29.245720+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: SleepWake debug buffer size:0x28000 spindump offset:0x9c
+2026-09-20 19:08:29.245748+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: No sleep wake failure string
+2026-09-20 19:08:29.245750+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: evaluatePolicy( 4, 0x0 )
+2026-09-20 19:08:29.245752+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: changePowerStateWithTagToPriv(ON_STATE, 3d0008)
+2026-09-20 19:08:29.245784+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x3d0008
+2026-09-20 19:08:29.245789+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2026-09-20 19:08:30.068213+0800 0x471      Default     0x0                  0      0    kernel: PMRD: assertionsUser 0x1->0x0
+2026-09-20 19:08:35.235832+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x3e0064
+2026-09-20 19:08:35.235838+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2026-09-20 19:08:35.236132+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x3f0064
+2026-09-20 19:08:35.236139+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2026-09-20 19:08:35.370239+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x400064
+2026-09-20 19:08:35.370245+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2026-09-20 19:08:35.370540+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x410064
+2026-09-20 19:08:35.370546+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2026-09-20 19:08:36.386591+0800 0x46c      Default     0x0                  0      0    kernel: PMRD: assertionsUser 0x0->0x40
+2026-09-20 19:08:36.386646+0800 0x46c      Default     0x0                  0      0    kernel: PMRD: wrangler->setIgnoreIdleTimer(1)
+2026-09-20 19:08:41.838883+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x420064
+2026-09-20 19:08:41.838892+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2026-09-20 19:08:43.110092+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: Desktop mode 1
+2026-09-20 19:08:43.110102+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: clamshell closed 0, disabled 1/0, desktopMode 1, ac 1
+2026-09-20 19:08:43.110106+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: clamshell closed 0, disabled 1/0, desktopMode 1, ac 1
+2026-09-20 19:08:43.110199+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: Clamshell enabled
+2026-09-20 19:08:43.110202+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: clamshell closed 0, disabled 0/0, desktopMode 1, ac 1
+2026-09-20 19:08:43.110214+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: clamshell closed 0, disabled 0/0, desktopMode 1, ac 1
+2026-09-20 19:08:54.035629+0800 0x88a      Default     0x0                  0      0    kernel: PMRD: assertionsUser 0x40->0x41
+2026-09-20 19:08:54.040447+0800 0x88a      Default     0x0                  0      0    kernel: PMRD: assertionsUser 0x41->0x40
+2026-09-20 19:09:05.365681+0800 0x88a      Default     0x0                  0      0    kernel: PMRD: assertionsUser 0x40->0x41
+2026-09-20 19:09:10.365451+0800 0x88a      Default     0x0                  0      0    kernel: PMRD: assertionsUser 0x41->0x40
+2026-09-20 19:10:23.339486+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x430064
+2026-09-20 19:10:23.339499+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2026-09-20 19:10:23.339708+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x440064
+2026-09-20 19:10:23.339726+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2026-09-20 19:10:37.372543+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x450064
+2026-09-20 19:10:37.372550+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2026-09-20 19:11:22.581402+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 14 args 0x0 0x0
+2026-09-20 19:11:22.581418+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: wrangler RootDomainPower (ps 4, 0->1)
+2026-09-20 19:11:22.581422+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: evaluatePolicy( 0, 0x0 )
+2026-09-20 19:11:46.190724+0800 0x2717     Default     0x0                  0      0    kernel: PMRD: assertionsUser 0x40->0x41
+2026-09-20 19:11:46.323204+0800 0x4f8d     Default     0x0                  0      0    kernel: PMRD: assertionsUser 0x41->0x40
+2026-09-20 19:12:22.581625+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 14 args 0x0 0x0
+2026-09-20 19:12:22.581640+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: wrangler RootDomainPower (ps 4, 0->1)
+2026-09-20 19:12:22.581643+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: evaluatePolicy( 0, 0x0 )
+2026-09-20 19:13:22.975627+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 14 args 0x0 0x0
+2026-09-20 19:13:22.975641+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: wrangler RootDomainPower (ps 4, 0->1)
+2026-09-20 19:13:22.975644+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: evaluatePolicy( 0, 0x0 )
+2026-09-20 19:14:18.757331+0800 0x6ae4     Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 19:14:22.975863+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 14 args 0x0 0x0
+2026-09-20 19:14:22.975910+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: wrangler RootDomainPower (ps 4, 0->1)
+2026-09-20 19:14:22.975919+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: evaluatePolicy( 0, 0x0 )
+2026-09-20 19:14:29.476557+0800 0x806      Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 19:14:30.477660+0800 0x6a3f     Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 19:14:40.354497+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 14 args 0x0 0x0
+2026-09-20 19:14:40.354511+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: wrangler RootDomainPower (ps 4, 0->1)
+2026-09-20 19:14:40.354516+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: evaluatePolicy( 0, 0x0 )
+2026-09-20 19:14:41.608642+0800 0x6ae4     Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 19:14:43.420385+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 14 args 0x0 0x0
+2026-09-20 19:14:43.420397+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: wrangler RootDomainPower (ps 4, 0->1)
+2026-09-20 19:14:43.420401+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: evaluatePolicy( 0, 0x0 )
+2026-09-20 19:14:44.813486+0800 0x6ae4     Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 19:14:45.762219+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 14 args 0x0 0x0
+2026-09-20 19:14:45.762238+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: wrangler RootDomainPower (ps 4, 0->1)
+2026-09-20 19:14:45.762241+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: evaluatePolicy( 0, 0x0 )
+2026-09-20 19:14:46.362822+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 14 args 0x0 0x0
+2026-09-20 19:14:46.362833+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: wrangler RootDomainPower (ps 4, 0->1)
+2026-09-20 19:14:46.362836+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: evaluatePolicy( 0, 0x0 )
+2026-09-20 19:14:46.391540+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 14 args 0x0 0x0
+2026-09-20 19:14:46.391555+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: wrangler RootDomainPower (ps 4, 0->1)
+2026-09-20 19:14:46.391558+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: evaluatePolicy( 0, 0x0 )
+2026-09-20 19:14:46.654498+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 14 args 0x0 0x0
+2026-09-20 19:14:46.654512+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: wrangler RootDomainPower (ps 4, 0->1)
+2026-09-20 19:14:46.654516+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: evaluatePolicy( 0, 0x0 )
+2026-09-20 19:14:46.675276+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 4 args 0xf55be0fda0d7da91 0x0
+2026-09-20 19:14:46.853593+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 14 args 0x0 0x0
+2026-09-20 19:14:46.853613+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: wrangler RootDomainPower (ps 4, 0->1)
+2026-09-20 19:14:46.853617+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: evaluatePolicy( 0, 0x0 )
+2026-09-20 19:14:46.857120+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 14 args 0x0 0x0
+2026-09-20 19:14:46.857137+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: wrangler RootDomainPower (ps 4, 0->1)
+2026-09-20 19:14:46.857141+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: evaluatePolicy( 0, 0x0 )
+2026-09-20 19:14:46.858562+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 14 args 0x0 0x0
+
+--- [5] 09-20 21:03~21:12 内核轨迹（第二次睡眠，standbydelay 仍为 0）---
+2026-09-20 21:03:02.520351+0800 0x34ac4    Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 21:03:03.521923+0800 0x330de    Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 21:03:35.360871+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: Clamshell closed
+2026-09-20 21:03:35.360892+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: clamshell closed 1, disabled 0/0, desktopMode 1, ac 1
+2026-09-20 21:03:35.360897+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: clamshell closed 1, disabled 0/0, desktopMode 1, ac 1
+2026-09-20 21:03:35.360992+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: clamshell closed 1, disabled 0/0, desktopMode 1, ac 1
+2026-09-20 21:03:35.369190+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: evaluatePolicy( 3, 0x67 )
+2026-09-20 21:03:35.369215+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: Requested wrangler idle
+2026-09-20 21:03:35.369217+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: changePowerStateWithOverrideTo(SLEEP_STATE, 460067)
+2026-09-20 21:03:35.369225+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: wrangler DevicePowerState (ps 4, 4->1)
+2026-09-20 21:03:35.369229+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: evaluatePolicy( 11, 0x0 )
+2026-09-20 21:03:35.369442+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: user inactive
+2026-09-20 21:03:35.369446+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: evaluatePolicy( 0, 0x0 )
+2026-09-20 21:03:35.369614+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: wrangler kIOMessageDeviceWillPowerOff ps 1
+2026-09-20 21:03:35.369620+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: evaluatePolicy( 0, 0x0 )
+2026-09-20 21:03:35.369673+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->SLEEP_STATE, f, 0xc2) tag 0x460067
+2026-09-20 21:03:35.369679+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: changePowerStateWithTagToPriv(ON_STATE, 470005)
+2026-09-20 21:03:35.369685+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: trace point 0x31
+2026-09-20 21:03:35.389985+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: sleep reason Software Sleep
+2026-09-20 21:03:35.389998+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: === START (ON_STATE->ON_STATE, f->9, 0x5c2) gen 1, msg 3, tag 460067
+2026-09-20 21:03:35.390004+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: askChangeDown ON_STATE->ON_STATE
+2026-09-20 21:03:35.390396+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: trace point 0x31 msgType 0xe0000270 detail 0x00007530
+2026-09-20 21:03:35.390470+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: Removed IODisplayWrangler from idle sleep preventers list (Total 0)
+2026-09-20 21:03:35.390475+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: changePowerStateWithTagTo(SLEEP_STATE, 480004)
+2026-09-20 21:03:35.390484+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: changePowerStateWithTagToPriv(ON_STATE, 490008)
+2026-09-20 21:03:35.391542+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 12 args 0x9e2dd00db46e03c9 0x0
+2026-09-20 21:03:35.391553+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: SleepWake UUID queued: 7D7178A1-5C37-47F1-941E-5287E09C3682
+2026-09-20 21:03:35.392321+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: askChangeDownDone(0x5c2, 0) type 3, cap f->9
+2026-09-20 21:03:35.392332+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: tellChangeDown ON_STATE->ON_STATE
+2026-09-20 21:03:35.392334+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: tellChangeDown::userActivityAtSleep 0
+2026-09-20 21:03:35.393453+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: kIOMessageSystemWillSleep[120] to pid 115, powerd
+2026-09-20 21:03:35.393467+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: kIOMessageSystemWillSleep[121] to pid 144, apsd
+2026-09-20 21:03:35.393480+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: kIOMessageSystemWillSleep[122] to pid 197, airportd
+2026-09-20 21:03:35.393777+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: kIOMessageSystemWillSleep[123] to com.apple.plugin.IOgPTPPlugin
+2026-09-20 21:03:35.394053+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: kIOMessageSystemWillSleep[124] to pid 355, WirelessRadioMan
+2026-09-20 21:03:35.394065+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: kIOMessageSystemWillSleep[125] to pid 170, corebrightnessd
+2026-09-20 21:03:35.394073+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: kIOMessageSystemWillSleep[126] to pid 159, PerfPowerService
+2026-09-20 21:03:35.394079+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: kIOMessageSystemWillSleep[127] to pid 176, loginwindow
+2026-09-20 21:03:35.394084+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: kIOMessageSystemWillSleep[128] to pid 176, loginwindow
+2026-09-20 21:03:35.394090+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: kIOMessageSystemWillSleep[129] to pid 630, sharingd
+2026-09-20 21:03:35.394096+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: kIOMessageSystemWillSleep[130] to pid 613, ContinuityCaptur
+2026-09-20 21:03:35.394101+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: kIOMessageSystemWillSleep[131] to pid 794, milod
+2026-09-20 21:03:35.394109+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: kIOMessageSystemWillSleep[132] to pid 2924, Clamshell
+2026-09-20 21:03:35.394439+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: trace point 0x31 msgType 0xe0000280 detail 0x00007530
+2026-09-20 21:03:35.399106+0800 0x351a2    Default     0x0                  0      0    kernel: PMRD: assertionsUser 0x40->0x41
+2026-09-20 21:03:35.464908+0800 0x35d67    Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 21:03:39.939813+0800 0x35828    Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 21:03:41.749044+0800 0x35828    Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 21:03:41.857931+0800 0x351a2    Default     0x0                  0      0    kernel: PMRD: setAggressiveness(0) kPMMinutesToSleep = 0
+2026-09-20 21:03:52.346207+0800 0x351a2    Default     0x0                  0      0    kernel: PMRD: assertionsUser 0x41->0x40
+2019-01-01 08:00:44.152719+0800 0x71       Default     0x0                  0      0    kernel: PMRD: PMTraceWorker 0x14400df8fbb619d7
+2019-01-01 08:00:44.152812+0800 0x71       Default     0x0                  0      0    kernel: PMRD: changePowerStateWithTagToPriv(ON_STATE, 10001)
+2019-01-01 08:00:44.152856+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 7 args 0x14400dea954c6117 0x0
+2019-01-01 08:00:44.152858+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 7 args 0x14400dea954c6ed7 0x0
+2019-01-01 08:00:44.152927+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (OFF_STATE->ON_STATE, f, 0x2) tag 0x20064
+2019-01-01 08:00:44.152935+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: sysPowerDownHandler message kIOMessageSystemCapabilityChange
+2019-01-01 08:00:44.152936+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: sysPowerDownHandler cap f -> f (flags 1)
+2019-01-01 08:00:44.152965+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: sysPowerDownHandler message kIOMessageSystemCapabilityChange
+2019-01-01 08:00:44.152966+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: sysPowerDownHandler cap f -> f (flags 2)
+2019-01-01 08:00:44.152968+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: tellChangeUp OFF_STATE->ON_STATE
+2019-01-01 08:00:44.152972+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: OFF_STATE->ON_STATE
+2019-01-01 08:00:44.152974+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x10001
+2019-01-01 08:00:44.152976+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.152977+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x302) tag 0x30064
+2019-01-01 08:00:44.152979+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.152980+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x302) tag 0x40064
+2019-01-01 08:00:44.152982+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.268030+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 7 args 0x14400dea954c66b7 0x0
+2019-01-01 08:00:44.268035+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x302) tag 0x50064
+2019-01-01 08:00:44.268040+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.271610+0800 0x139      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x60064
+2019-01-01 08:00:44.271613+0800 0x139      Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.271636+0800 0x139      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x70064
+2019-01-01 08:00:44.271638+0800 0x139      Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.338982+0800 0x143      Default     0x0                  0      0    kernel: PMRD: setSleepSupported(1)
+2019-01-01 08:00:44.338995+0800 0x139      Default     0x0                  0      0    kernel: PMRD: power event 7 args 0x14400dea954c6e37 0x0
+2019-01-01 08:00:44.339001+0800 0x44e      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x302) tag 0x80064
+2019-01-01 08:00:44.339008+0800 0x44e      Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.561325+0800 0x6f       Default     0x0                  0      0    kernel: PMRD: PMTrace found PCI host bridge PCI0->AppleACPIPCI
+2019-01-01 08:00:44.561332+0800 0x6f       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x90064
+2019-01-01 08:00:44.561334+0800 0x6f       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.561353+0800 0x6f       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0xa0064
+2019-01-01 08:00:44.561354+0800 0x6f       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.561357+0800 0x6f       Default     0x0                  0      0    kernel: PMRD: Clamshell opened
+2019-01-01 08:00:44.561360+0800 0x6f       Default     0x0                  0      0    kernel: PMRD: clamshell closed 0, disabled 1/0, desktopMode 0, ac 1
+2019-01-01 08:00:44.561362+0800 0x6f       Default     0x0                  0      0    kernel: PMRD: clamshell closed 0, disabled 1/0, desktopMode 0, ac 1
+2019-01-01 08:00:44.561365+0800 0x6f       Default     0x0                  0      0    kernel: PMRD: clamshell tickled 0 lastSleepReason 0
+2019-01-01 08:00:44.561978+0800 0x30a      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0xb0064
+2019-01-01 08:00:44.561980+0800 0x30a      Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.562025+0800 0x44e      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0xc0064
+2019-01-01 08:00:44.562028+0800 0x44e      Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.562271+0800 0x44e      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0xd0064
+2019-01-01 08:00:44.562274+0800 0x44e      Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.562329+0800 0x30a      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0xe0064
+2019-01-01 08:00:44.562332+0800 0x30a      Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.562828+0800 0x2f9      Default     0x0                  0      0    kernel: PMRD: Clamshell opened
+2019-01-01 08:00:44.562858+0800 0x2f9      Default     0x0                  0      0    kernel: PMRD: clamshell closed 0, disabled 1/0, desktopMode 0, ac 1
+2019-01-01 08:00:44.562882+0800 0x2f9      Default     0x0                  0      0    kernel: PMRD: clamshell closed 0, disabled 1/0, desktopMode 0, ac 1
+2019-01-01 08:00:44.563024+0800 0x2d2      Default     0x0                  0      0    kernel: PMRD: clamshell tickled 0 lastSleepReason 0
+2019-01-01 08:00:44.661441+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0xf0064
+2019-01-01 08:00:44.661444+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.661468+0800 0x38f      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x100064
+2019-01-01 08:00:44.661471+0800 0x38f      Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.662948+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x110064
+2019-01-01 08:00:44.662949+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.662966+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x120064
+2019-01-01 08:00:44.662967+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.664823+0800 0x44e      Default     0x0                  0      0    kernel: PMRD: power event 7 args 0x14400dea954c7297 0x0
+2019-01-01 08:00:44.664999+0800 0x44e      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x302) tag 0x130064
+2019-01-01 08:00:44.665010+0800 0x44e      Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.668737+0800 0x352      Default     0x0                  0      0    kernel: PMRD: power event 7 args 0x14400dea954c5857 0x0
+2019-01-01 08:00:44.668907+0800 0x352      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x302) tag 0x140064
+2019-01-01 08:00:44.668915+0800 0x352      Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.669155+0800 0x352      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x150064
+2019-01-01 08:00:44.669157+0800 0x352      Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.669354+0800 0x352      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x160064
+2019-01-01 08:00:44.669356+0800 0x352      Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.671070+0800 0x169      Default     0x0                  0      0    kernel: PMRD: power event 7 args 0x14400dea954c0577 0x0
+2019-01-01 08:00:44.671075+0800 0x169      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x302) tag 0x170064
+2019-01-01 08:00:44.671082+0800 0x169      Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+
+--- [6] 电源事件（09-20 19:00 ~ 09-21 09:00）---
+
+--- [7] 09-20 19:00 之后 PSH/BIOS 侧异常 ---
+2026-09-18 16:57:37 +0800 Assertions          	PID 629(cloudd) Created SystemIsActive "NSURLSessionTask 005A7BCE-FFE4-449E-91BD-B627E45E74A3" 00:00:00  id:0x0xc0000824e [System: PrevIdle DeclUser BGTask SysAct kDisp]          
+2026-09-18 16:57:42 +0800 Assertions          	PID 629(cloudd) Released SystemIsActive "NSURLSessionTask 005A7BCE-FFE4-449E-91BD-B627E45E74A3" 00:00:04  id:0x0xc0000824e [System: PrevIdle DeclUser BGTask SysAct kDisp]          
+2026-09-18 18:04:19 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-20 12:01:49 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-20 12:04:55 +0800 Assertions          	PID 660(cloudd) Created SystemIsActive "NSURLSessionTask 1F56A67B-5B44-4005-BE3D-1D88442A735A" 00:00:00  id:0x0xc000085f5 [System: PrevIdle DeclUser BGTask SysAct kDisp]          
+2026-09-20 12:04:59 +0800 Assertions          	PID 660(cloudd) Released SystemIsActive "NSURLSessionTask 1F56A67B-5B44-4005-BE3D-1D88442A735A" 00:00:03  id:0x0xc000085f5 [System: PrevIdle DeclUser BGTask kDisp]          
+2026-09-20 12:56:16 +0800 Assertions          	PID 1898(SoftwareUpdateNotificationManag) Summary PreventUserIdleSystemSleep "com.apple.SoftwareUpdateNotificationManager.RestartCountdownOperationIdleSleep" 00:08:53  id:0x0x10000909c [System: PrevIdle PrevDisp PrevSleep DeclUser SysAct kCPU kDisp]          
+2026-09-20 13:11:16 +0800 Assertions          	PID 1898(SoftwareUpdateNotificationManag) Summary PreventUserIdleSystemSleep "com.apple.SoftwareUpdateNotificationManager.RestartCountdownOperationIdleSleep" 00:23:53  id:0x0x10000909c [System: PrevIdle PrevDisp PrevSleep SysAct kCPU kDisp]          
+2026-09-20 13:26:16 +0800 Assertions          	PID 1898(SoftwareUpdateNotificationManag) Summary PreventUserIdleSystemSleep "com.apple.SoftwareUpdateNotificationManager.RestartCountdownOperationIdleSleep" 00:38:53  id:0x0x10000909c [System: PrevIdle PrevDisp PrevSleep SysAct kCPU kDisp]          
+2026-09-20 13:41:16 +0800 Assertions          	PID 1898(SoftwareUpdateNotificationManag) Summary PreventUserIdleSystemSleep "com.apple.SoftwareUpdateNotificationManager.RestartCountdownOperationIdleSleep" 00:53:53  id:0x0x10000909c [System: PrevIdle PrevDisp PrevSleep SysAct kCPU kDisp]          
+2026-09-20 13:56:16 +0800 Assertions          	PID 1898(SoftwareUpdateNotificationManag) Summary PreventUserIdleSystemSleep "com.apple.SoftwareUpdateNotificationManager.RestartCountdownOperationIdleSleep" 01:08:53  id:0x0x10000909c [System: PrevIdle PrevDisp PrevSleep SysAct kCPU kDisp]          
+2026-09-20 14:02:23 +0800 Assertions          	PID 1898(SoftwareUpdateNotificationManag) TimedOut PreventUserIdleSystemSleep "com.apple.SoftwareUpdateNotificationManager.RestartCountdownOperationIdleSleep" 01:15:00  id:0x0x10000909c [System: PrevIdle DeclUser SysAct IntPrevDisp kDisp]          
+2026-09-20 16:53:35 +0800 Assertions          	PID 185(coreaudiod) Released PreventUserIdleDisplaySleep "com.apple.audio.context100050.preventuseridledisplaysleep" 00:16:40  id:0x0x5000094d9 [System: PrevIdle DeclUser kDisp]          
+2026-09-20 16:53:35 +0800 Assertions          	PID 185(coreaudiod) Released PreventUserIdleSystemSleep "com.apple.audio.context100050.preventuseridlesleep" 00:16:40  id:0x0x1000094d8 [System: PrevIdle DeclUser kDisp]          
+2026-09-20 17:19:21 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-20 17:19:41 +0800 Assertions          	PID 173(WindowServer) Created UserIsActive "com.apple.iohideventsystem.queue.tickle serviceID:100000502 service:AppleUserHIDEventService product:Keyboard eventType:3" 00:00:00  id:0x0x9000080d4 [System: DeclUser BGTask kDisp]          
+2026-09-20 17:25:07 +0800 Assertions          	PID 173(WindowServer) Summary UserIsActive "com.apple.iohideventsystem.queue.tickle serviceID:100000502 service:AppleUserHIDEventService product:Keyboard eventType:3" 00:00:32  id:0x0x9000080d4 [System: PrevIdle DeclUser BGTask kDisp]          
+2026-09-20 17:34:18 +0800 Assertions          	PID 173(WindowServer) Summary UserIsActive "com.apple.iohideventsystem.queue.tickle serviceID:100000502 service:AppleUserHIDEventService product:Keyboard eventType:3" 00:00:00  id:0x0x9000080d4 [System: PrevIdle DeclUser kDisp]          
+2026-09-20 19:02:26 +0800 Assertions          	PID 173(WindowServer) Summary UserIsActive "com.apple.iohideventsystem.queue.tickle serviceID:100000502 service:AppleUserHIDEventService product:Keyboard eventType:3" 00:00:00  id:0x0x9000080d4 [System: PrevIdle DeclUser kDisp]          
+2026-09-20 19:15:39 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-20 19:23:20 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-20 19:23:54 +0800 Assertions          	PID 173(WindowServer) Created UserIsActive "com.apple.iohideventsystem.queue.tickle serviceID:100000508 service:AppleUserHIDEventService product:Keyboard eventType:3" 00:00:00  id:0x0x9000080cf [System: DeclUser BGTask kDisp]          
+2026-09-20 19:34:19 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-20 19:59:38 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-20 20:04:42 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-20 20:05:06 +0800 Assertions          	PID 173(WindowServer) Created UserIsActive "com.apple.iohideventsystem.queue.tickle serviceID:100000502 service:AppleUserHIDEventService product:Keyboard eventType:3" 00:00:00  id:0x0x9000080cf [System: PrevIdle DeclUser BGTask kDisp]          
+2026-09-20 20:13:17 +0800 Assertions          	PID 622(cloudd) Created SystemIsActive "NSURLSessionTask F3D807F8-12FE-400B-BDA8-973F005FE6CF" 00:00:00  id:0x0xc00008dd7 [System: PrevIdle DeclUser BGTask SysAct kDisp]          
+2026-09-20 20:13:21 +0800 Assertions          	PID 622(cloudd) Released SystemIsActive "NSURLSessionTask F3D807F8-12FE-400B-BDA8-973F005FE6CF" 00:00:03  id:0x0xc00008dd7 [System: PrevIdle DeclUser BGTask SysAct kDisp]          
+2026-09-21 08:55:53 +0800 Assertions          	PID 768(cloudd) Created SystemIsActive "NSURLSessionTask 6924F38E-90AB-4457-A6DA-F9BF891B005F" 00:00:00  id:0x0xc000083cd [System: PrevIdle DeclUser BGTask SysAct kDisp]          
+2026-09-21 08:55:57 +0800 Assertions          	PID 768(cloudd) Released SystemIsActive "NSURLSessionTask 6924F38E-90AB-4457-A6DA-F9BF891B005F" 00:00:03  id:0x0xc000083cd [System: PrevIdle DeclUser BGTask kDisp]          
+
+--- [8] sleepimage 里是否有有效镜像（前 16 字节魔数）---
+00000000: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+（Hibernate image 头部通常是 'hibernate image' 或全 0 占位）
+
+--- [9] NVRAM 休眠变量 ---
+(无)
+
+--- [10] ioreg IOPMrootDomain ---
+  |   "IOHibernateState" = <00000000>
+  |   "Standby Enabled" = Yes
+  |   "Standby Delay" = 0
+  |   "Hibernate File" = "/var/vm/sleepimage"
+  |   "Hibernate Mode" = 3
+  |   "DestroyFVKeyOnStandby" = No
+  |   "SystemPowerProfileOverrideDict" = {"Battery Power"={"Hibernate Mode"=3,"High Standby Delay"=86400,"DarkWakeBackgroundTasks"=No,"Standby Delay"=10800,"System Sleep Timer"=1,"Standby Enabled"=1,"Standby Battery Threshold"=50},"UPS Power"={"Hibernate Mode"=3,"High Standby Delay"=86400,"DarkWakeBackgroundTasks"=No,"Standby Delay"=10800,"System Sleep Timer"=1,"Standby Enabled"=1,"Standby Battery Threshold"=50},"AC Power"={"Hibernate Mode"=3,"High Standby Delay"=86400,"DarkWakeBackgroundTasks"=Yes,"Standby Delay"=10800,"System Sleep Timer"=1,"Standby Enabled"=1,"Standby Battery Threshold"=50}}
+  |   "Hibernate File Min" = 1073741824
+
+--- [11] 崩溃报告（09-20 19:00 起）---
+total 5456
+drwxrwx--- 19 root _analyticsusers     608 2026-09-21 09:55 .
+-rw-rw----  1 root _analyticsusers  222295 2026-09-21 09:55 WindowServer_2026-09-21-095538_TMacBook-Pro.cpu_resource.diag
+-rw-rw----  1 root _analyticsusers    8187 2026-09-21 08:53 CSMonitor-2026-09-21-085336.ips
+-rw-rw----  1 root _analyticsusers    1086 2026-09-21 08:53 Analytics-Census-2026-09-21-085329.core_analytics
+-rw-rw----  1 root _analyticsusers   80500 2026-09-20 20:39 apfsd_2026-09-20-203943_TMacBook-Pro.cpu_resource.diag
+-rw-rw----  1 root _analyticsusers  206171 2026-09-20 20:12 WindowServer_2026-09-20-201147_TMacBook-Pro.cpu_resource.diag
+-rw-rw----  1 root _analyticsusers   61135 2026-09-20 20:06 snac_agent-2026-09-20-200619.ips
+drwxr-xr-x 12 root wheel               384 2026-09-20 19:59 ..
+-rw-rw----  1 root _analyticsusers 1068235 2026-09-20 19:58 shutdown_stall_2026-09-20-195857_TMacBook-Pro.shutdownStall
+-rw-rw----  1 root _analyticsusers  162714 2026-09-20 19:56 system_installd_2026-09-20-195546_TMacBook-Pro.diag
+-rw-rw----  1 root _analyticsusers   10139 2026-09-20 19:51 Microsoft Edge_2026-09-20-195138_TMacBook-Pro.diag
+-rw-rw----  1 root _analyticsusers   55630 2026-09-20 19:41 mds_stores_2026-09-20-194144_TMacBook-Pro.diag
+-rw-rw----  1 root _analyticsusers  244972 2026-09-20 19:35 JetsamEvent-2026-09-20-193512.ips
+-rw-rw----  1 root _analyticsusers    1104 2026-09-20 19:34 Analytics-Census-2026-09-20-193422.core_analytics
+-rw-rw----  1 root _analyticsusers 1096097 2026-09-20 19:28 shutdown_stall_2026-09-20-192820_TMacBook-Pro.shutdownStall
+-rw-rw----  1 root _analyticsusers 1087493 2026-09-20 19:22 shutdown_stall_2026-09-20-192213_TMacBook-Pro.shutdownStall
+-rw-rw----  1 root _analyticsusers 1108931 2026-09-20 19:14 shutdown_stall_2026-09-20-191459_TMacBook-Pro.shutdownStall
+-rw-rw----  1 root _analyticsusers    8187 2026-09-20 19:09 CSMonitor-2026-09-20-190945.ips
+drwxrwx---  2 root _analyticsusers      64 2019-01-01 08:01 DiagnosticLogs
+
+=== 取证结束 ===
+结果文件: /Volumes/Common 1/workplace/zbookpowerg7/docs/sleep-tests/r3b-artifacts/verdict-0921-095734.txt

@@ -1,0 +1,91 @@
+=== R3b 取证 v2 2026-09-21 10:00:45 uid=0 ===
+
+--- [A] 看门狗冷启动回退路径的落点 ---
+/var/log/watch.log : 不存在
+/var/log/MARKER : 不存在
+/var/log/wb-r3b-watch.out : 存在 size=0 mtime=2026-09-20 19:01:08
+/var/log/wb-r3b-watch.err : 存在 size=0 mtime=2026-09-20 19:01:08
+--- /var/log 下 r3b/watch 相关 ---
+-rw-r--r--  1 root            wheel                 0 2026-09-20 19:01 wb-r3b-watch.err
+-rw-r--r--  1 root            wheel                 0 2026-09-20 19:01 wb-r3b-watch.out
+--- LaunchDaemons 现状 ---
+total 88
+drwxr-xr-x 24 root wheel  768 2026-09-20 20:13 .
+drwxr-xr-x 70 root wheel 2240 2026-09-20 19:33 ..
+-rw-r--r--  1 root wheel  589 2026-05-14 20:06 com.docker.socket.plist
+-rw-r--r--  1 root wheel  667 2026-05-14 20:06 com.docker.vmnetd.plist
+-rw-r--r--  1 root wheel  638 2026-05-21 20:32 com.laobamac.oclp-mod.macos-update.plist
+-rw-r--r--  1 root wheel  629 2026-05-21 20:32 com.laobamac.oclp-mod.os-caching.plist
+-rw-r--r--  1 root wheel  541 2026-04-17 17:40 com.oc.mountesp.plist
+-rw-r--r--  1 root wheel  600 2026-08-28 16:55 com.oray.awesun.helper.plist
+-rw-r--r--  1 root wheel  580 2026-09-02 16:03 com.oray.awesun.plist
+-rw-r--r--  1 root wheel  422 2026-09-02 09:44 com.sangfor.CSMonitor.plist
+-rw-r--r--  1 root wheel  813 2026-09-20 20:13 com.sangfor.aTrustDaemon.plist
+-rwxr-xr-x  1 root wheel  721 2025-10-17 16:02 com.sangfor.auem.sfservice.plist
+-rw-------  1 root wheel  683 2026-09-20 20:06 com.sangfor.eaio.service.plist
+-rw-r--r--  1 root wheel  765 2026-04-15 15:51 com.sangfor.limit.maxfiles.plist
+-rw-r--r--  1 root wheel  744 2026-09-20 20:06 com.sangfor.saio.appwatch.plist
+-rwxr-xr-x  1 root admin  545 2026-07-01 16:37 com.tencent.Lemon.plist
+-rwxr-xr-x  1 root admin  493 2026-07-01 16:37 com.tencent.Lemon.uninstall.plist
+-rw-r--r--  1 root wheel  695 2026-08-11 11:34 com.youqu.todesk.UninstallerHelper.plist
+-rw-r--r--  1 root wheel  824 2026-08-11 11:34 com.youqu.todesk.UninstallerWatcher.plist
+
+--- [B] 19:01:00~19:08:30 内核日志【不加关键词过滤】行数 ---
+1716710
+--- 上面窗口的原始前 25 行 ---
+Timestamp                       Thread     Type        Activity             PID    TTL  
+2026-09-20 19:08:23.036833+0800 0x470      Default     0x0                  0      0    kernel: PMRD: assertionsUser 0x0->0x1
+2026-09-20 19:08:23.075792+0800 0x833      Default     0x0                  0      0    kernel: (AppleKeyStore) "AppleKeyStore":pid:331,:13297: operation failed (sel: 7 ret: e00002f0, -1)
+2026-09-20 19:08:23.075846+0800 0x833      Default     0x0                  0      0    kernel: (AppleKeyStore) "AppleKeyStore":pid:331,:13297: operation failed (sel: 7 ret: e00002f0, -1)
+2026-09-20 19:08:23.093273+0800 0x21a      Error       0x0                  0      0    kernel: (Sandbox) [com.apple.sandbox.reporting:violation] 1 duplicate report for Sandbox: apsd(144) deny(1) mach-lookup com.apple.nesessionmanager.content-filter
+2026-09-20 19:08:23.093284+0800 0x21a      Error       0x0                  0      0    kernel: (Sandbox) [com.apple.sandbox.reporting:violation] Sandbox: dasd(154) deny(1) mach-lookup com.apple.systemstats.analysis
+2026-09-20 19:08:23.115205+0800 0x355      Default     0x0                  0      0    kernel: [com.apple.xnu.net.tcp:] tcp connected: [<IPv4-redacted>:49154<-><IPv4-redacted>:443] interface: en0 (skipped: 0)
+so_gencnt: 685 t_state: ESTABLISHED process: apsd:144 SYN in/out: 1/1 bytes in/out: 0/0 pkts in/out: 0/0 rtt: 0.0 ms rttvar: 250.0 ms base_rtt: 0 ms error: 0 so_error: 0 svc/tc: 0 flow: 0xbfbc3214
+2026-09-20 19:08:23.120053+0800 0x298      Error       0x0                  0      0    kernel: (Sandbox) [com.apple.sandbox.reporting:violation] Sandbox: searchpartyd(343) deny(1) mach-lookup com.apple.CoreLocation.agent
+2026-09-20 19:08:23.183848+0800 0x21b      Error       0x0                  0      0    kernel: (Sandbox) [com.apple.sandbox.reporting:violation] Sandbox: searchpartyd(343) deny(1) mach-lookup com.apple.timed.xpc
+2026-09-20 19:08:23.196566+0800 0x298      Error       0x0                  0      0    kernel: (Sandbox) [com.apple.sandbox.reporting:violation] Sandbox: searchpartyd(343) deny(1) mach-lookup com.apple.findmy.findmylocate.locationservice
+2026-09-20 19:08:23.197965+0800 0x298      Error       0x0                  0      0    kernel: (Sandbox) [com.apple.sandbox.reporting:violation] Sandbox: searchpartyd(343) deny(1) mach-lookup com.apple.tccd
+2026-09-20 19:08:23.198283+0800 0x21b      Error       0x0                  0      0    kernel: (Sandbox) [com.apple.sandbox.reporting:violation] Sandbox: searchpartyd(343) deny(1) mach-lookup com.apple.tccd.system
+2026-09-20 19:08:23.200096+0800 0x21b      Error       0x0                  0      0    kernel: (Sandbox) [com.apple.sandbox.reporting:violation] Sandbox: searchpartyd(343) deny(1) mach-lookup com.apple.tccd
+2026-09-20 19:08:23.200381+0800 0x298      Error       0x0                  0      0    kernel: (Sandbox) [com.apple.sandbox.reporting:violation] Sandbox: searchpartyd(343) deny(1) mach-lookup com.apple.tccd.system
+2026-09-20 19:08:23.200836+0800 0x21b      Error       0x0                  0      0    kernel: (Sandbox) [com.apple.sandbox.reporting:violation] Sandbox: searchpartyd(343) deny(1) mach-lookup com.apple.findmy.findmylocate.friendshipservice
+2026-09-20 19:08:23.202441+0800 0x298      Error       0x0                  0      0    kernel: (Sandbox) [com.apple.sandbox.reporting:violation] Sandbox: searchpartyd(343) deny(1) mach-lookup com.apple.findmy.findmylocate.settings
+2026-09-20 19:08:23.202689+0800 0x884      Default     0x0                  0      0    kernel: process_is_plugin_host: running binary "bash" in keys-off mode due to identity: com.apple.bash
+2026-09-20 19:08:23.202769+0800 0x21b      Error       0x0                  0      0    kernel: (Sandbox) [com.apple.sandbox.reporting:violation] Sandbox: searchpartyd(343) deny(1) mach-lookup com.apple.findmy.findmylocate.fenceservice
+2026-09-20 19:08:23.229103+0800 0x21b      Error       0x0                  0      0    kernel: (Sandbox) [com.apple.sandbox.reporting:violation] Sandbox: searchpartyd(343) deny(1) mach-lookup com.apple.spaceattributiond
+2026-09-20 19:08:23.238341+0800 0x298      Error       0x0                  0      0    kernel: (Sandbox) [com.apple.sandbox.reporting:violation] Sandbox: searchpartyd(343) deny(1) mach-lookup com.apple.tccd
+2026-09-20 19:08:23.245728+0800 0x21b      Error       0x0                  0      0    kernel: (Sandbox) [com.apple.sandbox.reporting:violation] Sandbox: searchpartyd(343) deny(1) mach-lookup com.apple.tccd.system
+2026-09-20 19:08:23.248178+0800 0x298      Error       0x0                  0      0    kernel: (Sandbox) [com.apple.sandbox.reporting:violation] Sandbox: searchpartyd(343) deny(1) mach-lookup com.apple.tccd
+2026-09-20 19:08:23.248590+0800 0x21b      Error       0x0                  0      0    kernel: (Sandbox) [com.apple.sandbox.reporting:violation] Sandbox: searchpartyd(343) deny(1) mach-lookup com.apple.tccd.system
+2026-09-20 19:08:23.255727+0800 0x7f8      Default     0x0                  0      0    kernel: [com.apple.xnu:skywalk] SK[2]: flow_entry_alloc               fe "0 proc kernel_task(0)LemonDaemon nx_port 1 flow_uuid 2547600F-C5AC-4778-839E-89A1BF77C071 flags 0x14120<CONNECTED,QOS_MARKING,EXT_PORT,EXT_FLOWID> ipver=4,src=<IPv4-redacted>.49155,dst=<IPv4-redacted>.443,proto=0x06 mask=0x0000003f,hash=0x0ac4be35 tp_proto=0x06"
+
+--- [B2] 19:01:00~19:08:30 是否存在 Sleep 流程标志串 ---
+2026-09-20 19:08:24.603613+0800 0x8c8      Default     0x0                  167    0    bluetoothd: [com.apple.bluetooth:Server.Core] requiresWillSleepWorkaround N chipset 0
+2026-09-20 19:08:41.056588+0800 0xf00      Default     0x0                  176    5    loginwindow: [com.apple.loginwindow.logging:Standard] RegisterSleepWakeCallback |    Display WillSleep notification registered successfully
+2026-09-20 19:09:00.185146+0800 0x16de     Default     0x0                  856    0    UIKitSystem: (FrontBoard) [com.apple.FrontBoard:Common] Prevent idle sleep reasons: {(
+2026-09-20 19:09:00.404965+0800 0x16de     Default     0x0                  856    0    UIKitSystem: (FrontBoard) [com.apple.FrontBoard:Common] Prevent idle sleep reasons: (none)
+2026-09-20 19:09:22.185851+0800 0xf42      Default     0x0                  618    0    distnoted: [com.apple.distnoted:diagnostic] register name: NSWorkspaceWillSleepNotification object: kCFNotificationAnyObject token: 6b00000066 pid: 739
+2026-09-20 19:14:46.687654+0800 0x6f14     Default     0x0                  176    5    loginwindow: [com.apple.loginwindow.logging:Standard] DeregisterSleepWakeCallback |    Display WillSleep notification deregistered successfully
+2026-09-20 19:15:40.417312+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: SleepWake UUID queued: F276FFCB-A9DA-4E7B-B363-FB5FFC081AB3
+2026-09-20 19:15:48.919075+0800 0x991      Default     0x0                  167    0    bluetoothd: [com.apple.bluetooth:Server.Core] requiresWillSleepWorkaround N chipset 0
+2026-09-20 19:16:01.793717+0800 0xf14      Default     0x0                  176    5    loginwindow: [com.apple.loginwindow.logging:Standard] RegisterSleepWakeCallback |    Display WillSleep notification registered successfully
+2026-09-20 19:16:16.630661+0800 0x14e2     Default     0x0                  814    0    UIKitSystem: (FrontBoard) [com.apple.FrontBoard:Common] Prevent idle sleep reasons: {(
+2026-09-20 19:16:16.870953+0800 0x14e2     Default     0x0                  814    0    UIKitSystem: (FrontBoard) [com.apple.FrontBoard:Common] Prevent idle sleep reasons: (none)
+2026-09-20 19:16:34.477940+0800 0xed1      Default     0x0                  625    0    distnoted: [com.apple.distnoted:diagnostic] register name: NSWorkspaceWillSleepNotification object: kCFNotificationAnyObject token: 6900000068 pid: 706
+2026-09-20 19:22:00.440202+0800 0x6c07     Default     0x0                  176    5    loginwindow: [com.apple.loginwindow.logging:Standard] DeregisterSleepWakeCallback |    Display WillSleep notification deregistered successfully
+2026-09-20 19:23:20.611282+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: SleepWake UUID queued: 6FDBA15E-2FED-48F1-999F-43A53658034A
+2026-09-20 19:23:30.524403+0800 0x991      Default     0x0                  167    0    bluetoothd: [com.apple.bluetooth:Server.Core] requiresWillSleepWorkaround N chipset 0
+2026-09-20 19:23:58.041248+0800 0xf21      Default     0x0                  176    5    loginwindow: [com.apple.loginwindow.logging:Standard] RegisterSleepWakeCallback |    Display WillSleep notification registered successfully
+2026-09-20 19:24:11.466214+0800 0x1567     Default     0x0                  805    0    UIKitSystem: (FrontBoard) [com.apple.FrontBoard:Common] Prevent idle sleep reasons: {(
+2026-09-20 19:24:11.699284+0800 0x1567     Default     0x0                  805    0    UIKitSystem: (FrontBoard) [com.apple.FrontBoard:Common] Prevent idle sleep reasons: (none)
+2026-09-20 19:24:35.336158+0800 0xfc8      Default     0x0                  641    0    distnoted: [com.apple.distnoted:diagnostic] register name: NSWorkspaceWillSleepNotification object: kCFNotificationAnyObject token: 6b00000066 pid: 690
+2026-09-20 19:26:52.986167+0800 0x4387     Default     0x0                  176    5    loginwindow: [com.apple.loginwindow.logging:Standard] DeregisterSleepWakeCallback |    Display WillSleep notification deregistered successfully
+2026-09-20 19:26:54.435842+0800 0x5092     Default     0x0                  3043   0    UIKitSystem: (FrontBoard) [com.apple.FrontBoard:Common] Prevent idle sleep reasons: {(
+2026-09-20 19:26:54.460723+0800 0x5092     Default     0x0                  3043   0    UIKitSystem: (FrontBoard) [com.apple.FrontBoard:Common] Prevent idle sleep reasons: (none)
+2026-09-20 11:31:12.672511+0000 0x220      Default     0x0                  0      0    kernel: PMRD: SleepWake UUID queued: B95BB73F-9035-4705-A345-04FA426C8A26
+2026-09-20 19:34:19.474232+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: SleepWake UUID queued: 0F1A766F-8F41-475E-9409-9CF7101C0CA8
+2026-09-20 19:34:28.111391+0800 0x853      Default     0x0                  167    0    bluetoothd: [com.apple.bluetooth:Server.Core] requiresWillSleepWorkaround N chipset 0
+2026-09-20 19:35:10.402415+0800 0x1963     Default     0x0                  996    0    UIKitSystem: (FrontBoard) [com.apple.FrontBoard:Common] Prevent idle sleep reasons: {(
+2026-09-20 19:35:10.527054+0800 0x1963     Default     0x0                  996    0    UIKitSystem: (FrontBoard) [com.apple.FrontBoard:Common] Prevent idle sleep reasons: (none)
+2026-09-20 19:36:09.537740+0800 0xa16      Default     0x0                  217    5    loginwindow: [com.apple.loginwindow.logging:Standard] RegisterSleepWakeCallback |    Display WillSleep notification registered successfully
+2026-09-20 19:43:03.860910+0800 0x4eb0     Default     0x0                  544    0    distnoted: [com.apple.distnoted:diagnostic] register name: NSWorkspaceWillSleepNotification object: kCFNotificationAnyObject token: 5e00000061 pid: 990

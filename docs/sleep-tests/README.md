@@ -1,6 +1,16 @@
 # 睡眠档位调优测试记录
 
-> 🟢🟢🟢 **2026-09-20 18:4x【§八十九 · 最新】—— ★★ 测试议程：还剩什么可测（用户问「那我们这几次再测什么？」）→ `next-test-agenda.md`（新建，唯一入口）**
+> 🔴🔴🔴 **2026-09-21 10:0x【§九十 · 最新】—— ★★★ Round 3b 实测结果：硬失败（睡下即断气档）→ `r3b-result.md`（新建）**
+> **【背景】** 会话在 09-20 19:01:12 触发睡眠后中断；09-21 09:53 用户「继续 S4 睡眠」时回来收账 ⇒ **① 不是"待做"，是"已做完、未记账"。**
+> **【结论】`standbydelay 0` 生效了（读回 0，未被钳位），系统真的"走进去"了 —— 但走不回来。没有写出任何休眠镜像，机器睡下后内核停摆，只能强制断电 ⇒ 与 09-16「睡下即断气」同档。`hbfx-ahbm` 这条路到此为止。**
+> **【判据 8/8 未达标】** `kern.hibernatemode=0`｜`hibernatecount=0`｜`sleepimage` 前 16 字节**全 0**｜`IOHibernateState=<00000000>`｜NVRAM 无 `IOHibernate*`｜无 `Entering Hibernate`｜**整个取证文件 `sleep params` 0 命中**（内核轨迹整段丢失）。
+> **【最硬的行为证据】** 内核日志 **19:01:00–19:08:23 零行**（同窗口总行数 1,716,710，最早条目 19:08:23.036833）⇒ 睡了 5.7 min；19:08:23 起 PID = **144/154/167/176/343**（**新 boot 的早期 PID**，不是唤醒）；`pmset` 那条 `Entering Sleep` **未回填时长**、无 `Wake from`、`HibernateStats` 断档；随后 **09-20 19:15–20:04 五次关机+五次重启**（`SMC shutdown cause: 5`）；**21:03:35 用户合盖又睡一次**（`Clamshell closed 1` → `SLEEP_STATE`；此时 `standbydelay` 仍是 0）⇒ 09-21 08:52:52 冷启动。
+> **【副产物①】又一次 RTC/CMOS 被写坏**：`sleepimage` mtime = **2019-01-01 08:01:05**、log 里 70 行条目时间戳 = **2019-01-01 08:00:44**（两源独立同值，差 21 s = boot 后建占位）🟡 待用户确认 BIOS 是否报 POST 005 / 时间是否跑到 2019。
+> **【副产物② · 工程教训】看门狗彻底失效**：`MARKER` 仍 `ARMED`、`.armed` 还在（⇒ 自己的 CLEANUP 没跑）、`/var/log/watch.log` **不存在**、`/Library/LaunchDaemons/com.wb.r3b.watch.plist` **被外部删掉** —— 时间吻合 aTrust 在 19:56–20:13 自我更新（`com.sangfor.*` plist mtime 20:06/20:13、目录 mtime 20:13）。⇒ 🔴 **别把自动回滚托付给自建 LaunchDaemon**（会被安全软件静默清掉），下次**人在旁边、测完手回滚**。
+> **【已回滚】** 09-21 09:57 `pmset -a hibernatemode 0 standby 0 standbydelaylow 10800 standbydelayhigh 86400` ⇒ 读回一致 = 基线，**"睡后立即断内存电"地雷已解除**。
+> **【对议程的影响】** **① 关闭**（`hbfx-ahbm` 路径判不通）；「已试过的配置空间」现已扩到最大（R3 软失败 + R3b 硬失败 + 09-16 五次 mode 25）。剩余 = ②OC 日志核 MMIO（低风险、与"S4 可用"关系弱）｜③Win 功耗量准｜④`dmpstore`（顺手）。
+
+> ⚪ **2026-09-20 18:4x【§八十九】（已被 §九十 接续：其"议程"仍有参考价值，① 已执行并判失败）—— ★★ 测试议程：还剩什么可测（用户问「那我们这几次再测什么？」）→ `next-test-agenda.md`（唯一入口）**
 > **本轮零配置改动**（纯只读核查）。**结论：只剩 3 件事，其中只有 1 件能解锁 S4。**
 > **① Round 3b = `standbydelaylow/high 0`**（唯一解锁性测试）——前置**已全部就位**（`hibernatemode 3`✓ `standby 1`✓ `HibernationFixup` 在 `Kernel/Add`✓ `hbfx-ahbm=1` 在 `boot-args`✓ `NVRAM/WriteFlash`✓）⇒ **只需 2 条 `pmset`，不动 EFI、不重启**。风险 🔴：走到 `type 4/5` ⇒ `IOPM.cpp:5743` 关 Sleep 位 = 强制真休眠 = 09-16「睡下即断气」同档。⚠️ **`standbydelay 0` 期间每次睡眠都立即断内存电 ⇒ 测完必须立刻回滚，别留过夜。**
 > **② T4 = 开 OC 日志（`Misc/Debug/Target=0` → 非 0）核 `DevirtualiseMmio`** ——本轮实读配置**形态已就位**（`DevirtualiseMmio=true` / `MmioWhitelist=0 条`），缺的只是"证据"（`Target=0` ⇒ 无日志可判）。**① 失败后的下一步，不并行。**
