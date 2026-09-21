@@ -13,3 +13,8 @@ docs/sleep-tests/com.wb.r3logdump.plist
 # ★ R3b 运行日志：**含 MCP Bearer token 与会话环境变量 dump**（osascript 提权跑会把整条 env 打进日志）
 # ⇒ 绝不入库；结论的权威去处 = docs/sleep-tests/r3b-result.md
 docs/sleep-tests/r3b-artifacts/run.log
+
+# ★ 记忆文件副本：`.workbuddy/` 本身已忽略（见第 1 行）⇒ 其副本同样不该进公开仓库。
+# 备份留在本地供回滚，但不入库。（2026-09-21 发现前两轮的 `git add -A` 误入库过两个，
+# 经扫描确认**无 PII**、且**从未推送** ⇒ 已 git rm --cached 移除。）
+docs/backups/MEMORY.md.pre-*

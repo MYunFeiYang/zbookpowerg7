@@ -1,6 +1,17 @@
 # 睡眠档位调优测试记录
 
-> 🟣🟣🟣 **2026-09-21 10:5x【§九十一 · 最新】—— ★★ 社区调研：别人怎么进休眠 → `community-hibernation-recipes.md`（新建）**
+> 🔵🔵🔵 **2026-09-21 11:3x【§九十二 · 最新】—— ★★★ 议程 ⑤ 有理论支撑了吗？**→ `rtc-patch-hibernation-causality.md`（新建）
+> **【触发】** 用户问「**有理论支撑吗？不要只是盲目的尝试**」
+> **【一句话】有 —— 而且是一条可逐行复核的源码闭环。** 本轮把 XNU `IOPMrootDomain.cpp` + `HibernationFixup/kern_hbfx.cpp` + `kern_config.hpp` 下载下来逐行核，找到 **6 环链条**；其中**最关键的新发现**是：
+> **① 符号级对齐（"不是猜"的关键）**：本机 `Kernel/Patch[0].Base` = **`__ZN8AppleRTC18setupDateTimeAlarmEPK11RTCDateTime`**，与 **`kern_hbfx.cpp:845` 的 hook 目标逐字符相同** ⇒ 两者**必然**相遇。
+> **② ☠️ `wakeCalendarSet` 恒为 true**：`kern_hbfx.cpp:283` 写 `wakeCalendarSet = (result == KERN_SUCCESS)`，而 XNU **`IOPMrootDomain.cpp:5032` `setPMSetting()` 无条件 `return kIOReturnSuccess`** ⇒ HBFX 那个"闹钟没设上就强制休眠"的补偿设计**永远不会触发**。
+> **③ ⇒ 自动休眠只剩唯一正常路径**：`kern_hbfx.cpp:449` `setupHibernate = (forceHibernate ‖ !wakeCalendarSet ‖ sleepServiceWake ‖ standby_delay == 0)`，中间两项恒假 ⇒ **只能靠 `sleepServiceWake`**，而它全文件**只在 `:185` 被置真**（= maintenance dark wake）⇒ **dark wake 由 RTC 闹钟产生** ⇒ **本机补丁掐掉 RTC 闹钟 = 掐死整条链**。
+> **【三个必然推论】** ① **R3「仍 Deep Idle」是必然**（`standbydelay≠0` 单独就足以 self-postpone，`kern_hbfx.cpp:437-438`）② **R3b「睡下即断气」也是必然**（`standbydelay==0` 命中公式第四项 ⇒ **跳过"先普通睡眠等 dark wake"这个保护直撞真休眠**）⇒ 两者是**同一机制的两个分支**，不是"同一测试的两个参数" ③ **`hbfx-ahbm` 位语义整表核过**（`kern_config.hpp:49-74`）：bit6=`DoNotOverrideWakeUpTime` ☠️**设了会取消休眠**；bit1-5 是"条件门"（**设了 = 只有该条件下才休**，方向易读反）；社区用 `5`（启用+只在拔电时休），我们用 `1`（无条件）。
+> **【★ 修正上一轮 3 处】** ① "86400 测不出"方向对但理由不全 —— **7200 与 86400 走同一条路**（都 ≠0），真差别是"≠0 要等 dark wake / =0 直撞硬断电" ② **"补丁是 R3 真因"是把两个独立缺陷叠加成一个** —— R3 的 Deep Idle 不需要补丁就能解释 ③ **"关掉补丁就大概率能通"证据等级下调为 🟡 推断**。
+> **【仍未验证】** ① OC patch 与 Lilu route 相遇谁生效 ② **本机 Deep Idle(S0ix) 下 RTC 闹钟能不能唤醒 —— 无社区先例，最致命** ③ `rtc-blacklist 0E-FF` 是否挡闹钟 ④ `IOPM.cpp:5743` 本轮未复验（xnu 主分支路径已变）⑤ IOPPF（闭源）侧 factor 的影响。
+> **【定价不变】** 议程 ⑤ = **主动恢复那条会写坏 CMOS 的路径**（那个补丁本来就是为防它才装的）；「武装休眠 ⇒ POST 005」**4/4 既定**。**本轮零配置改动 / 零 EFI 改动 / 零固件写入。**
+
+> 🟣🟣🟣 **2026-09-21 10:5x【§九十一】—— ★★ 社区调研：别人怎么进休眠 → `community-hibernation-recipes.md`（新建）**
 > **【触发】** 用户问「**社区别人是怎么进入休眠的？都确认了吗？**」
 > **【一句话】主流社区根本不进休眠** —— Dortania 官方原文：`Misc -> Boot -> HibernateMode -> None`，*"We're gonna avoid the **black magic** that is S4 for this guide"*，并在准备步骤里把 `autopoweroff`（"a form of hibernation"）与 `standby`（"time period between sleep and going into hibernation"）逐一关掉。**本机曾经的基线就是路线 0 的产物。**
 > **【真进得去的四类】** ① **Surface IceLake 组（唯一 AOAC 机型成功组）**：靠 ACPI 补丁 `5353335F00→5353335F01` 把 `Name (SS3, Zero)` 改成 `One` 解锁 S3 声明 ⇒ 作者原话 *"The key to the fix is to enable ACPI S3 Sleep in the DSDT"* ② **ThinkPad T530 组** ③ **Dell Latitude 5300（唯一带实测时间戳日志）** ④ HD630 台式机 / Chromebook。
