@@ -14,6 +14,42 @@
 
 ---
 
+## §0.5 术语澄清：`hibernatemode 3` ≠ ACPI `S3`
+
+> **这两处的「3」属于两套互不相干的编号体系 —— 命名撞车。**（2026-09-21 用户问「不是不支持 S3 吗？怎么还用 mode 3 吗？」时补录）
+
+| | `hibernatemode` | ACPI `S3` |
+|---|---|---|
+| 属于 | **macOS 保存侧策略** | **平台电源状态** |
+| 取值 | `0` / `3` / `25`（都是**位掩码**） | `S0` / `S0ix` / `S3` / `S4` / `S5` |
+| 定义处 | `man pmset` ＋ XNU `iokit/IOKit/IOHibernatePrivate.h:740-741` | ACPI 规范 / DSDT |
+| 「3」的含义 | `kIOHibernateModeOn(0x01) \| kIOHibernateModeSleep(0x02)` = `0x03` | Suspender to RAM（第 3 号睡眠状态） |
+
+`man pmset` 原文（三种值的官方定义）：
+- **`3`（笔记本默认）**：*"…will store a copy of memory to persistent storage (the disk), **and will power memory during sleep**. The system will wake from memory, unless a power loss forces it to restore from hibernate image."* ⇒ **写镜像 + 内存继续供电** = 保险绳，**不是断电**。
+- **`25`**：*"…will store a copy of memory… **and will remove power to memory**. The system will restore from disk image."* ⇒ 写镜像 + 断内存电。
+- **`0`**：*"…will not back memory up to persistent storage… historically, plain old sleep."*
+
+**★ 关键：`mode 3` 的「睡眠那一步落哪个 ACPI 档」与 `hibernatemode` 的数值无关。**
+本机实测：`hibernatemode 3` 睡下 ⇒ 内核日志 `type 7 / Deep Idle`、`lastSleepType = 0x7` ⇒ **走 S0ix，不经过 S3**（`round3-kernel-trace.md` §1.1）。
+
+**★ 那为什么议程 ⑤ 还要用 `mode 3`？** 因为它是 **HBFX 的入场券**，不是因为要用 S3：
+
+```cpp
+bool HBFX::isStandbyEnabled(IOPMrootDomain* pm_root, uint32_t &standby_delay, bool &pmset_default_mode)
+{                                              // kern_hbfx.cpp:1197
+    ...
+    pmset_default_mode = (callbackHBFX->latestHibernateMode == (kIOHibernateModeOn | kIOHibernateModeSleep));
+    return standbyEnabled;                     // 必须 == 3，否则 hbfx-ahbm 整段逻辑一次都不执行
+}
+```
+
+⇒ **「S3 不支持」卡住的是 `mode 25` 那条路（09-16 五次全失败），不是 `mode 3` 这条路** —— 两者只是名字里都带一个「3」。
+
+> ⚠️ **但别把这条读成"所以 mode 3 能通"**：`mode 3` 的终点**仍然是 S4**（写镜像 + 断 RAM）⇒ 它照样要撞 §4/§5 那堵固件墙。「不碰 S3」只说明它不撞 **S3 这一格**，不等于能通。
+
+---
+
 ## §1 四条路线（按"证据强度"由高到低）＋ 确切配置
 
 ### 路线 0 ★ 最主流：**不做**（Dortania 官方立场）
