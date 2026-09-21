@@ -8,6 +8,13 @@
 
 ## 0. 一句话
 
+> ### 🟣 2026-09-21 10:5x 更新（社区调研）→ `community-hibernation-recipes.md`
+> **⚠️ 修正本文与 README 的「已试过的配置空间扩到最大」：该表述只对 OS 侧成立。**
+> - **OS 侧（`pmset`）**：基本到顶 —— `mode 25` ×5 ＋ `mode 3 + standbydelay 0`（硬失败）＋ `mode 3 + standbydelay 86400·604800`。
+> - **引导器侧（`config.plist`）**：**4 项从未入账** —— `UEFI/ReservedMemory`（0 条）｜`DiscardHibernateMap`（False）｜`RebuildAppleMemoryMap`（True）｜`DevirtualiseMmio`（True，且 `MmioWhitelist` 0 条）。而社区成功配方里这些是**常备项**。
+> - **★★ 更关键**：两个独立来源（github T530 帖 + Latitude 5300 帖）都指名 **`Disable RTC wake scheduling` 内核补丁会掐掉 RTC 闹钟 ⇒ dark wake 不发生 ⇒ 永远到不了休眠判定**；**本机该补丁正开着**（`Kernel/Patch` / `com.apple.driver.AppleRTC`）⇒ **R3「仍 Deep Idle」很可能不是平台的错**，且那次 `standbydelay` = **86400 s（24 h）**，参数本身测不出结果。
+> ⇒ **新增候选议程 ⑤（唯一有社区先例、本机从未测过的一项）**：`关 RTC 唤醒补丁 + hbfx-ahbm=1 + standbydelay 7200 + mode 3`。**判据/回滚/风险定价见 `community-hibernation-recipes.md` §6。⚠️ 未执行，等你拍板。**
+
 > ### 🔴 2026-09-21 更新：**① 已执行完毕 ⇒ 判「不通」**（`r3b-result.md`）
 > 09-20 19:01:12 上机 → 19:02:41 睡下 → **内核停摆 5.7 min** → 19:08:23 已是新 boot ⇒ **未写镜像、未正常唤醒、需强制断电**（09-16 同档）。判据 **8/8 未达标**。**`hbfx-ahbm` 这条路到此为止。**
 > ⇒ **下面"只剩 3 件事"应读作"只剩 ②③④"**，且**没有一件能解锁 S4**。

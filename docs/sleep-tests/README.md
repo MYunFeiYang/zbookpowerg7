@@ -1,6 +1,19 @@
 # 睡眠档位调优测试记录
 
-> 🔴🔴🔴 **2026-09-21 10:0x【§九十 · 最新】—— ★★★ Round 3b 实测结果：硬失败（睡下即断气档）→ `r3b-result.md`（新建）**
+> 🟣🟣🟣 **2026-09-21 10:5x【§九十一 · 最新】—— ★★ 社区调研：别人怎么进休眠 → `community-hibernation-recipes.md`（新建）**
+> **【触发】** 用户问「**社区别人是怎么进入休眠的？都确认了吗？**」
+> **【一句话】主流社区根本不进休眠** —— Dortania 官方原文：`Misc -> Boot -> HibernateMode -> None`，*"We're gonna avoid the **black magic** that is S4 for this guide"*，并在准备步骤里把 `autopoweroff`（"a form of hibernation"）与 `standby`（"time period between sleep and going into hibernation"）逐一关掉。**本机曾经的基线就是路线 0 的产物。**
+> **【真进得去的四类】** ① **Surface IceLake 组（唯一 AOAC 机型成功组）**：靠 ACPI 补丁 `5353335F00→5353335F01` 把 `Name (SS3, Zero)` 改成 `One` 解锁 S3 声明 ⇒ 作者原话 *"The key to the fix is to enable ACPI S3 Sleep in the DSDT"* ② **ThinkPad T530 组** ③ **Dell Latitude 5300（唯一带实测时间戳日志）** ④ HD630 台式机 / Chromebook。
+> **【共同配方（4 个独立来源一致）】** `HibernateMode = NVRAM` ＋ `HibernateSkipsPicker` ＋ `HibernationFixup.kext` ＋ `hbfx-ahbm ≥ 1` ＋ `standbydelay 7200~10800` ＋ **「不要装 Disable RTC wake scheduling 补丁」**。
+> **【★ 与本机的三个关键对照】**
+> ① **`SS3` 这条对我们已拉满**：本机 **DSDT:5708 = `Name (SS3, One)`**、内核一直报 **`ACPI: sleep states S0 S3 S4 S5`** ⇒ Surface 组要打补丁才拿到的状态**我们出厂就有** ⇒ 路线 1 的核心不构成我们的缺口。
+> ② **⚠️ 修正：「已试过的配置空间扩到最大」只对 OS 侧成立** —— **引导器侧 4 项从未入过实验台账**（`UEFI/ReservedMemory` 0 条｜`DiscardHibernateMap=False`｜`RebuildAppleMemoryMap=True`｜`DevirtualiseMmio=True` ＋ `MmioWhitelist` 0 条）。
+> ③ **★★ R3「仍 Deep Idle」很可能不是平台的错**：**两个独立来源**（T530 帖 + Latitude 5300 帖）都指名 **`Disable RTC wake scheduling` 补丁会掐掉 RTC 闹钟 ⇒ dark wake 不发生 ⇒ 永远到不了休眠判定**，而**本机这个补丁正开着**；且 R3 的 `standbydelay` 设成了 **86400 s（24 小时）**，社区用 **7200~10800 s** ⇒ 参数本身**测不出结果**。⇒ **「mode 3 路线」在本机从未被公平测过**（一次延迟 24 h、一次延迟 0 绕过整段）。
+> **【确认度边界】** 全部成功案例**最高只到 Sonoma 14.5 / Ventura 13.6.7（2024）**，**没有一条在 macOS 15/26 上复测过**（本机跑 26.6.2）；也**没有一条**是在"EC 不响应 S3"的机器上成功的。
+> **【不可采信】** 中文搜索首页那批 `ufcn.cn` / `blog.csdn.net/gitblog_*` / `yoozai.com` / `heipg.cn/qa` 是模板化 AI 农场（把 `hibernatemode 0` 说成 S3、`25` 说成 S0iX、凭空发明 `29`）⇒ **逐条点名，不许引用**。
+> **【未动配置】** 本轮**纯调研 + 只读核查，零配置改动、零 EFI 改动、零固件写入**。§6 给出**唯一一个**"有社区先例且本机从未测过"的最小实验及其预注册判据，**但未执行**（武装休眠 = 写坏 RTC，4/4 既定代价）。
+
+> 🔴🔴🔴 **2026-09-21 10:0x【§九十】—— ★★★ Round 3b 实测结果：硬失败（睡下即断气档）→ `r3b-result.md`（新建）**
 > **【背景】** 会话在 09-20 19:01:12 触发睡眠后中断；09-21 09:53 用户「继续 S4 睡眠」时回来收账 ⇒ **① 不是"待做"，是"已做完、未记账"。**
 > **【结论】`standbydelay 0` 生效了（读回 0，未被钳位），系统真的"走进去"了 —— 但走不回来。没有写出任何休眠镜像，机器睡下后内核停摆，只能强制断电 ⇒ 与 09-16「睡下即断气」同档。`hbfx-ahbm` 这条路到此为止。**
 > **【判据 8/8 未达标】** `kern.hibernatemode=0`｜`hibernatecount=0`｜`sleepimage` 前 16 字节**全 0**｜`IOHibernateState=<00000000>`｜NVRAM 无 `IOHibernate*`｜无 `Entering Hibernate`｜**整个取证文件 `sleep params` 0 命中**（内核轨迹整段丢失）。
@@ -8,7 +21,7 @@
 > **【副产物①】RTC/CMOS 被写坏 —— ✅ 09-21 10:20 已收口（实锤）**：用户确认 **BIOS 报 POST 005**；本轮又补一条**直接解码**证据 —— `/var/run/utmpx` 原始 int64（offset 928）= **`1546300844` = 本地 `2019-01-01 08:00:44`**（＋ `who -b` = `Jan 1 08:00` ＋ `sleepimage` mtime `2019-01-01 08:01:05` ＋ log 70 行同值 = **四源同值**）。★ **utmpx 是开机重建的易失库、只含当次 boot session** ⇒ 那条错误 boot 记录**必属今早 08:52 这次启动** ⇒ **开机时 RTC 读到的就是 2019**，约 40 s 后被 NTP 校正。**写坏的是 21:03:35 合盖那一次**（19:02 那次未写坏：随后 19:08 启动的 `console` 记录落在 19:08 而非 2019）—— 而那次合盖睡眠**正因为看门狗失效、`standbydelay` 没被回滚**（§4）⇒ **"自动回滚没执行"的实际代价 = 多写坏一次 CMOS**。记数：**第 4 次 POST 005**（09-16 三次 ＋ 本轮 1 次）⇒ ⚠️ **"武装休眠 ⇒ 写坏 RTC" 现为 4/4，是既定代价不是概率**。判据一律用 **utmpx 原始字节**（`last reboot` 里缺今天这条 BOOT 记录，wtmp 与 utmpx 不一致，原因未明，已备案）。详见 `r3b-result.md` **§3 / §3.1**。
 > **【副产物② · 工程教训】看门狗彻底失效**：`MARKER` 仍 `ARMED`、`.armed` 还在（⇒ 自己的 CLEANUP 没跑）、`/var/log/watch.log` **不存在**、`/Library/LaunchDaemons/com.wb.r3b.watch.plist` **被外部删掉** —— 时间吻合 aTrust 在 19:56–20:13 自我更新（`com.sangfor.*` plist mtime 20:06/20:13、目录 mtime 20:13）。⇒ 🔴 **别把自动回滚托付给自建 LaunchDaemon**（会被安全软件静默清掉），下次**人在旁边、测完手回滚**。
 > **【已回滚 · 必须两侧】** ① `pmset`（09-21 09:57）：`hibernatemode 0 standby 0 standbydelaylow 10800 standbydelayhigh 86400` ⇒ 读回 = 基线，**"睡后立即断内存电"地雷已解除**。② ⚠️ **EFI 侧当时漏了 → 09-21 10:43 补做**：核查发现 R3 加进 `config.plist` 的 **`hbfx-ahbm=1 -hbfxdbg`（`boot-args`）＋ `HibernationFixup.kext`（30→31 个）一直留着** ⇒ 已用 R3 前快照精确回滚（逐区块键级核对**只有这两处差异**、`plutil -lint` = OK、`RTCMemoryFixup`/`RestrictEvents`/`Lilu` 均保留）。残留影响（🟢 源码级）= `standbydelay ≠ 0` 时 `hbfx2.cpp:437` **每次睡眠多写一次 RTC 闹钟** —— 零收益，且 RTC 写正是 POST 005 的来源，撤回若失手即掉进硬断电档。⇒ 🔴 **教训：回滚须两侧都做（`pmset` ＋ EFI）**；⚠️ **待 FreeFileSync 同步 ESP ＋ 重启生效**。详见 `r3b-result.md` **§5.1**。
-> **【对议程的影响】** **① 结案**（09-21 10:20 收口：`hbfx-ahbm` 路径判不通 ＋ BIOS POST 005 已确认）；「已试过的配置空间」现已扩到最大（R3 软失败 + R3b 硬失败 + 09-16 五次 mode 25）。剩余 = ②OC 日志核 MMIO（低风险、与"S4 可用"关系弱）｜③Win 功耗量准｜④`dmpstore`（顺手）。**②③④ 均不碰 RTC，无额外风险。**
+> **【对议程的影响】** **① 结案**（09-21 10:20 收口：`hbfx-ahbm` 路径判不通 ＋ BIOS POST 005 已确认）；~~「已试过的配置空间」现已扩到最大~~ ⚠️ **该表述已被 §九十一 修正：只对 OS 侧成立，引导器侧 4 项从未入账**。剩余 = ②OC 日志核 MMIO（低风险、与"S4 可用"关系弱）｜③Win 功耗量准｜④`dmpstore`（顺手）。**②③④ 均不碰 RTC，无额外风险。**
 
 > ⚪ **2026-09-20 18:4x【§八十九】（已被 §九十 接续：其"议程"仍有参考价值，① 已执行并判失败）—— ★★ 测试议程：还剩什么可测（用户问「那我们这几次再测什么？」）→ `next-test-agenda.md`（唯一入口）**
 > **本轮零配置改动**（纯只读核查）。**结论：只剩 3 件事，其中只有 1 件能解锁 S4。**
