@@ -89,3 +89,133 @@ so_gencnt: 685 t_state: ESTABLISHED process: apsd:144 SYN in/out: 1/1 bytes in/o
 2026-09-20 19:35:10.527054+0800 0x1963     Default     0x0                  996    0    UIKitSystem: (FrontBoard) [com.apple.FrontBoard:Common] Prevent idle sleep reasons: (none)
 2026-09-20 19:36:09.537740+0800 0xa16      Default     0x0                  217    5    loginwindow: [com.apple.loginwindow.logging:Standard] RegisterSleepWakeCallback |    Display WillSleep notification registered successfully
 2026-09-20 19:43:03.860910+0800 0x4eb0     Default     0x0                  544    0    distnoted: [com.apple.distnoted:diagnostic] register name: NSWorkspaceWillSleepNotification object: kCFNotificationAnyObject token: 5e00000061 pid: 990
+2026-09-20 19:58:47.097153+0800 0xef29     Default     0x0                  217    5    loginwindow: [com.apple.loginwindow.logging:Standard] DeregisterSleepWakeCallback |    Display WillSleep notification deregistered successfully
+(空 ⇒ 该窗口无睡眠流程记录)
+
+--- [C] 2019-01-01 08:00:00~08:03:00 那次 boot 的身份 ---
+Timestamp                       Thread     Type        Activity             PID    TTL  
+2019-01-01 08:00:44.000294+0800 0x0        Default     0x0                  0      0    kernel: mem_actual: 0x400000000
+ legacy sane_size: 0x3d8000000
+2019-01-01 08:00:44.000308+0800 0x0        Default     0x0                  0      0    kernel: PMAP: PCID enabled
+2019-01-01 08:00:44.000309+0800 0x0        Default     0x0                  0      0    kernel: PMAP: Supervisor Mode Execute Protection enabled
+2019-01-01 08:00:44.000310+0800 0x0        Default     0x0                  0      0    kernel: PMAP: Supervisor Mode Access Protection enabled
+2019-01-01 08:00:44.002970+0800 0x0        Default     0x0                  0      0    kernel: Darwin Kernel Version 25.6.0: Fri Jul 31 19:11:49 PDT 2026; root:xnu-12377.161.14~5/RELEASE_X86_64
+2019-01-01 08:00:44.006687+0800 0x0        Default     0x0                  0      0    kernel: pmap_startup() delaying init/free of page nums > 0x200000
+2019-01-01 08:00:44.033320+0800 0x0        Default     0x0                  0      0    kernel: pmap_startup() init/release time: 26668 microsec
+2019-01-01 08:00:44.033321+0800 0x0        Default     0x0                  0      0    kernel: pmap_startup() delayed init/release of 2507417 pages
+2019-01-01 08:00:44.033323+0800 0x0        Default     0x0                  0      0    kernel: vm_page_bootstrap: 1419322 free pages, 2742214 wired pages, (up to 2507417 of which are delayed free)
+2019-01-01 08:00:44.034007+0800 0x0        Default     0x0                  0      0    kernel: VM bootstrap: 73 maps, 128 entries and 16 nodes available
+2019-01-01 08:00:44.034016+0800 0x0        Default     0x0                  0      0    kernel: Maximum number of VM swap files: 100
+2019-01-01 08:00:44.034028+0800 0x0        Default     0x0                  0      0    kernel: kext submap [0x<private> - 0x<private>], kernel text [0x<private> - 0x<private>]
+2019-01-01 08:00:44.052788+0800 0x0        Default     0x0                  0      0    kernel: vm: "vm_compressor_mode" is 4
+2019-01-01 08:00:44.052855+0800 0x0        Default     0x0                  0      0    kernel: VM bootstrap done: 69 maps, 105 entries and 10 nodes left
+2019-01-01 08:00:44.060803+0800 0x0        Default     0x0                  0      0    kernel: standard timeslicing quantum is 10000 us
+2019-01-01 08:00:44.060805+0800 0x0        Default     0x0                  0      0    kernel: standard background quantum is 2500 us
+2019-01-01 08:00:44.060836+0800 0x0        Default     0x0                  0      0    kernel: Firehose configured: 16 chunks, 8 io pages
+2019-01-01 08:00:44.061483+0800 0x0        Default     0x0                  0      0    kernel: Log queues configured: slot count: 108, per-slot size: 32768, total size: 3538944
+2019-01-01 08:00:44.061485+0800 0x0        Default     0x0                  0      0    kernel: OSLog stream configured: stream: 8192 bytes, cache: 2112 bytes
+2019-01-01 08:00:44.061490+0800 0x0        Default     0x0                  0      0    kernel: Long logs support configured: size: 16384
+2019-01-01 08:00:44.061491+0800 0x0        Default     0x0                  0      0    kernel: [trap_telemetry] trap_telemetry_init
+2019-01-01 08:00:44.061528+0800 0x0        Default     0x0                  0      0    kernel: mig_table_max_displ = 90 mach_kobj_count = 384
+2019-01-01 08:00:44.064972+0800 0x0        Default     0x0                  0      0    kernel: TSC Deadline Timer supported and enabled
+2019-01-01 08:00:44.452033+0800 0x65       Default     0x0                  0      0    kernel: vm: creating swapout thread
+2019-01-01 08:00:44.452042+0800 0x65       Default     0x0                  0      0    kernel: vm: creating swapfile creation thread
+2019-01-01 08:00:44.452047+0800 0x65       Default     0x0                  0      0    kernel: vm: creating swapfile GC thread
+2019-01-01 08:00:44.454810+0800 0x71       Default     0x0                  0      0    kernel: PMRD: PMTraceWorker 0xf55be1026da909e1
+2019-01-01 08:00:44.454925+0800 0x71       Default     0x0                  0      0    kernel: PMRD: changePowerStateWithTagToPriv(ON_STATE, 10001)
+--- 该窗口行数 ---
+1104149
+
+--- [D] 时钟证据：2019-01-01 前后内核挂钟记 ------------------------------------------------------------------
+2019-01-01 08:00:44.002970+0800 0x0        Default     0x0                  0      0    kernel: Darwin Kernel Version 25.6.0: Fri Jul 31 19:11:49 PDT 2026; root:xnu-12377.161.14~5/RELEASE_X86_64
+2019-01-01 08:00:44.033323+0800 0x0        Default     0x0                  0      0    kernel: vm_page_bootstrap: 1419322 free pages, 2742214 wired pages, (up to 2507417 of which are delayed free)
+2019-01-01 08:00:44.034007+0800 0x0        Default     0x0                  0      0    kernel: VM bootstrap: 73 maps, 128 entries and 16 nodes available
+2019-01-01 08:00:44.052855+0800 0x0        Default     0x0                  0      0    kernel: VM bootstrap done: 69 maps, 105 entries and 10 nodes left
+2019-01-01 08:00:44.454810+0800 0x71       Default     0x0                  0      0    kernel: PMRD: PMTraceWorker 0xf55be1026da909e1
+2019-01-01 08:00:44.454925+0800 0x71       Default     0x0                  0      0    kernel: PMRD: changePowerStateWithTagToPriv(ON_STATE, 10001)
+2019-01-01 08:00:44.454966+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 7 args 0xf55be10c07452e51 0x0
+2019-01-01 08:00:44.454968+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 7 args 0xf55be10c074546b1 0x0
+2019-01-01 08:00:44.455037+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (OFF_STATE->ON_STATE, f, 0x2) tag 0x20064
+2019-01-01 08:00:44.455045+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: sysPowerDownHandler message kIOMessageSystemCapabilityChange
+2019-01-01 08:00:44.455046+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: sysPowerDownHandler cap f -> f (flags 1)
+2019-01-01 08:00:44.455076+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: sysPowerDownHandler message kIOMessageSystemCapabilityChange
+2019-01-01 08:00:44.455077+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: sysPowerDownHandler cap f -> f (flags 2)
+2019-01-01 08:00:44.455078+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: tellChangeUp OFF_STATE->ON_STATE
+2019-01-01 08:00:44.455082+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: OFF_STATE->ON_STATE
+2019-01-01 08:00:44.455084+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x10001
+2019-01-01 08:00:44.455085+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.455086+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x302) tag 0x30064
+2019-01-01 08:00:44.455089+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.455090+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x302) tag 0x40064
+2019-01-01 08:00:44.455092+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.465212+0800 0x7c       Default     0x0                  0      0    kernel: (AppleImage4) Darwin Image4 Extension Version 7.0.0: Fri Jul 31 18:12:07 PDT 2026; root:AppleImage4-349.160.2~555/AppleImage4/RELEASE_X86_64
+2019-01-01 08:00:44.570147+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: power event 7 args 0xf55be10c07452c71 0x0
+2019-01-01 08:00:44.570152+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x302) tag 0x50064
+2019-01-01 08:00:44.570157+0800 0x7b       Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.573727+0800 0x350      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x60064
+2019-01-01 08:00:44.573730+0800 0x350      Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.573754+0800 0x350      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x70064
+2019-01-01 08:00:44.573755+0800 0x350      Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.641401+0800 0x350      Default     0x0                  0      0    kernel: (AppleACPIPlatform) ACPI: sleep states S0 S3 S4 S5
+2019-01-01 08:00:44.641404+0800 0x350      Default     0x0                  0      0    kernel: PMRD: setSleepSupported(1)
+2019-01-01 08:00:44.641413+0800 0x329      Default     0x0                  0      0    kernel: PMRD: power event 7 args 0xf55be10c07453b71 0x0
+2019-01-01 08:00:44.641418+0800 0x329      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x302) tag 0x80064
+2019-01-01 08:00:44.641426+0800 0x329      Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.864849+0800 0x2fd      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0x90064
+2019-01-01 08:00:44.864852+0800 0x2fd      Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.864889+0800 0x350      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0xa0064
+2019-01-01 08:00:44.864893+0800 0x350      Default     0x0                  0      0    kernel: PMRD: PowerChangeDone: ON_STATE->ON_STATE
+2019-01-01 08:00:44.865836+0800 0x2f7      Default     0x0                  0      0    kernel: PMRD: PMTrace found PCI host bridge PCI0->AppleACPIPCI
+2019-01-01 08:00:44.865844+0800 0x2f7      Default     0x0                  0      0    kernel: PMRD: PowerChangeOverride (ON_STATE->ON_STATE, f, 0x2) tag 0xb0064
+
+--- [E] 系统日志里的时钟回退/校正 ---
+2026-09-20 19:08:23.036349+0800 0x3db      Default     0x0                  146    0    timed: [com.apple.settimeofday:] settimeofday({0x6aafbea7,0x8bd1}) == 0
+2026-09-20 19:08:23.036500+0800 0x0        Timesync    0x0                  0      0    === system wallclock time adjusted
+2026-09-20 19:08:23.036818+0800 0x307      Default     0x0                  154    8    dasd: [com.apple.duetactivityscheduler:BGSTHelper] Time change: Clock shifted by 243601638.926149 secs
+2026-09-20 19:08:23.037545+0800 0x3db      Default     0x0                  146    0    timed: [com.apple.timed:data] cmd,apply,src,settimeofday,rtc_s,21.290303877,rtc_unc_s,0.000000001,t_s,811595303.035270810,unc_s,0.050544472,mach,21290303877,adjust,243601638.926153779,success,1,after_m,21290304365
+2026-09-20 19:08:23.037559+0800 0x3db      Default     0x0                  146    0    timed: [com.apple.timed:data] cmd,rtc_offset,set,1789902481744966933,was,1789902481744960232,now,1789902481744959874,success,1
+2026-09-20 19:08:23.037606+0800 0x3db      Default     0x0                  146    0    timed: [com.apple.timed:data] cmd,SYNC,rtc_s,21.292646510,unc_s,0.000000000,mach,21292646510
+2026-09-20 19:08:23.037649+0800 0x3db      Default     0x0                  146    0    timed: [com.apple.timed:data] cmd,ntp_adjtime:in,modes,2015,offset_us,6914,freq_scaled,0,maxerror_us,50544
+2026-09-20 19:08:23.037656+0800 0x3db      Default     0x0                  146    0    timed: [com.apple.timed:data] cmd,ntp_adjtime:out,modes,2015,offset_us,6914,freq_scaled,0,maxerror_us,50544
+2026-09-20 19:08:23.037904+0800 0x3db      Default     0x0                  146    0    timed: (ServerState) [com.apple.timed:sntp] header is 0x1076b0000, errno is 0
+2026-09-20 19:08:23.038103+0800 0x3db      Default     0x0                  146    0    timed: [com.apple.timed:data] cmd,apply,src,adjtime,rtc_s,21.292619027,rtc_unc_s,0.000000001,t_s,811595303.037585974,unc_s,0.050544471,mach,21292619027,adjust,0.000006914,success,1,after_m,21292619460
+2026-09-20 19:08:23.038123+0800 0x3db      Default     0x0                  146    0    timed: [com.apple.timed:data] cmd,rtc_offset,set,1789902481744966947,was,1789902481744960834,now,1789902481744960574,success,1
+2026-09-20 19:08:23.040426+0800 0x40c      Default     0x0                  102    0    UserEventAgent: (com.apple.cts) [com.apple.xpc.activity:calendarinterval] Running StartCalendarInterval: com.apple.systemstats.daily.268435456
+2026-09-20 19:08:23.043895+0800 0x40c      Default     0x0                  102    0    UserEventAgent: (com.apple.cts) [com.apple.xpc.activity:calendarinterval] Rescheduling StartCalendarInterval: com.apple.systemstats.daily.268435456: Monday, September 21, 2026 at 12:15:00 AM China Standard Time
+2026-09-20 19:08:23.043900+0800 0x40c      Default     0x0                  102    0    UserEventAgent: (com.apple.cts) [com.apple.xpc.activity:calendarinterval] Running StartCalendarInterval: com.apple.gkreport.268435460
+2026-09-20 19:08:23.048189+0800 0x496      Default     0x0                  196    8    PowerUIAgent: (PowerUI) [com.apple.powerui.smartcharging:utilities] timeline event exists: Thu Sep 17 19:02:47 2026
+2026-09-20 19:08:23.048191+0800 0x496      Default     0x0                  196    8    PowerUIAgent: (PowerUI) [com.apple.powerui.smartcharging:utilities] Event count: 1, too low
+2026-09-20 19:08:23.049195+0800 0x40c      Default     0x0                  102    0    UserEventAgent: (com.apple.cts) [com.apple.xpc.activity:calendarinterval] Rescheduling StartCalendarInterval: com.apple.gkreport.268435460: Monday, September 21, 2026 at 3:52:00 AM China Standard Time
+2026-09-20 19:08:23.049200+0800 0x40c      Default     0x0                  102    0    UserEventAgent: (com.apple.cts) [com.apple.xpc.activity:calendarinterval] Running StartCalendarInterval: com.apple.newsyslog.268435459
+2026-09-20 19:08:23.058459+0800 0x454      Default     0x0                  199    0    airportd: (IO80211Old.dylib) [com.apple.WiFiManager:] SC: <airport[199]> _SC_callback: Changed keys: count[  7] key@[  1] = 'State:/Network/Interface/en1/AirPort/SmartCCADesenseSupported'
+2026-09-20 19:08:23.058471+0800 0x454      Default     0x0                  199    0    airportd: (IO80211Old.dylib) [com.apple.WiFiManager:] SC: <airport[199]> _SC_callback: Changed keys: count[  7] key@[  2] = 'State:/Network/Interface/en1/AirPort/SmartCCADesenseUSBPresence'
+    "State:/Network/Interface/en1/AirPort/SmartCCADesenseSupported",
+    "State:/Network/Interface/en1/AirPort/SmartCCADesenseUSBPresence",
+    "State:/Network/Interface/en1/AirPort/SmartCCADesenseSupported",
+    "State:/Network/Interface/en1/AirPort/SmartCCADesenseUSBPresence",
+2026-09-20 19:08:23.059251+0800 0x711      Default     0x0                  199    0    airportd: (IO80211Old.dylib) [com.apple.WiFiManager:] SC: <airport[199]> airportdProcessSystemConfigurationEvent: Processing 'State:/Network/Interface/en1/AirPort/SmartCCADesenseSupported'
+2026-09-20 19:08:23.059264+0800 0x711      Default     0x0                  199    0    airportd: (IO80211Old.dylib) [com.apple.WiFiManager:] SC: <airport[199]> airportdProcessSystemConfigurationEvent: Processing 'State:/Network/Interface/en1/AirPort/SmartCCADesenseUSBPresence'
+2026-09-20 19:08:23.063050+0800 0x496      Default     0x0                  196    8    PowerUIAgent: (PowerUI) [com.apple.powerui.smartcharging:utilities] Adding current plugin duration to recent plugin duration: 0.00h + 72.09h = 72.09h
+2026-09-20 19:08:23.063051+0800 0x496      Default     0x0                  196    8    PowerUIAgent: (PowerUI) [com.apple.powerui.smartcharging:utilities] Recent plugin duration: 259535.675170
+2026-09-20 19:08:23.063063+0800 0x496      Default     0x0                  196    8    PowerUIAgent: (PowerUI) [com.apple.powerui.smartcharging:smartChargeManager] Legitimate Usage = 1
+2026-09-20 19:08:23.064789+0800 0x40c      Default     0x0                  102    0    UserEventAgent: (com.apple.cts) [com.apple.xpc.activity:calendarinterval] Rescheduling StartCalendarInterval: com.apple.newsyslog.268435459: Sunday, September 20, 2026 at 7:30:00 PM China Standard Time
+
+--- [F] sleep/wake 失败报告 ---
+(无)
+--- /var/db/PowerManagement ---
+--- 当前 sleep-wake failure 计数 ---
+2026-09-18 08:59:50 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-18 12:44:41 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-18 14:05:39 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-18 16:56:28 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-18 18:04:19 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-20 12:01:49 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-20 17:19:21 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-20 19:15:39 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-20 19:23:20 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-20 19:34:19 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-20 19:59:38 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+2026-09-20 20:04:42 +0800 ShutdownCause       	SMC shutdown cause: 5: Software initiated shutdown                         	          
+
+=== 结束 ===
+结果: /Volumes/Common 1/workplace/zbookpowerg7/docs/sleep-tests/r3b-artifacts/verdict2-0921-100045.txt
