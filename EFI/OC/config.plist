@@ -228,7 +228,7 @@
 			<key>NormalizeHeaders</key>
 			<false/>
 			<key>RebaseRegions</key>
-			<true/>
+			<false/>
 			<key>ResetHwSig</key>
 			<true/>
 			<key>ResetLogoStatus</key>
@@ -340,8 +340,19 @@
 				<key>device-type</key>
 				<string>Trackpad</string>
 			</dict>
+			<key>PciRoot(0x0)/Pci(0x1B,0x0)</key>
+			<dict>
+				<key>pci-aspm-default</key>
+				<data>
+				AgAAAA==
+				</data>
+			</dict>
 			<key>PciRoot(0x0)/Pci(0x1B,0x0)/Pci(0x0,0x0)</key>
 			<dict>
+				<key>pci-aspm-default</key>
+				<data>
+				AgEAAA==
+				</data>
 				<key>ps-max-latency-us</key>
 				<data>
 				oIYBAAAAAAA=
@@ -977,24 +988,6 @@
 				<key>Arch</key>
 				<string>Any</string>
 				<key>BundlePath</key>
-				<string>VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Keyboard.kext</string>
-				<key>Comment</key>
-				<string>V2.3.8</string>
-				<key>Enabled</key>
-				<true/>
-				<key>ExecutablePath</key>
-				<string>Contents/MacOS/VoodooPS2Keyboard</string>
-				<key>MaxKernel</key>
-				<string></string>
-				<key>MinKernel</key>
-				<string></string>
-				<key>PlistPath</key>
-				<string>Contents/Info.plist</string>
-			</dict>
-			<dict>
-				<key>Arch</key>
-				<string>Any</string>
-				<key>BundlePath</key>
 				<string>RestrictEvents.kext</string>
 				<key>Comment</key>
 				<string>V1.1.7 | RestrictEvents 1.1.6 for OTA (revpatch=sbvmm), Acidanthera</string>
@@ -1162,10 +1155,6 @@
 			<true/>
 			<key>ProvideCurrentCpuInfo</key>
 			<false/>
-			<key>SetApfsTrimTimeout</key>
-			<integer>9999999</integer>
-			<key>ThirdPartyDrives</key>
-			<true/>
 			<key>XhciPortLimit</key>
 			<false/>
 		</dict>
@@ -1216,7 +1205,7 @@
 			<key>TakeoffDelay</key>
 			<integer>500</integer>
 			<key>Timeout</key>
-			<integer>5</integer>
+			<integer>0</integer>
 		</dict>
 		<key>Debug</key>
 		<dict>
@@ -1351,7 +1340,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1  -amfipassbeta -lilubetaall alctcsel=1 revpatch=sbvmm rtcfx_exclude=0E-FF -rtcfxdbg</string>
+				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall alctcsel=1 revpatch=sbvmm rtcfx_exclude=0E-FF</string>
 				<key>csr-active-config</key>
 				<data>
 				/w8AAA==
