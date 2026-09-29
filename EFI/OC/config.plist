@@ -1033,6 +1033,18 @@
 				<key>Strategy</key>
 				<string>Disable</string>
 			</dict>
+			<dict>
+				<key>Arch</key>
+				<string>Any</string>
+				<key>Comment</key>
+				<string>TB experiment 2026-09-29: block IOThunderboltFamily too. NHI is downstream of Family, so blocking NHI alone leaves Family loaded (verified via OSBundleLibraries). 8-24 ExpressCard NULL panic originates in this kext. Fully kill TB stack.</string>
+				<key>Enabled</key>
+				<true/>
+				<key>Identifier</key>
+				<string>com.apple.iokit.IOThunderboltFamily</string>
+				<key>Strategy</key>
+				<string>Disable</string>
+			</dict>
 		</array>
 		<key>Emulate</key>
 		<dict>
