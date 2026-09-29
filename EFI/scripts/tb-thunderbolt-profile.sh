@@ -97,7 +97,16 @@ cmd_status() {
 }
 
 apply_profile() {
-  local profile="$1"
+  local profile="$1" aml_file=""
+  case "$profile" in
+    on)   aml_file="$AML_ON" ;;
+    lite) aml_file="$AML_LITE" ;;
+  esac
+  if [[ -n "$aml_file" && ! -f "$(dirname "${CONFIG}")"/ACPI/"${aml_file}" ]]; then
+    echo "ERROR: ${aml_file} 不在工作区（2026-09 清理时删除，当前只有 off 档可用）。" >&2
+    echo "取回： git show ad8fcd2^:EFI/OC/ACPI/${aml_file} > $(dirname "${CONFIG}")/ACPI/${aml_file}" >&2
+    exit 1
+  fi
   case "$profile" in
     off)
       plist_set_acpi "$AML_OFF" true
