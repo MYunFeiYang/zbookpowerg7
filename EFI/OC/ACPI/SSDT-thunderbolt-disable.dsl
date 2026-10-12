@@ -22,16 +22,16 @@ DefinitionBlock ("", "SSDT", 2, "OCLT", "noRPxx", 0x00000000)
 {
     External (_SB_.PCI0.RP01, DeviceObj)
 
+    /*
+     * Fix 2026-10-09: 原先在本位置还有一段**模块级(方法外)**的还原分支:
+     *     If ((!Arg2 || !_OSI ("Darwin"))) { Return (Buffer (One) { 0x03 }) }
+     * 它不在任何 Method 内 ⇒ `Arg2` 无意义、`Return` 在模块级无定义 ⇒ 非 Darwin 保护**完全失效**;
+     * 而 Method(_STA) 只有 "If(_OSI("Darwin")){Return(Zero)}"、没有 else ⇒ 非 Darwin 下隐式返回
+     * 0 (Zero) = 设备不存在。DSDT 里 RP01 原本**没有 _STA**(默认 0x0F 存在且启用), 于是 Windows
+     * 侧 RP01 及其下游 JHL7540 一并被隐藏。已把该分支移入 _STA 作为 else(返回值按原语义取 0x0F)。
+     */
     Scope (_SB.PCI0.RP01)
     {
-        If ((!Arg2 || !_OSI ("Darwin")))
-        {
-            Return (Buffer (One)
-            {
-                 0x03                                             // .
-            })
-        }
-
         OperationRegion (DE01, PCI_Config, 0x50, One)
         Field (DE01, AnyAcc, NoLock, Preserve)
         {
@@ -45,6 +45,8 @@ DefinitionBlock ("", "SSDT", 2, "OCLT", "noRPxx", 0x00000000)
             {
                 Return (Zero)
             }
+
+            Return (0x0F)   // 非 Darwin: 还原「DSDT 未定义 _STA」的原语义 = 存在+启用+可见+正常
         }
     }
 
