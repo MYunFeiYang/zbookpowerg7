@@ -18,3 +18,51 @@ docs/sleep-tests/r3b-artifacts/run.log
 # 备份留在本地供回滚，但不入库。（2026-09-21 发现前两轮的 `git add -A` 误入库过两个，
 # 经扫描确认**无 PII**、且**从未推送** ⇒ 已 git rm --cached 移除。）
 docs/backups/MEMORY.md.pre-*
+
+# === 本地工作产物 / 调试残留：不入库（2026-10-12 清理，对应"其他 gitignore"） ===
+
+# 备份与快照目录（本地留存，不入库）
+docs/backups/
+docs/memory-snapshots/
+docs/sleep-tests/
+docs/sleep-forensics/
+docs/SysReport/
+
+# 风扇 kext 实验源码与构建产物（本地构建，不入库）
+docs/fan-kext/
+
+# 临时修复脚本
+docs/fixes/
+
+# 工具脚本（本地辅助，不入库）
+tools/
+
+# 单篇弃用文档
+docs/macos-sleep-power-verification.md
+docs/windows-side-power-prompt.md
+
+# 本轮各次审计/取证草稿（结论已并入正式报告者忽略）
+docs/acpi-darwin-gating-audit-2026-10-09.md
+docs/bios-update-forensics-2026-10-09.md
+docs/boot-time-audit.md
+docs/fan-ec-control-audit.md
+docs/hang-2026-09-28-clock-jump.md
+docs/macos-config-audit-2026-10-09.md
+docs/oc-config-dead-keys-audit.md
+docs/oclp-vs-oclp-mod.md
+docs/opencore-config-optimization-2026-09-29.md
+docs/opencore-kext-acpi-audit-2026-09-29.md
+docs/sleep-fix-2026-10-09-aoac-wake-and-s3.md
+docs/sleep-fix-2026-10-09-candidate1-and-oc-log.md
+docs/sleep-fix-2026-10-09-efi-rollback.md
+docs/sleep-remaining-candidates-2026-10-09.md
+docs/sleep-wake-failure-2026-09-29.md
+docs/sleep-why-middle-ok-2026-10-09.md
+docs/system-audit-2026-09-29.md
+
+# 原跟踪、现改为本地维护的文档（撤出仓库跟踪）
+docs/firmware-facts-ledger.md
+docs/memory-archive-2026-09.md
+docs/system-overhead-audit.md
+docs/thunderbolt-enable-plan-2026-09-29.md
+tools/sleep-power-measure.sh
