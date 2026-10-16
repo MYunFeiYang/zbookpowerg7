@@ -152,7 +152,7 @@
 				<key>Comment</key>
 				<string>Drop Intel PegSsdt (hybrid-mode sleep A/B; rollback=this Enabled=false)</string>
 				<key>Enabled</key>
-				<false/>
+				<true/>
 				<key>OemTableId</key>
 				<data>
 				UGVnU3NkdAA=
