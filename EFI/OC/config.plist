@@ -114,7 +114,7 @@
                     <key>Comment</key>
                     <string>dGPU power-down on Darwin (renamed from SSDT-eGPU OFF-AOAC); keep enabled</string>
                     <key>Enabled</key>
-                    <false/>
+                    <true/>
                     <key>Path</key>
                     <string>SSDT-dGPU-PowerOff-Darwin.aml</string>
                 </dict>
