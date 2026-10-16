@@ -8,7 +8,7 @@
             <array>
                 <dict>
                     <key>Comment</key>
-                    <string>Hide HDAS.SNDW on Darwin (built-in digital mic unsupported; does not fix internal mic)</string>
+                    <string>Hide HDAS.SNDW on Darwin (does not fix internal mic)</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
@@ -48,7 +48,7 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string>USB power properties. Original values restored 2026-08-05. kUSBSleepPowerSupply=0 caused black screen on wake. Do not zero sleep power on this machine.</string>
+                    <string>USB power props; do NOT zero kUSBSleepPowerSupply (black screen on wake)</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
@@ -64,7 +64,7 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string>TPD3 (ELAN073D) trackpad GPIO interrupt pin: supplies TPNM() = 0x0102 = 258 = GPP_E2. Only works together with the ACPI/Patch entry below, which rewrites the DSDT call site GNUM(GPDI) into TPNM(GPDI) inside TPD3._INI. Rollback: revert this commit.</string>
+                    <string>TPD3 trackpad GPIO pin GPP_E2; needs matching ACPI/Patch rename (rollback: revert)</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
@@ -72,7 +72,7 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string>Hide RP01 on Darwin - rollback if TB panic: enable this, disable SSDT-TB3HP-ZBook</string>
+                    <string>Hide RP01 on Darwin; rollback if TB panic: enable this, disable SSDT-TB3HP-ZBook</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
@@ -88,7 +88,7 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string>Defines PNLF device with a _UID of 19 for backlight control - requires PNLF to XNLF rename</string>
+                    <string>PNLF backlight (_UID 19); requires PNLF to XNLF rename</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
@@ -96,7 +96,7 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string>DeepIdle path: LPS0 / S0 deep idle (primary focus). AML in ACPI/ [RESTORED 2026-09-17 evening] Re-enabled together with SSDT-DeepIdle.aml: the force-S3 experiment is concluded a FAILURE (docs/sleep-tests/round2-tierB-result.md section 34). Under S3 this machine woke 65x slower (WakeTime 159.336 s vs 2.430-2.617 s across four Deep Idle wakes), the PS2 controller took 342x longer to resume (157735 ms vs 457-466 ms), and it produced the only kernel panic this machine has ever recorded (NMIPI TLB flush timeout, backtrace through IOUSBHostFamily / AppleUSBXHCI / IntelBluetoothFirmware). XDCI wake is benign under Deep Idle - it appears in the historical Deep Idle wake reasons too - so it was never the culprit. Rollback target is the known-stable Deep Idle state.</string>
+                    <string>S0ix deep idle (primary). Force-S3 experiment FAILED (docs/sleep-tests/round2-tierB-result.md sec 34).</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
@@ -104,7 +104,7 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string>DeepIdle path: LPC wake helpers (AOAC-class); pair with DeepIdle. AML in ACPI/ [RESTORED 2026-09-17 evening] Re-enabled together with SSDT-DeepIdle.aml: the force-S3 experiment is concluded a FAILURE (docs/sleep-tests/round2-tierB-result.md section 34). Under S3 this machine woke 65x slower (WakeTime 159.336 s vs 2.430-2.617 s across four Deep Idle wakes), the PS2 controller took 342x longer to resume (157735 ms vs 457-466 ms), and it produced the only kernel panic this machine has ever recorded (NMIPI TLB flush timeout, backtrace through IOUSBHostFamily / AppleUSBXHCI / IntelBluetoothFirmware). XDCI wake is benign under Deep Idle - it appears in the historical Deep Idle wake reasons too - so it was never the culprit. Rollback target is the known-stable Deep Idle state.</string>
+                    <string>DeepIdle LPC wake helpers (AOAC); pair with SSDT-DeepIdle</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
@@ -112,7 +112,7 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string>dGPU power-down on Darwin (renamed from SSDT-eGPU OFF-AOAC); keep enabled</string>
+                    <string>dGPU power-down on Darwin; keep enabled</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
@@ -120,7 +120,7 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string>AOAC: restore _S3 for non-Darwin only (on Darwin _S3 stays renamed to XS3 -> S3 disabled; required with SSDT-DeepIdle) [2026-10-09]</string>
+                    <string>Restore _S3 for non-Darwin only; on Darwin _S3->XS3 (S3 disabled); pair with SSDT-DeepIdle</string>
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
