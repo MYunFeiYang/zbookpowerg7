@@ -390,7 +390,7 @@
                 <key>PciRoot(0x0)/Pci(0x1B,0x0)/Pci(0x0,0x0)</key>
                 <dict>
                     <key>ps-max-latency-us</key>
-                    <data>oIYBAAAAAAA=</data>
+                    <data>AAAAAAAAAAA=</data>
                 </dict>
                 <key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)</key>
                 <dict>
