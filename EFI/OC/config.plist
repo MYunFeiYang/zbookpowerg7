@@ -143,6 +143,20 @@
                     <key>TableSignature</key>
                     <data>RE1BUg==</data>
                 </dict>
+                <dict>
+                    <key>All</key>
+                    <false/>
+                    <key>Comment</key>
+                    <string>Drop Intel PegSsdt (hybrid-mode sleep A/B; rollback=this Enabled=false)</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>OemTableId</key>
+                    <data>UGVnU3NkdAA=</data>
+                    <key>TableLength</key>
+                    <integer>0</integer>
+                    <key>TableSignature</key>
+                    <data>U1NEVA==</data>
+                </dict>
             </array>
             <key>Patch</key>
             <array>
