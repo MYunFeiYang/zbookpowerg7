@@ -120,6 +120,14 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
+				<string>PegSsdt helper lib for SGOF (dGPU power-off works while PegSsdt stays deleted); rollback=Enabled=false</string>
+				<key>Enabled</key>
+				<true/>
+				<key>Path</key>
+				<string>SSDT-dGPU-PwrLib.aml</string>
+			</dict>
+			<dict>
+				<key>Comment</key>
 				<string>Restore _S3 for non-Darwin only; on Darwin _S3-&gt;XS3 (S3 disabled); pair with SSDT-DeepIdle</string>
 				<key>Enabled</key>
 				<true/>
@@ -152,7 +160,7 @@
 				<key>Comment</key>
 				<string>Drop Intel PegSsdt (hybrid-mode sleep A/B; rollback=this Enabled=false)</string>
 				<key>Enabled</key>
-				<false/>
+				<true/>
 				<key>OemTableId</key>
 				<data>
 				UGVnU3NkdAA=
