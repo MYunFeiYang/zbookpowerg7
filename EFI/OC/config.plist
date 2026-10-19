@@ -1293,7 +1293,7 @@
 				<integer>0</integer>
 				<key>SystemAudioVolume</key>
 				<data>
-				IA==
+				FA==
 				</data>
 				<key>bluetoothExternalDongleFailed</key>
 				<data>
@@ -1317,7 +1317,7 @@
 				<string>No</string>
 				<key>SystemAudioVolumeDB</key>
 				<data>
-				1g==
+				0Q==
 				</data>
 			</dict>
 		</dict>
