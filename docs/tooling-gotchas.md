@@ -297,3 +297,27 @@ osascript -e "do shell script \"chown -R $(id -un):staff '$B' && chmod -R 777 '$
 **判据纪律**：结论要**双源一致**才写"确认"；单源只能写"高置信"。本机"BIOS 无 SL0"就是 CSV 值列表 + 实拍 4 项一致后才定的。
 
 **反例（会误导的）**：`system_profiler`/`ioreg` 在 macOS 侧只能反映"当前 config 档位下的结果"，不能用来判"BIOS 有没有这个开关"；`nvram -p` 也读不到 HP 的 BIOS 设置（它们不在 NVRAM，走 WMI/SMI 通道）。
+
+### 2026-10-19 复核：为什么 macOS 侧读不到，以及"按 GUID 直接读"的边界
+
+有人会想"`nvram -p` 列不出来，那我按 GUID 直接读"。**实测结论：这条路对 HP 设置无效，但对标准 EFI 变量有效**，两者别混。
+
+| 读法 | 实测 | 说明 |
+|---|---|---|
+| `nvram -p` | 只列 **12 个**变量，全是 Apple GUID（`7C436110-…`） | macOS 的 `nvram` **枚举被过滤**，只吐 Apple GUID；"没列出"≠"不存在" |
+| `nvram <GUID>:<name>`（标准 EFI 全局 GUID `8BE4DF61-…`） | `SecureBoot`=`%00`、`SetupMode`=`%00`、`PlatformLang`=`en-US`、`BootOrder` 可读 | **按 GUID 直读是通的**，运行时变量能拿到 |
+| `nvram <OC GUID>:opencore-version` | `REL-109-2026-10-11｜MOD - 草原企鹅` | 第三方 GUID 也能读 ⇒ 通道本身没问题 |
+| HP `Setup`（试 3 个候选 GUID × 6 个候选名：`EC87D643-…`/`A04A27F4-…`/`FE3542FE-…` × `Setup`/`HpSetup`/`SetupData`/`BiosSetting`/`SystemConfig`/`HPBIOS`） | **全部 `data was not found`** | ⇒ HP 的 260 项塞在**单个不透明二进制 blob** 里，且**未标记 runtime 可访问**，macOS 运行时拿不到 |
+
+**避坑**：批量探测脚本里若用 `cut -c1-60` 再 `case` 匹配 `"not found"`，错误信息会被截断导致**误报 HIT**（本轮踩过）。判断命中要匹配**退出码**，不要匹配被截断的文本。
+
+**能拿到"当前 BIOS 配置"的三条路（按成本排序）**：
+1. **Windows 侧 WMI / HP BCU**（唯一完整、文本可读）：`Get-CimInstance -Namespace root/HP/InstrumentedBIOS -ClassName HP_BIOSSetting`，或 `BiosConfigUtility64.exe /getconfig:cfg.txt`。CSV 表头 `"Name","Value","DisplayInUI","IsReadOnly","RequiresPhysicalPresence"` 正是 `HP_BIOSSetting` 的属性 ⇒ 台账就是这么导出的。
+2. **UEFI Shell**（`dmpstore`）：需把 `OpenShell.efi` 挂进 `Misc/Tools`；拿到的是十六进制 blob，要**差分解码**（改一项设置前后各 dump 一次、比字节）才知道偏移与取值编码。成本高，只在需要长期读时才值。
+3. **行为验证**（最便宜）：不读设置，直接测功能——改一项，看对应硬件行为变不变。
+   - ✅ 可用的例子：`USB Legacy Port Charging` 改完关 S4/S5，量关机态 USB 是否有电。
+   - ❌ **不要用 `powermetrics --samplers cpu_power` 的 `C-state residency` 去判 `Extended Idle Power States`**：本机同批样本里 `Cores Active 98.88%` / `Avg Num Cores Active 4.56`（=76%）/ `C-state 0.00%` 三者互斥，读数自相矛盾 ⇒ 该判据作废（详见 `firmware-facts-ledger.md` §10.3）。
+   - ⚠️ `IOPMDeepIdleSupported=True` 只证明**固件声明支持**，不证明**当前已启用**，不能当"设置已开"的证据。
+
+**★ 台账是快照，不是实时**：`HPBIOS-all.csv` 导出日 2026-09-20；此后用户改过 BIOS（10-19 改 `USB Legacy Port Charging` 等）⇒ **引用它时说"9-20 快照值"，不能说"当前值"**。要当前值只能走上面第 1 或第 2 条。
+
