@@ -621,24 +621,6 @@
 				<key>Arch</key>
 				<string>Any</string>
 				<key>BundlePath</key>
-				<string>AppleALC.kext</string>
-				<key>Comment</key>
-				<string>V1.9.9 | RapidEFI | DISABLED on Tahoe (AppleHDA gone; use VoodooHDA_BL).</string>
-				<key>Enabled</key>
-				<false/>
-				<key>ExecutablePath</key>
-				<string>Contents/MacOS/AppleALC</string>
-				<key>MaxKernel</key>
-				<string></string>
-				<key>MinKernel</key>
-				<string></string>
-				<key>PlistPath</key>
-				<string>Contents/Info.plist</string>
-			</dict>
-			<dict>
-				<key>Arch</key>
-				<string>Any</string>
-				<key>BundlePath</key>
 				<string>VoodooHDA_BL.kext</string>
 				<key>Comment</key>
 				<string>V3.7.0 | AppleHDA-free audio (ALC285, HDAS); replaces AppleALC, no OCLP.</string>
@@ -758,42 +740,6 @@
 				<string></string>
 				<key>MinKernel</key>
 				<string>25.0.0</string>
-				<key>PlistPath</key>
-				<string>Contents/Info.plist</string>
-			</dict>
-			<dict>
-				<key>Arch</key>
-				<string>Any</string>
-				<key>BundlePath</key>
-				<string>IOSkywalkFamily.kext</string>
-				<key>Comment</key>
-				<string>V1.0 | RapidEFI - Sequoia (Darwin 24) + AirportItlwm only.</string>
-				<key>Enabled</key>
-				<false/>
-				<key>ExecutablePath</key>
-				<string>Contents/MacOS/IOSkywalkFamily</string>
-				<key>MaxKernel</key>
-				<string>25.99.99</string>
-				<key>MinKernel</key>
-				<string>24.0.0</string>
-				<key>PlistPath</key>
-				<string>Contents/Info.plist</string>
-			</dict>
-			<dict>
-				<key>Arch</key>
-				<string>Any</string>
-				<key>BundlePath</key>
-				<string>IO80211FamilyLegacy.kext</string>
-				<key>Comment</key>
-				<string>V1200.12.2b1 | RapidEFI - Sequoia + AirportItlwm only.</string>
-				<key>Enabled</key>
-				<false/>
-				<key>ExecutablePath</key>
-				<string>Contents/MacOS/IO80211FamilyLegacy</string>
-				<key>MaxKernel</key>
-				<string>25.99.99</string>
-				<key>MinKernel</key>
-				<string>24.0.0</string>
 				<key>PlistPath</key>
 				<string>Contents/Info.plist</string>
 			</dict>
@@ -1033,24 +979,7 @@
 			</dict>
 		</array>
 		<key>Block</key>
-		<array>
-			<dict>
-				<key>Arch</key>
-				<string>Any</string>
-				<key>Comment</key>
-				<string>DISABLED: legacy Sequoia Skywalk block; Tahoe AirportItlwm needs stock IOSkywalkFamily.</string>
-				<key>Enabled</key>
-				<false/>
-				<key>Identifier</key>
-				<string>com.apple.iokit.IOSkywalkFamily</string>
-				<key>MaxKernel</key>
-				<string>25.99.99</string>
-				<key>MinKernel</key>
-				<string>24.0.0</string>
-				<key>Strategy</key>
-				<string>Exclude</string>
-			</dict>
-		</array>
+		<array/>
 		<key>Emulate</key>
 		<dict>
 			<key>Cpuid1Data</key>
@@ -1375,7 +1304,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1  -amfipassbeta -lilubetaall alctcsel=1 revpatch=sbvmm rtcfx_exclude=0E-FF -rtcfxdbg</string>
+				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall revpatch=sbvmm rtcfx_exclude=0E-FF</string>
 				<key>csr-active-config</key>
 				<data>
 				/w8AAA==
@@ -1639,6 +1568,14 @@
 				<false/>
 				<key>Path</key>
 				<string>ResetNvramEntry.efi</string>
+			</dict>
+			<dict>
+				<key>Path</key>
+				<string>AudioDxe.efi</string>
+				<key>LoadEarly</key>
+				<false/>
+				<key>Enabled</key>
+				<true/>
 			</dict>
 		</array>
 		<key>Input</key>
