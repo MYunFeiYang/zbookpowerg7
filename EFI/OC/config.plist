@@ -8,7 +8,7 @@
 		<array>
 			<dict>
 				<key>Comment</key>
-				<string>Hide HDAS.SNDW on Darwin (does not fix internal mic)</string>
+				<string>Hide HDAS.SNDW on Darwin (built-in digital mic unsupported; does not fix internal mic)</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -48,7 +48,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>USB power props; do NOT zero kUSBSleepPowerSupply (black screen on wake)</string>
+				<string>USB power properties. Original values restored 2026-08-05. kUSBSleepPowerSupply=0 caused black screen on wake. Do not zero sleep power on this machine.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -64,7 +64,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>TPD3 trackpad GPIO pin GPP_E2; needs matching ACPI/Patch rename (rollback: revert)</string>
+				<string>TPD3 (ELAN073D) trackpad GPIO interrupt pin: supplies TPNM() = 0x0102 = 258 = GPP_E2. Only works together with the ACPI/Patch entry below, which rewrites the DSDT call site GNUM(GPDI) into TPNM(GPDI) inside TPD3._INI. Rollback: revert this commit.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -72,7 +72,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>Hide RP01 on Darwin; rollback if TB panic: enable this, disable SSDT-TB3HP-ZBook</string>
+				<string>Hide RP01 on Darwin - rollback if TB panic: enable this, disable SSDT-TB3HP-ZBook</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -88,7 +88,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>PNLF backlight (_UID 19); requires PNLF to XNLF rename</string>
+				<string>Defines PNLF device with a _UID of 19 for backlight control - requires PNLF to XNLF rename</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -96,7 +96,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>S0ix deep idle (primary). Force-S3 experiment FAILED (docs/sleep-tests/round2-tierB-result.md sec 34).</string>
+				<string>DeepIdle path: LPS0 / S0 deep idle (primary focus). AML in ACPI/ [RESTORED 2026-09-17 evening] Re-enabled together with SSDT-DeepIdle.aml: the force-S3 experiment is concluded a FAILURE (docs/sleep-tests/round2-tierB-result.md section 34). Under S3 this machine woke 65x slower (WakeTime 159.336 s vs 2.430-2.617 s across four Deep Idle wakes), the PS2 controller took 342x longer to resume (157735 ms vs 457-466 ms), and it produced the only kernel panic this machine has ever recorded (NMIPI TLB flush timeout, backtrace through IOUSBHostFamily / AppleUSBXHCI / IntelBluetoothFirmware). XDCI wake is benign under Deep Idle - it appears in the historical Deep Idle wake reasons too - so it was never the culprit. Rollback target is the known-stable Deep Idle state.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -104,7 +104,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>DeepIdle LPC wake helpers (AOAC); pair with SSDT-DeepIdle</string>
+				<string>DeepIdle path: LPC wake helpers (AOAC-class); pair with DeepIdle. AML in ACPI/ [RESTORED 2026-09-17 evening] Re-enabled together with SSDT-DeepIdle.aml: the force-S3 experiment is concluded a FAILURE (docs/sleep-tests/round2-tierB-result.md section 34). Under S3 this machine woke 65x slower (WakeTime 159.336 s vs 2.430-2.617 s across four Deep Idle wakes), the PS2 controller took 342x longer to resume (157735 ms vs 457-466 ms), and it produced the only kernel panic this machine has ever recorded (NMIPI TLB flush timeout, backtrace through IOUSBHostFamily / AppleUSBXHCI / IntelBluetoothFirmware). XDCI wake is benign under Deep Idle - it appears in the historical Deep Idle wake reasons too - so it was never the culprit. Rollback target is the known-stable Deep Idle state.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -112,27 +112,11 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>dGPU power-down on Darwin; keep enabled</string>
+				<string>dGPU power-down on Darwin (renamed from SSDT-eGPU OFF-AOAC); keep enabled</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
 				<string>SSDT-dGPU-PowerOff-Darwin.aml</string>
-			</dict>
-			<dict>
-				<key>Comment</key>
-				<string>PegSsdt helper lib for SGOF (dGPU power-off works while PegSsdt stays deleted); rollback=Enabled=false</string>
-				<key>Enabled</key>
-				<true/>
-				<key>Path</key>
-				<string>SSDT-dGPU-PwrLib.aml</string>
-			</dict>
-			<dict>
-				<key>Comment</key>
-				<string>Restore _S3 for non-Darwin only; on Darwin _S3-&gt;XS3 (S3 disabled); pair with SSDT-DeepIdle</string>
-				<key>Enabled</key>
-				<true/>
-				<key>Path</key>
-				<string>SSDT-NameS3-disable.aml</string>
 			</dict>
 		</array>
 		<key>Delete</key>
@@ -152,24 +136,6 @@
 				<key>TableSignature</key>
 				<data>
 				RE1BUg==
-				</data>
-			</dict>
-			<dict>
-				<key>All</key>
-				<false/>
-				<key>Comment</key>
-				<string>Drop Intel PegSsdt (hybrid-mode sleep A/B; rollback=this Enabled=false)</string>
-				<key>Enabled</key>
-				<true/>
-				<key>OemTableId</key>
-				<data>
-				UGVnU3NkdAA=
-				</data>
-				<key>TableLength</key>
-				<integer>0</integer>
-				<key>TableSignature</key>
-				<data>
-				U1NEVA==
 				</data>
 			</dict>
 		</array>
@@ -241,85 +207,6 @@
 				<key>Replace</key>
 				<data>
 				VFBOTUdQREk=
-				</data>
-				<key>ReplaceMask</key>
-				<data>
-				</data>
-				<key>Skip</key>
-				<integer>0</integer>
-				<key>TableLength</key>
-				<integer>0</integer>
-				<key>TableSignature</key>
-				<data>
-				RFNEVA==
-				</data>
-			</dict>
-			<dict>
-				<key>Base</key>
-				<string></string>
-				<key>BaseSkip</key>
-				<integer>0</integer>
-				<key>Comment</key>
-				<string>AOAC: rename _S3 to XS3 (disable S3; OC-Little "avoid S3 when using SSDT-DeepIdle"). Find matches exactly 1 site in DSDT at 0x2B258 = If (SS3){Name (_S3, Package(0x04){0x05,0,0,0})}; does NOT touch _S3D/_S3W. [2026-10-09]</string>
-				<key>Count</key>
-				<integer>0</integer>
-				<key>Enabled</key>
-				<true/>
-				<key>Find</key>
-				<data>
-				X1MzXw==
-				</data>
-				<key>Limit</key>
-				<integer>0</integer>
-				<key>Mask</key>
-				<data>
-				</data>
-				<key>OemTableId</key>
-				<data>
-				AAAAAAAAAAA=
-				</data>
-				<key>Replace</key>
-				<data>
-				WFMzXw==
-				</data>
-				<key>ReplaceMask</key>
-				<data>
-				</data>
-				<key>Skip</key>
-				<integer>0</integer>
-				<key>TableLength</key>
-				<integer>0</integer>
-				<key>TableSignature</key>
-				<data>
-				RFNEVA==
-				</data>
-			</dict>
-			<dict>
-				<key>Base</key>
-				<string></string>
-				<key>BaseSkip</key>
-				<integer>0</integer>
-				<key>Comment</key>
-				<string>Disable platform Reset(WFEV) in _PTS [candidate1; rollback=delete this entry]</string>
-				<key>Count</key>
-				<integer>0</integer>
-				<key>Enabled</key>
-				<true/>
-				<key>Find</key>
-				<data>
-				WyZXRkVW
-				</data>
-				<key>Limit</key>
-				<integer>0</integer>
-				<key>Mask</key>
-				<data>
-				</data>
-				<key>OemTableId</key>
-				<data>
-				</data>
-				<key>Replace</key>
-				<data>
-				o6Ojo6Oj
 				</data>
 				<key>ReplaceMask</key>
 				<data>
@@ -457,22 +344,11 @@
 				<key>device-type</key>
 				<string>Trackpad</string>
 			</dict>
-			<key>PciRoot(0x0)/Pci(0x1B,0x0)</key>
-			<dict>
-				<key>pci-aspm-default</key>
-				<data>
-				AgAAAA==
-				</data>
-			</dict>
 			<key>PciRoot(0x0)/Pci(0x1B,0x0)/Pci(0x0,0x0)</key>
 			<dict>
 				<key>ps-max-latency-us</key>
 				<data>
 				oIYBAAAAAAA=
-				</data>
-				<key>pci-aspm-default</key>
-				<data>
-				AgEAAA==
 				</data>
 			</dict>
 			<key>PciRoot(0x0)/Pci(0x1C,0x0)/Pci(0x0,0x0)</key>
@@ -639,7 +515,7 @@
 				<key>BundlePath</key>
 				<string>VirtualSMC.kext</string>
 				<key>Comment</key>
-				<string>V1.3.9 | By RapidEFI</string>
+				<string>V1.3.8 | By RapidEFI</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -657,7 +533,7 @@
 				<key>BundlePath</key>
 				<string>SMCSuperIO.kext</string>
 				<key>Comment</key>
-				<string>V1.3.9 | By RapidEFI</string>
+				<string>V1.3.8 | By RapidEFI</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -675,7 +551,7 @@
 				<key>BundlePath</key>
 				<string>SMCBatteryManager.kext</string>
 				<key>Comment</key>
-				<string>V1.3.9 | SMCBatteryManager on (ACPIBatteryManager conflict anecdotal; keep for battery status)</string>
+				<string>V1.3.8 | SMCBatteryManager on (ACPIBatteryManager conflict anecdotal; keep for battery status)</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -693,7 +569,7 @@
 				<key>BundlePath</key>
 				<string>SMCProcessor.kext</string>
 				<key>Comment</key>
-				<string>V1.3.9 | By RapidEFI</string>
+				<string>V1.3.8 | By RapidEFI</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -729,7 +605,7 @@
 				<key>BundlePath</key>
 				<string>WhateverGreen.kext</string>
 				<key>Comment</key>
-				<string>V1.7.2 | By RapidEFI</string>
+				<string>V1.7.1 | By RapidEFI</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -747,7 +623,7 @@
 				<key>BundlePath</key>
 				<string>AppleALC.kext</string>
 				<key>Comment</key>
-				<string>V1.9.9 | By RapidEFI | DISABLED on Tahoe (AppleHDA removed; use VoodooHDA_BL)</string>
+				<string>V1.9.8 | By RapidEFI | DISABLED on Tahoe (AppleHDA removed; use VoodooHDA_BL)</string>
 				<key>Enabled</key>
 				<false/>
 				<key>ExecutablePath</key>
@@ -853,7 +729,7 @@
 				<key>Arch</key>
 				<string>Any</string>
 				<key>BundlePath</key>
-				<string>USBToolBox_Mod.kext</string>
+				<string>USBToolBox.kext</string>
 				<key>Comment</key>
 				<string>V1.2.0 | By RapidEFI</string>
 				<key>Enabled</key>
@@ -882,6 +758,42 @@
 				<string></string>
 				<key>MinKernel</key>
 				<string>25.0.0</string>
+				<key>PlistPath</key>
+				<string>Contents/Info.plist</string>
+			</dict>
+			<dict>
+				<key>Arch</key>
+				<string>Any</string>
+				<key>BundlePath</key>
+				<string>IOSkywalkFamily.kext</string>
+				<key>Comment</key>
+				<string>V1.0 | By RapidEFI - Sequoia (Darwin 24) + AirportItlwm only</string>
+				<key>Enabled</key>
+				<false/>
+				<key>ExecutablePath</key>
+				<string>Contents/MacOS/IOSkywalkFamily</string>
+				<key>MaxKernel</key>
+				<string>25.99.99</string>
+				<key>MinKernel</key>
+				<string>24.0.0</string>
+				<key>PlistPath</key>
+				<string>Contents/Info.plist</string>
+			</dict>
+			<dict>
+				<key>Arch</key>
+				<string>Any</string>
+				<key>BundlePath</key>
+				<string>IO80211FamilyLegacy.kext</string>
+				<key>Comment</key>
+				<string>V1200.12.2b1 | By RapidEFI - Sequoia + AirportItlwm only</string>
+				<key>Enabled</key>
+				<false/>
+				<key>ExecutablePath</key>
+				<string>Contents/MacOS/IO80211FamilyLegacy</string>
+				<key>MaxKernel</key>
+				<string>25.99.99</string>
+				<key>MinKernel</key>
+				<string>24.0.0</string>
 				<key>PlistPath</key>
 				<string>Contents/Info.plist</string>
 			</dict>
@@ -943,7 +855,7 @@
 				<key>Arch</key>
 				<string>Any</string>
 				<key>BundlePath</key>
-				<string>BlueToolFixup_Mod.kext</string>
+				<string>BlueToolFixup.kext</string>
 				<key>Comment</key>
 				<string>V2.7.2 | By RapidEFI</string>
 				<key>Enabled</key>
@@ -1126,7 +1038,7 @@
 				<key>Arch</key>
 				<string>Any</string>
 				<key>Comment</key>
-				<string>DISABLED: was Sequoia+itlwm Skywalk block (Darwin 24). Native Tahoe AirportItlwm no longer needs this.</string>
+				<string>DISABLED: was Sequoia+itlwm Skywalk block (Darwin 24). Native Tahoe AirportItlwm needs stock IOSkywalkFamily.</string>
 				<key>Enabled</key>
 				<false/>
 				<key>Identifier</key>
@@ -1267,15 +1179,15 @@
 			<key>LegacyCommpage</key>
 			<false/>
 			<key>PanicNoKextDump</key>
-			<false/>
+			<true/>
 			<key>PowerTimeoutKernelPanic</key>
 			<true/>
 			<key>ProvideCurrentCpuInfo</key>
 			<false/>
 			<key>SetApfsTrimTimeout</key>
-			<integer>0</integer>
+			<integer>9999999</integer>
 			<key>ThirdPartyDrives</key>
-			<false/>
+			<true/>
 			<key>XhciPortLimit</key>
 			<false/>
 		</dict>
@@ -1335,19 +1247,19 @@
 			<key>AppleDebug</key>
 			<false/>
 			<key>ApplePanic</key>
-			<true/>
+			<false/>
 			<key>DisableWatchDog</key>
-			<true/>
+			<false/>
 			<key>DisplayDelay</key>
 			<integer>0</integer>
 			<key>DisplayLevel</key>
-			<integer>2147483714</integer>
+			<integer>2147483648</integer>
 			<key>LogModules</key>
 			<string></string>
 			<key>SysReport</key>
 			<false/>
 			<key>Target</key>
-			<integer>64</integer>
+			<integer>0</integer>
 		</dict>
 		<key>Entries</key>
 		<array/>
@@ -1463,7 +1375,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall revpatch=sbvmm rtcfx_exclude=0E-FF keepsyms=1 forceRenderStandby=0 darkwake=0</string>
+				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1  -amfipassbeta -lilubetaall alctcsel=1 revpatch=sbvmm rtcfx_exclude=0E-FF -rtcfxdbg</string>
 				<key>csr-active-config</key>
 				<data>
 				/w8AAA==
@@ -1845,7 +1757,7 @@
 			<key>ForgeUefiSupport</key>
 			<false/>
 			<key>IgnoreInvalidFlexRatio</key>
-			<true/>
+			<false/>
 			<key>ReleaseUsbOwnership</key>
 			<true/>
 			<key>ReloadOptionRoms</key>
