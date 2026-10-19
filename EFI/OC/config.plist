@@ -1315,6 +1315,10 @@
 				</data>
 				<key>run-efi-updater</key>
 				<string>No</string>
+				<key>SystemAudioVolumeDB</key>
+				<data>
+				1g==
+				</data>
 			</dict>
 		</dict>
 		<key>Delete</key>
