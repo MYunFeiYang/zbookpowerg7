@@ -629,16 +629,14 @@
 				<string>Contents/Info.plist</string>
 			</dict>
 			<dict>
-				<key>Arch</key>
-				<string>Any</string>
 				<key>BundlePath</key>
-				<string>VoodooHDA_BL.kext</string>
+				<string>AppleALC.kext</string>
 				<key>Comment</key>
-				<string>V3.7.0 | AppleHDA-free audio (ALC285, HDAS); replaces AppleALC, no OCLP.</string>
+				<string>V1.9.8 | By acidanthera | needs AppleHDA (OCLP-Mod HDA patch) + layout-id 55 (ALC236 HP-240G8)</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
-				<string>Contents/MacOS/VoodooHDA_BL</string>
+				<string>Contents/MacOS/AppleALC</string>
 				<key>MaxKernel</key>
 				<string></string>
 				<key>MinKernel</key>
