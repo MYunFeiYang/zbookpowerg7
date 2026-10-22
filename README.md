@@ -23,7 +23,7 @@
 | 触控板 | **ELAN073D**（ACPI 中 **TPD3**；**`SSDT-TPD3-CRS` / `SSDT-TPD3-INI`**、**`SSDT-I2C0-GNVS`** 等）+ **VoodooI2C** 系 |
 | USB | **USBToolBox** + **UTBMap_tahoe** |
 | 风扇转速 | **可读**（EC 自主控速，macOS 不干预）。`SMCSuperIO` EC 模式：`Pci(0x1F,0x0)` 注入 `ec-device=generic` + `fan0-addr=0x2E`（DSDT `FRDC` 寄存器，参数同 ZBook 17 G5），监控软件（如 Stats）可显示 RPM |
-| 雷电 | **Intel JHL7540**（Titan Ridge）挂 **`_SB.PCI0.RP01.PXSX`**；三档：**`tb off` / `tb on` / `tb lite`**；**当前档位 `off`**（2026-09-29 复核：本机 BIOS 只暴露 4 档安全级别、**无 SL0/No Security**，当前 SL1）|
+| 雷电 | **Intel JHL7540**（Titan Ridge）挂 **`_SB.PCI0.RP01.PXSX`**；三档：**`tb off` / `tb on` / `tb lite`**；**当前档位 = 放控制器 + 屏蔽 TB 驱动栈**（详见下文「雷电」节）；BIOS 安全级别 = **SL1**（2026-09-29 复核：只暴露 4 档、**无 SL0/No Security**）|
 | 验证存储 | **西数 WD Blue SN570**；换盘或升级系统后请自行回归测试 |
 
 ## 睡眠与节能（配置级说明）
@@ -76,10 +76,18 @@ nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:opencore-version
 - **耳机孔麦克风**：**可用**（`layout 55`）。**自动切换**：`sh EFI/scripts/oc-setup.sh mic install`（优先级：**蓝牙 > 有线 > 内置麦**）；或手动选输入设备。  
 - **独显**：**不支持，且无解**。Quadro P620（Pascal）的 NVIDIA 驱动止步于 macOS 10.13；当前经 `-wegnoegpu` + `SSDT-dGPU-PowerOff-Darwin` 屏蔽并断电（已验证 IOReg 中无 NVIDIA 设备），仅使用核显。这是最优状态，勿再尝试驱动。  
 - **雷电**：**Intel JHL7540** 于 **`_SB.PCI0.RP01.PXSX`**。三档由 **`sh EFI/scripts/oc-setup.sh tb off|on|lite`** 切换（亦可用 **`tb-thunderbolt-profile.sh`**）：
-  - **off**（**当前档位**）— `SSDT-thunderbolt-disable.aml`：Darwin 下隐藏 RP01（**就是雷电总开关**），USB-C 退化为 USB2，**空口功耗最低**；
+  - **off** — `SSDT-thunderbolt-disable.aml`：Darwin 下隐藏 RP01（**就是雷电总开关**），USB-C 退化为 USB2，**空口功耗最低**；
   - **on** — `SSDT-TB3HP-ZBook`：热插拔 + **`force-power`** + 唤醒 **`_DSW`**；**勿** `power-save=1`（会破坏 Deep Idle 唤醒）；
   - **lite** — `SSDT-TB3HP-ZBook-lite`：保留热插拔与 **`_DSW`**，**不注入 `force-power`**，用于在「省电」与「可用 TB」之间试探；**稳定性待验证**（`.aml` 现状见上「睡眠与节能」）。
-  2026-06-12 曾验证 USB-C（TXHC）可用（**`DisableIoMapper=true` 下即成立 ⇒ VT-d 不是本机雷电的前提**）；2026-06-17 曾出现 `IOThunderboltFamily` 唤醒 panic（`on` 档）；2026-08-24 另一次 `IOThunderboltFamily` NULL panic 由 ExpressCard 幻影槽「关闭卡」触发。**无 TB 设备长期使用时建议 `tb off`**（当前即 `off`）。拿到 TB 设备可先 **`tb on`** 或保持 **lite** 实测睡眠/唤醒与热插拔。回退：**`tb off`**。同类参考：[ZBook 17 G5](https://github.com/theroadw/Zbook-G5-17-WX-4170)。  
+  - **★当前档位 = 「放控制器 + 屏蔽 TB 驱动栈」**（`SSDT-thunderbolt-disable` 关 = RP01 可见；`Kernel/Block` 双条
+    `AppleThunderboltNHI` + `IOThunderboltFamily`，`Strategy=Disable`）：**USB-C 拿回 USB3**，雷电控制器仍被枚举但**零驱动实例**。
+    2026-09-29 `c980425` 首次落地并实测封板（`AppleUSBXHCITR` 含 `SS01`、`IOThunderboltController`=0、零 panic）；
+    2026-10-19 `db40819` 整体回退到 09-18 基线时被连带扫掉，2026-10-22 复现并在本机重新实测通过。
+    ⚠️ Hackintool 的 PCI 列表仍会列出 `00:1d.0~1d.5` 六行——**Block 只拦驱动、不动硬件**；判据看实例数，
+    或系统信息 →「雷雳/USB4」显示 `No drivers are loaded.`。**「关闭卡」永远不要点**（历史 100% panic）。
+    切换/回滚：`tools/tb-block-toggle.sh status|off|on`（`tools/` 按约定不入库；脚本不在时，手动把上面两条 `Enabled` 改 `false` 即回滚）。
+    功耗尚未量化（`off` 档与「放控制器」两版都无实测数字）。
+  2026-06-12 曾验证 USB-C（TXHC）可用（**`DisableIoMapper=true` 下即成立 ⇒ VT-d 不是本机雷电的前提**）；2026-06-17 曾出现 `IOThunderboltFamily` 唤醒 panic（`on` 档）；2026-08-24 另一次 `IOThunderboltFamily` NULL panic 由 ExpressCard 幻影槽「关闭卡」触发。**无 TB 设备长期使用时建议 `tb off`**。拿到 TB 设备可先 **`tb on`** 或保持 **lite** 实测睡眠/唤醒与热插拔。回退：**`tb off`**。同类参考：[ZBook 17 G5](https://github.com/theroadw/Zbook-G5-17-WX-4170)。  
 - **睡眠/唤醒**：核显在 Deep Idle 唤醒时曾触发 **IGPU SafeForceWake** panic；已加 boot-arg **`igfxonln=1`**。蓝牙/Wi‑Fi 睡眠 hook 已移除，交由 macOS 与 **`pmset-reduce-wake.sh`** 管理。  
 - **系统升级**：大版本升级后请核对 **AirportItlwm_Sequoia** 与 **IOSkywalkFamily** / **IO80211FamilyLegacy** 等是否需替换或调整启用范围（以 **`config.plist` → `Kernel` → `Add`** 为准）。**注意**：当前 Wi‑Fi 相关 kext 的 `MaxKernel` 均为 `25.99.99`（即 macOS 26.x）；**升级 macOS 27 前必须先取得支持 Darwin 26 的版本并调整内核范围，否则升级后无 Wi‑Fi**。
 

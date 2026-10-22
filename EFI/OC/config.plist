@@ -72,9 +72,9 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string>Hide RP01 on Darwin; if TB panic: enable this, disable SSDT-TB3HP-ZBook.</string>
+                    <string>[FALLBACK] Hide RP01 on Darwin (kills USB-C entirely). Enabled ONLY if SSDT-TB-USBonly panics. Mutually exclusive with SSDT-TB-USBonly.</string>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>Path</key>
                     <string>SSDT-thunderbolt-disable.aml</string>
                 </dict>
@@ -117,6 +117,14 @@
                     <true/>
                     <key>Path</key>
                     <string>SSDT-dGPU-PowerOff-Darwin.aml</string>
+                </dict>
+                <dict>
+                    <key>Comment</key>
+                    <string>[DISABLED 2026-10-22] Dead nodes: TBTU@20000/TXHC@0 never map to PCI (enumerated by bus scan). Kept for reference only.</string>
+                    <key>Enabled</key>
+                    <false/>
+                    <key>Path</key>
+                    <string>SSDT-TB-USBonly.aml</string>
                 </dict>
             </array>
             <key>Delete</key>
@@ -915,7 +923,40 @@
                 </dict>
             </array>
             <key>Block</key>
-            <array/>
+            <array>
+                <dict>
+                    <key>Arch</key>
+                    <string>x86_64</string>
+                    <key>Comment</key>
+                    <string>[EXPERIMENT 2026-10-22] Block Thunderbolt stack so macOS never drives the NHI; keeps USB-C (AppleUSBXHCITR) alive. Rollback: set Enabled=false.</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Identifier</key>
+                    <string>com.apple.iokit.IOThunderboltFamily</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>Strategy</key>
+                    <string>Disable</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>x86_64</string>
+                    <key>Comment</key>
+                    <string>[TB] Block Thunderbolt NHI driver (paired with IOThunderboltFamily; matches 2026-09-29 c980425).</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Identifier</key>
+                    <string>com.apple.driver.AppleThunderboltNHI</string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>Strategy</key>
+                    <string>Disable</string>
+                </dict>
+            </array>
             <key>Emulate</key>
             <dict>
                 <key>Cpuid1Data</key>

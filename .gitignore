@@ -70,3 +70,9 @@ docs/memory-archive-2026-09.md
 docs/system-overhead-audit.md
 docs/thunderbolt-enable-plan-2026-09-29.md
 tools/sleep-power-measure.sh
+
+# Windows 侧抓取 HP HPTBT 表时的临时解包目录（含 723 KB SSDT-17.dsl，结论已写入 docs）
+.tmp_hptbt/
+
+# config.plist 的本地改动前快照（未提交状态无法靠 git 恢复，故本地留一份；不入库）
+EFI/OC/config.plist.bak-*
