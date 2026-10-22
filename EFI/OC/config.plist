@@ -1485,7 +1485,7 @@
                     <key>Arguments</key>
                     <string></string>
                     <key>Comment</key>
-                    <string>EXT4 filesystem driver | OcBinaryData | must load BEFORE OpenLinuxBoot</string>
+                    <string>EXT4 filesystem driver | OcBinaryData e74e533d8 (rEFInd 0.14.2) | needs metadata_csum_seed/orphan_file support | must load BEFORE OpenLinuxBoot</string>
                     <key>Enabled</key>
                     <true/>
                     <key>HideVerbose</key>
@@ -1499,7 +1499,7 @@
                     <key>Arguments</key>
                     <string></string>
                     <key>Comment</key>
-                    <string>Linux direct boot (no GRUB chainload) | OpenCore 1.0.8 | needs RequestBootVarRouting + LauncherOption</string>
+                    <string>Linux direct boot (no GRUB chainload) | OpenCore 1.0.9 build (OCAT) | needs RequestBootVarRouting + LauncherOption + ext4_x64.efi</string>
                     <key>Enabled</key>
                     <true/>
                     <key>HideVerbose</key>
