@@ -559,7 +559,7 @@
                     <key>BundlePath</key>
                     <string>AppleALC.kext</string>
                     <key>Comment</key>
-                    <string>V1.9.9 | By acidanthera | needs AppleHDA (OCLP-Mod HDA patch) + layout-id 55 (ALC236 HP-240G8)</string>
+                    <string>V1.9.8 | By acidanthera | needs AppleHDA (OCLP-Mod HDA patch) + layout-id 55 (ALC236 HP-240G8)</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
