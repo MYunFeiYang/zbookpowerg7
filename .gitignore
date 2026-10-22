@@ -1,5 +1,9 @@
 .workbuddy/
 
+# OCAT（OCAuxiliaryTools）每次保存 config 都会在 EFI/OC/ 下留一份 oldConfig.plist 快照。
+# 内容等价于上一次提交的 config，git 历史已覆盖 ⇒ 不入库，也不再往 ESP 留垃圾。
+EFI/OC/oldConfig.plist
+
 # 大体积二进制备份：留在本地不入库（路径登记在 docs/ 里），避免仓库历史被不可逆撑大
 docs/backups/**/*.tar.gz
 
