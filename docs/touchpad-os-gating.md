@@ -284,4 +284,17 @@ ioreg -lw0 -p IODeviceTree | grep -i 'boot-log'            # 有 "Failed to add 
 
 **一个无效判据（已排除，别再用）**：`ioreg -lw0 | grep TPNM` 恒为 0。`ioreg` 只导出设备属性，不导出 ACPI 命名空间里的方法，搜方法名永远是 0，**不能当反证**。
 
-**复发风险**：ESP 上仍有 `SSDT-TPD3-PIN2.dsl`（2727 B）与同名 `.aml` 并存，形态与本次出事时相同（`.dsl` 与 `.aml` 只差扩展名，挤在同一 8.3 短名空间）。要彻底断根需让同步任务排除 `*.dsl`，属待办，未实施。
+**关于 `.dsl` 与 `.aml` 并存 —— 不是复发风险，勿再混为一谈（2026-10-23 修正一处推断）**
+
+早先这里写过"`.dsl` 与 `.aml` 挤在同一 8.3 短名空间、构成复发隐患"，**该说法无依据，已撤回**：
+
+- FAT 短名结构是「8 字节基础名 + 3 字节扩展名」。`SSDT-TPD3-PIN.aml` 与 `SSDT-TPD3-PIN.dsl`
+  的别名分别是 `SSDT-T~1.AML` 与 `SSDT-T~1.DSL`，**扩展名不同 ⇒ 短名必然不同 ⇒ 不冲突**
+- 实测 ESP 上现有 6 对并存（`DeepIdle` / `PCI0.LPCB-Wake-AOAC` / `TPD3-PIN2` / `USBX` /
+  `dGPU-PowerOff-Darwin` / `thunderbolt-disable`），最早一对已并存 24–79 天，期间零故障
+- 本次目录项损坏的**触发条件未取证**。可查证的事实只有：目录层出现两条同名 entry、其中一条
+  `FileSize=0`。候选原因是同步写入被中断 / 并发写同一目录 / `msdosfs` 写入行为，**三者均无实证**
+
+因此不要把清理 `.dsl` 当成防护手段（且手动删也无效，同步任务十分钟内全量恢复）。
+**唯一有效的防护是在重启前跑 `tools/efi-preflight.sh`**：它直接检出「重复目录项」与「0 字节文件」，
+命中即 FAIL，这才是能真正拦住复发的一步。

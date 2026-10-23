@@ -89,7 +89,14 @@ nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:opencore-version
 - ⚠️ OC 1.0.8 changelog 里的 hibernation 条目原文是 *"Fixed unresolved ATAPI device paths on **NVMe Macs** during hibernation"* —— **针对真 Mac**，与本机的 S4（真休眠）无关，**勿据此认为本机 S4 有救**（见 [`docs/sleep-tests/`](docs/sleep-tests/)）。
 - 本批二进制于 2026-09-16/17 由机主手动升级，自 `eeac312` 起纳入版本控制 —— 此前长期处于 **工作区 == ESP ≠ HEAD** 的漂移态，任何 `git checkout -- EFI/` 都会**静默把 OC 核心换回旧版**。
 - ⚠️ **`EFI/oc/` 下不要放非必需的 plist**：`oldConfig.plist` 这类文件会被同步任务**一并镜像进 ESP**（已实测 `/Volumes/ESP/EFI/OC/oldConfig.plist` 存在）。备份请放到 `EFI/` 之外。
-- ⚠️ **ESP 上会出现 `.dsl`**（同步任务不区分扩展名，而 OC 只用 `.aml`）。它与同名 `.aml` 只差扩展名，挤在 FAT 的 8.3 短名空间里。**2026-10-23 触控板整条失效即由此类目录项损坏引起**：`SSDT-TPD3-PIN.aml` 在目录层出现两条 entry、其中一条 `FileSize=0`，OC 自带 FAT 驱动读到 0 字节 ⇒ 表不加载 ⇒ `TPNM` 不存在 ⇒ 中断引脚退化为 0。**`shasum` 一致不能证明 OC 读得到**，详见 [`docs/touchpad-os-gating.md`](docs/touchpad-os-gating.md) §7。
+- ℹ️ **ESP 上会出现 `.dsl`**（同步任务不区分扩展名，而 OC 只用 `.aml`）。**这与故障无关，不必清理**：
+  FAT 短名是「8 字节名 + 3 字节扩展名」，`SSDT-TPD3-PIN.aml` / `.dsl` 的短名分别是 `SSDT-T~1.AML` / `SSDT-T~1.DSL`，
+  扩展名不同 ⇒ 短名必然不同 ⇒ **不构成 8.3 冲突**。实测 6 对并存已存在 24–79 天，从未引发问题。
+- ⚠️ **真正要记的是 2026-10-23 那次故障本身**：`SSDT-TPD3-PIN.aml` 在 ESP 目录层出现两条 entry、其中一条
+  `FileSize=0`，OC 自带 FAT 驱动读到 0 字节 ⇒ 表不加载 ⇒ `TPNM` 不存在 ⇒ 中断引脚退化为 0 ⇒ 触控板整条失效。
+  **触发条件未取证**（写入中断 / 并发写 / msdosfs 写入均有可能），**唯一可用的防护是重启前跑 preflight 检出**。
+  两条硬教训：① **`shasum` 一致不能证明 OC 读得到**（macOS 只命中好的那条）；② 判据看 `gpioPin`，
+  258=正常、0=表没加载。详见 [`docs/touchpad-os-gating.md`](docs/touchpad-os-gating.md) §7。
 
 ## 已知限制
 
