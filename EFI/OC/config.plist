@@ -922,7 +922,7 @@
                     <key>Comment</key>
                     <string>[EXPERIMENT 2026-10-22] Block Thunderbolt stack so macOS never drives the NHI; keeps USB-C (AppleUSBXHCITR) alive. Rollback: set Enabled=false.</string>
                     <key>Enabled</key>
-                    <false/>
+                    <true/>
                     <key>Identifier</key>
                     <string>com.apple.iokit.IOThunderboltFamily</string>
                     <key>MaxKernel</key>
@@ -938,7 +938,7 @@
                     <key>Comment</key>
                     <string>[TB] Block Thunderbolt NHI driver (paired with IOThunderboltFamily; matches 2026-09-29 c980425).</string>
                     <key>Enabled</key>
-                    <false/>
+                    <true/>
                     <key>Identifier</key>
                     <string>com.apple.driver.AppleThunderboltNHI</string>
                     <key>MaxKernel</key>
