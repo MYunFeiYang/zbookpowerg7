@@ -39,6 +39,20 @@ macOS 辅助脚本统一入口：**`sh EFI/scripts/oc-setup.sh`**（`install-all
   - ⚠️ **`on` / `lite` 的 `.aml` 已于 2026-09-14 / 09-17 清理中删除**（当时它们在 `off` 档下本就是禁用残留）。要重试先取回：`git show ad8fcd2^:EFI/OC/ACPI/SSDT-TB3HP-ZBook-lite.aml > EFI/oc/ACPI/SSDT-TB3HP-ZBook-lite.aml`（`on` 同法，把 `-lite` 去掉）。
 - 合盖即关机（可选）：**`oc-setup.sh lid install`**。
 
+### 已查证但**决定不改**的项（2026-10-23，防重复讨论）
+
+| 项 | 现值 | 查证结论 | 为什么不动 |
+|---|---|---|---|
+| 雷电根端口 ASPM（`Pci(0x1C,0x0)`） | 未设 | **加配置也没用**。`pci-aspm-default` 只是「默认值」：真正生效要有人调 `IOPlatformDeviceASPMEnable`，而 `IOPCI2PCIBridge::setDeviceASPMState` 是按 `state & 上游caps & 下游caps` 取交集后**把结果写回**同名属性。实测：NVMe 链路 `RP17@1B` + `PXSX@0` 均 =`2`（L1 已生效）；USB-C 链路 `pci-bridge@2` + `pci8086,15e9@0` 均 =`0`（成对出现 = 走的是 disable 分支，或两端 caps 交集为空） | 两种可能都指向「注入无效」；且插电状态下收益无法量化 |
+| `Misc/Security/ScanPolicy` | `0` | 官方位表（三处来源一致）；本机若要收紧 = **`0x2A0D03`** = FS_LOCK(0x1)+DEV_LOCK(0x2)+APFS(0x100)+ESP(0x400)+NTFS(0x800)+SASEX(0x20000)+NVME(0x80000)+USB(0x200000) | 收益只有开机扫描的几十~几百毫秒；文档自己写明「协议隧道可能让设备被识别成别的类型」⇒ 万一 NVMe 被误判，picker 会一个启动项都没有 |
+| `csr-active-config` | `0x0FFF` | OCLP 系 root patch 必须降 SIP；OCLP-Mod 口径是「声卡/网卡补丁 `0x803`、显卡背光 `0x0FFF`」，本机只做 Modern Audio | 收到 `0x803` 只多回 10 个保护位，赌注是下次系统更新重打补丁失败（直接静音） |
+| boot-args 的 `-lilubetaall` | 有 | Lilu **1.7.1 起**「Allow loading on macOS 26 without `-lilubetaall`」（本机 1.7.3）⇒ 该参数已是**惰性** | 删掉不省电不提速；反而丢了「某插件在当前系统本不该加载」的提示，还要拿一次重启去换 |
+
+其余 boot-args 保留依据：`-igfxblt`（WEG 官方表：KBL/CFL 上 macOS 13.4+ 的背光寄存器替代修法）、`-igfxhdmidivs`（SKL/KBL/CFL 高像素时钟 HDMI 死循环）、`igfxrpsc=1`（`rps-control`）、`-amfipassbeta` / `revpatch=sbvmm` / `rtcfx_exclude=0E-FF`（**未查到决定性依据，按「不确定就不动」处理**）。
+
+- **P620 独显确认没上电**：`PEG0@1` 根端口存在（`pcidebug=0:1:0(2:2)`）但**二级总线上没有任何设备**，全树 `"vendor-id" = <de100000>` 命中 **0** ⇒ 链路没起来，不是「被 macOS 忽略」而是「根本没枚举」。
+- ⚠️ 判据提醒：`ioreg` 属性是 **little-endian**，`ioreg | grep 10de` **恒为 0**（假阴性，Intel 会打成 `<86800000>`）。查 NVIDIA 必须 `grep '"vendor-id" = <de100000>'`。
+
 ## 目录与安装
 
 | 路径 | 说明 |
