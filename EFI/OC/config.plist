@@ -72,7 +72,7 @@
                 </dict>
                 <dict>
                     <key>Comment</key>
-                    <string>[FALLBACK] Hide RP01 on Darwin (kills USB-C entirely). Enabled ONLY if SSDT-TB-USBonly panics. Mutually exclusive with SSDT-TB-USBonly.</string>
+                    <string>[FALLBACK] Hide RP01 on Darwin (kills USB-C entirely). Enabled ONLY if the Kernel/Block route ever regresses. Rollback: set Kernel/Block Enabled=false first.</string>
                     <key>Enabled</key>
                     <false/>
                     <key>Path</key>
@@ -117,14 +117,6 @@
                     <true/>
                     <key>Path</key>
                     <string>SSDT-dGPU-PowerOff-Darwin.aml</string>
-                </dict>
-                <dict>
-                    <key>Comment</key>
-                    <string>[DISABLED 2026-10-22] Dead nodes: TBTU@20000/TXHC@0 never map to PCI (enumerated by bus scan). Kept for reference only.</string>
-                    <key>Enabled</key>
-                    <false/>
-                    <key>Path</key>
-                    <string>SSDT-TB-USBonly.aml</string>
                 </dict>
             </array>
             <key>Delete</key>
