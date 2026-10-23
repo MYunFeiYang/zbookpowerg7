@@ -187,3 +187,79 @@ git revert <本次提交>          # 恢复 SSDT-TPD3-PIN 的无门控版本（W
 
 > ⚠️ 注意：**不要**用 `iasl -d` 在本目录反编译 `SSDT-TPD3-PIN.aml` —— 会把反汇编结果写回
 > 同名 `.dsl`，覆盖掉带注释的源文件（.dsl 与 .aml 同名同目录）。
+
+---
+
+## 7. 2026-10-23 触控板再次失效 —— 不是配置问题，是 ESP 上该 AML 的 FAT 目录项损坏
+
+### 7.1 现象
+
+重启后 macOS 触控板完全无响应（不是手势缺失，是连指针都不动）。实时探针：
+
+| 判据 | 实测 | 良好态（§2.4） |
+|---|---|---|
+| `VoodooI2CHIDDevice` 实例 | **0** | ≥1 |
+| `gpioPin` | **0** | **258** |
+| `Interrupt Mode` | `GPIO` | `GPIO` |
+| `VoodooI2CDeviceNub`（TPD3 节点） | 1（在） | 1 |
+| `VoodooI2CHID` kext | 在载（refs=0，无实例） | 在载 |
+
+关键读法：`Interrupt Mode = "GPIO"` 说明 `_CRS` **已走** `SBFB + SBFG` 分支（`OSYS≥0x07DC` 且
+`SDM1==0` 都成立 ⇒ `SSDT-I2C0-GNVS` 正常），但 `SBFG` 里的 GpioInt Pin 仍是 DSDT 原值 `0x0000`。
+即 **`TPD3._INI` 里 `INT1 = TPNM(GPDI)` 没有算出 258**。
+
+### 7.2 根因（OpenCore 启动日志实证，非推断）
+
+`ioreg -lw0 -p IODeviceTree | grep -i 'boot-log'` → hex 解出的原文：
+
+```
+00:000 00:000 OCA: Inserted ACPI table is only 0 bytes, ignoring
+00:004 00:004 OC: Failed to add ACPI SSDT-TPD3-PIN.aml - Invalid Parameter
+```
+
+`SSDT-TPD3-PIN.aml` **根本没被 OC 加载** ⇒ `TPNM` 不存在 ⇒ `TPD3._INI` 里那个 MethodInvocation
+求值失败 ⇒ `INT1` 保持 0 ⇒ `gpioPin = 0` ⇒ VoodooI2C 把中断装在 pin 0（不存在的 pad）上。
+
+为什么 `sha256` 校验一直是"通过"的：**ESP 是 FAT32，该文件在目录层存在两条 entry。**
+
+```
+$ ls -lai /Volumes/ESP/EFI/OC/ACPI/ | grep -i tpd3
+   46 -rwx------ 1 thinkway staff   89 2026-09-18 13:00 SSDT-TPD3-PIN.aml   ← macOS 命中这条
+   46 -rwx------ 1 thinkway staff   89 2026-09-18 13:00 SSDT-TPD3-PIN.aml   ← 重复条目
+```
+
+- `shasum` / `wc -c` / `xxd` 读的是 89 B 那条 ⇒ **内容校验全绿，反而掩盖了问题**
+- OpenCore 自带 FAT 驱动命中另一条（`FileSize = 0`）⇒ `only 0 bytes` + `Invalid Parameter`
+- 随后 `rm` 该文件返回 `Operation not permitted`，删掉 89 B 那条后残留条目 `inode = 18446744073709551577`（无效值）、`size = 0` —— 坏条目坐实
+
+### 7.3 修法（已实施）
+
+**换名绕行**，不动损坏的目录项：
+
+```bash
+git mv EFI/OC/ACPI/SSDT-TPD3-PIN.aml EFI/OC/ACPI/SSDT-TPD3-PIN2.aml
+git mv EFI/OC/ACPI/SSDT-TPD3-PIN.dsl EFI/OC/ACPI/SSDT-TPD3-PIN2.dsl
+# config.plist: ACPI/Add[7].Path -> SSDT-TPD3-PIN2.aml（AML 内容不变，sha 仍 61077ccb…）
+```
+
+随后同步镜像跑完一轮，坏条目被自动清除：ESP 文件数 `342 → 341`，与仓库一致，全量
+`shasum` 0 差异。
+
+### 7.4 判据补充（以后查触控板，先看这三行，别先怀疑 config）
+
+```bash
+ioreg -lw0 | grep -c '<class VoodooI2CHIDDevice,'          # 期望 ≥1
+ioreg -lw0 | grep -o '"gpioPin" = [0-9]*'                  # 期望 258
+ioreg -lw0 -p IODeviceTree | grep -i 'boot-log'            # 有 "Failed to add ACPI" 就是加载失败
+```
+
+- `gpioPin = 0` 而 `Interrupt Mode = GPIO` ⇒ **ACPI 分支对、`TPNM` 没生效** ⇒ 先查表有没有加载
+- `gpioPin = 0` 且 `Interrupt Mode ≠ GPIO` ⇒ `_CRS` 走了 `SBFI` ⇒ 查 `SSDT-I2C0-GNVS` / `OSYS` / `SDM1`
+- **`shasum` 一致不能证明 OC 读得到**：FAT 目录项损坏时两条 entry 内容可以不同，而 macOS 只命中好的那条
+
+### 7.5 顺带确认与本案无关的
+
+- `Kernel/Block`（雷电驱动屏蔽）与本故障**无机制通路**：依赖链零交集、`I2C0@15`(0:21.0) 与
+  `RP01@1C`(0:28.0) 拓扑不共用、Block 只作用于 `kmod start` 不碰 ACPI。Block 关闭后故障依旧，
+  双向都不支持"Block 导致触控板失效"。
+- `SSDT-TPD3-PIN.aml` 的 AML 内容（sha `61077ccb…`）与 09-18 修复版逐字节一致 ⇒ 表本身没被改坏。

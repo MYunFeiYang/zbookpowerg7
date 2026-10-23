@@ -68,7 +68,7 @@
                     <key>Enabled</key>
                     <true/>
                     <key>Path</key>
-                    <string>SSDT-TPD3-PIN.aml</string>
+                    <string>SSDT-TPD3-PIN2.aml</string>
                 </dict>
                 <dict>
                     <key>Comment</key>
@@ -174,7 +174,7 @@
                     <key>BaseSkip</key>
                     <integer>0</integer>
                     <key>Comment</key>
-                    <string>TPD3 rename GNUM->TPNM in TPD3._INI so GPIO pin=258 (GPP_E2); needs SSDT-TPD3-PIN.aml.</string>
+                    <string>TPD3 rename GNUM->TPNM in TPD3._INI so GPIO pin=258 (GPP_E2); needs SSDT-TPD3-PIN2.aml (renamed 2026-10-23 to dodge a corrupt 0-byte FAT dir entry on ESP).</string>
                     <key>Count</key>
                     <integer>1</integer>
                     <key>Enabled</key>
@@ -922,7 +922,7 @@
                     <key>Comment</key>
                     <string>[EXPERIMENT 2026-10-22] Block Thunderbolt stack so macOS never drives the NHI; keeps USB-C (AppleUSBXHCITR) alive. Rollback: set Enabled=false.</string>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>Identifier</key>
                     <string>com.apple.iokit.IOThunderboltFamily</string>
                     <key>MaxKernel</key>
@@ -938,7 +938,7 @@
                     <key>Comment</key>
                     <string>[TB] Block Thunderbolt NHI driver (paired with IOThunderboltFamily; matches 2026-09-29 c980425).</string>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>Identifier</key>
                     <string>com.apple.driver.AppleThunderboltNHI</string>
                     <key>MaxKernel</key>
