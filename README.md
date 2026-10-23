@@ -81,7 +81,7 @@ macOS 辅助脚本统一入口：**`sh EFI/scripts/oc-setup.sh`**（`install-all
 
 ```bash
 nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:opencore-version
-# → REL-109-2026-10-11 | MOD - 草原企鹅 | 微信:15242609 QQ:15242609
+# → REL-109-2026-10-11 | MOD   （第三方 MOD 构建；原串末尾带作者联系方式，此处已隐去）
 ```
 
 > ⚠️ **MOD 版的二进制里读不到版本号**：`strings EFI/OC/OpenCore.efi | grep REL-` 只会得到占位符
