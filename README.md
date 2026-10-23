@@ -83,10 +83,27 @@ nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:opencore-version
     `AppleThunderboltNHI` + `IOThunderboltFamily`，`Strategy=Disable`）：**USB-C 拿回 USB3**，雷电控制器仍被枚举但**零驱动实例**。
     2026-09-29 `c980425` 首次落地并实测封板（`AppleUSBXHCITR` 含 `SS01`、`IOThunderboltController`=0、零 panic）；
     2026-10-19 `db40819` 整体回退到 09-18 基线时被连带扫掉，2026-10-22 复现并在本机重新实测通过。
-    ⚠️ Hackintool 的 PCI 列表仍会列出 `00:1d.0~1d.5` 六行——**Block 只拦驱动、不动硬件**；判据看实例数，
-    或系统信息 →「雷雳/USB4」显示 `No drivers are loaded.`。**「关闭卡」永远不要点**（历史 100% panic）。
+    ⚠️ Hackintool 的 PCI 列表仍会列出 `00:1d.0~1d.5` 六行——**Block 只拦驱动、不动硬件**。
+
+    **★判据（必须按 `<class XXX,` 精确匹配，2026-10-23 修正）**：
+
+    ```
+    # 雷电驱动实例 —— 期望 0（三个类都不应出现）
+    ioreg -lw0 | grep -oE '<class (IOThunderboltController|AppleThunderboltNHIType3|AppleThunderboltHAL),' | sort | uniq -c
+    # USB-C 控制器 —— 期望 1
+    ioreg -lw0 | grep -c '<class AppleUSBXHCITR,'
+    # USB-C 的 4 个端口 —— 期望 2×USB30 + 2×USB20
+    ioreg -lw0 | grep -A120 'AppleUSBXHCITR@' | grep -oE 'AppleUSB(20|30)XHCIPort' | sort | uniq -c
+    ```
+
+    ⚠️ 两个**会误判**的旧写法，别再用：① `ioreg -lw0 | grep -c IOThunderboltController` —— 会命中
+    `IOKitDiagnostics` 的 `Classes` 字典（类名清单），实例为 0 时也可能报 1；② `ioreg -c AppleUSBXHCITR` ——
+    本机 `-c` 不生效，只回 `Root`，看着像"实例 0"，实际控制器活得好好的。也可看系统信息 →「雷雳/USB4」
+    显示 `No drivers are loaded.`。**「关闭卡」永远不要点**（历史 100% panic）。
     切换/回滚：`tools/tb-block-toggle.sh status|off|on`（`tools/` 按约定不入库；脚本不在时，手动把上面两条 `Enabled` 改 `false` 即回滚）。
-    功耗尚未量化（`off` 档与「放控制器」两版都无实测数字）。
+    **睡眠实测**：2026-10-23 过夜 10.9 h（单 Block 版）——DarkWake **0**、WakeTime **2.41 s**、零 panic，
+    唤醒后 `AppleUSBXHCITR` 与 4 端口（**2×USB3 + 2×USB2**）全部 `matched` ⇒ Dortania 提示的「USB-C 睡眠后中断」本机未发生。
+    ⚠️ 该夜=**AC 睡眠**，掉电率无物理意义 ⇒ **功耗仍未量化**（`off` 档与「放控制器」两版都没有拔电过夜数据）。
   2026-06-12 曾验证 USB-C（TXHC）可用（**`DisableIoMapper=true` 下即成立 ⇒ VT-d 不是本机雷电的前提**）；2026-06-17 曾出现 `IOThunderboltFamily` 唤醒 panic（`on` 档）；2026-08-24 另一次 `IOThunderboltFamily` NULL panic 由 ExpressCard 幻影槽「关闭卡」触发。**无 TB 设备长期使用时建议 `tb off`**。拿到 TB 设备可先 **`tb on`** 或保持 **lite** 实测睡眠/唤醒与热插拔。回退：**`tb off`**。同类参考：[ZBook 17 G5](https://github.com/theroadw/Zbook-G5-17-WX-4170)。  
 - **睡眠/唤醒**：核显在 Deep Idle 唤醒时曾触发 **IGPU SafeForceWake** panic；已加 boot-arg **`igfxonln=1`**。蓝牙/Wi‑Fi 睡眠 hook 已移除，交由 macOS 与 **`pmset-reduce-wake.sh`** 管理。  
 - **系统升级**：大版本升级后请核对 **AirportItlwm_Sequoia** 与 **IOSkywalkFamily** / **IO80211FamilyLegacy** 等是否需替换或调整启用范围（以 **`config.plist` → `Kernel` → `Add`** 为准）。**注意**：当前 Wi‑Fi 相关 kext 的 `MaxKernel` 均为 `25.99.99`（即 macOS 26.x）；**升级 macOS 27 前必须先取得支持 Darwin 26 的版本并调整内核范围，否则升级后无 Wi‑Fi**。
