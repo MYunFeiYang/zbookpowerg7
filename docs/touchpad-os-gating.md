@@ -263,3 +263,25 @@ ioreg -lw0 -p IODeviceTree | grep -i 'boot-log'            # 有 "Failed to add 
   `RP01@1C`(0:28.0) 拓扑不共用、Block 只作用于 `kmod start` 不碰 ACPI。Block 关闭后故障依旧，
   双向都不支持"Block 导致触控板失效"。
 - `SSDT-TPD3-PIN.aml` 的 AML 内容（sha `61077ccb…`）与 09-18 修复版逐字节一致 ⇒ 表本身没被改坏。
+
+### 7.6 修复后实测 —— ✅ 已恢复（2026-10-23 10:29 重启，boot `10:29:11`）
+
+| 判据 | 故障时（boot 10:01） | 修复后（boot 10:29） |
+|---|---|---|
+| `<class VoodooI2CHIDDevice,` | 0 | **1** |
+| `"gpioPin"` | 0 | **258** |
+| `<class AppleMultitouchDevice,` | 0 | **2** |
+| `<class VoodooInput,` | 0（整个 kext 未加载） | **1** |
+| `VoodooI2CPrecisionTouchpadHIDEventDriver` | 0 | **1** |
+| `Interrupt Mode` | GPIO | GPIO |
+
+**为什么 `gpioPin = 258` 是决定性证据，而不只是"看起来好了"**：
+
+- DSDT 原本 `TPD3._INI` 里是 `INT1 = GNUM(GPDI)`，本机 `GNUM` 解析为 **333**（GPP_I13，没接触控板）
+- `ACPI/Patch[1]` 把 DSDT 里这处调用改写成 `TPNM(GPDI)`（`Count=1`，仅此一处）
+- `SSDT-TPD3-PIN2` 提供 `TPNM`，**Darwin 分支返回 `0x0102` = 258**，非 Darwin 分支转调 `\_SB.GNUM` 保持原样
+- ⇒ **258 这个数只能由 `TPNM` 求值产生**。`TPNM` 不存在时 `_INI` 赋值失败、pin 保持 0（已实测）。所以 258 出现 = 表已加载 + Patch 已生效 + `_OSI("Darwin")` 分支正确，三者同时成立
+
+**一个无效判据（已排除，别再用）**：`ioreg -lw0 | grep TPNM` 恒为 0。`ioreg` 只导出设备属性，不导出 ACPI 命名空间里的方法，搜方法名永远是 0，**不能当反证**。
+
+**复发风险**：ESP 上仍有 `SSDT-TPD3-PIN2.dsl`（2727 B）与同名 `.aml` 并存，形态与本次出事时相同（`.dsl` 与 `.aml` 只差扩展名，挤在同一 8.3 短名空间）。要彻底断根需让同步任务排除 `*.dsl`，属待办，未实施。

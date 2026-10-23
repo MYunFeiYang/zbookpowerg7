@@ -42,8 +42,14 @@
  * Rollback: git revert this commit (config.plist) - this table alone is inert
  * without the matching ACPI/Patch entry.
  *
- * NOTE: do not run "iasl -d" on SSDT-TPD3-PIN.aml from this directory, it
- * writes the disassembly to SSDT-TPD3-PIN.dsl and overwrites this source.
+ * NOTE: do not run "iasl -d" on SSDT-TPD3-PIN2.aml from this directory, it
+ * writes the disassembly to SSDT-TPD3-PIN2.dsl and overwrites this source.
+ *
+ * Renamed 2026-10-23 from SSDT-TPD3-PIN.* -> SSDT-TPD3-PIN2.* because the FAT
+ * directory entry of the old name on the ESP got corrupted (a duplicate entry
+ * with FileSize=0 appeared); OpenCore's FAT driver picked the zero-length one,
+ * the table was never loaded, and gpioPin regressed 258 -> 0. The AML bytes are
+ * unchanged (sha 61077ccb...), only the filename differs.
  */
 
 DefinitionBlock ("", "SSDT", 2, "HPTPD3", "PINfix", 0x00000003)
