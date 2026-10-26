@@ -74,7 +74,7 @@
 				<key>Comment</key>
 				<string>[FALLBACK] Hide RP01 on Darwin (kills USB-C entirely). Enabled ONLY if the Kernel/Block route ever regresses. Rollback: set Kernel/Block Enabled=false first.</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>Path</key>
 				<string>SSDT-thunderbolt-disable.aml</string>
 			</dict>
@@ -120,9 +120,9 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>隔离空端口(PEG0/RP17/SBUS)以二分 0x50 中断风暴真凶</string>
+				<string>隔离空端口(PEG0/RP17/SBUS)以二分 0x50 中断风暴真凶（实验证伪：_STA=0 删不掉 PCI 功能，零贡献，已关）</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>Path</key>
 				<string>SSDT-disable-empty-ports.aml</string>
 			</dict>
