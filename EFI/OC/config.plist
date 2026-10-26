@@ -118,6 +118,14 @@
 				<key>Path</key>
 				<string>SSDT-dGPU-PowerOff-Darwin.aml</string>
 			</dict>
+			<dict>
+				<key>Comment</key>
+				<string>隔离空端口(PEG0/RP17/SBUS)以二分 0x50 中断风暴真凶</string>
+				<key>Enabled</key>
+				<true/>
+				<key>Path</key>
+				<string>SSDT-disable-empty-ports.aml</string>
+			</dict>
 		</array>
 		<key>Delete</key>
 		<array>
