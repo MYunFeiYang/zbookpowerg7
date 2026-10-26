@@ -120,7 +120,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>隔离空端口(PEG0/RP17/SBUS)以二分 0x50 中断风暴真凶（实验证伪：_STA=0 删不掉 PCI 功能，零贡献，已关）</string>
+				<string>Isolation of empty ports (PEG0/RP17/SBUS) to bisect 0x50 storm root cause. PROVEN INEFFECTIVE: _STA=0 cannot remove PCI functions; zero contribution. Disabled.</string>
 				<key>Enabled</key>
 				<false/>
 				<key>Path</key>
