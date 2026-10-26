@@ -80,6 +80,14 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
+				<string>Disable only Thunderbolt NHI (PXSX) on Darwin; keeps USB-C (TXHC/AppleUSBXHCITR, MSI) alive. Pair w/ Kernel/Block (IOThunderboltFamily + AppleThunderboltNHI). Rollback: set Enabled=false.</string>
+				<key>Enabled</key>
+				<true/>
+				<key>Path</key>
+				<string>SSDT-thunderbolt-nhi-disable.aml</string>
+			</dict>
+			<dict>
+				<key>Comment</key>
 				<string>PMCR: native 300-series NVRAM.</string>
 				<key>Enabled</key>
 				<true/>
