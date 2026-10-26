@@ -51,7 +51,7 @@ DefinitionBlock ("", "SSDT", 2, "ACDT", "CLWAKE", 0x00001000)
                 Return (Package (0x02)
                 {
                     0x6D, 
-                    0x04
+                    Zero
                 })
             }
 

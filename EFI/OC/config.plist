@@ -134,6 +134,14 @@
 				<key>Path</key>
 				<string>SSDT-disable-empty-ports.aml</string>
 			</dict>
+			<dict>
+				<key>Comment</key>
+				<string>GPRW-&gt;XPRW handler: return {0x6D, 0} for GPE 0x6D under Darwin so S0ix is not interrupted every 3s.</string>
+				<key>Enabled</key>
+				<true/>
+				<key>Path</key>
+				<string>SSDT-GPRW.aml</string>
+			</dict>
 		</array>
 		<key>Delete</key>
 		<array>
@@ -223,6 +231,86 @@
 				<key>Replace</key>
 				<data>
 				VFBOTUdQREk=
+				</data>
+				<key>ReplaceMask</key>
+				<data>
+				</data>
+				<key>Skip</key>
+				<integer>0</integer>
+				<key>TableLength</key>
+				<integer>0</integer>
+				<key>TableSignature</key>
+				<data>
+				RFNEVA==
+				</data>
+			</dict>
+			<dict>
+				<key>Base</key>
+				<string></string>
+				<key>BaseSkip</key>
+				<integer>0</integer>
+				<key>Comment</key>
+				<string>change Method(GPRW,2,N) to XPRW, pair with SSDT-GPRW.aml. GPE 0x6D (GLAN/XDCI/HDAS/CNVW) no longer a sleep wake source under Darwin.</string>
+				<key>Count</key>
+				<integer>0</integer>
+				<key>Enabled</key>
+				<true/>
+				<key>Find</key>
+				<data>
+				R1BSVwI=
+				</data>
+				<key>Limit</key>
+				<integer>0</integer>
+				<key>Mask</key>
+				<data>
+				</data>
+				<key>OemTableId</key>
+				<data>
+				AAAAAAAAAAA=
+				</data>
+				<key>Replace</key>
+				<data>
+				WFBSVwI=
+				</data>
+				<key>ReplaceMask</key>
+				<data>
+				</data>
+				<key>Skip</key>
+				<integer>0</integer>
+				<key>TableLength</key>
+				<integer>0</integer>
+				<key>TableSignature</key>
+				<data>
+				RFNEVA==
+				</data>
+			</dict>
+			<dict>
+				<key>Base</key>
+				<string></string>
+				<key>BaseSkip</key>
+				<integer>0</integer>
+				<key>Comment</key>
+				<string>XHC _PRW: Local0[One]=0x03 -&gt; 0 so macOS does not treat XHC as a sleep wake source (hardcoded GPE 0x6D, does not go through GPRW).</string>
+				<key>Count</key>
+				<integer>0</integer>
+				<key>Enabled</key>
+				<true/>
+				<key>Find</key>
+				<data>
+				cAoDiGABAA==
+				</data>
+				<key>Limit</key>
+				<integer>0</integer>
+				<key>Mask</key>
+				<data>
+				</data>
+				<key>OemTableId</key>
+				<data>
+				AAAAAAAAAAA=
+				</data>
+				<key>Replace</key>
+				<data>
+				cAoAiGABAA==
 				</data>
 				<key>ReplaceMask</key>
 				<data>
