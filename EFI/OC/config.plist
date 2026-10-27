@@ -290,11 +290,11 @@
 				<key>BaseSkip</key>
 				<integer>0</integer>
 				<key>Comment</key>
-				<string>XHC _PRW: Local0[One]=0x03 -&gt; 0 so macOS does not treat XHC as a sleep wake source (hardcoded GPE 0x6D, does not go through GPRW).</string>
+				<string>XHC _PRW: Local0[One]=0x03 -&gt; 0. TEMPORARILY DISABLED 2026-10-27 for a single-variable test: XDCI is already neutralised by Patch[5], so let XHC keep GPE 0x6D enabled and see whether lid-open wake returns without the 47s storm.</string>
 				<key>Count</key>
 				<integer>0</integer>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>Find</key>
 				<data>
 				cAoDiGABAA==
