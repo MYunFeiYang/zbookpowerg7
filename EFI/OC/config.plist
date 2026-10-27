@@ -136,9 +136,9 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>GPRW-&gt;XPRW handler: return {0x6D, 0} for GPE 0x6D under Darwin so S0ix is not interrupted every 3s.</string>
+				<string>RETIRED 2026-10-27: GPRW handler no longer injected. XDCI _PRW is patched directly in DSDT instead.</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>Path</key>
 				<string>SSDT-GPRW.aml</string>
 			</dict>
@@ -250,11 +250,11 @@
 				<key>BaseSkip</key>
 				<integer>0</integer>
 				<key>Comment</key>
-				<string>change Method(GPRW,2,N) to XPRW, pair with SSDT-GPRW.aml. GPE 0x6D (GLAN/XDCI/HDAS/CNVW) no longer a sleep wake source under Darwin.</string>
+				<string>RETIRED 2026-10-27: global GPRW-&gt;XPRW rename disabled. Replaced by the targeted XDCI _PRW patch below, which keeps GPE 0x6D enabled for lid-open wake.</string>
 				<key>Count</key>
 				<integer>0</integer>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>Find</key>
 				<data>
 				R1BSVwI=
@@ -311,6 +311,46 @@
 				<key>Replace</key>
 				<data>
 				cAoAiGABAA==
+				</data>
+				<key>ReplaceMask</key>
+				<data>
+				</data>
+				<key>Skip</key>
+				<integer>0</integer>
+				<key>TableLength</key>
+				<integer>0</integer>
+				<key>TableSignature</key>
+				<data>
+				RFNEVA==
+				</data>
+			</dict>
+			<dict>
+				<key>Base</key>
+				<string></string>
+				<key>BaseSkip</key>
+				<integer>0</integer>
+				<key>Comment</key>
+				<string>XDCI _PRW: lowest sleep state 0x04 to 0x00 under Darwin, so XDCI stops re-arming GPE 0x6D as a wake source. GLAN/HDAS/CNVW keep the GPE enabled, so lid-open wake still works.</string>
+				<key>Count</key>
+				<integer>1</integer>
+				<key>Enabled</key>
+				<true/>
+				<key>Find</key>
+				<data>
+				cgAAABQJX1MwVwCkCgMUD19QUlcApEdQUlcKbQoE
+				</data>
+				<key>Limit</key>
+				<integer>0</integer>
+				<key>Mask</key>
+				<data>
+				</data>
+				<key>OemTableId</key>
+				<data>
+				AAAAAAAAAAA=
+				</data>
+				<key>Replace</key>
+				<data>
+				cgAAABQJX1MwVwCkCgMUD19QUlcApEdQUlcKbQoA
 				</data>
 				<key>ReplaceMask</key>
 				<data>
