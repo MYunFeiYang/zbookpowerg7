@@ -437,3 +437,42 @@ HBFX: kIOHibernateRTCVariables is 44 bytes
 
 不改固件、不写 RTC ⇒ 无不可逆风险。最坏情况是「睡下去醒不来，需长按电源键」，
 NVRAM 里的 `IOHibernateRTCVariables` 可用 OpenCore 的 Reset NVRAM 清掉。
+
+## 3b 卡点二：sleepimage 带 `uchg` 导致 IOPolledFileOpen 0 ms 失败（2026-10-28 17:44 实测）
+
+hfile 修好后的那次睡眠（17:44:53–17:44:55）内核日志给出唯一失败点：
+
+```
+17:44:54.499  hibernate image path: /var/vm/sleepimage
+17:44:54.853  hibernate_page_list_setall preflight pageCount 675942 est comp 50 \
+              setfilemin 1484783616 setfilemax 1484783616 min 1073741824
+17:44:54.853  IOPolledFileOpen(e00002db)          ← 与上一行同一毫秒 = 0 ms 失败
+17:44:55.205  AppleACPIPlatformPower Wake reason: (HibernateError)
+```
+
+**`e00002db` = `kIOReturnNoSpace`，但它不是"磁盘满"**：`IOPolledInterface.cpp:628-653`
+把 `kern_open_file_for_direct_io()` 的任何失败都统一映射成这个码
+
+```c
+vars->fileRef = kern_open_file_for_direct_io(filename, flags, ...);
+if (!vars->fileRef) { err = kIOReturnNoSpace; }        // :651-652
+```
+
+真正的 `errno` 被丢弃。根因在文件自身的标志位：
+
+```
+$ ls -lO /var/vm/sleepimage
+-rw-r--r--  1 root  wheel  uchg  0 Oct 27 12:37
+$ stat -f '%z %b %Sf' /var/vm/sleepimage
+0 0 uchg
+```
+
+`uchg`（`UF_IMMUTABLE`）下**即使 root 也不能写、不能扩、不能截断** ⇒ 直写方式打开立即被拒。
+这也同时解释了三个现象：0 ms 失败、文件一直是 0 字节、mtime 停在 10-27 不动。
+
+除尺寸之外可以排除的因素：磁盘剩余 193 GiB（`kIOHibernateDiskFreeSpace` 只要 1 GiB）、
+swap 正常（1024 MB 已加密）、FileVault 关闭、`"Hibernate File Min" = 1 GiB` 已存在
+⇒ `IOHibernateIO.cpp:578` 的 preflight 分支本就该把文件扩到 1.38 GiB，只因不可变标志而没做成。
+
+休眠路径自身不会清这些标志（xnu 休眠相关文件 grep `chflags`/`IMMUTABLE` = 0 命中），必须外部清：
+`s4-arm.sh` 的 arm 门槛与 check 体检均已加入 `uchg`/`schg` 判据，arm 会自动 `chflags nouchg`。

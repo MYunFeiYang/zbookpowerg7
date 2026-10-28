@@ -307,6 +307,17 @@ PY
   SI="$(sysctl -n kern.hibernatefile 2>/dev/null || true)"
   [[ -n "$SI" ]] || SI="/var/vm/sleepimage"
   MEM="$(sysctl -n hw.memsize 2>/dev/null || echo 0)"
+  # 不可变标志：会让内核直写打开失败（uchg ⇒ 0 ms 返回 kIOReturnNoSpace）
+  if [[ -f "$SI" ]]; then
+    local SFL; SFL="$(stat -f %Sf "$SI" 2>/dev/null || true)"
+    case "$SFL" in
+      *uchg*|*schg*|*restricted*)
+        echo "  ✘ sleepimage 带不可变标志（${SFL}）⇒ 内核写不进去，必失败；arm 会自动清 uchg/schg"
+        blocked=1
+        ;;
+      *) echo "  ✔ sleepimage 无不可变标志（${SFL:-无}）" ;;
+    esac
+  fi
   if [[ -f "$SI" ]]; then
     SZ="$(stat -f %z "$SI" 2>/dev/null || echo 0)"
     if [[ "$SZ" -gt $((MEM / 2)) ]]; then
@@ -409,6 +420,32 @@ do_arm() {
   # sleepimage 不是前提，是结果：standby=1 时内核在休眠准备阶段自行创建/扩展。
   # 早前把它写成硬门槛并断言"只在启动时分配"，重启验证已推翻（见 check 的 B 段注释）。
   local SI; SI="${HF:-/var/vm/sleepimage}"
+  # ★★ 不可变标志 = 2026-10-28 17:44 那次失败的真正根因
+  #   uchg（UF_IMMUTABLE）/schg 下**即使 root 也不能写/扩/截断**该文件
+  #   ⇒ `kern_open_file_for_direct_io()` 返回 NULL ⇒ IOPolledInterface.cpp:651
+  #     把它一律映射成 kIOReturnNoSpace(e00002db)。
+  #   证据链：内核日志 `IOPolledFileOpen(e00002db)` 与 preflight 同毫秒（0 ms 即失败）、
+  #           文件至今 0 字节且 mtime 不动、`ls -lO` 显示 uchg。
+  #   休眠路径自身不清这些标志（xnu 休眠相关文件 grep chflags/IMMUTABLE = 0 命中）。
+  if [[ -f "$SI" ]]; then
+    local FL; FL="$(stat -f %Sf "$SI" 2>/dev/null || true)"
+    case "$FL" in
+      *uchg*|*schg*)
+        echo "  ! 镜像带不可变标志（${FL}）⇒ 内核无法写入，正在清除…"
+        chflags nouchg "$SI" 2>/dev/null || true
+        chflags noschg "$SI" 2>/dev/null || true
+        FL="$(stat -f %Sf "$SI" 2>/dev/null || true)"
+        if [[ "$FL" == *uchg* || "$FL" == *schg* ]]; then
+          echo "  ✘ 清不掉（仍为 ${FL}）⇒ 别睡，先手动 chflags"; blocked=1
+        else
+          echo "  ✔ 已清除（现为 ${FL:-无}）"
+        fi
+        ;;
+      *restricted*)
+        echo "  ! 镜像带 restricted 标志（${FL}）—— 需 SIP 关闭才能清，若睡失败先查它"
+        ;;
+    esac
+  fi
   if [[ -f "$SI" ]]; then
     echo "  ✔ 镜像文件已存在（$(awk -v s="$(stat -f %z "$SI" 2>/dev/null || echo 0)" 'BEGIN{printf "%.1f GiB", s/1073741824}')）"
   else
