@@ -106,3 +106,94 @@
 | 生效条件 | **需重启**；预期行为与改前一致（TRIM 走系统默认、AHCI patch 本就不加载、日志写入 ESP 停止） |
 
 回滚：`cp docs/backups/deadkeys-20261028-1512/config.plist.before EFI/OC/config.plist`（会镜像到 ESP）。
+
+---
+
+## 7. ACPI 专项补审（15:20 追加）
+
+用户追问「ACPI 呢」。上一轮只验证了 ACPI 文件是否**存在**，本节补做逐条有效性验证。
+
+### 7.1 ACPI/Patch —— 4 条启用的全部命中原始表
+
+验证方法：拿 `docs/SysReport/ACPI/*.aml`（45 个原始表、共 478,060 B，8-05 从固件导出，
+且 Replace 串在原表中出现 **0 次** ⇒ 确认是 patch **之前**的表），用 Python 二进制搜索每条 `Find` 序列。
+
+| # | 用途 | Find（hex） | 命中 | 结论 |
+|---|---|---|---|---|
+| 0 | PNLF → XNLF 改名（让 macOS 忽略固件背光设备，改用注入的 SSDT-PNLF） | `504e4c46` | **DSDT ×2** | ✅ 有效 |
+| 1 | TPD3 `GNUM`→`TPNM`（触控板 GPIO pin） | `474e554d47504449` | **DSDT ×1** | ✅ 有效（Count=1 精确只改这一处；`GNUM` 全表出现 17 次未被误伤） |
+| 2 | GPRW → XPRW 全局改名 | `47505257` | — | ⏸ **已禁用（RETIRED 2026-10-27）** |
+| 3 | XHC `_PRW` 最低睡眠态 `0x03`→`0x00` | `700a0388600100` | **DSDT ×1** | ✅ 有效 |
+| 4 | XDCI `_PRW` 最低睡眠态 `0x04`→`0x00`（阻止重新武装 GPE 0x6D） | `7200…0a6d0a04`(30B) | **DSDT ×1** | ✅ 有效 |
+
+关键资源名交叉验证：`XNLF` / `TPNM` / `XPRW` 在原表出现 **0 次**，`PNLF`×2 / `GPRW`×69 → 与上表自洽。
+
+**⚠️ 耦合约束（重要）**：Patch[1] 与 `SSDT-TPD3-PIN2.aml` 是**一对**，不能单独删任一个。
+SSDT 内容为 `Method (TPNM,1){ If(_OSI("Darwin")) Return(0x0102); Return(\_SB.GNUM(Arg0)) }`
+（0x0102 = GPIO pin 258 = GPP_E2）。Patch 负责把固件 `TPD3._INI` 里的调用改名，SSDT 负责提供新实现。
+删 Patch ⇒ SSDT 的 TPNM 无人调用；删 SSDT ⇒ TPD3._INI 调用未定义的 TPNM ⇒ 触控板 GPIO 断。
+
+### 7.2 ACPI/Add —— 14 个启用 SSDT 全部生效
+
+判据：Scope 目标必须存在于活命名空间（`ioreg -p IOACPIPlane`，175 个节点），
+且 SSDT 声明的 Device 必须已注册。
+
+| SSDT | Scope 目标 | 实测 | 提供的设备 |
+|---|---|---|---|
+| SSDT-EC | `\_SB.PCI0.LPCB` | ✅ LPCB 在 | Device **(EC)** ✅ 已注册 |
+| SSDT-PMC | `\_SB.PCI0.LPCB` | ✅ | Device **(PMCR)** ✅ 已注册 |
+| SSDT-PCI0.LPCB-Wake-AOAC | `\_SB.PCI0.LPCB` | ✅ | — |
+| SSDT-PLUG | `\_SB.PR00` | ✅ PR00 在 | — |
+| SSDT-SNDW-off | `\_SB.PCI0.HDAS.SNDW` | ✅ HDAS/SNDW 均在 | — |
+| SSDT-I2C0-GNVS | `\_SB.PCI0.I2C0` | ✅ I2C0 在 | — |
+| SSDT-thunderbolt-nhi-disable | `\_SB.PCI0.RP01.PXSX` | ✅ RP01/PXSX 均在 | — |
+| SSDT-USBX | `\_SB` | ✅ | Device **(USBX)** ✅ 已注册 |
+| SSDT-AWAC | `\_SB` | ✅ | 效果：**AWAC 已从命名空间消失、RTC 在位** ⇒ 生效 |
+| SSDT-PNLF | （无 Scope，直接建 Device） | ✅ | Device **(PNLF)** ✅ 已注册 |
+| SSDT-dGPU-PowerOff-Darwin | （无 Scope） | ✅ | Device **(DGPU)** ✅ 已注册 |
+| SSDT-DeepIdle | `_SB` + `_GPE` | ✅（`_GPE` 是纯命名空间节点，ioreg 本就不显示） | `LPS0`/`LXEN` 返回 One（S3 深度空闲） |
+| SSDT-LID-G7 | `_GPE` | ✅ | Device LID / S5 / EC0 均在 |
+| SSDT-TPD3-PIN2 | （无 Scope，定义 Method） | ✅ | `Method(TPNM)`，配 Patch[1] |
+
+`_GPE` 不在 ioreg 的 175 个节点里属**正常**：它是 ACPI 命名空间作用域，不产生 IORegistryEntry 对象。
+
+### 7.3 ACPI/Quirks —— 7 条逐条定性
+
+| 键 | 值 | 定性 |
+|---|---|---|
+| `FadtEnableReset` | `true` | 文档 *"Not recommended unless required"*，但它**确实改 FADT**（补 reset register）⇒ 属「可能起作用」非「不可能起作用」。本机重启/关机正常 ⇒ 冗余；收益为零、误判代价是关机异常 ⇒ **保留** |
+| `ResetHwSig` | `true` | **跨 OS 必需**：清 FACS `HardwareSignature`。macOS `hibernatemode=0` 用不到，但 **Windows 快速启动 = S4 混合休眠**依赖该签名一致性，归零后 `0==0` 恒匹配 ⇒ 对 Windows **有利** ⇒ 保留 |
+| `RebaseRegions` | `true` | 文档 *"Not recommended"*，但作用是 heuristic 重定位 `OperationRegion` 地址 ⇒ 有实际作用。本机无已知 region 偏移症状，属**可能冗余**；无 A/B 证据不敢动 ⇒ 保留 |
+| `NormalizeHeaders` | `false` | 等于 Failsafe |
+| `ResetLogoStatus` | `false` | 等于 Failsafe（清 BGRT 的 Displayed 位，影响 Win8+ boot logo） |
+| `SyncTableIds` | `false` | 等于 Failsafe；只对**老 Windows 的 SLIC 授权**有意义，本机 Win11 无关 |
+| `EnableForAll` | `false` | MOD 专有键，False ⇒ 行为等同官方 |
+
+### 7.4 ACPI/Delete —— 删 DMAR 表
+
+`DMAR-1.aml`（200 B）确实存在于原始表 ⇒ 该 Delete 条目**有作用对象、有效**，不是死配置。
+
+它与 `Kernel/Quirks/DisableIoMapper=true` 目的相近但**层次不同**：前者在固件表层面移除 DMAR
+（macOS 看不到 DMA Remapping 信息），后者在内核层让 VT-d 不启用。两者叠加是本项目现有配置，
+机器启动/睡眠/唤醒均正常 ⇒ **保留**。要验证「是否冗余」只能 A/B 重启，收益为零，不做。
+
+### 7.5 ACPI 结论
+
+**ACPI 段没有任何「不可能起作用」的项**：4 条启用 Patch 全部命中原始 DSDT、
+14 个启用 SSDT 的 Scope 目标与 Device 全部在活命名空间、7 条 Quirks 均有作用或属跨 OS 必需、1 条 Delete 有实际对象。
+
+唯一属「历史残留」的是 **4 个已禁用条目**，删掉零风险但也**零收益**，且回滚时需要重写：
+
+- `ACPI/Add`：`SSDT-thunderbolt-disable.aml`（雷电全量隐藏 fallback）、`SSDT-disable-empty-ports.aml`、`SSDT-GPRW.aml`
+- `ACPI/Patch`：`GPRW → XPRW`（注释已标 RETIRED 2026-10-27）
+
+⇒ **建议保持现状不动**。ACPI 是本套配置里质量最高的一段：每条都有明确目的、且都能指到实测证据。
+
+### 7.6 附带查实
+
+- `acpidump` 在 macOS 上不可用（那是 Linux 版，读 `/sys/firmware/acpi/tables`，实测报
+  `Cannot open directory`）。本机 `iasl`/`acpidump` 在 `/usr/local/bin`，验证改用
+  **`docs/SysReport/ACPI/*.aml` 原始表 + Python 二进制搜索**，比 acpidump 更可靠（不依赖运行时）。
+- Data Hub 的 `boot-log` 属性在本机**取不到**（`ioreg -lw0 -p IODeviceTree | grep -c boot-log` = 0，
+  转出的 `/tmp/oc-bootlog.txt` 为 0 字节）⇒ 本项目长期用于 ACPI 取证的通路目前**不可用**，
+  待下次重启后再验证（可能与 Target 已改为 0x05 无关，是 RELEASE 构建下 boot-log 未写入）。
