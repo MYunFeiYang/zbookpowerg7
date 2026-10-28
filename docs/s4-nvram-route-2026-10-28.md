@@ -292,11 +292,41 @@ sysctl -n kern.hibernatefile                 # → 空  （SYSCTL_STRING 直指�
 ### 修法
 
 - `boot-args` 增加 `hfile=/var/vm/sleepimage`（走第 2 条来源，不依赖 powerd 是否下发属性）。
+- **免重启通道（2026-10-28 17:40 补）**：上表"只有两处赋值"只统计了代码里的显式赋值，
+  还有第三条路——sysctl 处理函数**直接写同一个数组**：
+
+  ```c
+  // IOHibernateIO.cpp:1519
+  SYSCTL_STRING(_kern, OID_AUTO, hibernatefile,
+      CTLFLAG_RW | CTLFLAG_KERN | CTLFLAG_LOCKED,
+      gIOHibernateFilename, sizeof(gIOHibernateFilename), "");
+  ```
+
+  `CTLFLAG_RW` ⇒ root 可写：`sudo sysctl -w kern.hibernatefile=/var/vm/sleepimage`，
+  写完立刻生效，**不必重启**。实测（未提权时）报 `Operation not permitted` 而非 `unknown OID`
+  ⇒ 键存在且可写，只差权限。
+  为什么它不会被覆盖：`IOHibernateSystemSleep` 只在 `IOPMrootDomain` 真有 `"Hibernate File"`
+  属性时才覆盖（`:496-502`），本机该属性 0 命中 ⇒ 运行态写入的值能活到 `:504` 判据。
+  反例：`pmset <src> hibernatefile` 走的是 `IOPMrootDomain.cpp:2002/2051` 的
+  `kIOHibernateFileKey ⇒ setProperty` 那条，本机实测写完 `ioreg` 仍无该属性、sysctl 仍为空
+  ⇒ **别把它当主路**。
 - `s4-arm.sh` 增加两级判据：A 段查 config 里有没有 `hfile=`，B 段**硬判** `sysctl kern.hibernatefile` 非空；
-  `arm` 门槛在发现为空时会先尝试运行态 `pmset <src> hibernatefile /var/vm/sleepimage`，
-  成功则不必重启，失败才要求重启。
+  `arm` 门槛在发现为空时会先 `sysctl -w` 直写（成功则免重启），失败才要求重启。
+
+**sleepimage 0 字节不是阻塞**（2026-10-28 17:40 核实）：`ioreg` 里
+`"Hibernate File Min" = 1073741824`（1 GiB）非零 ⇒ `IOHibernateIO.cpp:578` 的
+`if (vars->fileMinSize || …)` 成立，preflight 会算出 `setFileSizeMin`，
+`:629` 的 `IOPolledFileOpen(..., kIOPolledFileCreate, setFileSizeMin, …)` 自行创建/扩展该文件。
 
 **下一步**：重启后先看 `sysctl kern.hibernatefile`。非空才睡 —— 这条让"白重启"变成可判读。
+
+**HBFX 日志不是判据（2026-10-28 17:40 结论）**：`kern_hbfx.cpp` 里
+`"IOHibernateSystemSleep is called, result is: 0x…"` 那行包在 `#ifdef DEBUG` 内，
+官方 release kext 根本没编进去 ⇒ 加 `-hbfxdbg` 也不会出现，`log show … CONTAINS "HBFX"` 为空是**预期**。
+另外 HBFX 的 NVRAM 写入有前置条件（`kern_hbfx.cpp:87`）：
+`if (result == KERN_SUCCESS || ioHibernateState == kIOHibernateStateHibernating)`——
+hfile 为空时内核返回 `kIOReturnUnsupported`，HBFX 直接跳过写 NVRAM
+⇒ 顺序上必须先把 hfile 修好，HBFX 才有机会干活。**判据改用 `sysctl kern.hibernatecount`。**
 
 **第 9 条的实测结果（2026-10-28 16:50，重启后）**：`Target` 已从 5 改成 69 并确认运行态生效，
 但 `ioreg -lw0 | grep -c '"boot-log"'` = **0**，`IODeviceTree` 里根本没有该属性。

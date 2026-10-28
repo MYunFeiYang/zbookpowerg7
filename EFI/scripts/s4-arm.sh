@@ -49,8 +49,10 @@
 #   ⇒ 醒后 nvram 里还查得到它 = OC 压根没消费，是**坏信号**；查不到才是正常。
 #   v1) kern.hibernatecount 从 0 变 1 且会话原样恢复    ⇒ NVRAM 路线成立，可转日常用
 #   v2) 计数变了但醒不来 / 半途重启                    ⇒ 卡在 boot.efi 恢复，查镜像/密文
-#   v3) pmset -g log 只有 Entering Sleep、计数仍 0     ⇒ 没走休眠路径，或 macOS 26 没在
-#       PMRootDomain 放密钥（HBFX 日志会直接打 "PMRootDomain key MISSING"）
+#   v3) pmset -g log 只有 Entering Sleep、计数仍 0     ⇒ 没走休眠路径
+#       （曾想用 HBFX 日志判"密钥有没有交出来"，2026-10-28 17:40 核实该路不可用：
+#        kern_hbfx.cpp 里那些行包在 #ifdef DEBUG 内，release kext 根本没编译进去，
+#        加 -hbfxdbg 也不会出现。判据只能是 kern.hibernatecount。）
 #
 
 set -uo pipefail
@@ -163,9 +165,9 @@ if '-hbfxforce' in ba:
 else:
     f("boot-args 缺 -hbfxforce ⇒ fork 逻辑不触发，休眠变量无处可写")
 if '-hbfxdbg' in ba:
-    p("boot-args 含 -hbfxdbg（HBFX 日志可用）")
+    p("boot-args 含 -hbfxdbg（注意：release kext 的 DEBUG 日志没编进去，此开关基本无效）")
 else:
-    w("boot-args 缺 -hbfxdbg ⇒ 失败时看不到 kext 内部判读")
+    w("boot-args 缺 -hbfxdbg（影响很小，见上）")
 
 # 6b hfile —— 内核写休眠镜像的路径来源（2026-10-28 实测根因）
 # IOHibernateIO.cpp:496-506：gIOHibernateFilename 只由两处赋值，
@@ -273,7 +275,8 @@ PY
   else
     echo "  ✘ kern.hibernatefile 为空 ⇒ 内核不知道该往哪写镜像，休眠必然 HibernateError"
     echo "     本机成因：IOPMrootDomain 没有 \"Hibernate File\" 属性（ioreg 全量 0 命中）"
-    echo "     修法：boot-args 加 hfile=/var/vm/sleepimage，重启后这条会自动变绿"
+    echo "     修法一（免重启）：sudo sysctl -w kern.hibernatefile=/var/vm/sleepimage"
+    echo "     修法二（持久）：boot-args 加 hfile=/var/vm/sleepimage，重启后这条自动变绿"
     blocked=1
   fi
 
@@ -300,7 +303,8 @@ PY
       echo "  ✔ sleepimage 已分配：$(awk -v s="$SZ" 'BEGIN{printf "%.1f GiB", s/1073741824}')"
     else
       echo "  ! sleepimage 仅 ${SZ} 字节（内存 $((MEM / 1073741824)) GiB）"
-      echo "     未分配不等于做不了：standby=1 时内核会在休眠准备阶段自行扩展（见 C 段）"
+      echo "     未分配不等于做不了：IOPMrootDomain 已有 \"Hibernate File Min\"（1 GiB）"
+      echo "     ⇒ IOHibernateIO.cpp:578-612 的 preflight 会算出 setFileSizeMin 并自行扩展/创建"
     fi
   else
     echo "  ! sleepimage 尚未分配（不等于阻塞：standby=1 时内核休眠准备阶段会自行创建）"
@@ -369,23 +373,27 @@ do_arm() {
   #   return kIOReturnUnsupported;` —— 不写镜像、不 panic、几秒内退回。
   local HF; HF="$(sysctl -n kern.hibernatefile 2>/dev/null || true)"
   if [[ -z "$HF" ]]; then
-    # 先尝试运行态补下发（成功则免掉一次重启；是否生效由下一行实测决定，不做假设）
-    local _src="-c"
-    if [[ "$($PMSET -g batt 2>/dev/null || true)" == *"'Battery Power'"* ]]; then _src="-b"; fi
-    echo "  ! kern.hibernatefile 为空，尝试运行态下发 hibernatefile…"
-    $PMSET "$_src" hibernatefile /var/vm/sleepimage >/dev/null 2>&1 || true
-    sleep 1
+    # 免重启通道：kern.hibernatefile 是 CTLFLAG_RW 的 SYSCTL_STRING
+    #   IOHibernateIO.cpp:1519 `SYSCTL_STRING(_kern, OID_AUTO, hibernatefile,
+    #     CTLFLAG_RW | CTLFLAG_KERN | CTLFLAG_LOCKED, gIOHibernateFilename, ...)`
+    #   ⇒ 直接写 gIOHibernateFilename 数组本身，绕开 IOPMrootDomain 属性。
+    # 反例（别再当主路）：`pmset <src> hibernatefile` 走 setProperties 那条
+    #   （IOPMrootDomain.cpp:2002/2051 `kIOHibernateFileKey` ⇒ setProperty），
+    #   本机实测不落地：写完 ioreg 里仍无 "Hibernate File" 属性、sysctl 仍为空。
+    echo "  ! kern.hibernatefile 为空，尝试运行态直写 sysctl…"
+    sysctl -w kern.hibernatefile=/var/vm/sleepimage >/dev/null 2>&1 || true
     HF="$(sysctl -n kern.hibernatefile 2>/dev/null || true)"
     if [[ -n "$HF" ]]; then
-      echo "  ✔ 下发成功：kern.hibernatefile = ${HF}（无需重启）"
+      echo "  ✔ 运行态下发成功：kern.hibernatefile = ${HF}（无需重启）"
     fi
   fi
   if [[ -n "$HF" ]]; then
     echo "  ✔ kern.hibernatefile = ${HF}"
   else
     echo "  ✘ kern.hibernatefile 仍为空 ⇒ 内核不知道往哪写镜像，睡了也是 HibernateError"
-    echo "     本机成因：IOPMrootDomain 没有 \"Hibernate File\" 属性（ioreg 全量 0 命中）"
-    echo "     修法：boot-args 已加 hfile=/var/vm/sleepimage，**重启一次**后这条才会变绿"
+    echo "     成因：IOPMrootDomain 没有 \"Hibernate File\" 属性（ioreg 全量 0 命中），gIOHibernateFilename 无人赋值"
+    echo "     修法一（免重启）：sudo sysctl -w kern.hibernatefile=/var/vm/sleepimage"
+    echo "     修法二（持久）：boot-args 已含 hfile=/var/vm/sleepimage，重启后由 IOHibernateSystemInit 写入"
     blocked=1
   fi
   # sleepimage 不是前提，是结果：standby=1 时内核在休眠准备阶段自行创建/扩展。
@@ -412,7 +420,10 @@ do_arm() {
   echo
   echo "=== 武装【${SN}】侧（另一侧保持 hibernatemode 0 / standby 0）"
   # 镜像路径：内核写休眠镜像的唯一来源（powers 已由上面前置门槛校验并尝试下发）
-  $PMSET "$SRC" hibernatefile /var/vm/sleepimage
+  # ★ `pmset hibernatefile` 只写 plist（让 pmset -g 好看），对内核无效；
+  #   真正落地的是 sysctl 直写 gIOHibernateFilename，两行都留。
+  $PMSET "$SRC" hibernatefile /var/vm/sleepimage >/dev/null 2>&1 || true
+  sysctl -w kern.hibernatefile=/var/vm/sleepimage >/dev/null 2>&1 || true
   $PMSET "$SRC" hibernatemode 25
   # ★ standby 必须为 1。man pmset 原文：hibernation image 是否写入"also dependent on
   #   the values of standby and autopoweroff"，而 standby=0 会彻底关掉镜像写入
@@ -450,13 +461,14 @@ do_arm() {
   echo "     开机后查 pmset -g log 判「恢复了但屏没亮」还是「压根没恢复」"
   echo
   echo "=== 回来后的取证（判读见脚本头部，注意方向别搞反）"
-  echo "  sysctl kern.hibernatecount               # 成功一次 +1（基线 0）"
-  echo "  ls -lh /System/Volumes/VM/sleepimage    # 应≈16G、mtime 是刚才（别查 /var/vm/，那是残留）"
+  echo "  sysctl kern.hibernatecount               # 成功一次 +1（基线 0）—— 唯一硬判据"
+  echo "  sysctl -n kern.hibernatefile             # 醒后仍应为 /var/vm/sleepimage"
+  echo "  ls -lh /var/vm/sleepimage                # ← 这才是写镜像的目标（Data 卷）"
+  echo "                                           #   醒后应明显增长（≥1 GiB，大小随压缩率变，不是固定 16G）"
+  echo "                                           #   /System/Volumes/VM/sleepimage 是 VM 卷的 swap/转储，别混"
   echo "  pmset -g log | grep -e Hibernat -e 'Entering Sleep' | tail -5"
   echo "                                           # 出现 'Entering Hibernate' = 走的是休眠不是普通睡"
-  echo "  log show --last 30m --predicate 'eventMessage CONTAINS \"HBFX\"' | tail -30"
-  echo "                                           # 'PMRootDomain key present/44 bytes' = 密钥交出来了"
-  echo "                                           # 'MISSING' = macOS 26 没给，要改 kext 取数方式"
+  echo "  # 不再查 HBFX 日志：kern_hbfx.cpp 的 DEBUG 行在 release kext 里被 #ifdef DEBUG 编掉，恒为空"
   echo "  nvram -p | grep -i hiber                 # 【注意】有输出反而是坏信号：OC 读到后会立刻删掉它"
   echo "  system_profiler SPDisplaysDataType | grep -e 'Connection Type' -e 'Resolution'"
   echo "                                           # 外屏是否自己回来了（独立观测项，不是成败判据）"
@@ -476,7 +488,7 @@ do_disarm() {
   $PMSET -c sleep 10
   $PMSET -b sleep 15
   $PMSET -a disksleep 1
-  echo "  注意：hibernatemode 归 0 后 macOS 会删掉 /System/Volumes/VM/sleepimage（基线行为）"
+  echo "  注意：hibernatemode 归 0 后写镜像目标 /var/vm/sleepimage 可能被回收（基线行为，不必在意）"
   $PMSET -g custom | grep -E "hibernatemode|standby|sleep" | sed 's/^/    /'
 }
 
