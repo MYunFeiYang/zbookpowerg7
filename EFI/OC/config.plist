@@ -1331,9 +1331,9 @@
 			<key>ProvideCurrentCpuInfo</key>
 			<false/>
 			<key>SetApfsTrimTimeout</key>
-			<integer>9999999</integer>
+			<integer>-1</integer>
 			<key>ThirdPartyDrives</key>
-			<true/>
+			<false/>
 			<key>XhciPortLimit</key>
 			<false/>
 		</dict>
@@ -1405,7 +1405,7 @@
 			<key>SysReport</key>
 			<false/>
 			<key>Target</key>
-			<integer>69</integer>
+			<integer>5</integer>
 		</dict>
 		<key>Entries</key>
 		<array/>
