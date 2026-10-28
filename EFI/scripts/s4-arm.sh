@@ -116,12 +116,12 @@ elif hm == 'Auto':
 else:
     f("Misc/Boot/HibernateMode = %r（应为 NVRAM，否则不读 NVRAM）" % hm)
 
-# 3b Debug Target 是否含 0x40（本机 OC 文件日志坏，只能走 Data Hub）
+# 3b Debug Target 是否含 0x40（本机 OC 文件日志坏；0x40 是否真能出 boot-log 未验证成功）
 tgt = d['Misc']['Debug'].get('Target', 0) or 0
 if tgt & 0x40:
-    p("Misc/Debug/Target = %d (0x%02X)，含 0x40 ⇒ boot-log 可从 Data Hub 取" % (tgt, tgt))
+    p("Misc/Debug/Target = %d (0x%02X)，含 0x40" % (tgt, tgt))
 else:
-    f("Misc/Debug/Target = %d (0x%02X)，缺 0x40 ⇒ 拿不到 OCB 休眠判读日志（本机文件日志是坏的）" % (tgt, tgt))
+    w("Misc/Debug/Target = %d (0x%02X)，缺 0x40" % (tgt, tgt))
 
 if d['Misc']['Boot'].get('HibernateSkipsPicker') is True:
     p("Misc/Boot/HibernateSkipsPicker = true")
@@ -211,7 +211,11 @@ PY
       echo "  ! 运行态 rtcfx_exclude=0E-FF —— 与旧配置同值，不能作为'新配置已生效'的证据"
     fi
   fi
-  if kextstat 2>/dev/null | grep -q HibernationFixup; then
+  # 注意：脚本开了 pipefail，`kextstat | grep -q` 会因 grep 提前退出触发 SIGPIPE
+  # （kextstat 退出码 13）而误判为「未加载」。必须用变量匹配。
+  local KS
+  KS="$(kextstat 2>/dev/null || true)"
+  if [[ "$KS" == *HibernationFixup* ]]; then
     echo "  ✔ HibernationFixup 已加载"
   else
     echo "  ! HibernationFixup 未加载（重启后仍未加载要看 Kernel/Add 与依赖顺序）"
@@ -254,7 +258,9 @@ do_arm() {
 
   echo "=== 前置门槛（不满足则拒绝武装，避免又做一次不可判读的测试）"
   local blocked=0
-  if ! /usr/sbin/kextstat 2>/dev/null | grep -q "as.lvs1974.HibernationFixup"; then
+  local KS
+  KS="$(/usr/sbin/kextstat 2>/dev/null || true)"
+  if [[ "$KS" != *"as.lvs1974.HibernationFixup"* ]]; then
     echo "  ✘ HibernationFixup 未加载 ⇒ 重启后再说"; blocked=1
   else
     echo "  ✔ HibernationFixup 已加载"
@@ -279,7 +285,9 @@ do_arm() {
 
   # 只武装当前电源源 —— 另一侧保持 Deep Idle，避免「拔电出门踩到无人看管的地雷」（09-16 18:27 教训）
   local SRC SN
-  if $PMSET -g batt 2>/dev/null | head -1 | grep -q "'AC Power'"; then SRC="-c"; SN="AC（插电）"; else SRC="-b"; SN="Battery（电池）"; fi
+  local BATT
+  BATT="$($PMSET -g batt 2>/dev/null || true)"
+  if [[ "$BATT" == *"'AC Power'"* ]]; then SRC="-c"; SN="AC（插电）"; else SRC="-b"; SN="Battery（电池）"; fi
 
   echo
   echo "=== 武装【$SN】侧（另一侧保持 hibernatemode 0 / standby 0）"
@@ -305,12 +313,14 @@ do_arm() {
   echo "  4) 按电源键唤醒（或开盖）"
   echo
   echo "=== 回来后的取证（判读见脚本头部，注意方向别搞反）"
-  echo "  ls -l /System/Volumes/VM/sleepimage      # 尺寸≈内存、mtime 变成刚才 = 真的写了镜像"
-  echo "  sysctl kern.hibernatecount               # 历史成功休眠计数是否 +1"
-  echo "  ioreg -lw0 -p IODeviceTree | grep boot-log | sed 's/.*<\\(.*\\)>.*/\\1/' | xxd -r -p | grep -a OCB"
-  echo "                                           # ↑ 出现 'NVRAM hibernation is 1 / Success / 44' = 成立"
-  echo "  nvram -p | grep -i hiber                 # 【注意】有输出反而是坏信号：OC 读到后会立刻删掉它"
+  echo "  sysctl kern.hibernatecount               # 成功一次 +1（基线 0）"
+  echo "  ls -l /var/vm/sleepimage                 # 尺寸≈16G、mtime 是刚才 = 真写了镜像"
+  echo "  pmset -g log | grep -e Hibernat -e 'Entering Sleep' | tail -5"
+  echo "                                           # 出现 'Entering Hibernate' = 走的是休眠不是普通睡"
   echo "  log show --last 30m --predicate 'eventMessage CONTAINS \"HBFX\"' | tail -30"
+  echo "                                           # 'PMRootDomain key present/44 bytes' = 密钥交出来了"
+  echo "                                           # 'MISSING' = macOS 26 没给，要改 kext 取数方式"
+  echo "  nvram -p | grep -i hiber                 # 【注意】有输出反而是坏信号：OC 读到后会立刻删掉它"
 }
 
 # ───────────────────────── disarm ─────────────────────────

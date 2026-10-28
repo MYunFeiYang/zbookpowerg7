@@ -155,10 +155,21 @@ macOS 走 S4 要同时满足 9 条，任一条断了就恢复不了。按链路�
 | 6 | OC 从 NVRAM 读回 | ✅ | `HibernateMode=NVRAM`；读到后校验长度必须 **= 44**、签名必须 **`AAPL`** |
 | 7 | OC 交出 `boot-image-key`/`boot-signature` | ✅ | `AppleHibernate.c:189-204` 自动写，格式对了就必定执行 |
 | 8 | boot.efi 解密 sleepimage 并恢复 | ❓ | 只能实测 |
-| 9 | 出问题能判读 | ✅ | `Target=0x45`（含 0x40）；本机 OC 文件日志是坏的，只能走 Data Hub |
+| 9 | 出问题能判读 | ⚠️ | 主判据改走内核侧（见下）。OC 侧 `boot-log` 实测取不到 |
 
-`⏳` 是待执行动作，`❓` 是只能靠一次实测回答的未知。第 4 条不成立时的表现是
-boot-log 里 `NVRAM hibernation is 0`，此时要改 kext 的取数方式（换 `IOPMrootDomain` 之外的数据源）。
+`⏳` 是待执行动作，`❓` 是只能靠一次实测回答的未知。
+
+**第 9 条的实测结果（2026-10-28 16:50，重启后）**：`Target` 已从 5 改成 69 并确认运行态生效，
+但 `ioreg -lw0 | grep -c '"boot-log"'` = **0**，`IODeviceTree` 里根本没有该属性。
+本机 OC 文件日志此前也是坏的（13 份 262144 B 全零）⇒ **OC 的 `OCB:` 日志在本机拿不到**，
+`Target` 那一位开不开都一样。判读改走内核侧，且这套判据足以区分第 4 条成立与否：
+
+| 要看什么 | 命令 | 读法 |
+|---|---|---|
+| macOS 有没有交出密钥 | `log show --last 30m --predicate 'eventMessage CONTAINS "HBFX"'` | `PMRootDomain key present` + `44 bytes` = 交了；`MISSING` = 没交（第 4 条不成立） |
+| 是否真的 hibernation | `sysctl kern.hibernatecount` | 成功一次 +1（当前 **0**，从未成功） |
+| 镜像是否写了 | `ls -l /var/vm/sleepimage` | 尺寸≈16 GB、mtime 是刚才 |
+| 系统怎么记的 | `pmset -g log \| grep -e Hibernat -e "Entering Sleep"` | 出现 `Entering Hibernate` 而非 `Entering Sleep` |
 
 ## 六、验证与判读
 
