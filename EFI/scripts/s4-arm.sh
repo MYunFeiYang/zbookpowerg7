@@ -354,15 +354,19 @@ do_arm() {
   $PMSET -g custom | grep -E "hibernatemode|standby|sleep" | sed 's/^/    /'
   echo
   echo "=== 接下来的人工步骤"
-  echo "  1) 拔掉外接 USB 鼠标 / U 盘 / 外接显示器"
-  echo "     └ 外屏占独立帧缓冲端口；25 模式会断 IGPU 电，恢复时它要重做链路训练，"
-  echo "       回不来就是黑屏 —— 外观与「S4 恢复失败」完全一样，会毁掉这次判读"
-  echo "  2) 苹果菜单 → 睡眠（**别合盖**）"
-  echo "     └ 本机实测 AppleClamshellCausesSleep = No（AC + 外屏时合盖进 clamshell，根本不睡）；"
-  echo "       且 DSDT 里有两个 LID 设备，合盖事件归属不可靠，行为不可复现"
+  echo "  1) 拔掉外接 USB 鼠标 / U 盘（鼠标一动就立刻唤醒，会截断这次测试）"
+  echo "     └ **外接显示器不用拔**：日常就是接屏用的，S4 必须在接屏状态下成立才有意义。"
+  echo "       恢复后内建屏（port 0）先亮，它就是判读窗口；外屏（port 6/7）回没回来"
+  echo "       是**独立观测项**，不是成败判据 —— 只记下来，别当失败。"
+  echo "  2) 开盖状态，苹果菜单 → 睡眠（**别合盖**）"
+  echo "     └ 本机实测 AppleClamshellCausesSleep = No：AC + 外屏时合盖进 clamshell，"
+  echo "       机器继续跑根本不睡，你会白测一轮；且 DSDT 里有两个 LID 设备，"
+  echo "       合盖事件归属不可靠、行为不可复现"
   echo "  3) 约 20–60 s 内镜像就落盘并断电（25 模式不等 standbydelay）"
   echo "     判据：电源灯灭、功率计掉到 ~0 W、风扇停"
   echo "  4) 按电源键唤醒 —— 不要指望开盖：本机 pmset 里没有 lidwake 项，开盖唤醒不可依赖"
+  echo "  5) 若内建屏也不亮：先拔插一次 HDMI 再等 10 s。仍黑则长按电源键重启，"
+  echo "     开机后查 pmset -g log 判「恢复了但屏没亮」还是「压根没恢复」"
   echo
   echo "=== 回来后的取证（判读见脚本头部，注意方向别搞反）"
   echo "  sysctl kern.hibernatecount               # 成功一次 +1（基线 0）"
@@ -373,6 +377,8 @@ do_arm() {
   echo "                                           # 'PMRootDomain key present/44 bytes' = 密钥交出来了"
   echo "                                           # 'MISSING' = macOS 26 没给，要改 kext 取数方式"
   echo "  nvram -p | grep -i hiber                 # 【注意】有输出反而是坏信号：OC 读到后会立刻删掉它"
+  echo "  system_profiler SPDisplaysDataType | grep -e 'Connection Type' -e 'Resolution'"
+  echo "                                           # 外屏是否自己回来了（独立观测项，不是成败判据）"
 }
 
 # ───────────────────────── disarm ─────────────────────────
