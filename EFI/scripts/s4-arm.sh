@@ -321,10 +321,14 @@ do_arm() {
   echo
   echo "=== 接下来的人工步骤"
   echo "  1) 拔掉外接 USB 鼠标 / U 盘 / 外接显示器"
-  echo "  2) 苹果菜单 → 睡眠（**别合盖**：合盖会进 clamshell，走别的路径）"
+  echo "     └ 外屏占独立帧缓冲端口；25 模式会断 IGPU 电，恢复时它要重做链路训练，"
+  echo "       回不来就是黑屏 —— 外观与「S4 恢复失败」完全一样，会毁掉这次判读"
+  echo "  2) 苹果菜单 → 睡眠（**别合盖**）"
+  echo "     └ 本机实测 AppleClamshellCausesSleep = No（AC + 外屏时合盖进 clamshell，根本不睡）；"
+  echo "       且 DSDT 里有两个 LID 设备，合盖事件归属不可靠，行为不可复现"
   echo "  3) 约 20–60 s 内镜像就落盘并断电（25 模式不等 standbydelay）"
   echo "     判据：电源灯灭、功率计掉到 ~0 W、风扇停"
-  echo "  4) 按电源键唤醒（或开盖）"
+  echo "  4) 按电源键唤醒 —— 不要指望开盖：本机 pmset 里没有 lidwake 项，开盖唤醒不可依赖"
   echo
   echo "=== 回来后的取证（判读见脚本头部，注意方向别搞反）"
   echo "  sysctl kern.hibernatecount               # 成功一次 +1（基线 0）"

@@ -188,6 +188,25 @@ macOS 走 S4 要同时满足 9 条，任一条断了就恢复不了。按链路�
 
 ## 六、验证与判读
 
+### 6.1 操作前提：为什么必须拔外屏、不许合盖
+
+这两条不是习惯问题，是本机实测状态决定的：
+
+**不许合盖** —— 本机 `ioreg -n IOPMrootDomain` 实测：
+
+```
+"AppleClamshellCausesSleep" = No
+"AppleClamshellState" = No
+```
+
+合盖判定是 **AC + 外接显示器 ⇒ clamshell 模式 ⇒ 合盖不睡、继续用外屏跑**。此时你在苹果菜单点睡眠、或以为"合盖就睡了"，实际上机器的睡眠路径根本不是你要测的那条；测出来的"没进休眠"会被误读成 S4 失败。
+
+另外 DSDT 里挂了**两个 LID 设备**（`ioreg -c AppleACPIDevice` 可见两个 `LID` → `AppleACPILid`，`IOPMrootDomain` 里 `"AppleACPILid"=2`），合盖事件的归属本身不可靠，行为不可复现。一次实验只能有一个变量，合盖会同时引入 clamshell 判定 + LID 事件归属两个未知。
+
+**拔外屏** —— 外屏走独立的帧缓冲端口（本机 `AppleIntelFramebuffer`：内建屏 `port-number 0` / `connector-type 0x0002`，外屏在 `port 6`/`port 7`、`connector-type 0x0004`）。`hibernatemode 25` 是断电内存，IGPU 电也断，恢复时外屏要重做链路训练并重建帧缓冲。它没回来 = 黑屏，**外观与「S4 恢复失败」完全相同**，会把一次成功的休眠判成失败。单屏（`port 0`）恢复路径最短，变量最少。
+
+**唤醒只按电源键** —— 本机 `pmset -g` / `pmset -g custom` 里**没有 `lidwake` 项**，开盖唤醒不可依赖。合盖睡下去再开盖，很可能不动，容易被误判成"醒不来"。
+
 ```bash
 bash EFI/scripts/s4-arm.sh check        # 只读体检，A 段 11 项静态判据
 bash EFI/scripts/rtc-protect-verify.sh  # 四层防护核验
@@ -215,12 +234,22 @@ if (!EFI_ERROR (Status)) {
 
 | 现象 | 含义 | 下一步 |
 |---|---|---|
-| boot-log `OCB: NVRAM hibernation is 1 / Success / 44`，且系统恢复原会话 | NVRAM 路线成立 | 转日常配置，`-hbfxdbg` 可移除 |
-| 同上，但唤醒黑屏 / 半途重启 / 回到登录界面重开 App | 卡在 boot.efi 解密或镜像 | 查 sleepimage 大小与加密；再考虑 `ReservedMemory` / CSM |
-| boot-log `NVRAM hibernation is 0 / Not Found` | 变量不存在或 Size ≠ 44 | 看 HBFX 日志的 `PMRootDomain key MISSING` 判 v3 |
+| `kern.hibernatecount` 从 0 变 1，且系统恢复原会话 | NVRAM 路线成立 | 转日常配置，`-hbfxdbg` 可移除 |
+| 计数变了，但唤醒黑屏 / 半途重启 / 回到登录界面重开 App | 卡在 boot.efi 解密或镜像 | 查 sleepimage 大小与加密；再考虑 `ReservedMemory` / CSM |
+| `pmset -g log` 里只有 `Entering Sleep`、没有 `Entering Hibernate`，计数仍 0 | 没走休眠路径（`hibernatemode` 未生效或未 arm） | 核对 `pmset -g custom` 的 `hibernatemode 25` 与 boot-args 的 `-hbfxforce` |
 | 醒后 `nvram` 里仍能查到 `IOHibernateRTCVariables` | 没被识别成休眠唤醒（或 HibernateMode 未生效） | 查 boot-args 是否真带上 `-hbfxforce`、OC 版本是否吃到新 config |
 
-boot-log 取法（本机 OC 的文件日志是坏的，只能走 Data Hub）：
+**本机取不到 OC 侧 `OCB:` 日志**（实测依据见下），所以判读走内核侧四条：
+
+```bash
+sysctl kern.hibernatecount                # 基线 0，成功一次 +1
+ls -l /var/vm/sleepimage                  # 基线 0 B，正常长到 ≈16 GB
+pmset -g log | grep -e Hibernat -e 'Entering Sleep' | tail -5
+log show --last 30m --predicate 'eventMessage CONTAINS "HBFX"' | tail -30
+```
+
+`boot-log` 取法**在本机无效**，留档备查（`Target` 已含 `0x40` 也取不到，
+`ioreg -lw0 | grep -c '"boot-log"'` = **0**，且 ESP 根目录 13 份 `opencore-*.txt` 全是 262144 B 零字节）：
 
 ```bash
 ioreg -lw0 -p IODeviceTree | grep boot-log | sed 's/.*<\(.*\)>.*/\1/' | xxd -r -p | grep -a OCB
