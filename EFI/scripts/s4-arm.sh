@@ -45,11 +45,12 @@
 #   sudo ./s4-arm.sh disarm 回滚到 Deep Idle 基线
 #
 # ── 判读（一次睡眠后三选一）
-#   v1) nvram 出现 IOHibernateRTCVariables 且能恢复  ⇒ NVRAM 路线成立，可转日常用
-#   v2) 变量出现但醒不来                            ⇒ 卡在 boot.efi 恢复，查镜像/密文
-#   v3) 变量始终不出现                              ⇒ macOS 26 没往 PMRootDomain 放密钥
-#                                                      ⇒ 需改 kext 取数方式（HBFX 日志会直接
-#                                                        打印 "PMRootDomain key MISSING"）
+#   方向先记住：OC 读到 IOHibernateRTCVariables 后**立刻把它删掉**（AppleHibernate.c:173-183）
+#   ⇒ 醒后 nvram 里还查得到它 = OC 压根没消费，是**坏信号**；查不到才是正常。
+#   v1) kern.hibernatecount 从 0 变 1 且会话原样恢复    ⇒ NVRAM 路线成立，可转日常用
+#   v2) 计数变了但醒不来 / 半途重启                    ⇒ 卡在 boot.efi 恢复，查镜像/密文
+#   v3) pmset -g log 只有 Entering Sleep、计数仍 0     ⇒ 没走休眠路径，或 macOS 26 没在
+#       PMRootDomain 放密钥（HBFX 日志会直接打 "PMRootDomain key MISSING"）
 #
 
 set -uo pipefail
@@ -359,9 +360,19 @@ do_disarm() {
   $PMSET -g custom | grep -E "hibernatemode|standby|sleep" | sed 's/^/    /'
 }
 
+usage() {
+  # 动态打印头部注释块（不再硬编码行号——注释一加长就会把「用法」段落截掉）
+  awk 'NR>1 && /^#/ {print; next} NR>1 {exit}' "$0"
+  echo
+  echo "用法: bash $0 {check|arm|disarm}"
+  echo "  check   只读体检，不需要 root，不改任何状态（A 静态 / B 运行态 / C 电源策略）"
+  echo "  arm     武装**当前电源源**为 hibernatemode=25，自动提权；另一侧留安全档"
+  echo "  disarm  回滚到 Deep Idle 基线（hibernatemode 0 / standby 0），自动提权"
+}
+
 case "${1:-}" in
   check)  do_check_wrap ;;
   arm)    do_arm ;;
   disarm) do_disarm ;;
-  *)      sed -n '2,40p' "$0"; exit 1 ;;
+  *)      usage; exit 1 ;;
 esac
