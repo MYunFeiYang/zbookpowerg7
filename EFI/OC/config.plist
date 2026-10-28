@@ -1276,7 +1276,7 @@
 			<key>ConsoleAttributes</key>
 			<integer>0</integer>
 			<key>HibernateMode</key>
-			<string>Auto</string>
+			<string>NVRAM</string>
 			<key>HibernateSkipsPicker</key>
 			<true/>
 			<key>HideAuxiliary</key>
@@ -1323,7 +1323,7 @@
 			<key>SysReport</key>
 			<false/>
 			<key>Target</key>
-			<integer>5</integer>
+			<integer>69</integer>
 		</dict>
 		<key>Entries</key>
 		<array/>

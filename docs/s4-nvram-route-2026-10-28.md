@@ -112,8 +112,9 @@ xcodebuild -project HibernationFixup.xcodeproj -scheme HibernationFixup \
 | 项 | 新值 | 说明 |
 |---|---|---|
 | `Kernel/Add[1]` | `HibernationFixup.kext` | fork 版，紧跟 Lilu |
-| `Misc/Boot/HibernateMode` | `Auto` | RTC 优先、NVRAM 兜底 |
+| `Misc/Boot/HibernateMode` | `NVRAM` | 只读 NVRAM。`Auto` 会先读 RTC，见下方「为什么不用 Auto」 |
 | `Misc/Boot/HibernateSkipsPicker` | `true` | 恢复时跳过选择器 |
+| `Misc/Debug/Target` | `69`（`0x45`） | `0x01\|0x04\|0x40`。**0x40 必须开**，否则拿不到 `OCB` 休眠判读日志 |
 | `boot-args` | `rtcfx_exclude=0E-FF … -hbfxdbg -hbfxforce` | 全封 RTC + 强制 NVRAM + 日志 |
 | `rtc-blacklist` | `242 B`（`0x0E–0xFF`） | 全封，含 `0x80–0xAB` |
 | `Kernel/Quirks/PowerTimeoutKernelPanic` | `false` | 超时不 panic，免污染判读 |
@@ -121,7 +122,45 @@ xcodebuild -project HibernationFixup.xcodeproj -scheme HibernationFixup \
 
 相对上一版（RTC 路线）的实质变化：`rtcfx_exclude` 与 `rtc-blacklist` **从「留出 80–AB」改回「全封」**。
 
-## 五、验证与判读
+### 为什么不用 `Auto`
+
+`Auto` = `RTC | NVRAM`，而 RTC 分支在前：
+
+```c
+// Library/OcBootManagementLib/AppleHibernate.c:134-146
+if (HibernateMask & HIBERNATE_MODE_RTC) {
+  for (Index = 0; Index < sizeof (AppleRTCHibernateVars); Index++)
+    RtcRawVars[Index] = OcRtcRead (Index + 128);
+  HasHibernateInfoInRTC = RtcVars.signature[0] == 'A' && ... == 'L';
+  HasHibernateInfo = HasHibernateInfoInRTC;
+}
+```
+
+它会校验 `'AAPL'` 签名（所以纯垃圾不会误判），但 `OcRtcRead` 是直读硬件、**不经过** `rtcfx_exclude`
+（那只拦 AppleRTC kext）。本机 09-16/09-17 那几次失败很可能在 RTC 里留下过 `AAPL` 签名，
+一旦命中就会被优先采信、盖掉 NVRAM 的正确 44 B，而且日志看起来像 "RTC hibernation is 1"。
+既然 NVRAM 腿已经打通，RTC 分支只剩负价值 ⇒ 改成 `NVRAM`（官方 toolTip 明确支持该值）。
+
+## 五、必要条件清单（2026-10-28 16:50 状态）
+
+macOS 走 S4 要同时满足 9 条，任一条断了就恢复不了。按链路顺序：
+
+| # | 条件 | 状态 | 依据 / 缺口 |
+|---|---|---|---|
+| 1 | 固件支持 S4 | ✅ | `FACP-1.aml` `FLAGS=0x002384A5`：bit7 `RTC_S4`=1、bit16 `S4_RTC_STS`=1；Windows/Linux 同机实测可 S4 |
+| 2 | 磁盘能放下镜像 | ✅ | 16 GB 内存 / 系统卷 193 GB 可用 |
+| 3 | macOS 侧开启休眠 | ⏳ | 当前 `hibernatemode=0`、`sleepimage` 0 字节；`s4-arm.sh arm` 会设 25 |
+| 4 | macOS 把 44 B 密钥交出来 | ❓ | 需 `PMRootDomain` 提供 `kIOHibernateRTCVariables`，macOS 26 上未验证 |
+| 5 | kext 把它写进 NVRAM | ✅ | fork + `-hbfxforce` 绕过 `checkRTCExtendedMemory()` 门控 |
+| 6 | OC 从 NVRAM 读回 | ✅ | `HibernateMode=NVRAM`；读到后校验长度必须 **= 44**、签名必须 **`AAPL`** |
+| 7 | OC 交出 `boot-image-key`/`boot-signature` | ✅ | `AppleHibernate.c:189-204` 自动写，格式对了就必定执行 |
+| 8 | boot.efi 解密 sleepimage 并恢复 | ❓ | 只能实测 |
+| 9 | 出问题能判读 | ✅ | `Target=0x45`（含 0x40）；本机 OC 文件日志是坏的，只能走 Data Hub |
+
+`⏳` 是待执行动作，`❓` 是只能靠一次实测回答的未知。第 4 条不成立时的表现是
+boot-log 里 `NVRAM hibernation is 0`，此时要改 kext 的取数方式（换 `IOPMrootDomain` 之外的数据源）。
+
+## 六、验证与判读
 
 ```bash
 bash EFI/scripts/s4-arm.sh check        # 只读体检，A 段 11 项静态判据
@@ -137,13 +176,29 @@ sudo bash EFI/scripts/s4-arm.sh disarm  # 无论成败先回滚
 nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:rtc-blacklist
 ```
 
-一次睡眠后三选一：
+一次睡眠后判读。**注意判据方向**：OC 读到 `IOHibernateRTCVariables` 后会立刻把它擦掉——
 
-| 结果 | 含义 | 下一步 |
+```c
+// AppleHibernate.c:173-183
+if (!EFI_ERROR (Status)) {
+  gRT->SetVariable (L"IOHibernateRTCVariables", &gAppleBootVariableGuid, ..., 0, NULL);  // 长度 0 = 删除
+```
+
+所以**醒来后 `nvram` 里还有这个变量 = OC 压根没消费它**，是坏信号；
+看不到它才是正常（前提是 boot-log 显示读到过）。
+
+| 现象 | 含义 | 下一步 |
 |---|---|---|
-| **v1** `nvram` 出现 `IOHibernateRTCVariables` 且能恢复 | NVRAM 路线成立 | 转日常配置，`-hbfxdbg` 可移除 |
-| **v2** 变量出现但醒不来 | 卡在 boot.efi 恢复 | 查镜像完整性 / 是否走了加密（`hibernatemode 25` 带加密） |
-| **v3** 变量始终不出现 | macOS 26 没往 PMRootDomain 放密钥 | 看 HBFX 日志是否打 `PMRootDomain key MISSING`；是则需改 kext 取数方式 |
+| boot-log `OCB: NVRAM hibernation is 1 / Success / 44`，且系统恢复原会话 | NVRAM 路线成立 | 转日常配置，`-hbfxdbg` 可移除 |
+| 同上，但唤醒黑屏 / 半途重启 / 回到登录界面重开 App | 卡在 boot.efi 解密或镜像 | 查 sleepimage 大小与加密；再考虑 `ReservedMemory` / CSM |
+| boot-log `NVRAM hibernation is 0 / Not Found` | 变量不存在或 Size ≠ 44 | 看 HBFX 日志的 `PMRootDomain key MISSING` 判 v3 |
+| 醒后 `nvram` 里仍能查到 `IOHibernateRTCVariables` | 没被识别成休眠唤醒（或 HibernateMode 未生效） | 查 boot-args 是否真带上 `-hbfxforce`、OC 版本是否吃到新 config |
+
+boot-log 取法（本机 OC 的文件日志是坏的，只能走 Data Hub）：
+
+```bash
+ioreg -lw0 -p IODeviceTree | grep boot-log | sed 's/.*<\(.*\)>.*/\1/' | xxd -r -p | grep -a OCB
+```
 
 v3 的日志判据（`-hbfxdbg` 开着）：
 
@@ -154,7 +209,7 @@ HBFX: kIOHibernateRTCVariables is 44 bytes
 
 若第二行字节数不是 44，说明结构变了；若是 `MISSING`，说明前提不成立。
 
-## 六、回滚
+## 七、回滚
 
 | 层级 | 动作 |
 |---|---|

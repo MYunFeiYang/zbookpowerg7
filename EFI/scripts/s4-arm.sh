@@ -4,7 +4,7 @@
 #
 # ── 一句话策略
 #   让 HibernationFixup 把 IOHibernateRTCVariables 写进 **NVRAM**，OpenCore 的
-#   HibernateMode=Auto 去 NVRAM 读；RTC 0x0E–0xFF 全程封死，macOS 一个字节都改不到。
+#   HibernateMode=NVRAM 只去 NVRAM 读；RTC 0x0E–0xFF 全程封死，macOS 一个字节都改不到。
 #
 # ── 为什么不是「走 RTC」（2026-10-28 结论）
 #   Apple 的休眠密钥固定落在 RTC 0x80 起 44 字节：
@@ -31,7 +31,8 @@
 #
 # ── 本机配置（2026-10-28）
 #   Kernel/Add[1]              HibernationFixup.kext（自编译 fork，紧跟 Lilu）
-#   Misc/Boot/HibernateMode    Auto（RTC 优先、NVRAM 兜底；原先的 NVRAM 是死值）
+#   Misc/Boot/HibernateMode    NVRAM（只读 NVRAM；Auto 会被 RTC 残留 AAPL 签名劫持）
+#   Misc/Debug/Target          69 (0x45)（含 0x40 ⇒ boot-log 走 Data Hub）
 #   boot-args                  rtcfx_exclude=0E-FF -hbfxdbg -hbfxforce
 #   rtc-blacklist              242 B（0x0E–0xFF 全封，含 0x80–0xAB）
 #   Kernel/Quirks              PowerTimeoutKernelPanic=false（超时不 panic，免污染判读）
@@ -108,12 +109,19 @@ else:
 
 # 3 HibernateMode
 hm = d['Misc']['Boot'].get('HibernateMode')
-if hm == 'Auto':
-    p("Misc/Boot/HibernateMode = Auto（RTC 优先、NVRAM 兜底）")
-elif hm == 'NVRAM':
-    w("Misc/Boot/HibernateMode = NVRAM（能用，但 RTC 有数据时不会优先读；建议 Auto）")
+if hm == 'NVRAM':
+    p("Misc/Boot/HibernateMode = NVRAM（只读 NVRAM，不被 RTC 残留签名劫持）")
+elif hm == 'Auto':
+    w("Misc/Boot/HibernateMode = Auto（先读 RTC；若 RTC 有残留 AAPL 签名会盖掉 NVRAM 的正确值）")
 else:
-    f("Misc/Boot/HibernateMode = %r（应为 Auto，否则不读 NVRAM）" % hm)
+    f("Misc/Boot/HibernateMode = %r（应为 NVRAM，否则不读 NVRAM）" % hm)
+
+# 3b Debug Target 是否含 0x40（本机 OC 文件日志坏，只能走 Data Hub）
+tgt = d['Misc']['Debug'].get('Target', 0) or 0
+if tgt & 0x40:
+    p("Misc/Debug/Target = %d (0x%02X)，含 0x40 ⇒ boot-log 可从 Data Hub 取" % (tgt, tgt))
+else:
+    f("Misc/Debug/Target = %d (0x%02X)，缺 0x40 ⇒ 拿不到 OCB 休眠判读日志（本机文件日志是坏的）" % (tgt, tgt))
 
 if d['Misc']['Boot'].get('HibernateSkipsPicker') is True:
     p("Misc/Boot/HibernateSkipsPicker = true")
@@ -211,9 +219,9 @@ PY
   local HIB
   HIB="$(nvram -p 2>/dev/null | awk -F'\t' '$1=="IOHibernateRTCVariables"')"
   if [[ -n "$HIB" ]]; then
-    echo "  ✔ IOHibernateRTCVariables 已存在 ⇒ NVRAM 腿写入成功"
+    echo "  ! IOHibernateRTCVariables 存在 ⇒ 上次休眠没被 OpenCore 消费（残留，不是好消息）"
   else
-    echo "  ! IOHibernateRTCVariables 不存在（未休眠过属正常）"
+    echo "  ✔ IOHibernateRTCVariables 不存在（正常：OC 读到后会立刻删除它）"
   fi
 
   echo
@@ -252,10 +260,15 @@ do_arm() {
     echo "  ✔ HibernationFixup 已加载"
   fi
   local RBA; RBA=$(nvram -p 2>/dev/null | awk -F'\t' '$1=="boot-args"{print $2}')
-  if [[ "$RBA" == *"rtcfx_exclude=0E-7F,AC-FF"* ]]; then
-    echo "  ✔ rtcfx_exclude 未覆盖 0x80–0xAB（休眠变量可写）"
+  if [[ "$RBA" == *"rtcfx_exclude=0E-FF"* ]]; then
+    echo "  ✔ rtcfx_exclude=0E-FF（RTC 0x0E–0xFF 全封，走 NVRAM 不依赖 RTC）"
   else
-    echo "  ✘ rtcfx_exclude 仍是旧值（${RBA:-空}）⇒ 重启后再说"; blocked=1
+    echo "  ✘ 运行态 rtcfx_exclude 不是 0E-FF（${RBA:-空}）⇒ 本次开机没吃到新 config"; blocked=1
+  fi
+  if [[ "$RBA" == *"-hbfxforce"* ]]; then
+    echo "  ✔ 运行态 boot-args 含 -hbfxforce"
+  else
+    echo "  ✘ 运行态 boot-args 缺 -hbfxforce ⇒ 本次开机没吃到新 config"; blocked=1
   fi
   if [[ $blocked -ne 0 ]]; then
     echo
@@ -271,10 +284,9 @@ do_arm() {
   echo
   echo "=== 武装【$SN】侧（另一侧保持 hibernatemode 0 / standby 0）"
   $PMSET "$SRC" hibernatemode 25
-  $PMSET "$SRC" standby 1
-  $PMSET "$SRC" highstandbythreshold 50
-  $PMSET "$SRC" standbydelaylow 300
-  $PMSET "$SRC" standbydelayhigh 300
+  # hibernatemode 25 是「立刻写镜像 + 断内存电」，与 3 的 standby 渐进逻辑无关。
+  # standby 必须为 0，否则多一条 Apple 私有策略参与，变量越多越难判读。
+  $PMSET "$SRC" standby 0
   $PMSET "$SRC" sleep 0
 
   local OTHER
@@ -286,18 +298,19 @@ do_arm() {
   $PMSET -g custom | grep -E "hibernatemode|standby|sleep" | sed 's/^/    /'
   echo
   echo "=== 接下来的人工步骤"
-  echo "  1) 拔掉外接 USB 鼠标 / U 盘"
-  echo "  2) 苹果菜单 → 睡眠（**别合盖**，接外屏会进 clamshell 不睡）"
-  echo "  3) 等 8–10 分钟（standbydelay 300 s = 5 分钟后才落盘）"
-  echo "  4) 看电源灯是否灭 / 功率计是否掉到 ~0.2 W"
-  echo "  5) 开盖或按电源键唤醒"
+  echo "  1) 拔掉外接 USB 鼠标 / U 盘 / 外接显示器"
+  echo "  2) 苹果菜单 → 睡眠（**别合盖**：合盖会进 clamshell，走别的路径）"
+  echo "  3) 约 20–60 s 内镜像就落盘并断电（25 模式不等 standbydelay）"
+  echo "     判据：电源灯灭、功率计掉到 ~0 W、风扇停"
+  echo "  4) 按电源键唤醒（或开盖）"
   echo
-  echo "=== 回来后的取证（一条条跑，判读见脚本头部）"
-  echo "  pmset -g log | grep -E 'Entering Sleep|Entering Hibernate|Wake from' | tail -20"
-  echo "  nvram -p | grep -i hiber                 # 有输出 = NVRAM 腿生效"
-  echo "  ls -l /System/Volumes/VM/sleepimage      # 尺寸/mtime 变化 = 真的写了镜像"
-  echo "  sysctl kern.hibernatecount               # 历史成功休眠计数"
-  echo "  log show --last 30m --predicate 'eventMessage CONTAINS \"HBFX\"' | tail -30   # -hbfxdbg 日志"
+  echo "=== 回来后的取证（判读见脚本头部，注意方向别搞反）"
+  echo "  ls -l /System/Volumes/VM/sleepimage      # 尺寸≈内存、mtime 变成刚才 = 真的写了镜像"
+  echo "  sysctl kern.hibernatecount               # 历史成功休眠计数是否 +1"
+  echo "  ioreg -lw0 -p IODeviceTree | grep boot-log | sed 's/.*<\\(.*\\)>.*/\\1/' | xxd -r -p | grep -a OCB"
+  echo "                                           # ↑ 出现 'NVRAM hibernation is 1 / Success / 44' = 成立"
+  echo "  nvram -p | grep -i hiber                 # 【注意】有输出反而是坏信号：OC 读到后会立刻删掉它"
+  echo "  log show --last 30m --predicate 'eventMessage CONTAINS \"HBFX\"' | tail -30"
 }
 
 # ───────────────────────── disarm ─────────────────────────
