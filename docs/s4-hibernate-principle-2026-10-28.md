@@ -1,5 +1,13 @@
 # S4 真休眠：机制与配置依据（2026-10-28）
 
+> ⚠️ **本文的配置结论已被 `docs/s4-nvram-route-2026-10-28.md` 取代（同日）。**
+> 机制部分（1.1 数据流、RTC 0x80 区布局、OC 的 `HibernateMode` 模式位、`OcActivateHibernateWake` 分支、
+> HibernationFixup 的 `checkRTCExtendedMemory` 门控）仍然有效，可直接引用。
+> 被推翻的只有「放开 `rtcfx_exclude` 的 0x80–0xAB、走 RTC 原生路径」这一条：
+> 因为 `APPLE_RTC_MAIN_CHECKSUM` 覆盖 `[0x0E,0x100)`（含 0x80–0xAB），
+> 而 `rtc-blacklist` 在 OpenCore 层是**内存模拟**而非拦截 ⇒ 只放一半会造成校验和失配、
+> boot.efi 触发 `AppleRtcRamReset` 清零整块。现改为 NVRAM 路线 + RTC 全封。
+
 > 本文只回答一个问题：**macOS 休眠在这台机器上依赖哪几个环节，每个环节由哪个配置项负责，依据出处是什么。**
 > 结论均标注来源等级：**源码** > **官方文档** > **社区实践**。社区实践只用来提示"有哪些变量"，不用来定结论。
 

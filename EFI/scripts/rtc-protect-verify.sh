@@ -4,10 +4,11 @@
 #
 # 背景与判读：docs/sleep-tests/round2-tierB-result.md §二十四
 #
-# 历史：本机「真休眠」(S4) 失败 5 次、坏 RTC 2 次，防护原先封满 0x0E–0xFF（242 字节）。
-#   差分铁证（§二十七）= 5 次武装休眠全死 / 4 次普通睡眠全活 ⇒ 坏的只有 S4。
-#   S4 已放弃（日常全走 Deep Idle），0x80–0xAB（IOHibernateRTCVariables）不再需要保护
-#   ⇒ 2026-10-28 收窄为 `0E-7F,AC-FF`（198 字节），留出 0x80–0xAB。
+# 当前策略（2026-10-28 起）：**休眠变量走 NVRAM，RTC 全封不碰**。
+#   本机「真休眠」(S4) 历史上失败 5 次、坏 RTC 2 次，所以 RTC 一个字节都不该被 macOS 改。
+#   HibernationFixup 被改成强制把 IOHibernateRTCVariables 写进 NVRAM（-hbfxforce），
+#   OpenCore 的 HibernateMode=Auto 会去 NVRAM 读，全程不依赖 RTC 0x80–0xAB。
+#   ⇒ 防护恢复为**封满 0x0E–0xFF（242 字节）**，0x80–0xAB 必须缺席（即被封）。
 # 为什么仍需本脚本：确认「四层」**真的都落地了**（改配置 ≠ 生效）。
 #
 # 用法：
@@ -24,7 +25,7 @@ set -u
 GUID="4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102"
 BOOTARGS_GUID="7C436110-AB2A-4BBB-A880-FE41995C9F82"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-WS_PLIST="$SCRIPT_DIR/../oc/config.plist"          # 工作区真源（git）
+WS_PLIST="$SCRIPT_DIR/../OC/config.plist"          # 工作区真源（git）
 ESP_MOUNT="${1:-/Volumes/ESP}"
 ESP_PLIST="$ESP_MOUNT/EFI/OC/config.plist"
 
@@ -41,25 +42,41 @@ hdr "1) 运行期 boot-args（本次开机由 OpenCore 传入）"
 BA="$(sysctl -n kern.bootargs 2>/dev/null || echo '')"
 if [ -n "$BA" ]; then echo "  $BA"; else warn "读不到 kern.bootargs"; fi
 case "$BA" in
-  *rtcfx_exclude=0E-7F,AC-FF*) ok "含 rtcfx_exclude=0E-7F,AC-FF —— bank1 0E–7F + 高位 AC–FF 封，休眠区 80–AB 留出" ;;
-  *rtcfx_exclude=0E-FF*)       warn "仍是旧的 0E-FF 全封（含休眠区）⇒ 本次开机没吃到新配置（ESP 没同步？还没重启？）" ;;
-  *rtcfx_exclude=80-FF*)       bad "仍是更旧的 80-FF ⇒ 本次开机没吃到新配置" ;;
-  *rtcfx_exclude=*)            warn "有 rtcfx_exclude 但范围非预期，请自行核对：$(echo "$BA" | tr ' ' '\n' | grep rtcfx_exclude)" ;;
-  *)                           bad "boot-args 里**没有** rtcfx_exclude ⇒ 新配置未生效" ;;
+  *rtcfx_exclude=0E-FF*)  ok "含 rtcfx_exclude=0E-FF —— 0x0E–0xFF 全封，RTC 一个字节都不让 macOS 改" ;;
+  *rtcfx_exclude=0E-7F*)  bad "仍是 0E-7F,AC-FF（留出了 0x80–0xAB）⇒ 本次开机没吃到新配置（ESP 没同步？还没重启？）" ;;
+  *rtcfx_exclude=80-FF*)  bad "仍是更旧的 80-FF ⇒ 本次开机没吃到新配置" ;;
+  *rtcfx_exclude=*)       warn "有 rtcfx_exclude 但范围非预期，请自行核对：$(echo "$BA" | tr ' ' '\n' | grep rtcfx_exclude)" ;;
+  *)                      bad "boot-args 里**没有** rtcfx_exclude ⇒ 新配置未生效" ;;
+esac
+case "$BA" in
+  *-hbfxforce*) ok "含 -hbfxforce —— HibernationFixup 走强制 NVRAM 路线" ;;
+  *)            bad "缺 -hbfxforce ⇒ fork 版 kext 不会被触发，休眠变量无处可写" ;;
+esac
+case "$BA" in
+  *-hbfxdbg*) ok "含 -hbfxdbg —— 可看 HBFX 日志" ;;
+  *)          warn "缺 -hbfxdbg ⇒ 失败时拿不到 kext 内部日志" ;;
 esac
 
 # ---------------------------------------------------------------- 2) 运行期：NVRAM 变量
 hdr "2) 运行期 NVRAM 变量 $GUID:rtc-blacklist（AppleRtcRam 协议的寄存器名单）"
+echo "  语义：名单内的偏移由 OpenCore 用**内存模拟**，读写都不落真实 RTC。"
 if NVRAM_OUT="$(nvram "$GUID:rtc-blacklist" 2>&1)"; then
   if [ -n "$NVRAM_OUT" ]; then
     ok "变量存在（前 100 字符）：$(printf '%s' "$NVRAM_OUT" | cut -c1-100)"
-    echo "     ⚠️ 需人工确认长度 = 198 字节（0E–7F 与 AC–FF 两段，80–AB 应缺席）"
+    echo "     ⚠️ 需人工确认长度 = 242 字节（0x0E–0xFF 全段，含 0x80–0xAB）"
   else
-    warn "变量存在但内容为空 —— 预期的 198 字节没写进去"
+    warn "变量存在但内容为空 —— 预期的 242 字节没写进去"
   fi
 else
   warn "nvram 读不到该变量（有两种可能：① 真没写进去；② macOS 的 nvram 工具不列非 Apple GUID 变量）"
-  echo "     ⇒ 以第 3 项的 ESP 配置为准；进一步可用 OpenCore 自带的 RtcRw 从 EFI 侧 dump"
+  echo "     ⇒ 以第 3 项的配置为准；进一步可用 OpenCore 自带的 RtcRw 从 EFI 侧 dump"
+fi
+echo
+echo "  休眠变量落点（走 NVRAM 路线后应出现，值随每次休眠变化）："
+if HIB="$(nvram "$BOOTARGS_GUID:IOHibernateRTCVariables" 2>&1)" && [ -n "$HIB" ]; then
+  ok "IOHibernateRTCVariables 存在，${#HIB} 字符 ⇒ HibernationFixup 写入成功"
+else
+  warn "IOHibernateRTCVariables 不存在 —— 未休眠过属正常；休眠过仍缺席则说明 kext 没写进去"
 fi
 
 # ---------------------------------------------------------------- 3) 部署期：工作区 ↔ ESP
@@ -73,18 +90,22 @@ else
 
   B="$(plist_extract "NVRAM.Add.$BOOTARGS_GUID.boot-args" "$WS_PLIST")"
   case "$B" in
-    *rtcfx_exclude=0E-7F,AC-FF*) ok "boot-args 含 rtcfx_exclude=0E-7F,AC-FF" ;;
-    *)                           bad "boot-args 不含 0E-7F,AC-FF" ;;
+    *rtcfx_exclude=0E-FF*) ok "boot-args 含 rtcfx_exclude=0E-FF" ;;
+    *)                     bad "boot-args 不含 0E-FF" ;;
+  esac
+  case "$B" in
+    *-hbfxforce*) ok "boot-args 含 -hbfxforce" ;;
+    *)            bad "boot-args 缺 -hbfxforce" ;;
   esac
 
   # ⚠️ 不能用 `plutil -extract … json`：data 类型会报 "Invalid object in plist for JSON format"。
-  #    `raw` 对 data 输出的是 **base64 文本**（198 字节 ⇒ 264 字符，且以 `Dg8Q` 开头）。
+  #    `raw` 对 data 输出的是 **base64 文本**（242 字节 ⇒ 324 字符，且以 `Dg8Q` 开头）。
   C="$(plist_extract "NVRAM.Add.$GUID.rtc-blacklist" "$WS_PLIST" | tr -d '[:space:]')"
   CLEN=${#C}
-  if [ "$CLEN" = "264" ] && [ "${C:0:4}" = "Dg8Q" ]; then
-    ok "rtc-blacklist = 264 字符 base64（= 198 字节：0E-7F + AC-FF，首个 0x0E）✔"
+  if [ "$CLEN" = "324" ] && [ "${C:0:4}" = "Dg8Q" ]; then
+    ok "rtc-blacklist = 324 字符 base64（= 242 字节：0x0E–0xFF 全封，首个 0x0E）✔"
   else
-    bad "rtc-blacklist 长度 ${CLEN}（期望 264）/ 前缀 ${C:0:4}（期望 Dg8Q）"
+    bad "rtc-blacklist 长度 ${CLEN}（期望 324）/ 前缀 ${C:0:4}（期望 Dg8Q）"
   fi
 
   D="$(plist_json "NVRAM.Delete.$GUID" "$WS_PLIST" | tr -d ' \n')"
@@ -92,6 +113,13 @@ else
     *rtc-blacklist*) ok "NVRAM/Delete 已列 rtc-blacklist（否则旧值不会被覆盖）" ;;
     *)               bad "NVRAM/Delete 未列 rtc-blacklist ⇒ Add 可能不生效" ;;
   esac
+
+  K="$(plist_extract Kernel.Add.1.BundlePath "$WS_PLIST")"
+  [ "$K" = "HibernationFixup.kext" ] && ok "Kernel/Add[1] = HibernationFixup.kext（紧跟 Lilu）" \
+                                     || warn "Kernel/Add[1] = ${K:-读不到}（顺序变了？）"
+  M="$(plist_extract Misc.Boot.HibernateMode "$WS_PLIST")"
+  [ "$M" = "Auto" ] && ok "Misc/Boot/HibernateMode = Auto（RTC 优先、NVRAM 兜底）" \
+                    || bad "Misc/Boot/HibernateMode = ${M:-读不到}（应为 Auto）"
 fi
 
 if [ -f "$ESP_PLIST" ]; then
@@ -100,7 +128,7 @@ if [ -f "$ESP_PLIST" ]; then
   echo "  工作区 $H1"
   echo "  ESP    $H2"
   if [ "$H1" = "$H2" ]; then ok "两边一致 —— ESP 已同步（可以重启做实验）"
-  else bad "两边**不一致** ⇒ 先在 FreeFileSync 手动点「开始」同步，再重启"; fi
+  else bad "两边**不一致** ⇒ 先同步 ESP，再重启"; fi
 else
   warn "ESP 未挂载（$ESP_MOUNT）⇒ 跳过一致性比对；跳过前不要指望新配置生效"
 fi
@@ -114,12 +142,13 @@ echo "  ⚠️ 现役安全态 = 两电源源 hibernatemode 0 / standby 0"
 # ---------------------------------------------------------------- 5) 下一步
 hdr "5) 下一步"
 cat <<'EOF'
-  四项全 ✔ 且已重启 ⇒ 可以开始实验（务必先看好回滚）：
-    FORCE_HIBERNATE=1 ./EFI/scripts/pmset-hibernate.sh auto   # 重新武装休眠档
-    ... 睡眠一次，记录结果 ...
-    ./EFI/scripts/pmset-hibernate.sh off                       # 无论成败先回滚
-  判读（决定性，二选一）：
-    · 不再报 HP POST 005 ⇒ 属「软件写 RTC」⇒ 风险归零，可从容往下二分定位
-    · 照样 005           ⇒ 「软件写 RTC」这一整类**一次性证伪** ⇒ 转固件侧或收手
-  失败签名 / 判据：docs/sleep-tests/README.md
+  全 ✔ 且已重启 ⇒ 可以武装并试睡（结论与判据见 docs/s4-nvram-route-2026-10-28.md）：
+    bash EFI/scripts/s4-arm.sh check     # 只读体检
+    sudo bash EFI/scripts/s4-arm.sh arm   # 武装当前电源源（hibernatemode 25）
+    ... 睡眠一次 ...
+    sudo bash EFI/scripts/s4-arm.sh disarm
+  判读（决定性）：
+    · v1) nvram 出现 IOHibernateRTCVariables + 能恢复 ⇒ NVRAM 路线成立
+    · v2) 出现变量但醒不来   ⇒ 卡在 boot.efi 恢复，查密文/镜像
+    · v3) 变量始终不出现     ⇒ macOS 26 没往 PMRootDomain 放密钥，此路需改 kext 取数方式
 EOF
