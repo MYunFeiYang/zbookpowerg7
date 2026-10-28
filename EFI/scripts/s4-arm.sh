@@ -33,7 +33,7 @@
 #   Kernel/Add[1]              HibernationFixup.kext（自编译 fork，紧跟 Lilu）
 #   Misc/Boot/HibernateMode    NVRAM（只读 NVRAM；Auto 会被 RTC 残留 AAPL 签名劫持）
 #   Misc/Debug/Target          69 (0x45)（含 0x40 ⇒ boot-log 走 Data Hub）
-#   boot-args                  rtcfx_exclude=0E-FF -hbfxdbg -hbfxforce
+#   boot-args                  rtcfx_exclude=0E-FF -hbfxdbg -hbfxforce hfile=/var/vm/sleepimage
 #   rtc-blacklist              242 B（0x0E–0xFF 全封，含 0x80–0xAB）
 #   Kernel/Quirks              PowerTimeoutKernelPanic=false（超时不 panic，免污染判读）
 #   Misc/Security              不含 AllowNvramReset（OC 1.0.x 已移除该键，是死配置）
@@ -167,6 +167,20 @@ if '-hbfxdbg' in ba:
 else:
     w("boot-args 缺 -hbfxdbg ⇒ 失败时看不到 kext 内部判读")
 
+# 6b hfile —— 内核写休眠镜像的路径来源（2026-10-28 实测根因）
+# IOHibernateIO.cpp:496-506：gIOHibernateFilename 只由两处赋值，
+#   ① IOPMrootDomain 的 "Hibernate File" 属性（本机实测不存在）
+#   ② boot-arg hfile=<path>（IOHibernateIO.cpp:1617）
+# 两者都没有 ⇒ 504 行 `return kIOReturnUnsupported` ⇒ 不写镜像、立刻退回 ⇒ HibernateError
+if 'hfile=' in ba:
+    hv = [t for t in ba.split() if t.startswith('hfile=')][0].split('=', 1)[1]
+    if hv == '/var/vm/sleepimage':
+        p("boot-args 含 hfile=/var/vm/sleepimage（内核写镜像路径）")
+    else:
+        w("boot-args 里 hfile=%s（不是默认路径，确认它可写）" % hv)
+else:
+    f("boot-args 缺 hfile= ⇒ 若内核没收到 \"Hibernate File\" 属性就不写镜像（本机实测就是没收到）")
+
 m = [t for t in ba.split() if t.startswith('rtcfx_exclude=')]
 val = m[0].split('=', 1)[1] if m else ''
 def covers(spec, lo, hi):
@@ -243,6 +257,26 @@ PY
     echo "  ✔ IOHibernateRTCVariables 不存在（正常：OC 读到后会立刻删除它）"
   fi
 
+  # ── 内核侧镜像路径：**唯一的硬判据**（2026-10-28 17:30 定位到真正根因）
+  # IOHibernateIO.cpp:1520  SYSCTL_STRING(_kern, hibernatefile, gIOHibernateFilename, ...)
+  #   ⇒ `sysctl kern.hibernatefile` **实时**就是内核里的写镜像路径，不是快照。
+  # IOHibernateIO.cpp:496-506  该变量只有两个来源：
+  #   ① IOPMrootDomain 的 "Hibernate File" 属性 —— 本机 ioreg 全量搜 `"Hibernate File"` = 0 次
+  #   ② boot-arg hfile=<path>（IOHibernateIO.cpp:1617）
+  # 两个都空 ⇒ `if (!gIOHibernateMode || !gIOHibernateFilename[0]) return kIOReturnUnsupported;`
+  #   ⇒ 不写镜像、不 panic、立刻退回 ⇒ AppleACPIPlatform 报 (HibernateError)。
+  #   这就是 17:23 那次 10 秒内回来、hibernatecount 仍为 0 的机制。
+  local HF
+  HF="$(sysctl -n kern.hibernatefile 2>/dev/null || true)"
+  if [[ -n "$HF" ]]; then
+    echo "  ✔ kern.hibernatefile = ${HF}（内核已持有写镜像路径）"
+  else
+    echo "  ✘ kern.hibernatefile 为空 ⇒ 内核不知道该往哪写镜像，休眠必然 HibernateError"
+    echo "     本机成因：IOPMrootDomain 没有 \"Hibernate File\" 属性（ioreg 全量 0 命中）"
+    echo "     修法：boot-args 加 hfile=/var/vm/sleepimage，重启后这条会自动变绿"
+    blocked=1
+  fi
+
   # ── sleepimage：它**不是**前提，是结果（2026-10-28 17:20 修正）
   # 早前把它当"硬前提"并断言"只在启动时按 hibernatemode 分配"——重启验证推翻：
   # hibernatemode=25 开机后镜像仍然不存在（VM 卷只有 kernelcore，swap 也是 0）。
@@ -253,10 +287,12 @@ PY
   #    autopoweroff are all set to 0."
   # ⇒ standby=0 会直接抑制写入，hibernatemode=25 被静默降级成普通睡眠。
   #   所以这里只做提示，真正的判据在 C 段。
-  # ★ 位置：真实镜像在 VM 卷 /System/Volumes/VM/sleepimage；
-  #   /var/vm/sleepimage 在 Data 卷上是另一份（0 字节残留，dev 不同）。
+  # ★ 位置修正（17:30）：镜像写到 **hfile 指定的路径**，本机即 /var/vm/sleepimage（Data 卷），
+  #   而不是 /System/Volumes/VM/sleepimage（VM 卷那份是 swap/内核转储用的，dev 不同）。
+  #   之前把 /var/vm 那份当成"残留"是错的；它才是 XNU 的目标文件。
   local SI MEM SZ
-  SI="/System/Volumes/VM/sleepimage"
+  SI="$(sysctl -n kern.hibernatefile 2>/dev/null || true)"
+  [[ -n "$SI" ]] || SI="/var/vm/sleepimage"
   MEM="$(sysctl -n hw.memsize 2>/dev/null || echo 0)"
   if [[ -f "$SI" ]]; then
     SZ="$(stat -f %z "$SI" 2>/dev/null || echo 0)"
@@ -328,13 +364,37 @@ do_arm() {
   else
     echo "  ✘ 运行态 boot-args 缺 -hbfxforce ⇒ 本次开机没吃到新 config"; blocked=1
   fi
+  # ★ 硬门槛：内核必须持有写镜像路径，否则睡下去必然 (HibernateError)
+  #   依据 IOHibernateIO.cpp:504 `if (!gIOHibernateMode || !gIOHibernateFilename[0])
+  #   return kIOReturnUnsupported;` —— 不写镜像、不 panic、几秒内退回。
+  local HF; HF="$(sysctl -n kern.hibernatefile 2>/dev/null || true)"
+  if [[ -z "$HF" ]]; then
+    # 先尝试运行态补下发（成功则免掉一次重启；是否生效由下一行实测决定，不做假设）
+    local _src="-c"
+    if [[ "$($PMSET -g batt 2>/dev/null || true)" == *"'Battery Power'"* ]]; then _src="-b"; fi
+    echo "  ! kern.hibernatefile 为空，尝试运行态下发 hibernatefile…"
+    $PMSET "$_src" hibernatefile /var/vm/sleepimage >/dev/null 2>&1 || true
+    sleep 1
+    HF="$(sysctl -n kern.hibernatefile 2>/dev/null || true)"
+    if [[ -n "$HF" ]]; then
+      echo "  ✔ 下发成功：kern.hibernatefile = ${HF}（无需重启）"
+    fi
+  fi
+  if [[ -n "$HF" ]]; then
+    echo "  ✔ kern.hibernatefile = ${HF}"
+  else
+    echo "  ✘ kern.hibernatefile 仍为空 ⇒ 内核不知道往哪写镜像，睡了也是 HibernateError"
+    echo "     本机成因：IOPMrootDomain 没有 \"Hibernate File\" 属性（ioreg 全量 0 命中）"
+    echo "     修法：boot-args 已加 hfile=/var/vm/sleepimage，**重启一次**后这条才会变绿"
+    blocked=1
+  fi
   # sleepimage 不是前提，是结果：standby=1 时内核在休眠准备阶段自行创建/扩展。
   # 早前把它写成硬门槛并断言"只在启动时分配"，重启验证已推翻（见 check 的 B 段注释）。
-  local SI; SI="/System/Volumes/VM/sleepimage"
+  local SI; SI="${HF:-/var/vm/sleepimage}"
   if [[ -f "$SI" ]]; then
-    echo "  ✔ sleepimage 已存在（$(awk -v s="$(stat -f %z "$SI" 2>/dev/null || echo 0)" 'BEGIN{printf "%.1f GiB", s/1073741824}')）"
+    echo "  ✔ 镜像文件已存在（$(awk -v s="$(stat -f %z "$SI" 2>/dev/null || echo 0)" 'BEGIN{printf "%.1f GiB", s/1073741824}')）"
   else
-    echo "  ! sleepimage 尚未存在 —— 不拦，standby=1 时休眠准备阶段会自行创建"
+    echo "  ! 镜像文件尚未存在 —— 不拦，standby=1 时休眠准备阶段会自行创建"
   fi
   if [[ $blocked -ne 0 ]]; then
     echo
@@ -351,6 +411,8 @@ do_arm() {
 
   echo
   echo "=== 武装【${SN}】侧（另一侧保持 hibernatemode 0 / standby 0）"
+  # 镜像路径：内核写休眠镜像的唯一来源（powers 已由上面前置门槛校验并尝试下发）
+  $PMSET "$SRC" hibernatefile /var/vm/sleepimage
   $PMSET "$SRC" hibernatemode 25
   # ★ standby 必须为 1。man pmset 原文：hibernation image 是否写入"also dependent on
   #   the values of standby and autopoweroff"，而 standby=0 会彻底关掉镜像写入

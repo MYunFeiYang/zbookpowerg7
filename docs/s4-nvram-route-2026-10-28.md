@@ -156,7 +156,7 @@ if (HibernateMask & HIBERNATE_MODE_RTC) {
 一旦命中就会被优先采信、盖掉 NVRAM 的正确 44 B，而且日志看起来像 "RTC hibernation is 1"。
 既然 NVRAM 腿已经打通，RTC 分支只剩负价值 ⇒ 改成 `NVRAM`（官方 toolTip 明确支持该值）。
 
-## 五、必要条件清单（2026-10-28 16:50 状态）
+## 五、必要条件清单（2026-10-28 17:35 状态）
 
 macOS 走 S4 要同时满足 9 条，任一条断了就恢复不了。按链路顺序：
 
@@ -165,7 +165,8 @@ macOS 走 S4 要同时满足 9 条，任一条断了就恢复不了。按链路�
 | 1 | 固件支持 S4 | ✅ | `FACP-1.aml` `FLAGS=0x002384A5`：bit7 `RTC_S4`=1、bit16 `S4_RTC_STS`=1；Windows/Linux 同机实测可 S4 |
 | 2 | 磁盘能放下镜像 | ✅ | 16 GB 内存 / 系统卷 193 GB 可用 |
 | 3 | macOS 侧开启休眠 | ✅ | `s4-arm.sh arm` 设 25，已生效 |
-| 3b | **`standby` 必须为 1** | ✘ | **2026-10-28 17:04 实测卡在这**：`standby 0` 会彻底关掉镜像写入（`man pmset`），`hibernatemode 25` 被静默降级成普通睡眠。见 1.1 节。`sleepimage` 本身不是前提，是结果 |
+| 3b | **`standby` 必须为 1** | ✅ | 17:04 卡在这（`standby 0` 彻底关掉镜像写入，见 1.1）；已改并实测生效 |
+| 3c | **内核持有写镜像路径** | ⏳ | 17:23 卡在这：`sysctl kern.hibernatefile` 为空 ⇒ `IOHibernateIO.cpp:504` return Unsupported ⇒ `HibernateError`（见 1.2）。已加 `hfile=` boot-arg，**重启后 `sysctl kern.hibernatefile` 非空才算过** |
 | 4 | macOS 把 44 B 密钥交出来 | ❓ | 需 `PMRootDomain` 提供 `kIOHibernateRTCVariables`，macOS 26 上未验证 |
 | 5 | kext 把它写进 NVRAM | ✅ | fork + `-hbfxforce` 绕过 `checkRTCExtendedMemory()` 门控 |
 | 6 | OC 从 NVRAM 读回 | ✅ | `HibernateMode=NVRAM`；读到后校验长度必须 **= 44**、签名必须 **`AAPL`** |
@@ -219,18 +220,83 @@ macOS 走 S4 要同时满足 9 条，任一条断了就恢复不了。按链路�
 结论：`sleepimage` 不是"启动时预分配"的前置条件，而是休眠动作的结果 —— 只有真的决定写镜像时
 内核才会去创建/扩展它。所以它不存在**不构成阻塞**，脚本里那条硬门槛已降级为提示。
 
-**★ 位置陷阱（上次就搞错过）**：两台卷上都可能有同名文件，不是同一个：
+**位置（17:30 修正）**：两台卷上都有同名文件，但**写镜像的目标是 `hfile` 指定的那个**：
 
 ```
-/System/Volumes/VM/sleepimage      ← VM 卷（disk1s6，nobrowse,noexec），真正的镜像位置
-/var/vm/sleepimage                 ← Data 卷（disk1s4）上的另一份，本机 0 字节、mtime 停在 10-27 12:37
+/var/vm/sleepimage                 ← Data 卷（disk1s4）；本机 pmset 与 hfile 都指向这里，这才是写目标
+/System/Volumes/VM/sleepimage      ← VM 卷（disk1s6，nobrowse,noexec），swap / 内核转储用
 ```
 
-用 `stat -f "inode=%i dev=%d"` 可证两者 `dev` 不同（16777226 vs 16777227）。
-`kern.hibernatefile` 指向的是 `/var/vm/sleepimage`，但实际镜像落在 VM 卷。
+`stat -f "inode=%i dev=%d"` 可证两者 `dev` 不同（16777226 vs 16777227）。
+早前把 `/var/vm` 那份判成「0 字节残留」是**错的**：它是 XNU 的写目标，0 字节只说明从未真正写入过。
 
-**下一步**：重新 `arm`（这次会写 `standby 1`），然后按 6.1 的操作前提睡一次。
-判读只看 `sysctl kern.hibernatecount` 与 `pmset -g log` 里有没有 `Entering Hibernate`。
+### 1.2 2026-10-28 17:23 第二次实测：进了 Standby，报 `HibernateError`
+
+`standby 1` 生效后这次不一样了：不再是 Deep Idle，而是**真的进入 Standby 并尝试写镜像**，
+但 10 秒内退回，唤醒原因 `(HibernateError)`。
+
+两道门是串联的：17:04 那次卡在第一道（`standby 0` ⇒ 连尝试都没有，直接降级普通睡眠）；
+改掉之后才撞上第二道（内核没有写镜像路径 ⇒ 尝试了但立刻失败）。
+
+```
+17:23:38  PMRD: phase 0, standby 1 delay 300, hibernate 0x19
+17:23:39  PMRD: phase 1 / phase 2, hibernateMode 0x19
+17:23:49  (AppleACPIPlatform) AppleACPIPlatformPower Wake reason: (HibernateError)
+17:24:35  PMRD: sleep factors …, StandbyForced, ExternalDisplay, HibernateFailed
+```
+
+`kern.hibernatecount` 仍是 0，镜像没有生成。
+
+### 根因：内核根本没拿到写镜像的路径（源码 + 实测双证）
+
+`IOHibernateIO.cpp:496-506`（XNU main）：
+
+```c
+if ((obj = IOService::getPMRootDomain()->copyProperty(kIOHibernateFileKey))) {   // "Hibernate File"
+    if ((str = OSDynamicCast(OSString, obj))) {
+        strlcpy(gIOHibernateFilename, str->getCStringNoCopy(), sizeof(gIOHibernateFilename));
+    }
+    obj->release();
+}
+if (!gIOHibernateMode || !gIOHibernateFilename[0]) {
+    return kIOReturnUnsupported;        // ← 直接返回，不写镜像、不 panic
+}
+```
+
+`gIOHibernateFilename` 全文件只有两处赋值（`grep -n gIOHibernateFilename IOHibernateIO.cpp`）：
+
+| # | 位置 | 条件 |
+|---|---|---|
+| 1 | `IOHibernateIO.cpp:496-502` | `IOPMrootDomain` 上存在 `"Hibernate File"` 属性 |
+| 2 | `IOHibernateIO.cpp:1617` | boot-arg `hfile=<path>`（`PE_parse_boot_argn`） |
+
+本机实测：
+
+```bash
+ioreg -lw0 | grep -c '"Hibernate File"'      # → 0   （全系统 0 命中）
+sysctl -n kern.hibernatefile                 # → 空  （SYSCTL_STRING 直指该数组，见 1520 行）
+```
+
+所以走了 504 行的 `return kIOReturnUnsupported`：**不写镜像、不 panic、几秒内退回** ——
+这正好解释「10 秒就回来 + 没有 panic + `hibernatecount` 仍为 0 + 镜像不生成」。
+
+顺带纠正两条旧判断：
+
+- `kern.hibernatefile` **不是**"只是显示用"：`IOHibernateIO.cpp:1520` 的
+  `SYSCTL_STRING(_kern, OID_AUTO, hibernatefile, …, gIOHibernateFilename, …)` 直接指该数组，
+  它**实时**就是内核里的写镜像路径 ⇒ **重启后可立即验证，不必先睡一次**。
+- `pmset -g` 显示 `hibernatefile /var/vm/sleepimage` 只说明**配置文件**里有这个值
+  （`/Library/Preferences/com.apple.PowerManagement.<UUID>.plist` 的 `"Hibernate File"` 键），
+  **不代表内核收到了**。
+
+### 修法
+
+- `boot-args` 增加 `hfile=/var/vm/sleepimage`（走第 2 条来源，不依赖 powerd 是否下发属性）。
+- `s4-arm.sh` 增加两级判据：A 段查 config 里有没有 `hfile=`，B 段**硬判** `sysctl kern.hibernatefile` 非空；
+  `arm` 门槛在发现为空时会先尝试运行态 `pmset <src> hibernatefile /var/vm/sleepimage`，
+  成功则不必重启，失败才要求重启。
+
+**下一步**：重启后先看 `sysctl kern.hibernatefile`。非空才睡 —— 这条让"白重启"变成可判读。
 
 **第 9 条的实测结果（2026-10-28 16:50，重启后）**：`Target` 已从 5 改成 69 并确认运行态生效，
 但 `ioreg -lw0 | grep -c '"boot-log"'` = **0**，`IODeviceTree` 里根本没有该属性。
@@ -241,7 +307,7 @@ macOS 走 S4 要同时满足 9 条，任一条断了就恢复不了。按链路�
 |---|---|---|
 | macOS 有没有交出密钥 | `log show --last 30m --predicate 'eventMessage CONTAINS "HBFX"'` | `PMRootDomain key present` + `is N bytes` = 交了；`MISSING` = 没交（第 4 条不成立）。**必须在你的终端跑**：AI 沙箱里会报 `Cannot run while sandboxed` |
 | 是否真的 hibernation | `sysctl kern.hibernatecount` | 成功一次 +1（当前 **0**，从未成功） |
-| 镜像是否写了 | `ls -lh /System/Volumes/VM/sleepimage` | 应 ≈16 GB、mtime 是刚才。**别用 `/var/vm/`，那里是 Data 卷上的 0 字节残留** |
+| 镜像是否写了 | `ls -lh /var/vm/sleepimage`（或用 `sysctl -n kern.hibernatefile` 得到的路径） | 应 ≈16 GB、mtime 是刚才 |
 | 系统怎么记的 | `pmset -g log \| grep -e Hibernat -e "Entering Sleep"` | 出现 `Entering Hibernate` 而非 `Entering Sleep` |
 
 ## 六、验证与判读
