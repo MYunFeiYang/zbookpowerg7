@@ -44,11 +44,16 @@
 - 休眠/睡眠策略由 `oc-setup.sh pmset`（→ `pmset-hibernate.sh`）直接写 `pmset` 参数实现。推荐一次执行 `oc-setup.sh install-all`（含 pmset 收紧、耳麦自动切换）；系统更新后 `oc-setup.sh pmset` 可重跑。
 - 查睡眠记录用 `powerlog` 的 `PLSleepWakeAgent_EventForward_PowerState`（`pmset -g log` 只保留当前 boot）。测掉电必须**拔电**睡（AC 睡眠的掉电率无物理意义）。
 
-### 雷电档位（改 `config.plist` 后须同步 ESP 并重启）
-- **`tb off`** — `SSDT-thunderbolt-disable`：最省电，macOS 不加载 TB 栈；
-- **`tb on`** — `SSDT-TB3HP-ZBook`：`force-power`，功能最全、空口功耗最高；
-- **`tb lite`** — `SSDT-TB3HP-ZBook-lite`：无 `force-power`，保留唤醒 `_DSW`；睡眠/唤醒不稳请改 `tb off` 或 `tb on`。
-- 当前档位 = 「放控制器 + 屏蔽 TB 驱动栈」（`SSDT-thunderbolt-disable` 关 = `RP01` 可见；`Kernel/Block` 双条 `AppleThunderboltNHI` + `IOThunderboltFamily`，`Strategy=Disable`）：USB-C 拿回 USB3，雷电控制器仍被枚举但零驱动实例。
+### 雷电（固定屏蔽，无档位切换）
+两条机制叠加：
+- **`ACPI/Add` → `SSDT-thunderbolt-nhi-disable.aml`**：只在 `Darwin` 下隐藏 NHI（`_SB.PCI0.RP01.PXSX`），
+  保留 `TXHC` / `AppleUSBXHCITR`（走 MSI）⇒ USB-C 仍以 USB3 工作；
+- **`Kernel/Block`** → `com.apple.iokit.IOThunderboltFamily` + `com.apple.driver.AppleThunderboltNHI`（`Strategy=Disable`）。
+
+判据：`ioreg -c IOThunderboltController | grep -c IOThunderboltController` = **0**；
+`kextstat | grep -ci AppleThunderboltNHI` = **0**；`ioreg -c AppleUSBXHCITR` ≥ **1**。
+
+限制：雷电 PCIe 隧道不可用（扩展坞 / eGPU / 40Gbps 雷电盘）；C 口仅 USB 模式（≤10Gbps）。
 
 合盖即关机（可选）：`oc-setup.sh lid install`。
 

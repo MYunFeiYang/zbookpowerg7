@@ -197,3 +197,48 @@ SSDT 内容为 `Method (TPNM,1){ If(_OSI("Darwin")) Return(0x0102); Return(\_SB.
 - Data Hub 的 `boot-log` 属性在本机**取不到**（`ioreg -lw0 -p IODeviceTree | grep -c boot-log` = 0，
   转出的 `/tmp/oc-bootlog.txt` 为 0 字节）⇒ 本项目长期用于 ACPI 取证的通路目前**不可用**，
   待下次重启后再验证（可能与 Target 已改为 0x05 无关，是 RELEASE 构建下 boot-log 未写入）。
+
+---
+
+## 8. 删除全部禁用条目（15:20 追加）
+
+上一节结论是「4 个已禁用条目可删但零收益、建议保留」。用户决定**不留回滚包袱**，要求清空。
+实测全配置共 **6 个 `Enabled=false` 条目**（不止 4 个，另 2 个在 Kernel/UEFI 段），本次全部删除。
+
+### 8.1 删除清单（6 项）
+
+| 段 | 条目 | 删除理由 |
+|---|---|---|
+| `ACPI/Add` | `SSDT-thunderbolt-disable.aml` | [FALLBACK] 全量隐藏 RP01（会连带杀掉 USB-C）。现行方案走 nhi-disable + Kernel/Block，此路仅作回滚，未启用 |
+| `ACPI/Add` | `SSDT-disable-empty-ports.aml` | 注释自述「PROVEN INEFFECTIVE: `_STA=0` cannot remove PCI functions」 |
+| `ACPI/Add` | `SSDT-GPRW.aml` | RETIRED 2026-10-27：GPE 0x6D 改由 DSDT 定向 patch（XDCI `_PRW`）处理 |
+| `ACPI/Patch` | `GPRW → XPRW` 全局改名 | RETIRED 2026-10-27，同上；全局改名会破坏合盖唤醒 |
+| `Kernel/Patch` | `Bypass firmware check (for TB on/lite profiles)` | 只服务已废除的 `tb on`/`tb lite` 档位（依赖的 `SSDT-TB3HP-ZBook(.lite).aml` 早已不在） |
+| `UEFI/Drivers` | `AudioDxe.efi` | 开机音的驱动项，未启用 |
+
+### 8.2 校验
+
+- `plutil -lint` → **OK**
+- 文本 diff：**删 114 行、增 0 行**（= 8+16+40+36+14，逐块精确吻合，无重排）
+- 结构化比对（plistlib）：4 个目标数组 `ACPI/Add 17→14`、`ACPI/Patch 5→4`、`Kernel/Patch 2→1`、`UEFI/Drivers 9→8`，
+  **其余全树零差异**；各数组内剩余条目**顺序完全保持**；删除 6 项、新增 0 项
+- 全配置 `Enabled=false` 计数：**0**
+- 完整性复查：14 个 ACPI 全部在位且非零、29 个 kext 全启用、8 个 UEFI 驱动全部在位
+- 工作区与 ESP `config.plist` SHA-256 一致：`688fbd93…`
+
+### 8.3 连带影响（重要）
+
+`EFI/scripts/tb-thunderbolt-profile.sh` 的档位切换**彻底失效**：
+它按 `ACPI/Add[].Path` 匹配 `AML_OFF/AML_ON/AML_LITE` 三个文件名来 `PlistBuddy Set :Enabled`。
+其中 `SSDT-TB3HP-ZBook.aml` / `SSDT-TB3HP-ZBook-lite.aml` **文件早已不存在**，`SSDT-thunderbolt-disable.aml`
+的**配置条目本次已删** ⇒ 三个档位全部无对象。`status` 子命令同理查不到任何一条。
+`oc-setup.sh` 已无 `tb` 子命令转发。⇒ 该脚本整份作废。
+
+`README.md` 的「雷电档位」小节已同步改写为**当前状态**（固定屏蔽 + 判据命令 + 限制），
+不再提 `tb off/on/lite` 档位（符合本项目「文档只写现状」的约定）。
+
+### 8.4 回滚
+
+`docs/backups/disabled-purge-20261028-1520/config.plist.before`（SHA-256 `5e7a9436…`），
+或 `git revert` 本次提交。3 个已删配置项的 `.aml/.dsl` 源文件与 `AudioDxe.efi` **仍保留在仓库与 ESP 上**
+（本次只删配置条目，未删文件），需要恢复时把条目加回、`Enabled` 置 `false` 即可。

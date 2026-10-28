@@ -72,14 +72,6 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>[FALLBACK] Hide RP01 on Darwin (kills USB-C entirely). Enabled ONLY if the Kernel/Block route ever regresses. Rollback: set Kernel/Block Enabled=false first.</string>
-				<key>Enabled</key>
-				<false/>
-				<key>Path</key>
-				<string>SSDT-thunderbolt-disable.aml</string>
-			</dict>
-			<dict>
-				<key>Comment</key>
 				<string>Disable only Thunderbolt NHI (PXSX) on Darwin; keeps USB-C (TXHC/AppleUSBXHCITR, MSI) alive. Pair w/ Kernel/Block (IOThunderboltFamily + AppleThunderboltNHI). Rollback: set Enabled=false.</string>
 				<key>Enabled</key>
 				<true/>
@@ -125,22 +117,6 @@
 				<true/>
 				<key>Path</key>
 				<string>SSDT-dGPU-PowerOff-Darwin.aml</string>
-			</dict>
-			<dict>
-				<key>Comment</key>
-				<string>Isolation of empty ports (PEG0/RP17/SBUS) to bisect 0x50 storm root cause. PROVEN INEFFECTIVE: _STA=0 cannot remove PCI functions; zero contribution. Disabled.</string>
-				<key>Enabled</key>
-				<false/>
-				<key>Path</key>
-				<string>SSDT-disable-empty-ports.aml</string>
-			</dict>
-			<dict>
-				<key>Comment</key>
-				<string>RETIRED 2026-10-27: GPRW handler no longer injected. XDCI _PRW is patched directly in DSDT instead.</string>
-				<key>Enabled</key>
-				<false/>
-				<key>Path</key>
-				<string>SSDT-GPRW.aml</string>
 			</dict>
 		</array>
 		<key>Delete</key>
@@ -231,46 +207,6 @@
 				<key>Replace</key>
 				<data>
 				VFBOTUdQREk=
-				</data>
-				<key>ReplaceMask</key>
-				<data>
-				</data>
-				<key>Skip</key>
-				<integer>0</integer>
-				<key>TableLength</key>
-				<integer>0</integer>
-				<key>TableSignature</key>
-				<data>
-				RFNEVA==
-				</data>
-			</dict>
-			<dict>
-				<key>Base</key>
-				<string></string>
-				<key>BaseSkip</key>
-				<integer>0</integer>
-				<key>Comment</key>
-				<string>RETIRED 2026-10-27: global GPRW-&gt;XPRW rename disabled. Replaced by the targeted XDCI _PRW patch below, which keeps GPE 0x6D enabled for lid-open wake.</string>
-				<key>Count</key>
-				<integer>0</integer>
-				<key>Enabled</key>
-				<false/>
-				<key>Find</key>
-				<data>
-				R1BSVwI=
-				</data>
-				<key>Limit</key>
-				<integer>0</integer>
-				<key>Mask</key>
-				<data>
-				</data>
-				<key>OemTableId</key>
-				<data>
-				AAAAAAAAAAA=
-				</data>
-				<key>Replace</key>
-				<data>
-				WFBSVwI=
 				</data>
 				<key>ReplaceMask</key>
 				<data>
@@ -1251,42 +1187,6 @@
 				<key>Skip</key>
 				<integer>0</integer>
 			</dict>
-			<dict>
-				<key>Arch</key>
-				<string>Any</string>
-				<key>Base</key>
-				<string>__ZN22AppleThunderboltNHIUser10initializeEP9IOService</string>
-				<key>Comment</key>
-				<string>Bypass firmware check (for TB on/lite profiles).</string>
-				<key>Count</key>
-				<integer>1</integer>
-				<key>Enabled</key>
-				<false/>
-				<key>Find</key>
-				<data>
-				idLrqAAAAA==
-				</data>
-				<key>Identifier</key>
-				<string>com.apple.driver.AppleThunderboltNHI</string>
-				<key>Limit</key>
-				<integer>0</integer>
-				<key>Mask</key>
-				<data>
-				</data>
-				<key>MaxKernel</key>
-				<string></string>
-				<key>MinKernel</key>
-				<string></string>
-				<key>Replace</key>
-				<data>
-				idLrrrrrrg==
-				</data>
-				<key>ReplaceMask</key>
-				<data>
-				</data>
-				<key>Skip</key>
-				<integer>0</integer>
-			</dict>
 		</array>
 		<key>Quirks</key>
 		<dict>
@@ -1789,20 +1689,6 @@
 				<false/>
 				<key>Path</key>
 				<string>ResetNvramEntry.efi</string>
-			</dict>
-			<dict>
-				<key>Arguments</key>
-				<string></string>
-				<key>Comment</key>
-				<string></string>
-				<key>Enabled</key>
-				<false/>
-				<key>HideVerbose</key>
-				<false/>
-				<key>LoadEarly</key>
-				<false/>
-				<key>Path</key>
-				<string>AudioDxe.efi</string>
 			</dict>
 			<dict>
 				<key>Arguments</key>
