@@ -8,7 +8,7 @@
 		<array>
 			<dict>
 				<key>Comment</key>
-				<string>Hide HDAS.SNDW on Darwin (digital mic unsupported; no internal mic fix).</string>
+				<string>Hide HDAS.SNDW on Darwin (mic unsupported).</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -48,7 +48,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>USB power props. kUSBSleepPowerSupply=0 -&gt; black screen on wake; keep non-zero.</string>
+				<string>USB power props; sleep supply must stay non-zero.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -56,7 +56,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>I2C0 GNVS for trackpad; load before TPD3-CRS/INI.</string>
+				<string>I2C0 GNVS for trackpad; load before TPD3.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -64,7 +64,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>TPD3 (ELAN073D): TPNM()=258=GPP_E2. Pair w/ ACPI/Patch[1]. Rollback: revert commit.</string>
+				<string>TPD3 TPNM()=pin258/GPP_E2; pair w/ Patch[1].</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -72,7 +72,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>Disable only Thunderbolt NHI (PXSX) on Darwin; keeps USB-C (TXHC/AppleUSBXHCITR, MSI) alive. Pair w/ Kernel/Block (IOThunderboltFamily + AppleThunderboltNHI). Rollback: set Enabled=false.</string>
+				<string>Hide TB NHI only; keeps USB-C (AppleUSBXHCITR).</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -88,7 +88,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>PNLF backlight device (_UID 19); needs PNLF-&gt;XNLF rename.</string>
+				<string>PNLF backlight (_UID 19); needs PNLF-&gt;XNLF.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -96,7 +96,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>DeepIdle LPS0/S0 (primary). Pair w/ SSDT-DeepIdle. Force-S3 FAILED -&gt; use Deep Idle.</string>
+				<string>LPS0/S0 deep idle; primary sleep path.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -104,7 +104,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>DeepIdle LPC wake helpers (AOAC). Pair w/ SSDT-DeepIdle. Force-S3 FAILED -&gt; use Deep Idle.</string>
+				<string>LPC wake helpers (AOAC) for DeepIdle.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -112,7 +112,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>dGPU power-down on Darwin (SSDT-eGPU OFF-AOAC rename); keep enabled.</string>
+				<string>dGPU power-down under Darwin; keep enabled.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -186,7 +186,7 @@
 				<key>BaseSkip</key>
 				<integer>0</integer>
 				<key>Comment</key>
-				<string>TPD3 rename GNUM-&gt;TPNM in TPD3._INI so GPIO pin=258 (GPP_E2); needs SSDT-TPD3-PIN2.aml (renamed 2026-10-23 to dodge a corrupt 0-byte FAT dir entry on ESP).</string>
+				<string>TPD3 GNUM-&gt;TPNM (pin 258); needs SSDT-TPD3-PIN2.</string>
 				<key>Count</key>
 				<integer>1</integer>
 				<key>Enabled</key>
@@ -226,7 +226,7 @@
 				<key>BaseSkip</key>
 				<integer>0</integer>
 				<key>Comment</key>
-				<string>XHC _PRW: Local0[One]=0x03 -&gt; 0 so macOS does not treat XHC as a sleep wake source. Re-enabled after the 2026-10-27 A/B test proved XHC is not the lid-open wake path (only HP HD Camera sits on XHC; keyboard is PS2, trackpad is VoodooI2C), so keeping it off buys nothing while leaving a needless wake source.</string>
+				<string>XHC _PRW 0x03-&gt;0: drop XHC as a wake source.</string>
 				<key>Count</key>
 				<integer>0</integer>
 				<key>Enabled</key>
@@ -266,7 +266,7 @@
 				<key>BaseSkip</key>
 				<integer>0</integer>
 				<key>Comment</key>
-				<string>XDCI _PRW: lowest sleep state 0x04 to 0x00 under Darwin, so XDCI stops re-arming GPE 0x6D as a wake source. GLAN/HDAS/CNVW keep the GPE enabled, so lid-open wake still works.</string>
+				<string>XDCI _PRW 0x04-&gt;0: stop GPE 0x6D re-arm.</string>
 				<key>Count</key>
 				<integer>1</integer>
 				<key>Enabled</key>
@@ -653,7 +653,7 @@
 				<key>BundlePath</key>
 				<string>SMCBatteryManager.kext</string>
 				<key>Comment</key>
-				<string>V1.3.9 | SMCBatteryManager (ACPIBatteryManager conflict anecdotal).</string>
+				<string>V1.3.9 | no ACPIBatteryManager conflict.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -725,7 +725,7 @@
 				<key>BundlePath</key>
 				<string>AppleALC.kext</string>
 				<key>Comment</key>
-				<string>V1.9.9 | By acidanthera (OCAT build) | needs AppleHDA (OCLP-Mod HDA patch) + layout-id 55 (ALC236 HP-240G8)</string>
+				<string>V1.9.9 | layout-id 55 (ALC236); needs AppleHDA.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -743,7 +743,7 @@
 				<key>BundlePath</key>
 				<string>SimpleHDA.kext</string>
 				<key>Comment</key>
-				<string>V1.0.0 | By laobamac | injects original AppleHDA 600.2 via OC, replaces OCLP Modern Audio root patch | needs keepsyms boot-arg, must load after AppleALC</string>
+				<string>V1.0.0 | injects AppleHDA 600.2; after AppleALC; keepsyms.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -869,7 +869,7 @@
 				<key>BundlePath</key>
 				<string>AirportItlwm-Tahoe.kext</string>
 				<key>Comment</key>
-				<string>V2.4.0 | laobamac itlwm v2.4.0-alpha @738d4c6 (Tahoe/AX201); native, replaces Skywalk hack+OCLP.</string>
+				<string>V2.4.0 | itlwm 738d4c6; native AX201.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -1013,7 +1013,7 @@
 				<key>BundlePath</key>
 				<string>VoodooI2C.kext/Contents/PlugIns/VoodooInput.kext</string>
 				<key>Comment</key>
-				<string>V1.1.7 | After VoodooI2C core; explicit load aids gesture/input.</string>
+				<string>V1.1.7 | load after VoodooI2C core.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -1085,7 +1085,7 @@
 				<key>BundlePath</key>
 				<string>RestrictEvents.kext</string>
 				<key>Comment</key>
-				<string>V1.1.7 | RestrictEvents 1.1.6 for OTA (revpatch=sbvmm), Acidanthera.</string>
+				<string>V1.1.7 | OTA on unsupported hw (revpatch=sbvmm).</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -1104,7 +1104,7 @@
 				<key>Arch</key>
 				<string>x86_64</string>
 				<key>Comment</key>
-				<string>[EXPERIMENT 2026-10-22] Block Thunderbolt stack so macOS never drives the NHI; keeps USB-C (AppleUSBXHCITR) alive. Rollback: set Enabled=false.</string>
+				<string>Block TB stack; AppleUSBXHCITR (USB-C) unaffected.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Identifier</key>
@@ -1120,7 +1120,7 @@
 				<key>Arch</key>
 				<string>x86_64</string>
 				<key>Comment</key>
-				<string>[TB] Block Thunderbolt NHI driver (paired with IOThunderboltFamily; matches 2026-09-29 c980425).</string>
+				<string>Block TB NHI driver (pairs with #0).</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Identifier</key>
@@ -1694,7 +1694,7 @@
 				<key>Arguments</key>
 				<string></string>
 				<key>Comment</key>
-				<string>EXT4 filesystem driver | OcBinaryData e74e533d8 (rEFInd 0.14.2) | needs metadata_csum_seed/orphan_file support | must load BEFORE OpenLinuxBoot</string>
+				<string>EXT4 driver; must load before OpenLinuxBoot.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>HideVerbose</key>
@@ -1708,7 +1708,7 @@
 				<key>Arguments</key>
 				<string></string>
 				<key>Comment</key>
-				<string>Linux direct boot (no GRUB chainload) | OpenCore 1.0.9 build (OCAT) | needs RequestBootVarRouting + LauncherOption + ext4_x64.efi</string>
+				<string>Linux direct boot; needs ext4_x64 + LauncherOption.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>HideVerbose</key>
