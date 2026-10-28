@@ -476,3 +476,39 @@ swap 正常（1024 MB 已加密）、FileVault 关闭、`"Hibernate File Min" = 
 
 休眠路径自身不会清这些标志（xnu 休眠相关文件 grep `chflags`/`IMMUTABLE` = 0 命中），必须外部清：
 `s4-arm.sh` 的 arm 门槛与 check 体检均已加入 `uchg`/`schg` 判据，arm 会自动 `chflags nouchg`。
+
+## 3c 卡点三：HP POST 报 `005 Real-Time Clock Power Loss`（2026-10-28 18:00 那次）
+
+18:00:12 睡下、18:01:56 冷启动，开机屏幕出现 HP 三位码 **005**。
+
+**HP 官方定义**（三处文档口径一致：support.hp.com 中文页、`hp.com/go/techcenter/startup`、
+HP Z Series Maintenance and Service Guide 表 7-1）：
+
+> 005-Real-Time Clock Power Loss：Invalid time or date in configuration memory.
+> RTC battery may need to be replaced. —— 且该错误会 **load factory defaults**（BIOS 载入出厂默认设置）。
+
+这条一次性解释了三个此前"解释不通"的现象：
+
+| 现象 | 由 005 解释 |
+|---|---|
+| 冷启动而非从镜像恢复 | 休眠状态存于 RTC/NVRAM，CMOS 被重置后失效 ⇒ 无恢复依据 |
+| `sleepimage` mtime = `2019-01-01 08:00:57` | CMOS 重置后时钟回落到 BIOS 默认值，开机早期写文件用的就是这个错时间；NTP 之后才校正 |
+| "又出现了 005" | 每次 S4 断电后开机都会复现 |
+
+注意 **003 才是"主板故障"**，005 不是硬件报废，可恢复。
+
+## 3d 配置自相矛盾：`rtcfx_exclude=0E-FF` 与 S4 在原理上互斥
+
+`RTCMemoryFixup` 官方 README（lvs1974/RTCMemoryFixup）原文：
+
+> Offsets from **0x80 to 0xAB** are used to store some hibernation information (IOHibernateRTCVariables).
+> If any offset in this range causes a conflict, you can exclude it, **but hibernation won't work**.
+> Offsets from 0 to 0D usually are more or less 'compatible' and should not cause any conflicts.
+
+本机 `rtcfx_exclude=0E-FF` 完整覆盖 0x80–0xAB ⇒ **按官方说明，当前配置下 S4 不可能成立**。
+
+同时它也没能挡住 005（0x0E–0x7F 早被封，BIOS 设置区仍被破坏）⇒ 说明破坏路径不在被封范围内。
+
+**待办（尚未执行，需单独验证）**：把排除区间从 `0E-FF` 收窄为 `0E-7F` ——
+bank 0 的 `0x0E–0x7F`（BIOS 设置与校验和所在区）继续封，bank 2 的 `0x80–0xAB` 放开给休眠变量。
+一次只动这一个变量，跑完一次睡眠后看两件事：① 是否还出 005；② 是否出现 `Wake from Hibernate`。
