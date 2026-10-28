@@ -243,7 +243,8 @@ show_status() {
   $PMSET -g custom | grep -E 'hibernatemode|standby|standbydelay|powernap|womp|tcpkeepalive' || true
   echo
   echo "==> 历史 standby/hibernate 事件"
-  if $PMSET -g log 2>/dev/null | grep -qE "Entering Standby state|Entering Hibernate"; then
+  _pf_log="$($PMSET -g log 2>/dev/null || true)"
+  if [[ "$_pf_log" == *"Entering Hibernate"* || "$_pf_log" == *"Entering Standby state"* ]]; then
     $PMSET -g log 2>/dev/null | grep -E "Entering Standby state|Entering Hibernate" | tail -5
   else
     echo "  (无 —— 从未真正进入过 standby/hibernate)"
@@ -360,12 +361,13 @@ case "${1:-}" in
     echo "==> 诊断档：RTC 写通道封满后的**一次**休眠尝试（目的 = 判定，不是修好）"
     # ★ 只武装**当前正在用的那个电源源**，另一侧保持安全档 ——
     #   否则拔电出门时，另一侧会变成「15 min 自动睡 + 5 min 后休眠」的**无人看管地雷**（18:27 的教训）。
-    if $PMSET -g batt 2>/dev/null | grep -q "'AC Power'"; then
+    _pf_batt="$($PMSET -g batt 2>/dev/null || true)"
+    if [[ "$_pf_batt" == *"'AC Power'"* ]]; then
       SRC="-c"; SRCNAME="AC（插电）"
     else
       SRC="-b"; SRCNAME="Battery（电池）"
     fi
-    echo "    只武装【$SRCNAME】侧；另一侧保持 hibernatemode 0 / standby 0（不拆地雷）"
+    echo "    只武装【${SRCNAME}】侧；另一侧保持 hibernatemode 0 / standby 0（不拆地雷）"
     echo "    配置 = hibernatemode 25 + standby 1 + 300 s —— 与失败的档 B **同形**，只把延迟缩短"
     echo "    前置（本次已实测落地）：rtcfx_exclude=0E-7F,AC-FF ｜ AppleRtcRam=true ｜ rtc-blacklist 198 B"
     echo "    ⚠️ 2026-10-28 已把 RTC 封锁收窄（原 0E-FF / 242 B），休眠区 80–AB 不再受保护 —— 实验前先想清楚"

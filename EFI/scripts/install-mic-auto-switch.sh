@@ -44,7 +44,8 @@ if [[ "$(id -u)" -eq 0 ]]; then
   exit 1
 fi
 
-if ! echo "$(sysctl -n kern.bootargs 2>/dev/null)" | grep -q 'alcverbs=1'; then
+_pf_ba="$(sysctl -n kern.bootargs 2>/dev/null || true)"
+if [[ "$_pf_ba" != *alcverbs=1* ]]; then
   echo "WARN: boot-args 未含 alcverbs=1，MicFix 可能无效。请确认 OpenCore 配置后重启。" >&2
 fi
 

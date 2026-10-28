@@ -81,7 +81,8 @@ cmd_status() {
   echo ""
 
   echo "[pmset]"
-  if pmset -g custom 2>/dev/null | grep -q 'tcpkeepalive.*0'; then
+  _pf_pc="$(pmset -g custom 2>/dev/null || true)"
+  if [[ "$_pf_pc" == *tcpkeepalive*0* ]]; then
     echo "  tcpkeepalive=0  (已收紧，可重跑: $0 pmset)"
   else
     echo "  未收紧 → 运行: $0 pmset"

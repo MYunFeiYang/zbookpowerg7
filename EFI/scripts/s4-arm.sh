@@ -305,7 +305,7 @@ do_arm() {
   if [[ "$BATT" == *"'AC Power'"* ]]; then SRC="-c"; SN="AC（插电）"; else SRC="-b"; SN="Battery（电池）"; fi
 
   echo
-  echo "=== 武装【$SN】侧（另一侧保持 hibernatemode 0 / standby 0）"
+  echo "=== 武装【${SN}】侧（另一侧保持 hibernatemode 0 / standby 0）"
   $PMSET "$SRC" hibernatemode 25
   # hibernatemode 25 是「立刻写镜像 + 断内存电」，与 3 的 standby 渐进逻辑无关。
   # standby 必须为 0，否则多一条 Apple 私有策略参与，变量越多越难判读。
