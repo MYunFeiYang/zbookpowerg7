@@ -47,12 +47,22 @@
 # ── 判读（一次睡眠后三选一）
 #   方向先记住：OC 读到 IOHibernateRTCVariables 后**立刻把它删掉**（AppleHibernate.c:173-183）
 #   ⇒ 醒后 nvram 里还查得到它 = OC 压根没消费，是**坏信号**；查不到才是正常。
-#   v1) kern.hibernatecount 从 0 变 1 且会话原样恢复    ⇒ NVRAM 路线成立，可转日常用
-#   v2) 计数变了但醒不来 / 半途重启                    ⇒ 卡在 boot.efi 恢复，查镜像/密文
-#   v3) pmset -g log 只有 Entering Sleep、计数仍 0     ⇒ 没走休眠路径
-#       （曾想用 HBFX 日志判"密钥有没有交出来"，2026-10-28 17:40 核实该路不可用：
-#        kern_hbfx.cpp 里那些行包在 #ifdef DEBUG 内，release kext 根本没编译进去，
-#        加 -hbfxdbg 也不会出现。判据只能是 kern.hibernatecount。）
+#
+#   ★ kern.hibernatecount **不是**成功判据（2026-10-28 17:50 源码坐实）：
+#     `gIOHibernateCount++` 在 `IOHibernateDone()`（IOHibernateIO.cpp:1442）里，而它有两条调用路径：
+#       :886  —— 休眠写镜像**失败**时的清理分支
+#       :1257 —— 唤醒时 `IOHibernateSystemWake()` 里（仅当 gFSState==kFSOpened）
+#     ⇒ 失败也会 +1。它的正确含义只有一个：**已经越过 :504 那道 hfile 门槛、进到写镜像阶段**。
+#       （17:23 那次 = 0，因为在 :504 就 return Unsupported；17:44 那次 = 1，说明门过了、后面才失败。）
+#
+#   成功判据（三条同时成立，缺一不可）：
+#     a) 电源灯灭 / 风扇停（hibernatemode 25 写完镜像应断电，不是 DarkWake 秒回）
+#     b) `pmset -g log` 里**没有** `/HibernateError` 字样（有它 = 失败，无论计数是多少）
+#     c) 醒后能恢复会话（S4 是全量 reinit）
+#
+#   失败判据（任一即可确定失败）：
+#     · `pmset -g log` 出现 `DarkWake from Standby ... due to /HibernateError`（秒回）
+#     · 电源灯一直亮着、风扇没停
 #
 
 set -uo pipefail
@@ -461,13 +471,13 @@ do_arm() {
   echo "     开机后查 pmset -g log 判「恢复了但屏没亮」还是「压根没恢复」"
   echo
   echo "=== 回来后的取证（判读见脚本头部，注意方向别搞反）"
-  echo "  sysctl kern.hibernatecount               # 成功一次 +1（基线 0）—— 唯一硬判据"
+  echo "  sysctl kern.hibernatecount               # 只表示'进过写镜像阶段'，失败也+1，**别拿它判成败**"
+  echo "  pmset -g log | grep -e Hibernat -e 'Entering' -e 'Wake from' | tail -6"
+  echo "                                           # 出现 /HibernateError = 失败；无它且断电 = 成功"
   echo "  sysctl -n kern.hibernatefile             # 醒后仍应为 /var/vm/sleepimage"
   echo "  ls -lh /var/vm/sleepimage                # ← 这才是写镜像的目标（Data 卷）"
   echo "                                           #   醒后应明显增长（≥1 GiB，大小随压缩率变，不是固定 16G）"
   echo "                                           #   /System/Volumes/VM/sleepimage 是 VM 卷的 swap/转储，别混"
-  echo "  pmset -g log | grep -e Hibernat -e 'Entering Sleep' | tail -5"
-  echo "                                           # 出现 'Entering Hibernate' = 走的是休眠不是普通睡"
   echo "  # 不再查 HBFX 日志：kern_hbfx.cpp 的 DEBUG 行在 release kext 里被 #ifdef DEBUG 编掉，恒为空"
   echo "  nvram -p | grep -i hiber                 # 【注意】有输出反而是坏信号：OC 读到后会立刻删掉它"
   echo "  system_profiler SPDisplaysDataType | grep -e 'Connection Type' -e 'Resolution'"
