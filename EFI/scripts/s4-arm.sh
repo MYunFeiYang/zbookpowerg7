@@ -243,6 +243,29 @@ PY
     echo "  ✔ IOHibernateRTCVariables 不存在（正常：OC 读到后会立刻删除它）"
   fi
 
+  # ── sleepimage 是否真实存在：hibernatemode 25 的**硬前提**（2026-10-28 实测补入）
+  # macOS 只在**启动时**按当时的 hibernatemode 决定是否分配镜像；
+  # 开机时是 0、之后再 pmset 改 25，系统不会补建 ⇒ 睡眠时无目标文件可写
+  # ⇒ 静默降级成普通睡眠（日志只写 Entering Sleep，不是 Entering Hibernate）。
+  # ★ 真实位置在 VM 卷（独立 APFS，nobrowse）：/System/Volumes/VM/sleepimage
+  #   /var/vm/sleepimage 在 Data 卷上，可能只是个 0 字节残留，**不能拿它当判据**。
+  local SI MEM SZ
+  SI="/System/Volumes/VM/sleepimage"
+  MEM="$(sysctl -n hw.memsize 2>/dev/null || echo 0)"
+  if [[ -f "$SI" ]]; then
+    SZ="$(stat -f %z "$SI" 2>/dev/null || echo 0)"
+    if [[ "$SZ" -gt $((MEM / 2)) ]]; then
+      echo "  ✔ sleepimage 已分配：$(awk -v s="$SZ" 'BEGIN{printf "%.1f GiB", s/1073741824}')"
+    else
+      echo "  ✘ sleepimage 仅 ${SZ} 字节（内存 $((MEM / 1073741824)) GiB）⇒ 25 模式无目标可写"; blocked=1
+    fi
+  else
+    echo "  ✘ /System/Volumes/VM/sleepimage 不存在 ⇒ 系统从未分配镜像"
+    echo "     成因：只在启动时按当时的 hibernatemode 分配，改完 25 必须重启一次"
+    echo "     （/var/vm/sleepimage 在 Data 卷上，是 0 字节残留，不具参考性）"
+    blocked=1
+  fi
+
   echo
   echo "=== C. 电源策略"
   $PMSET -g custom 2>/dev/null | grep -E "hibernatemode|standby |standbydelay|sleep " | sed 's/^/    /'
@@ -291,10 +314,20 @@ do_arm() {
   else
     echo "  ✘ 运行态 boot-args 缺 -hbfxforce ⇒ 本次开机没吃到新 config"; blocked=1
   fi
+  # sleepimage 是 hibernatemode 25 的硬前提：文件不存在时睡眠会静默降级成普通睡
+  # （2026-10-28 17:04 实测踩过：arm 成功、sleepimage 从没分配、睡了 256 s 走的是 Deep Idle）
+  local SI; SI="/System/Volumes/VM/sleepimage"
+  if [[ -f "$SI" ]]; then
+    echo "  ✔ sleepimage 已分配（$(awk -v s="$(stat -f %z "$SI" 2>/dev/null || echo 0)" 'BEGIN{printf "%.1f GiB", s/1073741824}')）"
+  else
+    echo "  ✘ /System/Volumes/VM/sleepimage 不存在 ⇒ 25 模式无目标可写，睡了也只是普通睡眠"
+    echo "     成因：只在启动时按当时的 hibernatemode 分配；改完 25 要重启一次才会创建"
+    blocked=1
+  fi
   if [[ $blocked -ne 0 ]]; then
     echo
-    echo "已中止：当前机器跑的还是**旧配置**，此刻武装等于复刻 09-16/09-21 的失败前提。"
-    echo "先重启（新 config 已同步 ESP），重启后跑：bash $0 check"
+    echo "已中止：前置条件不满足，此刻武装等于再做一次不可判读的测试。"
+    echo "按上面的 ✘ 项处理（多数情况：重启一次让系统分配 sleepimage），然后跑：bash $0 check"
     exit 3
   fi
 
@@ -333,7 +366,7 @@ do_arm() {
   echo
   echo "=== 回来后的取证（判读见脚本头部，注意方向别搞反）"
   echo "  sysctl kern.hibernatecount               # 成功一次 +1（基线 0）"
-  echo "  ls -l /var/vm/sleepimage                 # 尺寸≈16G、mtime 是刚才 = 真写了镜像"
+  echo "  ls -lh /System/Volumes/VM/sleepimage    # 应≈16G、mtime 是刚才（别查 /var/vm/，那是残留）"
   echo "  pmset -g log | grep -e Hibernat -e 'Entering Sleep' | tail -5"
   echo "                                           # 出现 'Entering Hibernate' = 走的是休眠不是普通睡"
   echo "  log show --last 30m --predicate 'eventMessage CONTAINS \"HBFX\"' | tail -30"

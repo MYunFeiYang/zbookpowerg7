@@ -164,7 +164,8 @@ macOS 走 S4 要同时满足 9 条，任一条断了就恢复不了。按链路�
 |---|---|---|---|
 | 1 | 固件支持 S4 | ✅ | `FACP-1.aml` `FLAGS=0x002384A5`：bit7 `RTC_S4`=1、bit16 `S4_RTC_STS`=1；Windows/Linux 同机实测可 S4 |
 | 2 | 磁盘能放下镜像 | ✅ | 16 GB 内存 / 系统卷 193 GB 可用 |
-| 3 | macOS 侧开启休眠 | ⏳ | 当前 `hibernatemode=0`、`sleepimage` 0 字节；`s4-arm.sh arm` 会设 25 |
+| 3 | macOS 侧开启休眠 | ✅ | `s4-arm.sh arm` 设 25，已生效 |
+| 3b | **`sleepimage` 已真实分配** | ✘ | **2026-10-28 17:04 实测卡在这**：`/System/Volumes/VM/sleepimage` 不存在，VM 卷只用了 1.1 MB（仅 `kernelcore`）⇒ 25 模式无目标可写，静默降级普通睡眠。见 1.1 节 |
 | 4 | macOS 把 44 B 密钥交出来 | ❓ | 需 `PMRootDomain` 提供 `kIOHibernateRTCVariables`，macOS 26 上未验证 |
 | 5 | kext 把它写进 NVRAM | ✅ | fork + `-hbfxforce` 绕过 `checkRTCExtendedMemory()` 门控 |
 | 6 | OC 从 NVRAM 读回 | ✅ | `HibernateMode=NVRAM`；读到后校验长度必须 **= 44**、签名必须 **`AAPL`** |
@@ -174,6 +175,49 @@ macOS 走 S4 要同时满足 9 条，任一条断了就恢复不了。按链路�
 
 `⏳` 是待执行动作，`❓` 是只能靠一次实测回答的未知。
 
+### 1.1 2026-10-28 17:04 第一次实测：没进休眠，卡在 sleepimage 未分配
+
+`arm` 成功（AC 侧 `hibernatemode 25`、`sleep 0`），17:04:19 菜单睡眠、17:08:35 按电源键唤醒，
+睡了 256 秒。**但走的是 Deep Idle，不是 S4**：
+
+| 判据 | 实测 | 读法 |
+|---|---|---|
+| `pmset -g log` | `Entering Sleep state due to 'Software Sleep pid=217'` | 普通睡眠，**没有** `Entering Hibernate` |
+| 唤醒类型 | `Wake from Deep Idle [CDNVA] : due to PWRB/User` | S0ix，不是 S4 |
+| `WakeTime` | 2.443 sec | 与历史 Deep Idle 唤醒一致（S4 恢复不可能是这个量级） |
+| `kern.hibernatecount` | **0** | 从未成功 |
+| `/System/Volumes/VM/sleepimage` | **不存在** | ← 根因 |
+| VM 卷 `disk1s6` 已用 | 1.1 MB（只有 `kernelcore`） | 从未放过镜像 |
+| `vm.swapusage` | `total = 0.00M` | VM 卷从没被用过 |
+| NVRAM `boot-image*` | 无 | 从未写成过 |
+
+**根因**：`hibernatemode 25` 要写进 `sleepimage` 才有意义，而这台机器**根本没有这个文件**。
+macOS 只在**启动时**按当时的 `hibernatemode` 决定是否分配镜像；本次 16:45 开机时是 `0`，
+17:02 才改成 `25` ⇒ 系统不会事后补建 ⇒ 睡眠时无目标可写 ⇒ 静默降级成普通睡眠。
+
+**★ 位置陷阱（上次就搞错过）**：真正的镜像在 **VM 卷**，是独立的 APFS（`disk1s6`，
+挂载参数 `nobrowse,noexec`）：
+
+```
+/System/Volumes/VM/sleepimage      ← 真实位置，本机不存在
+/var/vm/sleepimage                 ← 在 Data 卷（disk1s4）上，0 字节残留，mtime 还停在 10-27 12:37
+```
+
+用 `stat -f "inode=%i dev=%d"` 可证两者不是同一个文件（`dev` 不同）。
+**判据只能看 `/System/Volumes/VM/sleepimage`，看 `/var/vm/` 会得出错误结论。**
+
+`dynamic_pager` 也没在跑，进一步佐证镜像分配路径从未启动过。
+
+**下一步**：在 `hibernatemode 25` 已持久化的状态下**重启一次**，让系统在启动时分配镜像。
+重启后第一件事：
+
+```bash
+ls -lh /System/Volumes/VM/sleepimage      # 应出现且 ≈16 GB
+```
+
+出现了再睡；仍不出现，说明 macOS 26 在该平台/配置下不分配，才需要往 SIP、VM 卷、boot-args 干扰方向查。
+`s4-arm.sh check` 已把这条加为硬门槛，缺镜像时 `arm` 会直接拒绝武装，避免再做一次不可判读的测试。
+
 **第 9 条的实测结果（2026-10-28 16:50，重启后）**：`Target` 已从 5 改成 69 并确认运行态生效，
 但 `ioreg -lw0 | grep -c '"boot-log"'` = **0**，`IODeviceTree` 里根本没有该属性。
 本机 OC 文件日志此前也是坏的（13 份 262144 B 全零）⇒ **OC 的 `OCB:` 日志在本机拿不到**，
@@ -181,9 +225,9 @@ macOS 走 S4 要同时满足 9 条，任一条断了就恢复不了。按链路�
 
 | 要看什么 | 命令 | 读法 |
 |---|---|---|
-| macOS 有没有交出密钥 | `log show --last 30m --predicate 'eventMessage CONTAINS "HBFX"'` | `PMRootDomain key present` + `44 bytes` = 交了；`MISSING` = 没交（第 4 条不成立） |
+| macOS 有没有交出密钥 | `log show --last 30m --predicate 'eventMessage CONTAINS "HBFX"'` | `PMRootDomain key present` + `is N bytes` = 交了；`MISSING` = 没交（第 4 条不成立）。**必须在你的终端跑**：AI 沙箱里会报 `Cannot run while sandboxed` |
 | 是否真的 hibernation | `sysctl kern.hibernatecount` | 成功一次 +1（当前 **0**，从未成功） |
-| 镜像是否写了 | `ls -l /var/vm/sleepimage` | 尺寸≈16 GB、mtime 是刚才 |
+| 镜像是否写了 | `ls -lh /System/Volumes/VM/sleepimage` | 应 ≈16 GB、mtime 是刚才。**别用 `/var/vm/`，那里是 Data 卷上的 0 字节残留** |
 | 系统怎么记的 | `pmset -g log \| grep -e Hibernat -e "Entering Sleep"` | 出现 `Entering Hibernate` 而非 `Entering Sleep` |
 
 ## 六、验证与判读
