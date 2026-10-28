@@ -165,7 +165,7 @@ macOS 走 S4 要同时满足 9 条，任一条断了就恢复不了。按链路�
 | 1 | 固件支持 S4 | ✅ | `FACP-1.aml` `FLAGS=0x002384A5`：bit7 `RTC_S4`=1、bit16 `S4_RTC_STS`=1；Windows/Linux 同机实测可 S4 |
 | 2 | 磁盘能放下镜像 | ✅ | 16 GB 内存 / 系统卷 193 GB 可用 |
 | 3 | macOS 侧开启休眠 | ✅ | `s4-arm.sh arm` 设 25，已生效 |
-| 3b | **`sleepimage` 已真实分配** | ✘ | **2026-10-28 17:04 实测卡在这**：`/System/Volumes/VM/sleepimage` 不存在，VM 卷只用了 1.1 MB（仅 `kernelcore`）⇒ 25 模式无目标可写，静默降级普通睡眠。见 1.1 节 |
+| 3b | **`standby` 必须为 1** | ✘ | **2026-10-28 17:04 实测卡在这**：`standby 0` 会彻底关掉镜像写入（`man pmset`），`hibernatemode 25` 被静默降级成普通睡眠。见 1.1 节。`sleepimage` 本身不是前提，是结果 |
 | 4 | macOS 把 44 B 密钥交出来 | ❓ | 需 `PMRootDomain` 提供 `kIOHibernateRTCVariables`，macOS 26 上未验证 |
 | 5 | kext 把它写进 NVRAM | ✅ | fork + `-hbfxforce` 绕过 `checkRTCExtendedMemory()` 门控 |
 | 6 | OC 从 NVRAM 读回 | ✅ | `HibernateMode=NVRAM`；读到后校验长度必须 **= 44**、签名必须 **`AAPL`** |
@@ -175,7 +175,7 @@ macOS 走 S4 要同时满足 9 条，任一条断了就恢复不了。按链路�
 
 `⏳` 是待执行动作，`❓` 是只能靠一次实测回答的未知。
 
-### 1.1 2026-10-28 17:04 第一次实测：没进休眠，卡在 sleepimage 未分配
+### 1.1 2026-10-28 17:04 第一次实测：没进休眠；根因是 `standby 0` 抑制了镜像写入
 
 `arm` 成功（AC 侧 `hibernatemode 25`、`sleep 0`），17:04:19 菜单睡眠、17:08:35 按电源键唤醒，
 睡了 256 秒。**但走的是 Deep Idle，不是 S4**：
@@ -186,37 +186,51 @@ macOS 走 S4 要同时满足 9 条，任一条断了就恢复不了。按链路�
 | 唤醒类型 | `Wake from Deep Idle [CDNVA] : due to PWRB/User` | S0ix，不是 S4 |
 | `WakeTime` | 2.443 sec | 与历史 Deep Idle 唤醒一致（S4 恢复不可能是这个量级） |
 | `kern.hibernatecount` | **0** | 从未成功 |
-| `/System/Volumes/VM/sleepimage` | **不存在** | ← 根因 |
-| VM 卷 `disk1s6` 已用 | 1.1 MB（只有 `kernelcore`） | 从未放过镜像 |
-| `vm.swapusage` | `total = 0.00M` | VM 卷从没被用过 |
+| `/System/Volumes/VM/sleepimage` | **不存在** | 镜像从未被写 |
+| VM 卷 `disk1s6` 已用 | 1.0 MB（只有 `kernelcore`） | 从未放过镜像 |
+| `vm.swapusage` | `total = 0.00M` | VM 子系统没有任何文件 |
 | NVRAM `boot-image*` | 无 | 从未写成过 |
 
-**根因**：`hibernatemode 25` 要写进 `sleepimage` 才有意义，而这台机器**根本没有这个文件**。
-macOS 只在**启动时**按当时的 `hibernatemode` 决定是否分配镜像；本次 16:45 开机时是 `0`，
-17:02 才改成 `25` ⇒ 系统不会事后补建 ⇒ 睡眠时无目标可写 ⇒ 静默降级成普通睡眠。
+#### 根因：`standby = 0` 会直接关掉休眠镜像写入
 
-**★ 位置陷阱（上次就搞错过）**：真正的镜像在 **VM 卷**，是独立的 APFS（`disk1s6`，
-挂载参数 `nobrowse,noexec`）：
+`man pmset` 原文（本机手册，逐字）：
+
+> `hibernatemode` supports values of 0, 3, or 25. **Whether or not a hibernation
+> image gets written is also dependent on the values of standby and autopoweroff**
+>
+> To disable hibernation images completely, ensure hibernatemode standby and
+> autopoweroff are all set to 0.
+
+反过来读：**`standby 0` ⇒ 不写镜像**。此时 `hibernatemode 25` 是个空标志，睡眠照常走
+普通睡眠（本机即 Deep Idle）。第一次 `arm` 时脚本把 `standby` 设成了 0 —— 依据是
+"25 是立刻落盘、与 standby 的渐进逻辑无关"，**这个判断是错的**，被上面这句手册原文直接否掉。
+
+正确的组合是 `hibernatemode 25` **加** `standby 1`：`standby` 负责"允许写镜像"这个开关，
+`hibernatemode 25` 负责"写完就断内存电"。`standbydelay` 在 25 下不参与（它管的是
+3 模式"先睡 RAM、若干分钟后再落盘"），但设一个 300 s 的值可以作为兜底退路。
+
+#### 已被证伪的旧判断（留档，避免再犯）
+
+17:04 之后曾判断"macOS 只在启动时按当时的 hibernatemode 分配 sleepimage，所以改完 25 必须重启"，
+并据此在脚本里加了硬门槛。**17:17 重启后该判断被实测推翻**：`hibernatemode` 仍是 25，
+`/System/Volumes/VM/sleepimage` **依然不存在**，VM 卷仍只有 `kernelcore`，
+`dynamic_pager` 仍是 `not running`（`launchctl print system/com.apple.dynamic_pager` → `state = not running`）。
+
+结论：`sleepimage` 不是"启动时预分配"的前置条件，而是休眠动作的结果 —— 只有真的决定写镜像时
+内核才会去创建/扩展它。所以它不存在**不构成阻塞**，脚本里那条硬门槛已降级为提示。
+
+**★ 位置陷阱（上次就搞错过）**：两台卷上都可能有同名文件，不是同一个：
 
 ```
-/System/Volumes/VM/sleepimage      ← 真实位置，本机不存在
-/var/vm/sleepimage                 ← 在 Data 卷（disk1s4）上，0 字节残留，mtime 还停在 10-27 12:37
+/System/Volumes/VM/sleepimage      ← VM 卷（disk1s6，nobrowse,noexec），真正的镜像位置
+/var/vm/sleepimage                 ← Data 卷（disk1s4）上的另一份，本机 0 字节、mtime 停在 10-27 12:37
 ```
 
-用 `stat -f "inode=%i dev=%d"` 可证两者不是同一个文件（`dev` 不同）。
-**判据只能看 `/System/Volumes/VM/sleepimage`，看 `/var/vm/` 会得出错误结论。**
+用 `stat -f "inode=%i dev=%d"` 可证两者 `dev` 不同（16777226 vs 16777227）。
+`kern.hibernatefile` 指向的是 `/var/vm/sleepimage`，但实际镜像落在 VM 卷。
 
-`dynamic_pager` 也没在跑，进一步佐证镜像分配路径从未启动过。
-
-**下一步**：在 `hibernatemode 25` 已持久化的状态下**重启一次**，让系统在启动时分配镜像。
-重启后第一件事：
-
-```bash
-ls -lh /System/Volumes/VM/sleepimage      # 应出现且 ≈16 GB
-```
-
-出现了再睡；仍不出现，说明 macOS 26 在该平台/配置下不分配，才需要往 SIP、VM 卷、boot-args 干扰方向查。
-`s4-arm.sh check` 已把这条加为硬门槛，缺镜像时 `arm` 会直接拒绝武装，避免再做一次不可判读的测试。
+**下一步**：重新 `arm`（这次会写 `standby 1`），然后按 6.1 的操作前提睡一次。
+判读只看 `sysctl kern.hibernatecount` 与 `pmset -g log` 里有没有 `Entering Hibernate`。
 
 **第 9 条的实测结果（2026-10-28 16:50，重启后）**：`Target` 已从 5 改成 69 并确认运行态生效，
 但 `ioreg -lw0 | grep -c '"boot-log"'` = **0**，`IODeviceTree` 里根本没有该属性。
@@ -286,14 +300,14 @@ if (!EFI_ERROR (Status)) {
 |---|---|---|
 | `kern.hibernatecount` 从 0 变 1，且系统恢复原会话 | NVRAM 路线成立 | 转日常配置，`-hbfxdbg` 可移除 |
 | 计数变了，但唤醒黑屏 / 半途重启 / 回到登录界面重开 App | 卡在 boot.efi 解密或镜像 | 查 sleepimage 大小与加密；再考虑 `ReservedMemory` / CSM |
-| `pmset -g log` 里只有 `Entering Sleep`、没有 `Entering Hibernate`，计数仍 0 | 没走休眠路径（`hibernatemode` 未生效或未 arm） | 核对 `pmset -g custom` 的 `hibernatemode 25` 与 boot-args 的 `-hbfxforce` |
+| `pmset -g log` 里只有 `Entering Sleep`、没有 `Entering Hibernate`，计数仍 0 | 没走休眠路径 | 先查 `pmset -g \| grep standby` 是否为 **1**（`standby 0` 会关掉镜像写入）；再核对 `hibernatemode 25` 与 boot-args 的 `-hbfxforce` |
 | 醒后 `nvram` 里仍能查到 `IOHibernateRTCVariables` | 没被识别成休眠唤醒（或 HibernateMode 未生效） | 查 boot-args 是否真带上 `-hbfxforce`、OC 版本是否吃到新 config |
 
 **本机取不到 OC 侧 `OCB:` 日志**（实测依据见下），所以判读走内核侧四条：
 
 ```bash
-sysctl kern.hibernatecount                # 基线 0，成功一次 +1
-ls -l /var/vm/sleepimage                  # 基线 0 B，正常长到 ≈16 GB
+sysctl kern.hibernatecount                             # 基线 0，成功一次 +1
+ls -lh /System/Volumes/VM/sleepimage                   # 应 ≈16 GB、mtime 是刚才（别用 /var/vm/）
 pmset -g log | grep -e Hibernat -e 'Entering Sleep' | tail -5
 log show --last 30m --predicate 'eventMessage CONTAINS "HBFX"' | tail -30
 ```
@@ -312,7 +326,10 @@ HBFX: NVStorage path entered (forceNvram=1), PMRootDomain key present
 HBFX: kIOHibernateRTCVariables is 44 bytes
 ```
 
-若第二行字节数不是 44，说明结构变了；若是 `MISSING`，说明前提不成立。
+注意第二条在二进制里是格式化串 `is %u bytes`（`strings` 实测确认），所以 grep 时用
+`kIOHibernateRTCVariables is` 这个前缀，别拿固定的 `44 bytes` 去匹配。
+
+若字节数不是 44，说明结构变了；若是 `MISSING`，说明前提不成立。
 
 ## 七、回滚
 

@@ -243,12 +243,18 @@ PY
     echo "  ✔ IOHibernateRTCVariables 不存在（正常：OC 读到后会立刻删除它）"
   fi
 
-  # ── sleepimage 是否真实存在：hibernatemode 25 的**硬前提**（2026-10-28 实测补入）
-  # macOS 只在**启动时**按当时的 hibernatemode 决定是否分配镜像；
-  # 开机时是 0、之后再 pmset 改 25，系统不会补建 ⇒ 睡眠时无目标文件可写
-  # ⇒ 静默降级成普通睡眠（日志只写 Entering Sleep，不是 Entering Hibernate）。
-  # ★ 真实位置在 VM 卷（独立 APFS，nobrowse）：/System/Volumes/VM/sleepimage
-  #   /var/vm/sleepimage 在 Data 卷上，可能只是个 0 字节残留，**不能拿它当判据**。
+  # ── sleepimage：它**不是**前提，是结果（2026-10-28 17:20 修正）
+  # 早前把它当"硬前提"并断言"只在启动时按 hibernatemode 分配"——重启验证推翻：
+  # hibernatemode=25 开机后镜像仍然不存在（VM 卷只有 kernelcore，swap 也是 0）。
+  # 真正决定镜像写不写的是 standby / autopoweroff，见 man pmset：
+  #   "Whether or not a hibernation image gets written is also dependent on the
+  #    values of standby and autopoweroff"
+  #   "To disable hibernation images completely, ensure hibernatemode standby and
+  #    autopoweroff are all set to 0."
+  # ⇒ standby=0 会直接抑制写入，hibernatemode=25 被静默降级成普通睡眠。
+  #   所以这里只做提示，真正的判据在 C 段。
+  # ★ 位置：真实镜像在 VM 卷 /System/Volumes/VM/sleepimage；
+  #   /var/vm/sleepimage 在 Data 卷上是另一份（0 字节残留，dev 不同）。
   local SI MEM SZ
   SI="/System/Volumes/VM/sleepimage"
   MEM="$(sysctl -n hw.memsize 2>/dev/null || echo 0)"
@@ -257,31 +263,39 @@ PY
     if [[ "$SZ" -gt $((MEM / 2)) ]]; then
       echo "  ✔ sleepimage 已分配：$(awk -v s="$SZ" 'BEGIN{printf "%.1f GiB", s/1073741824}')"
     else
-      echo "  ✘ sleepimage 仅 ${SZ} 字节（内存 $((MEM / 1073741824)) GiB）⇒ 25 模式无目标可写"; blocked=1
+      echo "  ! sleepimage 仅 ${SZ} 字节（内存 $((MEM / 1073741824)) GiB）"
+      echo "     未分配不等于做不了：standby=1 时内核会在休眠准备阶段自行扩展（见 C 段）"
     fi
   else
-    echo "  ✘ /System/Volumes/VM/sleepimage 不存在 ⇒ 系统从未分配镜像"
-    echo "     成因：只在启动时按当时的 hibernatemode 分配，改完 25 必须重启一次"
-    echo "     （/var/vm/sleepimage 在 Data 卷上，是 0 字节残留，不具参考性）"
-    blocked=1
+    echo "  ! sleepimage 尚未分配（不等于阻塞：standby=1 时内核休眠准备阶段会自行创建）"
+    echo "     若 C 段 standby 已是 1 而这里仍长期不出现，才说明休眠路径根本没走到"
   fi
 
   echo
   echo "=== C. 电源策略"
-  $PMSET -g custom 2>/dev/null | grep -E "hibernatemode|standby |standbydelay|sleep " | sed 's/^/    /'
-  local HM
+  $PMSET -g custom 2>/dev/null | grep -E "hibernatemode|standby |standbydelay|autopoweroff|sleep " | sed 's/^/    /'
+  local HM SB
   HM="$($PMSET -g | awk '/hibernatemode/{print $2}')"
+  SB="$($PMSET -g | awk '/^ *standby /{print $2}')"
   if [[ "$HM" == "0" ]]; then
     echo "  ! hibernatemode = 0（尚未武装，属安全态）"
   else
     echo "  ✔ hibernatemode = ${HM}"
+  fi
+  # ★ standby=0 会直接抑制休眠镜像写入（man pmset 原文），此时 hibernatemode=25
+  #   会被静默降级成普通睡眠 —— 这是 2026-10-28 17:04 那次失败的真正原因。
+  if [[ "$HM" != "0" && "$SB" == "0" ]]; then
+    echo "  ✘ standby = 0 ⇒ 镜像不会被写，hibernatemode ${HM} 会被降级成普通睡眠"; blocked=1
+    echo "     依据：man pmset —— hibernation image 是否写入还取决于 standby / autopoweroff"
+  elif [[ "$SB" == "1" ]]; then
+    echo "  ✔ standby = 1（允许写休眠镜像）"
   fi
 
   echo
   if [[ "$blocked" -eq 0 ]]; then
     echo "=== 结论：静态与运行态均就绪，可以 sudo $0 arm"
   else
-    echo "=== 结论：有 ✘ 项，重启或同步 ESP 后再武装"
+    echo "=== 结论：有 ✘ 项，按上面的提示处理后再武装（不一定是重启问题，看 ✘ 的具体内容）"
   fi
 }
 
@@ -314,20 +328,18 @@ do_arm() {
   else
     echo "  ✘ 运行态 boot-args 缺 -hbfxforce ⇒ 本次开机没吃到新 config"; blocked=1
   fi
-  # sleepimage 是 hibernatemode 25 的硬前提：文件不存在时睡眠会静默降级成普通睡
-  # （2026-10-28 17:04 实测踩过：arm 成功、sleepimage 从没分配、睡了 256 s 走的是 Deep Idle）
+  # sleepimage 不是前提，是结果：standby=1 时内核在休眠准备阶段自行创建/扩展。
+  # 早前把它写成硬门槛并断言"只在启动时分配"，重启验证已推翻（见 check 的 B 段注释）。
   local SI; SI="/System/Volumes/VM/sleepimage"
   if [[ -f "$SI" ]]; then
-    echo "  ✔ sleepimage 已分配（$(awk -v s="$(stat -f %z "$SI" 2>/dev/null || echo 0)" 'BEGIN{printf "%.1f GiB", s/1073741824}')）"
+    echo "  ✔ sleepimage 已存在（$(awk -v s="$(stat -f %z "$SI" 2>/dev/null || echo 0)" 'BEGIN{printf "%.1f GiB", s/1073741824}')）"
   else
-    echo "  ✘ /System/Volumes/VM/sleepimage 不存在 ⇒ 25 模式无目标可写，睡了也只是普通睡眠"
-    echo "     成因：只在启动时按当时的 hibernatemode 分配；改完 25 要重启一次才会创建"
-    blocked=1
+    echo "  ! sleepimage 尚未存在 —— 不拦，standby=1 时休眠准备阶段会自行创建"
   fi
   if [[ $blocked -ne 0 ]]; then
     echo
     echo "已中止：前置条件不满足，此刻武装等于再做一次不可判读的测试。"
-    echo "按上面的 ✘ 项处理（多数情况：重启一次让系统分配 sleepimage），然后跑：bash $0 check"
+    echo "按上面的 ✘ 项处理，然后跑：bash $0 check"
     exit 3
   fi
 
@@ -340,9 +352,15 @@ do_arm() {
   echo
   echo "=== 武装【${SN}】侧（另一侧保持 hibernatemode 0 / standby 0）"
   $PMSET "$SRC" hibernatemode 25
-  # hibernatemode 25 是「立刻写镜像 + 断内存电」，与 3 的 standby 渐进逻辑无关。
-  # standby 必须为 0，否则多一条 Apple 私有策略参与，变量越多越难判读。
-  $PMSET "$SRC" standby 0
+  # ★ standby 必须为 1。man pmset 原文：hibernation image 是否写入"also dependent on
+  #   the values of standby and autopoweroff"，而 standby=0 会彻底关掉镜像写入
+  #   ⇒ hibernatemode 25 被静默降级成普通睡眠。这是 2026-10-28 17:04 失败的真正原因。
+  $PMSET "$SRC" standby 1
+  $PMSET "$SRC" highstandbythreshold 50
+  # 25 理论上是"立刻写盘断电"，standbydelay 不参与；设成 300 s 只在 25 行为异常时兜底，
+  # 让"睡下去 5 分钟后必落盘"这条退路仍然有效。
+  $PMSET "$SRC" standbydelaylow 300
+  $PMSET "$SRC" standbydelayhigh 300
   $PMSET "$SRC" sleep 0
 
   local OTHER
@@ -362,7 +380,8 @@ do_arm() {
   echo "     └ 本机实测 AppleClamshellCausesSleep = No：AC + 外屏时合盖进 clamshell，"
   echo "       机器继续跑根本不睡，你会白测一轮；且 DSDT 里有两个 LID 设备，"
   echo "       合盖事件归属不可靠、行为不可复现"
-  echo "  3) 约 20–60 s 内镜像就落盘并断电（25 模式不等 standbydelay）"
+  echo "  3) 25 模式应在睡眠瞬间就写盘断电（20–60 s）；若迟迟不落盘，"
+  echo "     standbydelay 300 s 会兜底 —— 但它只负责「写盘」，断电与否看电源灯"
   echo "     判据：电源灯灭、功率计掉到 ~0 W、风扇停"
   echo "  4) 按电源键唤醒 —— 不要指望开盖：本机 pmset 里没有 lidwake 项，开盖唤醒不可依赖"
   echo "  5) 若内建屏也不亮：先拔插一次 HDMI 再等 10 s。仍黑则长按电源键重启，"
