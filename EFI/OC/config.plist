@@ -597,6 +597,24 @@
 				<key>Arch</key>
 				<string>Any</string>
 				<key>BundlePath</key>
+				<string>HibernationFixup.kext</string>
+				<key>Comment</key>
+				<string>V1.5.4 | Acidanthera</string>
+				<key>Enabled</key>
+				<true/>
+				<key>ExecutablePath</key>
+				<string>Contents/MacOS/HibernationFixup</string>
+				<key>MaxKernel</key>
+				<string></string>
+				<key>MinKernel</key>
+				<string></string>
+				<key>PlistPath</key>
+				<string>Contents/Info.plist</string>
+			</dict>
+			<dict>
+				<key>Arch</key>
+				<string>Any</string>
+				<key>BundlePath</key>
 				<string>RTCMemoryFixup.kext</string>
 				<key>Comment</key>
 				<string>V1.0.8 | By acidanthera</string>
@@ -1227,7 +1245,7 @@
 			<key>PanicNoKextDump</key>
 			<false/>
 			<key>PowerTimeoutKernelPanic</key>
-			<true/>
+			<false/>
 			<key>ProvideCurrentCpuInfo</key>
 			<false/>
 			<key>SetApfsTrimTimeout</key>
@@ -1258,7 +1276,7 @@
 			<key>ConsoleAttributes</key>
 			<integer>0</integer>
 			<key>HibernateMode</key>
-			<string>NVRAM</string>
+			<string>Auto</string>
 			<key>HibernateSkipsPicker</key>
 			<true/>
 			<key>HideAuxiliary</key>
@@ -1311,6 +1329,8 @@
 		<array/>
 		<key>Security</key>
 		<dict>
+			<key>AllowNvramReset</key>
+			<true/>
 			<key>AllowSetDefault</key>
 			<true/>
 			<key>ApECID</key>
@@ -1423,7 +1443,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall revpatch=sbvmm rtcfx_exclude=0E-7F,AC-FF keepsyms=1 -vi2c-force-polling</string>
+				<string>-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall revpatch=sbvmm rtcfx_exclude=0E-7F,AC-FF keepsyms=1 -vi2c-force-polling -hbfxdbg</string>
 				<key>csr-active-config</key>
 				<data>
 				/w8AAA==
