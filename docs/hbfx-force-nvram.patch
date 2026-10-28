@@ -1,0 +1,57 @@
+--- /tmp/hbfx_orig/kern_config.hpp	2026-10-28 16:28:48
++++ kern_config.hpp	2026-10-28 16:28:55
+@@ -22,6 +22,7 @@
+ 	static constexpr const char *bootargPatchPCIWithList  {"hbfx-patch-pci"};            // patch pci family ignored device list
+ 	static constexpr const char *bootargDisablePatchPCI   {"-hbfx-disable-patch-pci"};   // disable patch pci family
+ 	static constexpr const char *bootargAutoHibernateMode {"hbfx-ahbm"};                 // auto hibernate mode
++	static constexpr const char *bootargForceNvram        {"-hbfxforce"};               // always route hibernation vars to NVRAM
+ 
+ public:
+ 	/**
+@@ -35,6 +36,13 @@
+ 	bool dumpNvram {false};
+ 
+ 	/**
++	 *  route IOHibernateRTCVariables to NVRAM even when RTC reports extended memory.
++	 *  Upstream only does this when the RTC has a single 128-byte bank; on machines with a
++	 *  full 256-byte RTC it stays silent by design, which leaves NVRAM hibernation unused.
++	 */
++	bool forceNvram {false};
++
++	/**
+ 	 *  patch PCI Family
+ 	 */
+ 	bool patchPCIFamily {true};
+--- /tmp/hbfx_orig/kern_start.cpp	2026-10-28 16:28:48
++++ kern_start.cpp	2026-10-28 16:28:57
+@@ -28,6 +28,11 @@
+ Configuration ADDPR(hbfx_config);
+ 
+ void Configuration::readArguments() {
++	if (checkKernelArgument(bootargForceNvram)) {
++		forceNvram = true;
++		DBGLOG("HBFX", "boot-arg %s specified, routing hibernation variables to NVRAM regardless of RTC size", bootargForceNvram);
++	}
++
+ 	if (checkKernelArgument(bootargDumpNvram)) {
+ 		dumpNvram = true;
+ 		DBGLOG("HBFX", "boot-arg %s specified, turn on writing NVRAM to file", bootargDumpNvram);
+--- /tmp/hbfx_orig/kern_hbfx.cpp	2026-10-28 16:28:48
++++ kern_hbfx.cpp	2026-10-28 16:29:04
+@@ -88,12 +88,15 @@
+ 	
+ 	if (result == KERN_SUCCESS || ioHibernateState == kIOHibernateStateHibernating)
+ 	{
+-		if (!callbackHBFX->checkRTCExtendedMemory())
++		if (!callbackHBFX->checkRTCExtendedMemory() || ADDPR(hbfx_config).forceNvram)
+ 		{
+ 			if (!callbackHBFX->initializeNVStorage())
+ 				return result;
+ 			
+ 			OSData *rtc = OSDynamicCast(OSData, IOService::getPMRootDomain()->getProperty(kIOHibernateRTCVariablesKey));
++			DBGLOG("HBFX", "NVStorage path entered (forceNvram=%d), PMRootDomain key %s", (int)ADDPR(hbfx_config).forceNvram, rtc != nullptr ? "present" : "MISSING");
++			if (rtc != nullptr)
++				DBGLOG("HBFX", "kIOHibernateRTCVariables is %u bytes", (unsigned)rtc->getLength());
+ 			if (rtc && !callbackHBFX->nvstorage.exists(kIOHibernateRTCVariablesKey))
+ 			{
+ 				if (!callbackHBFX->nvstorage.write(kIOHibernateRTCVariablesKey, rtc, NVStorage::OptRaw))
