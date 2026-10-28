@@ -36,7 +36,8 @@
 #   boot-args                  rtcfx_exclude=0E-FF -hbfxdbg -hbfxforce
 #   rtc-blacklist              242 B（0x0E–0xFF 全封，含 0x80–0xAB）
 #   Kernel/Quirks              PowerTimeoutKernelPanic=false（超时不 panic，免污染判读）
-#   Misc/Security              AllowNvramReset=true（Reset NVRAM 逃生口）
+#   Misc/Security              不含 AllowNvramReset（OC 1.0.x 已移除该键，是死配置）
+#   UEFI/Drivers               ResetNvramEntry.efi=true（真正的 Reset NVRAM 逃生口）
 #
 # ── 用法
 #   ./s4-arm.sh check      只读体检（不需要 root）：静态配置 + 运行态 + 电源策略
@@ -134,11 +135,24 @@ if d['Kernel']['Quirks'].get('PowerTimeoutKernelPanic') is False:
 else:
     f("Kernel/Quirks/PowerTimeoutKernelPanic = %r（应为 false，否则超时会内核崩溃）" % d['Kernel']['Quirks'].get('PowerTimeoutKernelPanic'))
 
-# 5 逃生口
-if d['Misc']['Security'].get('AllowNvramReset') is True:
-    p("Misc/Security/AllowNvramReset = true（Reset NVRAM 逃生口可用）")
+# 5 逃生口 —— OC 1.0.x 已移除 Misc/Security/AllowNvramReset，
+#   Reset NVRAM 改由 ResetNvramEntry.efi 驱动提供（还带 CMD+OPT+P+R 热键）。
+_esc = None
+for _drv in d['UEFI']['Drivers']:
+    if isinstance(_drv, dict):
+        _path, _en = _drv.get('Path'), _drv.get('Enabled')
+    else:
+        _path, _en = _drv, True
+    if _path == 'ResetNvramEntry.efi':
+        _esc = _en
+if _esc is True:
+    p("UEFI/Drivers 已启用 ResetNvramEntry.efi（Reset NVRAM 逃生口，另有 CMD+OPT+P+R）")
+elif _esc is False:
+    f("ResetNvramEntry.efi 存在但 Enabled=false ⇒ 无逃生口")
 else:
-    f("Misc/Security/AllowNvramReset = %r（缺失即 false ⇒ 无逃生口）" % d['Misc']['Security'].get('AllowNvramReset'))
+    f("未加载 ResetNvramEntry.efi ⇒ NVRAM 若被写坏将无菜单逃生口")
+if 'AllowNvramReset' in d['Misc']['Security']:
+    f("config 仍含已废弃的 Misc/Security/AllowNvramReset ⇒ ocvalidate 会报 No schema，应删")
 
 # 6 boot-args
 nv = d['NVRAM']['Add'].get('7C436110-AB2A-4BBB-A880-FE41995C9F82', {})
