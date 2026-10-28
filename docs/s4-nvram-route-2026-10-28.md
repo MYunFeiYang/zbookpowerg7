@@ -497,18 +497,81 @@ HP Z Series Maintenance and Service Guide 表 7-1）：
 
 注意 **003 才是"主板故障"**，005 不是硬件报废，可恢复。
 
-## 3d 配置自相矛盾：`rtcfx_exclude=0E-FF` 与 S4 在原理上互斥
+## 3d 主因：`HibernateMode=NVRAM` 在本机必然失败（2026-10-28 18:15 源码确认）
 
-`RTCMemoryFixup` 官方 README（lvs1974/RTCMemoryFixup）原文：
+`OcBootManagementLib/AppleHibernate.c` 的两个分支（掩码定义在
+`Include/Acidanthera/Library/OcBootManagementLib.h:1168-1170`：`NONE=0`、`RTC=1`、`NVRAM=2`）：
+
+```c
+if (HibernateMask & HIBERNATE_MODE_RTC) {          // :134
+  for (Index = 0; Index < sizeof (AppleRTCHibernateVars); Index++)
+    RtcRawVars[Index] = OcRtcRead (Index + 128);   // 读 CMOS 0x80–0xAB
+  HasHibernateInfoInRTC = 签名 == 'AAPL';
+  HasHibernateInfo      = HasHibernateInfoInRTC;
+}
+
+if (HibernateMask & HIBERNATE_MODE_NVRAM) {        // :148
+  // If RTC variables is still written to NVRAM (and RTC is broken).
+  // Prior to 10.13.6.                                ← 注释原文
+  Status = GetVariable2 (L"IOHibernateRTCVariables", &gAppleBootVariableGuid, ...);
+  if (!HasHibernateInfo && !EFI_ERROR (Status) && (Size == sizeof (RtcVars))) { ... }
+}
+```
+
+`NVRAM` 只置第 2 位 ⇒ RTC 分支整段不执行 ⇒ `HasHibernateInfo` 恒为 FALSE，
+只能靠 `IOHibernateRTCVariables` 这个 NVRAM 变量翻盘。而源码注释写明它只存在于
+**10.13.6 之前**；本机 `nvram -p | grep -i hiber` 为空、`ioreg` 里
+`IOHibernateRTCVariables` 属性命中 0 ⇒ OC 永远判定"不是休眠唤醒" ⇒ 走正常启动。
+
+这就是 18:00 那次"睡下 → 断电 → 冷启动、会话丢失"的直接原因。
+
+**已改**：`Misc/Boot/HibernateMode` `NVRAM` → **`RTC`**。
+
+## 3e 三层封锁：为什么 RTC 里从来没有密钥
+
+本机同时叠了三层，任一未解开都不成立。
+
+| # | 位置 | 旧值 | 作用 |
+|---|---|---|---|
+| ① | `Kernel/Quirks/DisableRtcChecksum` | **true** | 阻止 AppleRTC 更新主校验和 `0x58/0x59` |
+| ② | boot-args `rtcfx_exclude` | **0E-FF** | RTCMemoryFixup 在内核端口层拦写，覆盖 `0x80–0xAB` |
+| ③ | `UEFI/ProtocolOverrides/AppleRtcRam` + NVRAM `rtc-blacklist` | true + `[0x0E..0xFF]` | 固件层模拟，拦 EfiBoot 的 EFI_RTC 访问 |
+
+**① 是最隐蔽的一层**：`DisableRtcChecksum=true` 让校验和永不更新。即使内容区放开，
+写进去的密钥也会让主校验和失配 ⇒ boot.efi 判 mismatch ⇒ 调 `AppleRtcRamReset` 清 `0x40–0xFF`
+⇒ 密钥自毁。这正是本机历史上「坏 RTC 2 次」的机制。
+
+**② 覆盖了密钥区**：`AppleRTCHibernateVars`（`AppleHibernate.h:123-128`）
+= `signature[4] + revision[4] + booterSignature[20] + wiredCryptKey[16]` = **44 字节**，
+OC 从 `0x80` 起读 ⇒ 正好 `0x80–0xAB`。RTCMemoryFixup README 原文：
 
 > Offsets from **0x80 to 0xAB** are used to store some hibernation information (IOHibernateRTCVariables).
 > If any offset in this range causes a conflict, you can exclude it, **but hibernation won't work**.
-> Offsets from 0 to 0D usually are more or less 'compatible' and should not cause any conflicts.
 
-本机 `rtcfx_exclude=0E-FF` 完整覆盖 0x80–0xAB ⇒ **按官方说明，当前配置下 S4 不可能成立**。
+该 kext 的 offset 空间是 `bank0 0x00–0x7F + bank1 0x80–0xFF`，由
+`RTCMemoryFixup.cpp:167-175` 的
+`safe_offset = (cmd_reg == CMOS_ADDREG2 ? 0x80 : 0) + (cmd_offset & 0x7F)` 决定；
+hook 的是 **I/O 端口层**（`:321-323` `routeVirtual(provider, ioRead8/ioWrite8, ...)`），
+所以内核休眠路径写 RTC 同样被拦。
 
-同时它也没能挡住 005（0x0E–0x7F 早被封，BIOS 设置区仍被破坏）⇒ 说明破坏路径不在被封范围内。
+**③ 不影响内核写入**：AppleRtcRam 替换的是 EFI_RTC 协议，只作用于 EfiBoot；
+OC 自己用 `OcRtcRead` 直读端口，macOS 走内核 hook，都不经过它 ⇒ **保留不动**。
 
-**待办（尚未执行，需单独验证）**：把排除区间从 `0E-FF` 收窄为 `0E-7F` ——
-bank 0 的 `0x0E–0x7F`（BIOS 设置与校验和所在区）继续封，bank 2 的 `0x80–0xAB` 放开给休眠变量。
-一次只动这一个变量，跑完一次睡眠后看两件事：① 是否还出 005；② 是否出现 `Wake from Hibernate`。
+### Apple 的 RTC 布局（`Include/Apple/IndustryStandard/AppleRtc.h`）
+
+| 区域 | 用途 |
+|---|---|
+| `0x58` / `0x59` | 主校验和（`APPLE_RTC_MAIN_CHECKSUM_ADDR1/2`），覆盖 `[0x0E, 0x100)` |
+| `0x78–0x7F` | 保留区（填 `FF`，PRAM 复位不清） |
+| `0x80–0xAB` | 休眠密钥（`APPLE_RTC_HIBERNATION_KEY_ADDR=0x80`，长度 `0x2C`） |
+| `0xB0–0xB6` | trace 区（唤醒进度日志，EfiBoot 写） |
+
+### 已改（三处，必须同时生效）
+
+- `Misc/Boot/HibernateMode`：`NVRAM` → **`RTC`**
+- `Kernel/Quirks/DisableRtcChecksum`：`true` → **`false`**
+- `rtcfx_exclude`：`0E-FF` → **`0E-57,5A-7F`**
+  即封 BIOS 设置区、放开校验和 `0x58/0x59` 与密钥区 `0x80–0xAB`。
+
+> 005 在 `0E-FF` 期间同样出现，说明它的成因不在被封锁的范围内；
+> 改成放开校验和后 005 是否变化，只作观察，不作成败判据。

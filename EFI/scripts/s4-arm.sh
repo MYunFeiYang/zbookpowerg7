@@ -1,43 +1,42 @@
 #!/bin/bash
 #
-# S4 休眠 —— 「NVRAM 存休眠变量、RTC 全封」路线的体检 / 武装 / 回滚
+# S4 休眠 —— RTC 密钥路线 的体检 / 武装 / 回滚
 #
 # ── 一句话策略
-#   让 HibernationFixup 把 IOHibernateRTCVariables 写进 **NVRAM**，OpenCore 的
-#   HibernateMode=NVRAM 只去 NVRAM 读；RTC 0x0E–0xFF 全程封死，macOS 一个字节都改不到。
+#   让 macOS 内核把休眠密钥写进 **真实 RTC 0x80–0xAB**（AppleRTCHibernateVars，44 字节），
+#   由 OpenCore 的 HibernateMode=RTC 在下次启动时读回并还原成 boot-signature / boot-image-key。
 #
-# ── 为什么不是「走 RTC」（2026-10-28 结论）
-#   Apple 的休眠密钥固定落在 RTC 0x80 起 44 字节：
-#     AppleRtc.h: APPLE_RTC_HIBERNATION_KEY_ADDR=0x80, _LENGTH=0x2C
-#                 注释 "effectively equals sizeof (AppleRTCHibernateVars)"
-#   但 Apple 的主校验和 0x58/0x59 覆盖范围是 [0x0E, 0x100)，**包含 0x80–0xAB**。
-#   而 OpenCore 的 rtc-blacklist 并非"拦截写"，而是**内存模拟**：
-#     AppleRtcRam.c: mEmulatedRtcStatus[RtcBlacklist[i]] = TRUE
-#                    SyncRtcWrite -> 命中则只写内存，永不落真实 RTC
-#   ⇒ 若把 0x58/0x59 封着、却放开 0x80–0xAB，就会出现"内容变了、校验和不跟"
-#     ⇒ boot.efi 判 mismatch ⇒ 调 AppleRtcRamReset 把 0x40–0xFF 清零 ⇒ 密钥自毁。
-#     这正是本机历史上「坏 RTC 2 次」的机制。
-#   ⇒ 结论：要么两边一起放开（等于让 Apple 自由改 BIOS 的 CMOS 区），要么两边都别碰。
-#     选后者：完全不碰 RTC，只走 NVRAM。
+# ── 为什么必须走 RTC（2026-10-28 18:15 源码定论）
+#   OcBootManagementLib/AppleHibernate.c:148 的 NVRAM 分支读的是
+#   `IOHibernateRTCVariables` 这个 NVRAM 变量，注释原文 "Prior to 10.13.6"
+#   ⇒ 现代 macOS 根本不写它 ⇒ HibernateMode=NVRAM 永远判定「非休眠唤醒」⇒ 必然冷启动。
+#   只有 :134 的 RTC 分支（OcRtcRead 读 0x80–0xAB、校验 'AAPL' 签名）在现代系统上成立。
 #
-# ── NVRAM 腿为什么以前不存在（已解决）
-#   HibernationFixup 上游只服务「RTC 只有 1 bank(128 B)」的机器（README 开篇原话），
-#   而本机 RTC 是 256 B ⇒ 判定函数只做 read(0xB4)（Lilu kern_rtc.cpp:44）
-#   ⇒ 恒成功 ⇒ kern_hbfx.cpp:91 的 `if (!checkRTCExtendedMemory())` 整段跳过
-#   ⇒ NVRAM 里永远没有休眠变量（实测至今 0 条）。
-#   现改用**自编译 fork**：新增 boot-arg `-hbfxforce`，把该条件变为
-#   `!checkRTCExtendedMemory() || forceNvram`，强制走 NVRAM 写入分支。
-#   源码与构建记录：docs/s4-nvram-route-2026-10-28.md
+# ── 三层封锁，缺一不可地全部解开（这是本机历史「坏 RTC / 冷启动」的完整成因）
+#   ① Kernel/Quirks/DisableRtcChecksum = true
+#        阻止 AppleRTC 更新主校验和 0x58/0x59 ⇒ 内容变了校验和不跟 ⇒ boot.efi 判 mismatch
+#        ⇒ 调 AppleRtcRamReset 清 0x40–0xFF ⇒ 密钥自毁。必须 false。
+#   ② boot-args rtcfx_exclude 覆盖 0x80–0xAB
+#        RTCMemoryFixup README：排除该区 ⇒ hibernation won't work。必须放开。
+#   ③ UEFI/ProtocolOverrides/AppleRtcRam=true + NVRAM rtc-blacklist=[0x0E..0xFF]
+#        这是**固件层**模拟，只影响 EfiBoot 经 EFI_RTC 协议的访问；
+#        OC 自己用 OcRtcRead 直读端口、macOS 走内核端口 hook，均不经过它 ⇒ 保留即可。
 #
-# ── 本机配置（2026-10-28）
-#   Kernel/Add[1]              HibernationFixup.kext（自编译 fork，紧跟 Lilu）
-#   Misc/Boot/HibernateMode    NVRAM（只读 NVRAM；Auto 会被 RTC 残留 AAPL 签名劫持）
-#   Misc/Debug/Target          69 (0x45)（含 0x40 ⇒ boot-log 走 Data Hub）
-#   boot-args                  rtcfx_exclude=0E-FF -hbfxdbg -hbfxforce hfile=/var/vm/sleepimage
-#   rtc-blacklist              242 B（0x0E–0xFF 全封，含 0x80–0xAB）
-#   Kernel/Quirks              PowerTimeoutKernelPanic=false（超时不 panic，免污染判读）
-#   Misc/Security              不含 AllowNvramReset（OC 1.0.x 已移除该键，是死配置）
-#   UEFI/Drivers               ResetNvramEntry.efi=true（真正的 Reset NVRAM 逃生口）
+# ── Apple 的 RTC 布局（OpenCore Include/Apple/IndustryStandard/AppleRtc.h）
+#   MAIN_CHECKSUM_ADDR1/2 = 0x58 / 0x59，覆盖 [0x0E, 0x100)
+#   HIBERNATION_KEY_ADDR  = 0x80，长度 0x2C(44) ⇒ 0x80–0xAB
+#   RESERVED              = 0x78–0x7F（填 FF，PRAM 复位不清）
+#   TRACE_DATA            = 0xB0–0xB6（唤醒进度日志）
+#   ⇒ rtcfx_exclude 取 0E-57,5A-7F：封 BIOS 设置区，放开校验和与密钥区。
+#
+# ── 本机配置（2026-10-28 18:20）
+#   Misc/Boot/HibernateMode      RTC
+#   Kernel/Quirks/DisableRtcChecksum  false（必须允许更新 0x58/0x59）
+#   boot-args                    rtcfx_exclude=0E-57,5A-7F -hbfxdbg -hbfxforce hfile=/var/vm/sleepimage
+#   Misc/Debug/Target            69 (0x45)
+#   Kernel/Quirks                PowerTimeoutKernelPanic=false
+#   Misc/Security                不含 AllowNvramReset（OC 1.0.x 已移除该键，是死配置）
+#   UEFI/Drivers                 ResetNvramEntry.efi=true（真正的 Reset NVRAM 逃生口）
 #
 # ── 用法
 #   ./s4-arm.sh check      只读体检（不需要 root）：静态配置 + 运行态 + 电源策略
@@ -123,12 +122,15 @@ else:
 
 # 3 HibernateMode
 hm = d['Misc']['Boot'].get('HibernateMode')
-if hm == 'NVRAM':
-    p("Misc/Boot/HibernateMode = NVRAM（只读 NVRAM，不被 RTC 残留签名劫持）")
+if hm == 'RTC':
+    p("Misc/Boot/HibernateMode = RTC（读 CMOS 0x80-0xAB 的 AAPL 签名，现代 macOS 唯一有效路径）")
 elif hm == 'Auto':
-    w("Misc/Boot/HibernateMode = Auto（先读 RTC；若 RTC 有残留 AAPL 签名会盖掉 NVRAM 的正确值）")
+    w("Misc/Boot/HibernateMode = Auto（RTC+NVRAM；RTC 读到即用，NVRAM 只作兜底，可用但多一层变量）")
+elif hm == 'NVRAM':
+    f("Misc/Boot/HibernateMode = NVRAM ⇒ OC 只读 NVRAM 变量 IOHibernateRTCVariables，"
+      "源码注释写明该变量仅存在于 10.13.6 之前 ⇒ 本机永远判定'非休眠唤醒'，必然冷启动")
 else:
-    f("Misc/Boot/HibernateMode = %r（应为 NVRAM，否则不读 NVRAM）" % hm)
+    f("Misc/Boot/HibernateMode = %r（应为 RTC）" % hm)
 
 # 3b Debug Target 是否含 0x40（本机 OC 文件日志坏；0x40 是否真能出 boot-log 未验证成功）
 tgt = d['Misc']['Debug'].get('Target', 0) or 0
@@ -205,26 +207,41 @@ def covers(spec, lo, hi):
             a = b = int(item, 16)
         if a <= lo and b >= hi: return True
     return False
+def hits(spec, lo, hi):
+    for item in spec.split(','):
+        item = item.strip()
+        if not item: continue
+        if '-' in item:
+            a, b = item.split('-', 1); a, b = int(a, 16), int(b, 16)
+        else:
+            a = b = int(item, 16)
+        if not (b < lo or a > hi): return True
+    return False
+# 0x80–0xAB = AppleRTCHibernateVars（44 B），0x58/0x59 = Apple 主校验和（覆盖 0x0E–0xFF）
 if not m:
-    f("boot-args 无 rtcfx_exclude ⇒ RTC 写通道完全敞开（本机曾因此坏 RTC 2 次）")
-elif covers(val, 0x0E, 0xFF):
-    p("rtcfx_exclude=%s 覆盖 0x0E–0xFF（RTC 全封，休眠不依赖它）" % val)
+    w("boot-args 无 rtcfx_exclude ⇒ RTC 全开：密钥可写，但 BIOS 设置区也裸露")
+elif hits(val, 0x80, 0xAB):
+    f("rtcfx_exclude=%s 覆盖了 0x80–0xAB ⇒ 休眠密钥写不进 RTC，RTC 模式必然失败"
+      "（RTCMemoryFixup README：排除该区会让 hibernation 不工作）" % val)
+elif hits(val, 0x58, 0x59):
+    f("rtcfx_exclude=%s 封了主校验和 0x58/0x59 ⇒ 内容变了校验和不跟 ⇒ boot.efi 判 mismatch 清 RTC" % val)
 else:
-    f("rtcfx_exclude=%s 未覆盖 0x0E–0xFF ⇒ 有 RTC 区会被 macOS 改写，风险面变大" % val)
+    p("rtcfx_exclude=%s：放开 0x58/0x59 校验和与 0x80–0xAB 密钥区（其余仍受保护）" % val)
 
-# 7 rtc-blacklist
+# 7 rtc-blacklist + AppleRtcRam（固件层，只拦 EfiBoot 的 EFI_RTC 访问，不拦内核写入）
 try:
     bl = d['NVRAM']['Add']['4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102']['rtc-blacklist']
     cov = set(bl)
     full = all(x in cov for x in range(0x0E, 0x100))
-    if len(bl) == 242 and full:
-        p("rtc-blacklist = 242 B，0x0E–0xFF 全覆盖（含 0x80–0xAB）")
-    elif len(bl) == 198 and not any(0x80 <= x <= 0xAB for x in cov):
-        f("rtc-blacklist = 198 B 且留出 0x80–0xAB ⇒ 这是旧的 RTC 路线配置（校验和会失配）")
+    rtcram = d['UEFI'].get('ProtocolOverrides', {}).get('AppleRtcRam', False)
+    if rtcram and len(bl) == 242 and full:
+        p("AppleRtcRam=true + rtc-blacklist 242 B（0x0E–0xFF）：固件层模拟生效，只影响 EfiBoot")
+    elif not rtcram:
+        w("AppleRtcRam=false ⇒ rtc-blacklist 无人消费（死配置，无害但也没保护）")
     else:
-        f("rtc-blacklist = %d B（期望 242），含 0x80–0xAB=%s" % (len(bl), any(0x80 <= x <= 0xAB for x in cov)))
+        w("rtc-blacklist = %d B，0x0E–0xFF 未全覆盖（%s）" % (len(bl), "全封" if full else "有缺口"))
 except KeyError:
-    f("NVRAM 里没有 rtc-blacklist ⇒ AppleRtcRam 无名单，RTC 不受控")
+    w("NVRAM 里没有 rtc-blacklist ⇒ 固件层不模拟 RTC 写")
 
 # 8 NVRAM/Delete 是否覆盖
 dl = d['NVRAM'].get('Delete', {}).get('4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102', [])
@@ -240,17 +257,16 @@ PY
   RBA="$(nvram -p 2>/dev/null | awk -F'\t' '$1=="boot-args"{print $2}')"
   if [[ "$RBA" == *"-hbfxforce"* ]]; then
     echo "  ✔ NVRAM boot-args 已含 -hbfxforce"
-    if [[ "$RBA" == *"rtcfx_exclude=0E-FF"* ]]; then
-      echo "  ✔ 运行态 rtcfx_exclude=0E-FF（RTC 全封已生效）"
-    else
-      echo "  ✘ 运行态 rtcfx_exclude 非 0E-FF"; blocked=1
-    fi
+    case "$RBA" in
+      *rtcfx_exclude=0E-57,5A-7F*)
+        echo "  ✔ 运行态 rtcfx_exclude=0E-57,5A-7F（放开 0x58/0x59 校验和 + 0x80–0xAB 密钥）" ;;
+      *rtcfx_exclude=0E-FF*|*rtcfx_exclude=0E-7F*)
+        echo "  ✘ 运行态仍封着 0x80–0xAB（${RBA##*rtcfx_exclude=}）⇒ 密钥写不进 RTC，需重启生效"; blocked=1 ;;
+      *)
+        echo "  ✘ 运行态 rtcfx_exclude 非预期值（${RBA:-空}）"; blocked=1 ;;
+    esac
   else
     echo "  ✘ NVRAM boot-args 尚无 -hbfxforce ⇒ 未重启或 ESP 未同步"; blocked=1
-    # 注意：旧配置的运行态本来就是 rtcfx_exclude=0E-FF，单看它无法区分新旧 ⇒ 只作提示
-    if [[ "$RBA" == *"rtcfx_exclude=0E-FF"* ]]; then
-      echo "  ! 运行态 rtcfx_exclude=0E-FF —— 与旧配置同值，不能作为'新配置已生效'的证据"
-    fi
   fi
   # 注意：脚本开了 pipefail，`kextstat | grep -q` 会因 grep 提前退出触发 SIGPIPE
   # （kextstat 退出码 13）而误判为「未加载」。必须用变量匹配。
@@ -379,10 +395,31 @@ do_arm() {
     echo "  ✔ HibernationFixup 已加载"
   fi
   local RBA; RBA=$(nvram -p 2>/dev/null | awk -F'\t' '$1=="boot-args"{print $2}')
-  if [[ "$RBA" == *"rtcfx_exclude=0E-FF"* ]]; then
-    echo "  ✔ rtcfx_exclude=0E-FF（RTC 0x0E–0xFF 全封，走 NVRAM 不依赖 RTC）"
+  case "$RBA" in
+    *rtcfx_exclude=0E-57,5A-7F*)
+      echo "  ✔ rtcfx_exclude=0E-57,5A-7F（放开校验和 0x58/0x59 与密钥区 0x80–0xAB）" ;;
+    *rtcfx_exclude=0E-FF*|*rtcfx_exclude=0E-7F*)
+      echo "  ✘ 运行态仍封着 0x80–0xAB ⇒ 休眠密钥写不进 RTC；需重启生效"; blocked=1 ;;
+    *)
+      echo "  ✘ 运行态 rtcfx_exclude 非预期值（${RBA:-空}）⇒ 本次开机没吃到新 config"; blocked=1 ;;
+  esac
+  # 校验和开关：必须 false，否则内容变了校验和不跟 ⇒ boot.efi 判 mismatch ⇒ 清 RTC
+  local CFG=/Volumes/ESP/EFI/OC/config.plist
+  [[ -f "$CFG" ]] || CFG=/Volumes/Common/workplace/zbookpowerg7/EFI/OC/config.plist
+  local DRC
+  DRC="$(/usr/libexec/PlistBuddy -c 'Print :Kernel:Quirks:DisableRtcChecksum' "$CFG" 2>/dev/null || echo unknown)"
+  if [[ "$DRC" == "false" ]]; then
+    echo "  ✔ DisableRtcChecksum=false（允许 AppleRTC 更新 0x58/0x59 主校验和）"
   else
-    echo "  ✘ 运行态 rtcfx_exclude 不是 0E-FF（${RBA:-空}）⇒ 本次开机没吃到新 config"; blocked=1
+    echo "  ✘ DisableRtcChecksum=${DRC} ⇒ 校验和不会随内容更新，恢复必失败"; blocked=1
+  fi
+  # 静态 config 改过但没重启 ⇒ quirk 不会生效，睡了也是旧配置，纯白测
+  local CFG_MT BOOT_T
+  CFG_MT="$(stat -f %m "$CFG" 2>/dev/null || echo 0)"
+  BOOT_T="$(sysctl -n kern.boottime 2>/dev/null | sed 's/.*sec = \([0-9]*\).*/\1/')"
+  if [[ -n "$BOOT_T" && "$CFG_MT" -gt "$BOOT_T" ]]; then
+    echo "  ✘ config.plist 修改时间晚于本次启动（$(( (CFG_MT-BOOT_T)/60 )) 分钟）⇒ 改动未生效，必须重启"
+    blocked=1
   fi
   if [[ "$RBA" == *"-hbfxforce"* ]]; then
     echo "  ✔ 运行态 boot-args 含 -hbfxforce"
