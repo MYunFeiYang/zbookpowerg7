@@ -4,10 +4,11 @@
 #
 # 背景与判读：docs/sleep-tests/round2-tierB-result.md §二十四
 #
-# 为什么需要它：本机「真休眠」失败 5 次、坏 RTC 2 次，长尾原因是**防护一直是残缺的** ——
-#   · Apple 的写路径每次会把 `0x0E–0xFF` 共 242 字节**整体重写**（AppleRtcRam.c）
-#   · 而 `0x0E–0x7F` 以前从没被任何一层拦过；`boot.efi` 协议层更是零防护
-#   ⇒ 本脚本用来确认「四层」是否**真的都落地了**（改配置 ≠ 生效）。
+# 历史：本机「真休眠」(S4) 失败 5 次、坏 RTC 2 次，防护原先封满 0x0E–0xFF（242 字节）。
+#   差分铁证（§二十七）= 5 次武装休眠全死 / 4 次普通睡眠全活 ⇒ 坏的只有 S4。
+#   S4 已放弃（日常全走 Deep Idle），0x80–0xAB（IOHibernateRTCVariables）不再需要保护
+#   ⇒ 2026-10-28 收窄为 `0E-7F,AC-FF`（198 字节），留出 0x80–0xAB。
+# 为什么仍需本脚本：确认「四层」**真的都落地了**（改配置 ≠ 生效）。
 #
 # 用法：
 #   ./EFI/scripts/rtc-protect-verify.sh                # ESP 默认挂载点 /Volumes/ESP
@@ -40,10 +41,11 @@ hdr "1) 运行期 boot-args（本次开机由 OpenCore 传入）"
 BA="$(sysctl -n kern.bootargs 2>/dev/null || echo '')"
 if [ -n "$BA" ]; then echo "  $BA"; else warn "读不到 kern.bootargs"; fi
 case "$BA" in
-  *rtcfx_exclude=0E-FF*) ok "含 rtcfx_exclude=0E-FF —— bank1 的 0E–7F 也封了（新配置已生效）" ;;
-  *rtcfx_exclude=80-FF*) bad "仍是旧值 80-FF ⇒ 本次开机**没吃到**新配置（ESP 没同步？还没重启？）" ;;
-  *rtcfx_exclude=*)      warn "有 rtcfx_exclude 但不是 0E-FF，请自行核对：$(echo "$BA" | tr ' ' '\n' | grep rtcfx_exclude)" ;;
-  *)                     bad "boot-args 里**没有** rtcfx_exclude ⇒ 新配置未生效" ;;
+  *rtcfx_exclude=0E-7F,AC-FF*) ok "含 rtcfx_exclude=0E-7F,AC-FF —— bank1 0E–7F + 高位 AC–FF 封，休眠区 80–AB 留出" ;;
+  *rtcfx_exclude=0E-FF*)       warn "仍是旧的 0E-FF 全封（含休眠区）⇒ 本次开机没吃到新配置（ESP 没同步？还没重启？）" ;;
+  *rtcfx_exclude=80-FF*)       bad "仍是更旧的 80-FF ⇒ 本次开机没吃到新配置" ;;
+  *rtcfx_exclude=*)            warn "有 rtcfx_exclude 但范围非预期，请自行核对：$(echo "$BA" | tr ' ' '\n' | grep rtcfx_exclude)" ;;
+  *)                           bad "boot-args 里**没有** rtcfx_exclude ⇒ 新配置未生效" ;;
 esac
 
 # ---------------------------------------------------------------- 2) 运行期：NVRAM 变量
@@ -51,9 +53,9 @@ hdr "2) 运行期 NVRAM 变量 $GUID:rtc-blacklist（AppleRtcRam 协议的寄存
 if NVRAM_OUT="$(nvram "$GUID:rtc-blacklist" 2>&1)"; then
   if [ -n "$NVRAM_OUT" ]; then
     ok "变量存在（前 100 字符）：$(printf '%s' "$NVRAM_OUT" | cut -c1-100)"
-    echo "     ⚠️ 需人工确认长度 = 242 字节（内容 0E 0F … FF）"
+    echo "     ⚠️ 需人工确认长度 = 198 字节（0E–7F 与 AC–FF 两段，80–AB 应缺席）"
   else
-    warn "变量存在但内容为空 —— 预期的 242 字节没写进去"
+    warn "变量存在但内容为空 —— 预期的 198 字节没写进去"
   fi
 else
   warn "nvram 读不到该变量（有两种可能：① 真没写进去；② macOS 的 nvram 工具不列非 Apple GUID 变量）"
@@ -71,18 +73,18 @@ else
 
   B="$(plist_extract "NVRAM.Add.$BOOTARGS_GUID.boot-args" "$WS_PLIST")"
   case "$B" in
-    *rtcfx_exclude=0E-FF*) ok "boot-args 含 rtcfx_exclude=0E-FF" ;;
-    *)                     bad "boot-args 不含 0E-FF" ;;
+    *rtcfx_exclude=0E-7F,AC-FF*) ok "boot-args 含 rtcfx_exclude=0E-7F,AC-FF" ;;
+    *)                           bad "boot-args 不含 0E-7F,AC-FF" ;;
   esac
 
   # ⚠️ 不能用 `plutil -extract … json`：data 类型会报 "Invalid object in plist for JSON format"。
-  #    `raw` 对 data 输出的是 **base64 文本**（242 字节 ⇒ 324 字符，且以 `Dg8Q` 开头）。
+  #    `raw` 对 data 输出的是 **base64 文本**（198 字节 ⇒ 264 字符，且以 `Dg8Q` 开头）。
   C="$(plist_extract "NVRAM.Add.$GUID.rtc-blacklist" "$WS_PLIST" | tr -d '[:space:]')"
   CLEN=${#C}
-  if [ "$CLEN" = "324" ] && [ "${C:0:4}" = "Dg8Q" ]; then
-    ok "rtc-blacklist = 324 字符 base64（= 242 字节，首个 0x0E）✔"
+  if [ "$CLEN" = "264" ] && [ "${C:0:4}" = "Dg8Q" ]; then
+    ok "rtc-blacklist = 264 字符 base64（= 198 字节：0E-7F + AC-FF，首个 0x0E）✔"
   else
-    bad "rtc-blacklist 长度 ${CLEN}（期望 324）/ 前缀 ${C:0:4}（期望 Dg8Q）"
+    bad "rtc-blacklist 长度 ${CLEN}（期望 264）/ 前缀 ${C:0:4}（期望 Dg8Q）"
   fi
 
   D="$(plist_json "NVRAM.Delete.$GUID" "$WS_PLIST" | tr -d ' \n')"

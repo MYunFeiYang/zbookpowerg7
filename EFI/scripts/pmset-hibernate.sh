@@ -178,6 +178,8 @@ case "${1:-}" in
        此时 RTC 写通道已被封满（rtcfx_exclude=0E-FF ＋ AppleRtcRam=true ＋
        rtc-blacklist 242 字节），目的**不是**把休眠配好，而是判定
        「RTC 是不是被软件写坏」这一整类假设 —— 详见 round2-tierB-result.md §二十四。
+       ⚠️ 2026-10-28 起现役已收窄为 `0E-7F,AC-FF` / 198 B（留出休眠区 80–AB）。
+          要复现当时的「封满」前提，需先把 boot-arg 与 rtc-blacklist 临时改回 0E-FF / 242 B。
    完整取证：docs/sleep-tests/round2-tierB-result.md §二十三 / §二十四
 
 WARN
@@ -365,7 +367,8 @@ case "${1:-}" in
     fi
     echo "    只武装【$SRCNAME】侧；另一侧保持 hibernatemode 0 / standby 0（不拆地雷）"
     echo "    配置 = hibernatemode 25 + standby 1 + 300 s —— 与失败的档 B **同形**，只把延迟缩短"
-    echo "    前置（本次已实测落地）：rtcfx_exclude=0E-FF ｜ AppleRtcRam=true ｜ rtc-blacklist 242 B"
+    echo "    前置（本次已实测落地）：rtcfx_exclude=0E-7F,AC-FF ｜ AppleRtcRam=true ｜ rtc-blacklist 198 B"
+    echo "    ⚠️ 2026-10-28 已把 RTC 封锁收窄（原 0E-FF / 242 B），休眠区 80–AB 不再受保护 —— 实验前先想清楚"
     $PMSET "$SRC" hibernatemode 25
     $PMSET "$SRC" standby 1
     $PMSET "$SRC" standbydelaylow 300

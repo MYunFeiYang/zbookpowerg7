@@ -27,14 +27,15 @@
 
 ## 引导参数（boot-args）
 
-当前实际值：`-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall revpatch=sbvmm rtcfx_exclude=0E-FF keepsyms=1`
+当前实际值：`-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall revpatch=sbvmm rtcfx_exclude=0E-7F,AC-FF keepsyms=1`
 
 - `igfxonln=1` / `igfxrpsc=1` —— 缓解 IGPU 睡眠/唤醒 panic（#967 freeze-panic）
 - `igfxblt` —— KBL/CFL 上 macOS 13.4+ 的背光寄存器替代修法
 - `igfxhdmidivs` —— SKL/KBL/CFL 高像素时钟 HDMI 死循环规避
 - `revpatch=sbvmm` —— 让不受支持机型也能收到 OTA 更新
 - `keepsyms=1` —— 保留内核符号名，便于定位音频栈问题
-- `-amfipassbeta` / `-lilubetaall` / `rtcfx_exclude=0E-FF` —— 当前保留项
+- `rtcfx_exclude=0E-7F,AC-FF` —— 封 RTC `0E–7F` 与 `AC–FF`，留出 `80–AB`（`IOHibernateRTCVariables`，仅 S4 使用；本机不启用休眠）
+- `-amfipassbeta` / `-lilubetaall` —— 测试版系统加载插件所需（当前保留项）
 
 ## 睡眠与节能
 
