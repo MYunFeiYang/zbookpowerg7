@@ -2112,3 +2112,540 @@ header 校验通过、boot.efi 照样全绿，死点一模一样。容量不是�
 | **判据** | **只有现象**。若该 quirk 是内核侧补丁，OC/boot.efi 日志**不会有任何变化**，别拿日志不变当"没生效" |
 | **回滚** | `cp docs/backups/config-2026-10-29-1620-pre-discard.plist EFI/OC/config.plist` + 同步 ESP；ESP 上另留 `config.plist.bak-none`（HibernateMode=None 态）与 `config.plist.safe`（10:05 态） |
 | **不可逆风险** | 低。该 quirk 只作用于休眠语义；若误伤正常启动，从 Windows 侧改 ESP 上的 config 即可恢复 |
+
+---
+
+### §3z.14 日志全解析：4 次真 S4 全部死在 EXITBS 之后；下午测试被判无效（2026-10-29 16:23）
+
+#### 一、此前的检索错误（先记下来，别再犯）
+
+ESP 根共有 **23 份** opencore 日志：20 份 `opencore-2026-10-29-*` + **3 份 `opencore-2019-01-01-*`**。
+此前找文件用 `opencore-2026-10-29-*.txt`，**把 3 份 2019 命名的整个排除在外**——而它们正是下午失败那段的记录。
+教训：**取日志必须 `opencore-*.txt` 全匹配**，因为 RTC 会把文件名打到 2019-01-01。
+
+#### 二、23 份日志的形态分类（全部解析完毕）
+
+| 形态 | 行数 | 份数 | 关键特征 |
+|---|---|---|---|
+| 冷启动 | 107 | 12 | `H:IS 0` → `H:NOT`，正常进系统 |
+| 冷启动（RTC 已坏） | 107 | 3 | 同上，内部时间 `2019-01-01T00:00:3X` |
+| **休眠恢复** | **65** | **4** | `H:IS 1` → `H:BI` → `REAN:START/END` |
+| OC 走完、boot.efi 零输出 | 575 / 582 / 837 | 3 | 尾行为 `ReleaseUsbOwnership`（575/582）或 `Restoring FW NVRAM`（837） |
+| **建了文件但零字节** | 0 | 1 | `051613.txt`，262144 B 全零 |
+
+**4 次休眠恢复的时刻**：`05:00:33`、`06:32:26`、`07:05:29`、`08:00:39`。
+
+#### 三、坐实：死点 100% 在内核侧
+
+用户确认"**S4 就没亮起过**"。⇒ 这 4 次 `H:IS 1` + `REAN` 走完 + `EXITBS:START` 的引导，**全部黑屏**。
+
+| 阶段 | 结果 |
+|---|---|
+| OC 建日志、加载 boot.efi | 4/4 正常 |
+| boot.efi 读出休眠镜像设备路径（`H:BI`） | 4/4 |
+| REAN（镜像重定位） | 4/4，耗时 0–1 s |
+| 交出控制权（`EXITBS:START`） | 4/4 |
+| 内核 `hibernate_kernel_entrypoint` | **4/4 死** |
+
+**4 次独立复现、零次侥幸通过** ⇒ 不是偶发，是确定性故障。`EXITBS` 之前的链路已完全排除，
+不再有排查价值。
+
+#### 四、新证据：`EB.H.HB|! Err(0x84)` 是休眠路径专属
+
+4 份 `H:IS 1` 日志里各有一条，位置固定在 `H:BI` 之后、`REAN:START` 之前：
+
+```
+#[EB.H.HB|!] Err(0x84) <- 17407E5A-AF6C-4EE8-98A8-00210453CDD9.R MSWr
+```
+
+**19 份冷启动日志里一次都没出现**。GUID `17407E5A-AF6C-4EE8-98A8-00210453CDD9` 为 Apple 厂商变量域，
+`.R MSWr` 疑为某种 memory-saving write，`0x84` 未解析。**但它是被容忍的**——后面 REAN 照样走完，
+所以不是失败原因，只是休眠路径的固定伴生事件。留作指纹用。
+
+#### 五、新证据：RTC 在 08:00:38 那次恢复过程中被打回 2019-01-01
+
+三处记录互相咬合：
+
+| 证据 | 值 |
+|---|---|
+| 日志文件名 | `opencore-2019-01-01-000032/33/34.txt` |
+| boot.efi 内部 `LOG:INIT` | `2019-01-01T00:00:35 / 36 / 37` |
+| `/var/vm/sleepimage` 的 mtime | `2019-01-01 08:01:00` |
+
+而 `080038.txt` 内部 `LOG:INIT` 仍是**正确的** `2026-10-29T08:00:38`。
+⇒ **同一次事件之内：boot.efi 读到的 RTC 正确，22 秒后内核写盘时 RTC 已是 2019-01-01 00:01 UTC。**
+
+`2019-01-01` 是 HP 机器 CMOS 清空后的出厂默认值。这说明:
+1. 恢复路径在内核侧**确实开始执行了**（它动到了 RTC），死点不在入口之前；
+2. 08:00:39 之后 RTC 一直是错的，**所有 08:00 之后的日志文件名都不可用于定时**；
+3. `rtcfx_exclude=0E-57,5A-7F` 与这现象的关系未查证（该 boot-arg 本意是排除 RTC 写修正）。
+
+#### 六、下午的测试全部作废——机器压根没进 S4
+
+**判据 1：sleepimage 是个空壳**
+
+```
+-rw------T 1 root wheel 1073741824 2019-01-01 08:01 /var/vm/sleepimage
+size=1073741824  mtime=Jan 1 08:01:00 2019  birth=Oct 29 15:42:18 2026
+
+$ sudo xxd -l 232 /var/vm/sleepimage
+00000000: 0000 0000 0000 0000 0000 0000 0000 0000   ← 前 232 字节全零
+```
+
+`IOHibernateImageHeader` 的 magic 应为 `0x73696D65`（ASCII `sime`），**实测前 232 字节全零**。
+⇒ 这是个没有合法 header 的 1 GiB 空文件，系统不会拿它做 S4。
+
+`birth=15:42:18` 但 `mtime` 比 birth 还早 8 年 ⇒ 文件在 15:42:18 被重建后，**再没被写过一次**。
+`mtime=2019-01-01 08:01` 是**上午 08:00 那次写盘**留下的（当时 RTC 已坏）。
+
+**判据 2：两次睡眠都活不到 standby 阈值**
+
+`pmset -g custom`（AC）：`hibernatemode 25`、`standby 1`、`standbydelayhigh 300`、`standbydelaylow 300`。
+E2 设的 `mode 3 / standby 0` 已不在配置里。
+
+| 睡眠时刻 | 结束 | 时长 | 判定 |
+|---|---|---|---|
+| 15:54:09 | 15:56:13 `Wake from Deep Idle` | 124 s | < 300 s，**没到 standby** |
+| 15:59:51 | 16:01:43 新内核 boottime | 112 s | < 300 s，**没到 standby** |
+| 15:04:43 | 15:42:18 新内核 | 38 min | 够阈值，但见判据 3 |
+
+**判据 3：15:04 那次按电源键后，日志里是 `H:IS 0`**
+
+3 份 `2019-01-01` 日志全是 `H:IS 0` + `H:NOT`，**一次 `H:IS 1` 都没有**。
+⇒ 那次机器也没认到可恢复镜像（与判据 1 一致：镜像早已是空壳）。
+
+**⚠️ 以上"下午没进 S4"的判断已被用户实测推翻（16:25 当场证伪）**
+
+用户观察到**睡眠后电源灯熄灭**——断电是 S4 的物理特征，S0ix 不断电。
+而"镜像前 232 字节全零"**根本不能**推出"没写镜像"：§3z.12 的 P1 取样早就证明
+**恢复失败后、下次 macOS 启动会把镜像原地清零**（birth 不变、内容归零）。
+
+⇒ 正确的读法恰好相反：**镜像全零恰恰是"上次休眠恢复失败、系统因此清零重建"的痕迹**。
+`mtime=2019-01-01 08:01` 对应的是 16:01:43 那次启动（RTC 读成 2019-01-01 00:00）时的清零动作，
+不是"最后写镜像的时刻"。
+
+**我的推理错误**：拿一个和 §3z.12 已知现象直接冲突的判据去下结论，等于自己推翻自己。
+判据必须换成物理观察，见 §3z.15。
+
+#### 七、判据修正（替换此前所有相关表述）
+
+| 旧判据 | 新判据 |
+|---|---|
+| "没有第二份日志 ⇒ 没有重启" | **废**。每次启动都落一份日志；要看 `Start powerd process is started` 的时间序列 |
+| "`kern.hibernatecount` 不 +1 ⇒ 没写镜像" | 保留，但需配合 sleepimage mtime |
+| "日志文件名可用于定时" | **08:00:39 之后废**。RTC 已坏成 2019-01-01 |
+| "下午失败 = S4 恢复失败" | **废**。需先证明 sleepimage header 合法 + 睡眠时长 > standbydelay |
+
+#### 八、下一步（按顺序）
+
+1. **删掉空壳镜像让系统重建**：`sudo rm -f /var/vm/sleepimage && sudo pmset -a hibernatefile /var/vm/sleepimage`
+2. **重启**，让 D4（`DiscardHibernateMap=true` + `HibernateMode=NVRAM`，16:20 落盘）真正加载
+3. **重新测**：AC 供电、`pmset -g assertions` 确认无阻止、睡眠后**至少等 8 分钟**（> 300 s 阈值）
+4. **进场判据**：机器必须真断电（电源灯灭）+ `sleepimage` mtime 前移 + 前 232 字节出现 `sime`
+5. 只有满足 4，才谈"唤醒失败"；否则仍是 Deep Idle 那条线
+
+---
+
+### §3z.15 更正：下午确实进了 S4；`HibernateMode=None` 才是"H:IS 0"的原因（2026-10-29 16:26）
+
+#### 一、错在哪
+
+§3z.14 第六节用"sleepimage 前 232 字节全零"推出"下午没进 S4"，**这与 §3z.12 的 P1 取样直接冲突**：
+P1 早就记录过——**恢复失败之后，下次 macOS 启动会把镜像原地清零**（`birth` 不变、内容归零、size 8 GiB→1 GiB）。
+
+所以"镜像全零"不是"没写过"，而是"**写过、恢复失败了、被清零了**"。证据方向完全反了。
+
+**正确读法**：
+- `mtime = 2019-01-01 08:01`（= 00:01 UTC）是 **16:01:43 那次启动**（RTC 读成 2019-01-01 00:00）清零镜像留下的；
+- `birth = 15:42:18`（2026，正常时间）是文件重建的时刻；
+- 前 232 字节全零 = header 已被清掉 = **上一次恢复没有走完**。
+
+#### 二、物理判据（用户可肉眼确认，优先级高于任何文件时间戳）
+
+| 现象 | 含义 |
+|---|---|
+| 睡眠后**电源灯熄灭** | 机器断电 → **S4**（S0ix 不断电，灯会呼吸/常亮） |
+| 按电源键后有 **POST**（HP logo 一闪、风扇转、005 报码） | 说明经历过断电 → 确认 S4 |
+| 按电源键后**无 POST、直接亮屏** | 是 S0ix / Deep Idle，不是 S4 |
+
+用户实测：**灯灭了，且有 POST + 005** ⇒ 下午那几次是真的 S4，也是真的失败。
+
+#### 三、那为什么下午一次 `H:IS 1` 都没有？——不是 `HibernateMode`，是镜像哑火
+
+**先排除 `HibernateMode=None` 这个假设**（我一度这么认为，被备份时间线否掉）：
+
+| 备份 | 时刻 | HibernateMode |
+|---|---|---|
+| `1258-s4-baseline` | 12:58 | **NVRAM** |
+| `1313-memmap-probe` | 13:13 | NVRAM |
+| `1450-pre-reservedmem` | 14:50 | NVRAM |
+| `1612-pre-capture` | 16:12 | NVRAM |
+| `1620-pre-discard` | 16:20 | **None** |
+
+⇒ **12:58 到 16:12 全程是 `NVRAM`**，15:04 那次测试就落在这个窗口内。
+所以"OC 不转发 boot-image"解释不了它。
+
+**真正的因果链**：
+
+```
+E1 实验（mkfile -n 造 8 GiB 空文件 / restore）
+   → sleepimage header 被破坏，成了无 magic 的空壳
+   → 内核 preflight 认为镜像不可用，不写新镜像
+   → NVRAM 里不产生 boot-image / boot-signature
+   → boot.efi 读不到 ⇒ H:IS 0 ⇒ H:NOT ⇒ 冷启动
+   → 用户看到的仍是黑屏+复位+005（断电确实发生了，但恢复流程根本没启动）
+```
+
+**⇒ 下午不是"恢复失败"，是"恢复压根没发生"。判据是 `H:IS 0`，不是黑屏。**
+
+真正有效的 S4 样本**只有早上那 4 次**（05:00:33 / 06:32:26 / 07:05:29 / 08:00:39），
+那时镜像合法、`H:IS 1` 走完 REAN、全部黑屏。**这 4 次才是要攻的对象。**
+
+#### 四、D4 两个改动的权重
+
+| 键 | 改动 | 评价 |
+|---|---|---|
+| `Misc/Boot/HibernateMode` | None → **NVRAM** | 必要但不充分。它只是把 16:12–16:20 那段（为 P1 取样故意设的 None）改回正常态 |
+| `Booter/Quirks/DiscardHibernateMap` | false → **true** | 真正待验证的机制假设 |
+
+**⇒ 光改 config 不够，必须先让 sleepimage 重新变成合法镜像**（删掉重建），
+否则重启后 `H:IS` 仍然是 0，D4 照样测不到。**进场条件：日志里必须出现 `H:IS 1`。**
+
+#### 五、由此暴露的、与 S4 无关的第二条故障线
+
+`pmset -g log` 里 15:54:09 睡眠 → 15:56:13 `Wake from Deep Idle`（成功，218 s，WakeTime 2.449 s）；
+15:59:51 睡眠 → 16:01:43 新内核（失败）。两次都是短睡，结果一成一败 ⇒ S0ix 唤醒本身也不稳定。
+**它和 S4 是两条线，判读时必须先按时长分开，否则每次"黑屏"都分不清是谁。**
+
+---
+
+### §3z.16 根本性更正：OpenCore / boot.efi 日志一律用 UTC，本地时间要 +8h（2026-10-29 16:38）
+
+#### 一、错在哪（这一条推翻了 §3z.14 六、§3z.15 三/四的全部结论）
+
+刚重启后新日志 `opencore-2026-10-29-083424.txt`，内部 `#[EB|LOG:INIT] 2026-10-29T08:34:30`。
+同一时刻：
+
+```
+$ date -u   →  2026-10-29T08:37:34 UTC
+$ date      →  2026-10-29T16:37:34 CST
+$ kern.boottime → Thu Oct 29 16:34:36 2026
+```
+
+**⇒ 日志文件名与 boot.efi 内部时间戳都是 UTC，本地 CST = UTC + 8h。**
+（`ls` 显示 mtime 也是同一套 UTC 值，因为 ESP 是 FAT，无时区信息。）
+
+我此前把 `024742` 读成"凌晨 2 点"、把 `080038` 读成"早上 8 点"，**全部错 8 小时**。
+
+#### 二、重写今日时间线（UTC → 本地）
+
+| 日志 | UTC | **本地 CST** | H:IS | 对应事件 |
+|---|---|---|---|---|
+| 024742 | 02:47 | 10:47 | 0 | 冷启动 |
+| 025037 | 02:50 | 10:50 | 0 | 冷启动 |
+| 030129 | 03:01 | 11:01 | 0 | 冷启动 |
+| 034347 | 03:43 | 11:43 | 0 | 冷启动 |
+| 042738 | 04:27 | 12:27 | 0 | 冷启动 |
+| 045700 | 04:57 | 12:57 | 0 | 冷启动 |
+| **050032** | **05:00** | **13:00** | **1** | **13:00 卡死那次** |
+| 051613 | 05:16 | 13:16 | — | 空文件（OC 建文件后死） |
+| 055846 | 05:59 | 13:59 | 0 | 冷启动 |
+| 060354 / 061145 / 062002 | 06:03–06:20 | 14:03–14:20 | 0 | 冷启动（memmap 采集期） |
+| **063008** | **06:30** | **14:30** | **1** | 失败 |
+| 065726 | 06:57 | 14:57 | 0 | 冷启动 |
+| **070528** | **07:05** | **15:05** | **1** | **15:04 黑屏自动复位 + POST 005** |
+| 074152 | 07:41 | 15:41 | 0 | 冷启动 |
+| **080038** | **08:00** | **16:00** | **1** | **16:00 失败** |
+| 2019-01-01-00003X | — | 16:0X–16:3X | 0 | RTC 被打成 2019 后的复位重启 |
+| **083424** | **08:34** | **16:34** | **0** | **本次重启（删镜像后）** |
+
+**⇒ 4 次 `H:IS 1` 不是"早上四次"，就是用户今天下午做的那 4 次失败测试。**
+时间点与用户描述逐一对上：13:00 卡死、14:30、15:04 复位 005、16:00 失败。
+
+#### 三、三个错误结论，作废
+
+| 错误结论 | 出处 | 为什么错 |
+|---|---|---|
+| "下午没进 S4" | §3z.14 六 | 电源灯灭 = 断电 = S4，用户实测直接证伪 |
+| "下午一次 `H:IS 1` 都没有" | §3z.14 六 / §3z.15 三 | **UTC 当本地**，把 13:00–16:00 的日志误读成早上 05:00–08:00 |
+| "sleepimage 空壳 ⇒ 内核不写镜像 ⇒ 哑火" | §3z.15 三 | 内核 preflight 会自行扩展/覆盖，header 空不影响它写；15:04 那次 `H:IS 1` 就是证据 |
+
+#### 四、站得住的结论（与 §3z 一致，未变）
+
+**今天 4 次真 S4，全部走完 `H:IS 1` → `H:BI` → `REAN` → `EXITBS:START`，全部黑屏。
+死点 100% 在内核侧 `hibernate_kernel_entrypoint`，4/4 确定性复现。**
+
+`EXITBS` 之前链路已完全排除；下午折腾的 E1/E2/P1 取样与 ReservedMemory 实验，
+**没有一次改变了这个形态**。
+
+#### 五、附带坐实的两件事
+
+1. **S4 恢复失败会把 RTC 打成 2019-01-01**（3 份 `2019-01-01-00003X` 日志即 16:0X–16:3X 那几次复位重启）。
+2. **16:34 那次重启 RTC 已恢复正常**（`083424` 内部 UTC 08:34:30 对得上 `date -u`），
+   说明该损坏是"一次性的、重启后自行恢复"，不是永久性 CMOS 失效。
+
+#### 六、教训（写进流程）
+
+**取 OC/boot.efi 日志时间必须先 `date -u` 对齐，不能按本地时区读。**
+判据代码一律用 UTC；文档里标注时间时写明 `UTC` 或 `CST`。
+
+---
+
+### §3z.17 突破：首次捕获 S4 恢复期 panic，死点从"未知"收敛到"读镜像失败"（2026-10-29 16:56）
+
+#### 一、现象对比：性质变了
+
+| | 前 4 次（050032 / 063008 / 070528 / 080038） | 本次（084752，D4 生效后） |
+|---|---|---|
+| boot.efi 链路 | `H:IS 1` → `H:BI` → `REAN` → `EXITBS` | **完全相同** |
+| `EXITBS` 之后 | 黑屏 → 硬复位 → POST 005，**零 panic 痕迹** | **内核 panic 并成功落盘** |
+| 判定 | triple fault，IDT 未恢复，来不及 panic | **`hibernate_kernel_entrypoint` 已过，进入 IOKit 恢复** |
+
+⇒ **D4（`DiscardHibernateMap=true` + `HibernateMode=NVRAM`）确实改变了行为**：
+恢复链路从"死在三重故障"推进到"死在读镜像 I/O"。
+
+#### 二、panic 原文
+
+```
+panic(cpu 0 caller 0xffffff800dc866ab): Hibernate restore error e00002bc @IOHibernateIO.cpp:2921
+  _hibernate_machine_init + 0x12db
+  _ml_hibernate_active_post + 0x27
+  _IOCPURunPlatformActiveActions + 0x6b
+  _acpi_sleep_kernel + 0x2be
+  AppleACPIPlatformExpert::sleepPlatform + 0x1f9
+  AppleACPICPU::haltCPU + 0x85
+  _IOCPUSleepKernel + 0x21c
+  IOPMrootDomain::powerChangeDone + 0xa4a
+Hibernation exit count: 0
+Last Sleep: Uptime 0xb799f3c320 (788.6 s) / Sleep 0xb282112f5d (766.6 s) / Wake 0x0
+```
+
+文件：`/Library/Logs/DiagnosticReports/Kernel-2019-01-01-080117.panic`
+（文件名时间戳是 2019，因为 S4 断电把 RTC 打回出厂值；`timestamp` 字段同样是错的）
+
+`-hbfxdbg -hbfxforce hfile=/var/vm/sleepimage` 在 boot-args 中，HibernationFixup 1.5.4 已加载。
+
+#### 三、源码定位（xnu `iokit/Kernel/IOHibernateIO.cpp`，`hibernate_machine_init()`）
+
+该函数内共有 **6 处** `panic("Hibernate restore error %x", err)`，全部是 I/O 失败：
+
+```c
+/* ① readahead（第一次读盘） */
+IOPolledFileSeek(vars->fileVars, gIOHibernateCurrentHeader->image1Size);
+vars->fileVars->readEnd = gIOHibernateCurrentHeader->imageSize;
+err = IOPolledFileRead(vars->fileVars, NULL, 0, cryptvars);
+if (kIOReturnSuccess != err) panic("Hibernate restore error %x", err);
+
+/* ② 读 8 字节 page-range 头 */
+err = IOPolledFileRead(vars->fileVars, src, 8, cryptvars);
+if (kIOReturnSuccess != err) panic("Hibernate restore error %x", err);
+
+/* ③ 读 4 字节 tag */
+err = IOPolledFileRead(vars->fileVars, (uint8_t *) &tag, 4, cryptvars);
+if (kIOReturnSuccess != err) panic("Hibernate restore error %x", err);
+
+/* ④ tag 签名不匹配 —— 唯一用固定码的一处 */
+compressedSize = kIOHibernateTagLength & tag;
+if (kIOHibernateTagSignature != (tag & kIOHibernateTagSigMask)) {
+    err = kIOReturnIPCError;
+    panic("Hibernate restore error %x", err);
+}
+
+/* ⑤ 读压缩页数据 */
+err = IOPolledFileRead(vars->fileVars, src, (compressedSize + 3) & ~3, cryptvars);
+
+/* ⑥ 落到目标物理页 */
+err = IOMemoryDescriptorReadToPhysical(vars->srcBuffer, decoOffset, ptoa_64(ppnum), page_size);
+
+/* ⑦ 循环结束总校验 */
+if ((kIOReturnSuccess == err) && (pagesDone == header->actualUncompressedPages))
+    err = kIOReturnLockedRead;
+if (kIOReturnSuccess != err) panic("Hibernate restore error %x", err);
+```
+
+#### 四、错误码判定
+
+| 值 | 名称 | 出处 |
+|---|---|---|
+| **`0xe00002bc`（实测）** | **`kIOReturnError`** | `iokit_common_err(0x2bc)`，IOKit 通用错误 |
+| `0xe00002c4` | `kIOReturnIPCError` | 仅用于 **④ tag 签名不匹配** |
+| `0xe00002c1` | `kIOReturnLockedRead` | 仅用于 **⑦ 页数不符** |
+
+⇒ **实测值不等于 ④ 也不等于 ⑦** ⇒ **排除"镜像内容/签名损坏"与"页数不符"**，
+失败发生在 **`IOPolledFileRead` / `IOMemoryDescriptorReadToPhysical` 的读盘动作本身**。
+
+#### 五、最可能的机制：`header->imageSize` 与文件实际大小不符
+
+第一步 readahead 直接拿镜像头的 `imageSize` 当 `readEnd`。若 `imageSize` > 文件真实长度，
+`IOPolledFileRead` 会读到 EOF 之外 ⇒ 返回通用错误 `kIOReturnError`。
+
+**当前实测**：
+
+```
+/var/vm/sleepimage  size=1073741824 (1 GiB)  birth=Oct 29 16:33:43 2026  mtime=2019-01-01 08:01:24
+```
+
+`birth` 是 16:33:43（16:34:36 那次启动前 53 秒创建），说明**文件未被重建**。
+若头里 `imageSize` 是数 GiB 而文件只有 1 GiB，本条即为根因。
+
+**待验证（需 root）**：`sudo python3 EFI/scripts/hib-header.py /var/vm/sleepimage`
+读 magic（应为 `sime`）、`imageSize`、`image1Size`、`pageCount`、`conflictCount`。
+
+#### 六、判据修正
+
+| 旧表述 | 更正 |
+|---|---|
+| "死点 100% 在 `EXITBS` 之后，triple fault，无 panic 痕迹" | **仅在 D3（`DiscardHibernateMap=false`）下成立**。D4 下内核能 panic |
+| "boot.efi 侧已完全排除" | 保留。`REAN` 0.7 s 正常，问题在交棒之后 |
+| "镜像内容坏了" | **本次可排除**（错误码不是 `kIOReturnIPCError`） |
+
+#### 七、顺带坐实
+
+1. `#[EB.H.CHK|BM] 0x0000000000000000` —— boot manifest 值为 0。
+2. `#[EB.H.CHK|!] Err(0xE) <- BS.LocDP 5B27263B-…` —— `LocateDevicePath` 返回 `EFI_NOT_FOUND`，**被容忍**，`REAN` 照常完成。
+3. `#[EB.H.HB|DT] 3 0` —— 恢复路径固定伴生输出。
+4. `Last Sleep: Wake absolute = 0` —— 唤醒时刻未写回（panic 打断），不可作"未唤醒"判据。
+
+---
+
+### §3z.18 二进制取证：panic 行 2921 = **第一处 readahead**，一页都没恢复（2026-10-29 17:20）
+
+#### 一、方法（可复现，不依赖任何在线源码版本）
+
+退 10 帧源码猜测的低效做法：**直接在本机 `mach_kernel` 二进制上定位 panic 调用点**。
+
+```bash
+nm -n /System/Library/Kernels/kernel | grep _hibernate_machine_init
+# ffffff800099d3d0 T _hibernate_machine_init
+
+# backtrace: 0xffffff800dc866ab，Kernel slide = 0x000000000d2e8000
+# unslid = 0xffffff800dc866ab - 0xd2e8000 = 0xffffff800099e6ab
+# 0xffffff800099e6ab - 0xffffff800099d3d0 = 0x12db  ← 与 backtrace 的 "+0x12db" 逐位吻合
+```
+
+panic 是 `call _panic`，所以调用点 = `0xffffff800099e6ab - 5 = 0xffffff800099e6a6`。
+其前面 6 字节是 `b9 69 0b 00 00` = `mov ecx, 0xB69` = **2921** —— panic 消息里的 `@IOHibernateIO.cpp:2921`
+就是从这里来的（`panic(fmt, err, __FILE__, __LINE__)` 的第三个参数）。
+
+以同样办法把 `_hibernate_machine_init`（0x1360 字节）内 **所有** "Hibernate restore error" 站点扫了一遍：
+
+| lea 位置 | 源码行 | 固定错误码 |
+|---|---|---|
+| `…e68f` | **2921** | —（透传 err） |
+| `…e625` | 2940 | — |
+| `…e5a5` | 2955 | — |
+| `…e5c1` | **2961** | `0xe00002bf` = `kIOReturnIPCError` |
+| `…e589` | 2966 | — |
+| `…e56a` | 2998 | 扫描到 `0xe00002e7`（= `kIOReturnUnderrun`），疑为相邻块的立即数，未确认 |
+| `…e6ab` | **3030** | `0xe00002c3` = `kIOReturnLockedRead` |
+
+（地址为 `lea rdi, [fmt]` 指令位置；实际 `call _panic` 在其后约 0x22 字节。）
+
+**行号 ↔ 源码站点的锚定**：xnu `xnu-12377.121.6` 的 `IOHibernateIO.cpp` 里这 7 处按源码顺序是
+①readahead ②读 8 字节块头 ③读 4 字节 tag ④**tag 签名（唯一用 `kIOReturnIPCError`）**
+⑤读页数据 ⑥`IOMemoryDescriptorReadToPhysical` ⑦**页数总校验（唯一用 `kIOReturnLockedRead`）**。
+
+本机二进制里带固定码的是**第 4 个（2961）和第 7 个（3030）**，与源码顺序 1:1 对上。
+⇒ 第 1 个 = **2921** = readahead。
+
+#### 二、结论：死点在第 1 处 readahead
+
+```c
+IOPolledFileSeek(vars->fileVars, gIOHibernateCurrentHeader->image1Size);
+vars->fileVars->readEnd = gIOHibernateCurrentHeader->imageSize;
+...
+err = IOPolledFileRead(vars->fileVars, NULL, 0, cryptvars);   // ← 2921
+if (kIOReturnSuccess != err) panic("Hibernate restore error %x", err);
+```
+
+`IOPolledFileRead(vars, NULL, 0, …)`：长度 0，只做"启动预读"。它内部（`IOPolledInterface.cpp`）：
+
+```c
+if ((vars->bufferOffset == vars->bufferLimit) && (vars->position < vars->readEnd)) {
+    if (!vars->pollers->io) cryptvars = NULL;
+    err = IOPolledFilePollersIODone(vars->pollers, true);   // io==false ⇒ 立即返回 success
+    if (err) break;
+    ...
+    err = IOStartPolledIO(vars->pollers, kIOPolledRead, vars->bufferHalf, offset, length);
+    if (err) break;                                        // ← 就是这里返回 0xe00002bc
+}
+```
+而 `IOStartPolledIO`：
+```c
+err = vars->ioStatus;            // open 时被置 0 ⇒ 通过
+if (err) return err;
+vars->ioStatus = -1;
+poller = vars->pollers->getObject(0);
+err = poller->startIO(operation, bufferOffset, deviceOffset, length, completion);  // ← 真正失败点
+```
+
+⇒ **失败发生在 poller 的 `startIO`，不是数据校验、不是解密、不是页表、不是内存映射。**
+
+**本机的 poller 是谁，有直接证据**（`ioreg -rc IONVMeController`）：
+
+```
+"IOPolledInterface" = "IONVMeControllerPolledAdapter is not serializable"
+```
+
+即 Apple 闭源的 `IONVMeControllerPolledAdapter`（WD Blue SN570 1TB，PCIe x4，APFS 根卷 `disk1s1s1`）。
+
+#### 三、勘误（此前两条错误码给错了）
+
+| 码 | 正确名称 | 此前误写 |
+|---|---|---|
+| `0xe00002bc` | `kIOReturnError`（通用） | ✔ 正确 |
+| `0xe00002bf` | `kIOReturnIPCError` | ✘ 曾误写为 `0xe00002c4` |
+| `0xe00002c3` | `kIOReturnLockedRead` | ✘ 曾误写为 `0xe00002c1` |
+
+依据：`/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/…/IOReturn.h:96-104`。
+**结论不变**：实测 `0x2bc` 既不等于 `0x2bf` 也不等于 `0x2c3` ⇒ 排除"签名不匹配"与"页数不符"。
+
+#### 四、被这一条一次性排除的旧假设
+
+| 旧假设 | 状态 |
+|---|---|
+| 镜像内容/加密/签名损坏 | ✘ 根本没读到数据 |
+| `imageSize` 与实际文件大小不符导致越界 | ✘ 越界也要先走到第 ②③⑤ 站；这里是第 ① 站 |
+| RT 区被当 scratch 覆写（OpenRuntime 代码被盖） | ✘ 一页都没写回，物理地址还没动过 |
+| `ReservedMemory` 0x8B000 位置不对 | ✘ 同上 |
+| 页表 / `BootPTD[2040..2047]` / AREA 映射 | ✘ 内存恢复阶段还没开始 |
+| 页数校验 `pagesDone` | ✘ 第 ⑦ 站，没走到 |
+
+#### 五、当前唯一站得住的描述
+
+> S4 唤醒后，内核在**读取镜像的第一个块之前**就失败了；失败点是 NVMe 控制器的轮询接口
+> `IONVMeControllerPolledAdapter::startIO(kIOPolledRead, …)` 返回 `kIOReturnError`。
+> 此时镜像内容未被触碰、内存未被写回。
+
+`IOPolledFilePollersOpen(kIOPolledAfterSleepState)` 的返回值在源码里**只 HIBLOG、不 panic**，
+所以"poller 的 open 失败"与"startIO 失败"两种情形都可能落到这条 panic 上，需要 HIBLOG 才能分开——
+而 release 内核的 HIBLOG 不落盘（本机 OC 日志文件里 100% 是 boot.efi 的 `AAPL:` 行，0 条 `OCB:/OCABC:`）。
+
+#### 六、剩余可动变量盘点（全部有 OC 官方文本背书，逐条评估）
+
+| 变量 | 现值 | OC 文档原文 | 对本次失败的作用 |
+|---|---|---|---|
+| `Booter/Quirks/DiscardHibernateMap` | true | "forces XNU to ignore a newly supplied memory map … Do not use without a full understanding" | 已测：false→三重故障，true→推进到 I/O 错误。**保留 true** |
+| `Booter/Quirks/DevirtualiseMmio` | true（`MmioWhitelist=[]`） | "On certain firmware, a list of addresses that need virtual addresses for proper NVRAM **and hibernation** functionality may be required. Use the MmioWhitelist section" | 唯一有"hibernation"字样的未处理项；但 whitelist 需要 OC 自己打印的 devirt 列表，**当前拿不到**（OC 日志未落盘） |
+| `ACPI/Quirks/ResetHwSig` | **true** | "works around firmware that fail to maintain hardware signature across reboots and cause issues with waking from hibernation" | 已开 |
+| `ACPI/Quirks/RebaseRegions` | **true** | "Not recommended … Do not use unless absolutely required" | 与本故障无关，但是配置卫生问题 |
+| `Booter/Quirks/ForceBooterSignature` | false | "let OpenCore shim hibernation wake on **Mac EFI firmware**" | 非 Mac EFI，不适用 |
+| `Booter/Quirks/AllowRelocationBlock` | false | "Hibernation is not supported when booting with a relocation block" | ✔ 已是关闭状态 |
+
+#### 七、现实判断
+
+剩下这一层是 **Apple 闭源 NVMe 轮询适配器 + 固件在 S4 后未保留的控制器状态**，
+XNU 与 OpenCore 都**没有**能改到这条代码路径的开关。要继续只能靠：
+1. 拿到 HIBLOG（需要串口或 debug 内核）区分 open 失败 / startIO 失败；
+2. 换非 NVMe 的启动盘（AHCI 轮询路径是另一套代码）做对照实验。
+
+#### 八、运维建议（与实验解耦）
+
+当前 AC 侧 `hibernatemode 25`，意味着**每次睡眠都走写盘+断电**。在 S4 恢复修好之前，
+日常使用应退回不写镜像的睡眠：
+
+```bash
+sudo pmset -a hibernatemode 0 standby 0 autopoweroff 0
+```
+
+需要做 S4 实验时再单独 `sudo pmset -a hibernatemode 25` 并 `s4-arm.sh arm`，两者不要混。
