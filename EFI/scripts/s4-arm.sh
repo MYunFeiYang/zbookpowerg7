@@ -177,9 +177,9 @@ if '-hbfxforce' in ba:
 else:
     f("boot-args 缺 -hbfxforce ⇒ fork 逻辑不触发，休眠变量无处可写")
 if '-hbfxdbg' in ba:
-    p("boot-args 含 -hbfxdbg（注意：release kext 的 DEBUG 日志没编进去，此开关基本无效）")
+    p("boot-args 含 -hbfxdbg（本机是自编译 fork，DEBUG 串已编入 ⇒ 日志可读）")
 else:
-    w("boot-args 缺 -hbfxdbg（影响很小，见上）")
+    w("boot-args 缺 -hbfxdbg ⇒ fork 里的调试日志不会输出，失败时只剩内核码可看")
 
 # 6b hfile —— 内核写休眠镜像的路径来源（2026-10-28 实测根因）
 # IOHibernateIO.cpp:496-506：gIOHibernateFilename 只由两处赋值，
@@ -354,10 +354,21 @@ PY
   local HM SB
   HM="$($PMSET -g | awk '/hibernatemode/{print $2}')"
   SB="$($PMSET -g | awk '/^ *standby /{print $2}')"
+  # ★ pmset 里的值是「偏好」，内核真正用的是 gIOHibernateMode（sysctl 可直读）。
+  #   2026-10-29 08:56 实测：pmset AC 侧 = 25，而 sysctl = 1 ⇒ 二者可以不一致，
+  #   而决定睡法的只有内核那个。arm 会显式核对并 sysctl 补写。
+  local KM
+  KM="$(sysctl -n kern.hibernatemode 2>/dev/null || echo '')"
   if [[ "$HM" == "0" ]]; then
     echo "  ! hibernatemode = 0（尚未武装，属安全态）"
   else
-    echo "  ✔ hibernatemode = ${HM}"
+    echo "  ✔ hibernatemode = ${HM}（pmset 偏好）"
+  fi
+  if [[ -n "$KM" && "$HM" != "0" && "$KM" != "$HM" ]]; then
+    echo "  ✘ 内核态 kern.hibernatemode=${KM} ≠ pmset ${HM} ⇒ 真睡下去按 ${KM} 走，不是 25"
+    echo "     修法：sudo sysctl -w kern.hibernatemode=${HM}（arm 会自动做）"; blocked=1
+  elif [[ -n "$KM" ]]; then
+    echo "  ✔ 内核态 kern.hibernatemode = ${KM}"
   fi
   # ★ standby=0 会直接抑制休眠镜像写入（man pmset 原文），此时 hibernatemode=25
   #   会被静默降级成普通睡眠 —— 这是 2026-10-28 17:04 那次失败的真正原因。
@@ -509,6 +520,24 @@ do_arm() {
   $PMSET "$SRC" hibernatefile /var/vm/sleepimage >/dev/null 2>&1 || true
   sysctl -w kern.hibernatefile=/var/vm/sleepimage >/dev/null 2>&1 || true
   $PMSET "$SRC" hibernatemode 25
+  # ★ pmset 与内核态可以不一致（2026-10-29 08:56 实测 pmset=25 / sysctl=1）。
+  #   kern.hibernatemode 是 SYSCTL_UINT + CTLFLAG_RW，直接指向 gIOHibernateMode
+  #   （IOHibernateIO.cpp:1526）⇒ root 可直写。这是让"真按 25 睡"落地的硬保险。
+  if [[ "$(sysctl -n kern.hibernatemode 2>/dev/null)" != "25" ]]; then
+    echo "  ! 内核态 hibernatemode 不是 25，sysctl 直写修正…"
+    sysctl -w kern.hibernatemode=25 >/dev/null 2>&1 || true
+  fi
+  local KM; KM="$(sysctl -n kern.hibernatemode 2>/dev/null || echo '?')"
+  if [[ "$KM" != "25" ]]; then
+    echo "  ✘ 内核态 kern.hibernatemode = ${KM}（不是 25）⇒ 这一觉会按 ${KM} 走，测了也判不出来"
+    echo "     已回滚到安全档（hibernatemode 0 / standby 0 / sleep 15），请先把内核态弄成 25"
+    $PMSET "$SRC" hibernatemode 0 >/dev/null 2>&1 || true
+    $PMSET "$SRC" standby 0 >/dev/null 2>&1 || true
+    $PMSET "$SRC" sleep 15 >/dev/null 2>&1 || true
+    echo "=== 已中止武装。"
+    return 1
+  fi
+  echo "  ✔ 内核态 kern.hibernatemode = 25"
   # ★ standby 必须为 1。man pmset 原文：hibernation image 是否写入"also dependent on
   #   the values of standby and autopoweroff"，而 standby=0 会彻底关掉镜像写入
   #   ⇒ hibernatemode 25 被静默降级成普通睡眠。这是 2026-10-28 17:04 失败的真正原因。
@@ -552,7 +581,12 @@ do_arm() {
   echo "  ls -lh /var/vm/sleepimage                # ← 这才是写镜像的目标（Data 卷）"
   echo "                                           #   醒后应明显增长（≥1 GiB，大小随压缩率变，不是固定 16G）"
   echo "                                           #   /System/Volumes/VM/sleepimage 是 VM 卷的 swap/转储，别混"
-  echo "  # 不再查 HBFX 日志：kern_hbfx.cpp 的 DEBUG 行在 release kext 里被 #ifdef DEBUG 编掉，恒为空"
+  echo "  sudo log show --last 40m --predicate 'process == \"kernel\"' --style compact \\"
+  echo "    | grep -e 'IOHibernateSystemSleep is called' -e 'IOHibernateSystemWake is called' \\"
+  echo "           -e 'NVStorage path entered' -e 'kIOHibernateRTCVariables is' -e 'wake type is'"
+  echo "                                           # 本机 kext 是自编译 fork，DEBUG 串已编入，日志可读"
+  echo "                                           # result is: 0x0 = 成功；0xe00002c9/0xe00002db 等 = 失败码"
+  echo "                                           # 'PMRootDomain key present' + '44 bytes' = 密钥已交出"
   echo "  nvram -p | grep -i hiber                 # 【注意】有输出反而是坏信号：OC 读到后会立刻删掉它"
   echo "  system_profiler SPDisplaysDataType | grep -e 'Connection Type' -e 'Resolution'"
   echo "                                           # 外屏是否自己回来了（独立观测项，不是成败判据）"

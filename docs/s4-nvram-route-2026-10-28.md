@@ -575,3 +575,28 @@ OC 自己用 `OcRtcRead` 直读端口，macOS 走内核 hook，都不经过它 �
 
 > 005 在 `0E-FF` 期间同样出现，说明它的成因不在被封锁的范围内；
 > 改成放开校验和后 005 是否变化，只作观察，不作成败判据。
+
+## 3f `pmset hibernatemode` 与内核态可以长期不一致（2026-10-29 08:56 实测）
+
+```
+$ pmset -g custom            # AC 侧
+ hibernatemode        25
+$ sysctl -n kern.hibernatemode
+1
+```
+
+**成因**：`pmset` 只在目标值相对当前偏好**发生变化**时才把设置推给 powerd；
+重启后内核的 `gIOHibernateMode` 回到默认值 1，而 plist 里早就是 25 ⇒
+`pmset -c hibernatemode 25` 属于"无变化"，不触发下发 ⇒ 内核态永远停在 1。
+此时睡下去是**普通睡眠**（不写镜像），日志里连 `hibernate image path` 都不会出现。
+
+**修法**：`kern.hibernatemode` 是 `SYSCTL_UINT` + `CTLFLAG_RW`，直接指向 `gIOHibernateMode`
+（`IOHibernateIO.cpp:1526-1528`）⇒ root 可直写：
+
+```
+sudo sysctl -w kern.hibernatemode=25
+```
+
+**已加固**：`s4-arm.sh` 的 arm 段在下发后**硬核对**内核态，不是 25 就 sysctl 直写；
+仍不是 25 则回滚到安全档并中止武装。check 的 C 段也会把"pmset vs 内核态"不一致判成 ✘，
+避免"看着武装好、其实按模式 1 睡"这种不可判读的测试。
