@@ -775,3 +775,78 @@ cp /Volumes/ESP/config.plist.safe /Volumes/ESP/EFI/OC/config.plist
 
 **注意**：`/Volumes/ESP/EFI/OC/config.plist.safe` 会被 EFI→ESP 的单向镜像删掉（仓库里没有同名文件，
 镜像连删除一起同步）。所以回滚件必须放在 `EFI/OC/` 之外。
+
+## 3j RebuildAppleMemoryMap=false 直接打进启动 panic —— 路线到此为止（2026-10-29 10:28）
+
+**现场（10:05 改键 → 10:11 长按断电 → 10:22 Windows 改回 → 10:24:35 正常开机）**
+
+用户拍下的内核 panic 屏（`-v` 生效后第一次启动即崩，循环重启）：
+
+```
+Mac OS version: Not yet set
+Darwin Kernel Version 25.6.0 ... root:xnu-12377.161.15.701.40~2/RELEASE_X86_64
+roots installed: 0
+System shutdown begun: NO
+Panic diags file unavailable, panic occurred prior to initialization
+Hibernation exit count: 0
+System uptime in nanoseconds: 317417283
+Last Sleep:   Uptime : 0x0000000037f30331
+              Sleep  : 0x0   Wake : 0x0
+Last started kext at 649002036: as.lvs1974.HibernationFixup  1.5.4
+** In Memory Panic Stackshot Succeeded **
+MACH Reboot
+```
+
+**判定：这是正常启动路径的崩溃，不是休眠恢复路径**，三条独立证据：
+
+| 证据 | 含义 |
+|---|---|
+| `Mac OS version: Not yet set` + `panic occurred prior to initialization` | 死在 `version_init()` 之前，即内核最早段 |
+| `Sleep : 0 / Wake : 0`（全零） | 本次会话**从未发生过睡眠/唤醒** |
+| `Hibernation exit count: 0` | 没有休眠退出 |
+| `uptime = 317417283 ns` = 0.317 s | 开机 0.3 秒即崩 |
+
+**机制（OC 官方文档原话，不是推断）**
+
+`Booter/Quirks/RebuildAppleMemoryMap` 条目 Description 的第一段：
+
+> The Apple kernel has several limitations on parsing the UEFI memory map:
+> **The Memory map size must not exceed 4096 bytes** as the Apple kernel maps it as a single 4K page.
+> As some types of firmware can have very large memory maps, potentially over 100 entries,
+> **the Apple kernel will crash on boot.**
+
+也就是说：这个 quirk 存在的作用**正是防止内核在启动时崩溃**（把固件原始映射整理成 Apple 能吃的形态）。
+置 `false` = 把固件原始映射原封不动交给内核 ⇒ 本机映射不合 Apple 要求 ⇒ 启动即 panic。
+**这条路在本机不成立，不存在"再调调参数"的空间。**
+
+同一文档尾段亦承认此类 quirk 无确定解：
+
+> Unfortunately for some quirks such as `RebuildAppleMemoryMap`, `EnableWriteUnprotector`,
+> `ProtectMemoryRegions`, `SetupVirtualMap`, and `SyncRuntimePermissions` there is no definite
+> approach even on similar systems, so trying all their combinations may be required for optimal setup.
+
+**社区处方在本机不适用的原因**：T530 issue #48 / Dell 5550 #10 那两台把 `RebuildAppleMemoryMap`
+设为 `false` 还能正常启动，说明它们的固件内存映射本身就是 Apple 兼容的；本机的不是。
+所以那条处方抄不过来。
+
+**已回滚（`60deb40d`，= 09:17 那版已验证可启动）**
+
+| 键 | 值 |
+|---|---|
+| `RebuildAppleMemoryMap` | `true` |
+| `DiscardHibernateMap` | `false`（实测对恢复无帮助，一并撤掉） |
+| `boot-args` | 去掉前置 `-v` |
+
+仓库与 ESP 两侧 sha 一致，`ocvalidate` 0 问题。
+
+**结论：S4 恢复在本机无低成本可推进路径**，四条理由：
+
+1. **OC 段已通**：`HibernateMode=NVRAM` 两次都让 OC 跳过选择器（`AppleHibernate.c:148-181` 读 44 B → 写 `boot-image-key`/`boot-signature` → 删源变量）。
+2. **失败点前移到 boot.efi**：黑屏时无 Apple 标志、`Caps Lock` 灯无反应 ⇒ 内核从未运行。
+3. **能动那一段的两个 quirk 都已出局**：`DiscardHibernateMap` 实测无效；`RebuildAppleMemoryMap=false` 直接搞坏正常启动。
+4. **诊断通道关闭**：OC 文件日志在本机全为零字节、`boot-log` 在 IODeviceTree 里取不到、无串口 —— 再往下只能盲猜，**每猜一次 = 一次重启 + 一次可能开不了机**。
+
+保留现状：普通睡眠（`hibernatemode=3` 侧 / `standby`）在本机工作是正常的（基线 5.5–5.6 %/h），
+S4 属加分项，不值得用"可能开不了机"去换。
+
+**订正**：3i 里写的「`s4-arm.sh` 里也加了这两个键的体检项」不成立 —— 脚本里实际没有这两项检查（`grep` 无匹配）。
