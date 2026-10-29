@@ -2658,13 +2658,34 @@ sudo pmset -a hibernatemode 0 standby 0 autopoweroff 0
 - `Kernel/Add[11]`（NVMeFix.kext）`Enabled: true → false`，深递归 diff 确认**仅此一处**。
 - 备份 `docs/backups/config-2026-10-29-1727-pre-nvmefix.plist`，ESP 上留 `config.plist.bak-nvmefix`。
 - 同步 ESP，两侧 sha `f5dbfdc7…27ea5b7` 一致。
-- 运行时 `pmset -a hibernatemode 29 standby 0 autopoweroff 0`（29 = 25 但跳过镜像加密）。
+- 运行时电源设置**保持 25 不变**（见下方勘误，29 不合法）。
 
 #### 依据
-1. **NVMeFix 会重写控制器 APST 表**（二进制里 `APST unsupported` / `Failed to enable APST` / `-nvmefaspm`），而本机盘
-   WD Blue SN570 1TB (FW 234100WD) 是 DRAM-less + HMB，上游 issue `kvic-z/SsdPmEnabler#24` 记录真 Mac 换 SN570 后
-   合盖数小时必 panic、去掉 SsdPmEnabler 即恢复 ⇒ 该盘与 macOS 低功耗态的配合有实证问题。
-2. `hibernatemode 29` 与 25 的差别是**不加密 hibernate image**，跳过 `cryptvars` 解密路径。
+**NVMeFix 会重写控制器 APST 表**（二进制里 `APST unsupported` / `Failed to enable APST` / `-nvmefaspm`），
+而本机盘 WD Blue SN570 1TB (FW 234100WD) 是 DRAM-less + HMB，上游 issue `kvic-z/SsdPmEnabler#24` 记录
+真 Mac 换 SN570 后合盖数小时必 panic、去掉 SsdPmEnabler 即恢复 ⇒ 该盘与 macOS 低功耗态的配合有实证问题。
+
+#### ★ 勘误：`hibernatemode 29` 的说法作废（源码实证）
+
+`xnu-12377.121.6` 的 `iokit/IOKit/IOHibernatePrivate.h:740-748`：
+
+```c
+kIOHibernateModeOn                   = 0x00000001,
+kIOHibernateModeSleep                = 0x00000002,
+kIOHibernateModeEncrypt              = 0x00000004,
+kIOHibernateModeDiscardCleanInactive = 0x00000008,
+kIOHibernateModeDiscardCleanActive   = 0x00000010,
+```
+
+⇒ **`25 = 0x19 = On | DiscardCleanInactive | DiscardCleanActive`，本身不含 `Encrypt` 位。**
+⇒ **`29 = 0x1D = 25 | Encrypt`，是"25 加上加密"，与"跳过加密"完全相反。**
+（此前表述"29 跳过镜像加密"方向反了，作废。）
+
+而 `man pmset` 第 113 行原文：**`hibernatemode supports values of 0, 3, or 25.`**
+⇒ **29 未文档化，不是可用的调参入口**。同理 `hibernatemode 1` 也不在官方支持列表内。
+
+**结论：hibernatemode 这条路上没有可动的变量，保持 25。**
+"改变断电前时序"这个想法作废——25 是唯一能真正走 S4 恢复的值（3 会保持内存供电、从内存唤醒，根本不进恢复路径）。
 
 #### 为什么 HibernationFixup 在这条链上无效（已确认，别再指望它）
 panic backtrace：
