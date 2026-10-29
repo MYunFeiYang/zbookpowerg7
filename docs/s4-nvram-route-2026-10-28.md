@@ -1958,3 +1958,31 @@ if (callbackHBFX->correct_pci_config_command && offset == WIOKit::PCIRegister::k
 
 解析器：`EFI/scripts/hib-header.py`（按 `IOHibernateImageHeader` 固定偏移解析前 232 字节，
 `--memmap` 可与归档的 RT 段对照）。
+
+#### 3z.10 更正：**不能"退回 S3"**，S3 在本机实测是坏的（2026-10-29 15:50）
+
+前面 §3y / §3z 里我反复写"建议收摊退回 S3"，这是**错的**，两处都错：
+
+**错一：S3 用不了。** 2026-09-17 已强制实测过一次（撤 `\_SB.LPS0` 让 `IOPMDeepIdleSupported` Yes→No）：
+
+| 项 | 数值 | 来源 |
+|---|---|---|
+| 唤醒耗时 | **159.336 s**（正常 2.430–2.617 s，65×） | `docs/sleep-status-summary-2026-10-09.md:145` |
+| PS2 恢复 | **157,735 ms**（正常 457–466 ms，342×） | 同上 |
+| panic | **1**（NMIPI TLB flush timeout） | 同上；本机唯一 panic |
+| 机理 | `AppleACPIEC EC OBF=1 poll timed out` 连绵 ⇒ PS2/SMBus 死等 ⇒ USB 栈 panic | `docs/firmware-facts-ledger.md:395` |
+
+外加 OC-Little 原文：「SSDT-DeepIdle 和 S3 睡眠可能有严重冲突，使用 SSDT-DeepIdle 应避免 S3 睡眠」。
+⇒ **强制 S3 = 把能用的睡眠换成会 panic 的睡眠。**
+
+**错二：根本不需要"退回"。** 日常睡眠本来就不是 S3，是 **Deep Idle（S0ix）**：
+
+- `pmset -g log`（10-27～10-28 共 6 次）：唤醒**全部** `Wake from Deep Idle [CDNVA]`，
+  无一条 `Wake from S3` / `Wake from Hibernate`；即时 10-28 17:45 那条也是 `DarkWake to FullWake from Standby`。
+- 成因：`SSDT-DeepIdle` 的 `\_SB.LPS0` ⇒ `IOPMDeepIdleSupported` ⇒ 平台有更优选择就不选 `_S3`。
+
+⇒ 所以"兜底"不是 S3，**就是现状**：不作任何改动，继续走 Deep Idle，代价是 5.5–5.6 %/h / ≈3.7 W。
+"收摊"= 保持现状 + AC 侧 `hibernatemode 0`（不写镜像、永不进 S4 恢复路径），而不是切 S3。
+
+**对 E2 的影响：无。** E2 用的是 `hibernatemode 3`（写镜像 + 保 RAM），不是 S3。
+物理睡眠态仍由平台选 Deep Idle，不经过 `_S3`，所以 09-17 那条 EC/PS2 死等链路不会被触发。
