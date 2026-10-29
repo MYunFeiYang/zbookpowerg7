@@ -1476,3 +1476,54 @@ ExitBootServices 之后；而这两条处方针对的都是**boot.efi 及更早*
 | 配置读错（比如 Key 拼错） | OC 会整段忽略 | 见上：必然报 `Available` |
 
 无论哪一种，本轮之后 `ReservedMemory` 这条线都可以收敛，不再有"也许没配对"的余地。
+
+### 3t. ReservedMemory 实测已生效（2026-10-29 15:00）
+
+`probe 0x8B000` 结果：
+
+```
+源文件 = /Volumes/ESP/memmap.txt   段数 = 43
+查询地址 = 0x000000000008B000 (569344)
+落在  RT_Code       0x000000000008B000 - 0x000000000008BFFF  (4 KiB)
+```
+
+原始行（归档于 `docs/s4-memmap/memmap-cold-reservedmem.txt`）：
+
+```
+RT_Code    000000000008B000-000000000008BFFF 0000000000000001 800000000000000F
+```
+
+判读三件，缺一不可：
+
+| 观察点 | 值 | 含义 |
+|---|---|---|
+| 类型 | `Available` → `RT_Code` | `AllocatePages(AllocateAddress)` 确实占到了这个地址 |
+| 属性 | `0x800000000000000F` | bit63 = `EFI_MEMORY_RUNTIME` ⇒ ESRT 之后仍映射，`SetVirtualAddressMap` 后 boot.efi 可寻址 |
+| 大小 | 1 页 = 4 KiB | 与 config 的 `Size 4096` 一致，无越界吞邻段 |
+
+⇒ 配置被 OC 正确解析（`Enabled`/`Address`/`Size`/`Type` 四项全部吃到），
+§3s 判读表的第二、三行（"分配失败""配置读错"）均已排除。**这是本轮唯一的变量，已确认在位。**
+
+顺带记一条：本次冷启动 43 段，`memmap-cold.txt`（3h 基线）55 段，两者除保留区外无其他
+固定区差异——**自由池碎片数每次开机都在变**（`RebuildAppleMemoryMap=true` 每次重建映射），
+故"段数"本身不能当判据，只能看固定区（Reserved/ACPI/MMIO/RT*）是否逐元素相等。
+
+### 3t-补. 下一步实验：直接睡
+
+`ReservedMemory` 已生效在 `AllocatePages` 占位层面，但**它是否救得了唤醒是另一件事**，
+只能靠一次真睡（`hibernatemode 25` + AC）来判：
+
+| 步骤 | 命令 / 动作 | 判据 |
+|---|---|---|
+| 1 | `sudo bash EFI/scripts/s4-arm.sh arm` | 最后一行 `hibernatemode=25` 且内核态同步为 25 |
+| 2 | 苹果菜单 → 睡眠 | 电源灯灭、风扇停 ⇒ 写完镜像真断电；`HibernateSkipsPicker=true` 下**不弹 picker** 才是正常 |
+| 3A | 若上述成立 | 按电源键唤醒，看是否恢复桌面 = 成功收敛 |
+| 3B | 若灯重新亮 + 黑屏（老症状） | 长按电源键 10s 断电重启，进系统跑 `bash EFI/scripts/s4-log-collect.sh` |
+| 3C | 若仍弹 picker | OC 没读到 `IOHibernateRTCVariables` ⇒ NVRAM 路线本身失效，与保留区无关 |
+
+3B 与 §3o 那次（13:00，`REAN:END` 534ms、`HB|DT 3 0`、无 `HB|! <- BS.Exit`、`EXITBS:START`）
+对齐比较；若日志形态完全一致，则说明"钉住低内存"不是缺口，缺口仍在
+`hibernate_kernel_entrypoint()` 之后的 wired pages 还原。
+
+⚠️ 测完必须 `sudo bash EFI/scripts/s4-arm.sh disarm` 回滚，否则 AC 侧长期停在
+`sleep 0 / hibernatemode 25`，任何一次手动睡眠都会走 S4 黑屏。
