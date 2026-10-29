@@ -3527,3 +3527,123 @@ sudo pmset sleepnow
 | `sleepimage` 仍是 1 GiB 且 mtime 更新 | 打开文件后没写入任何有效数据 ⇒ 写入阶段失败 |
 | `sleepimage` 仍是 1 GiB 且 mtime 不变 | 内核压根没走到写文件这步 |
 | 新增 panic / `H:IS` 值 | 与历史三次对照是否同源 |
+
+---
+
+### 3z.27. D10 实测：D7 下首次睡满一轮 —— 无 panic、boot.efi 认镜像、但仍冷启动（2026-10-29 20:25）
+
+#### 一、时间线（本地时间，全部实测）
+
+| 时刻 | 事件 | 来源 |
+|---|---|---|
+| 20:06:44 | 上一轮重启完成（boot-args 已是 D7 版） | `sysctl kern.boottime` |
+| 20:06:59 | `sleepimage` **被创建**（birth time） | `stat %SB` |
+| 20:15:11 | `Entering Sleep state due to 'Software Sleep pid=10232'` Using AC 100% | `pmset -g log` |
+| 20:15:12 | 排 `*UserWake 107s → 20:16:59`（GaugingMitigationActions） | 同上 |
+| ~20:15:1x | **断电**（见下「四、RTC 再次归零」） | USB assertion `creat=2019/1/1 08:03` |
+| **20:17:34** | boot.efi 启动，日志 `opencore-2026-10-29-121734.txt`（UTC 12:17:34） | ESP |
+| 20:17:36 | `EXITBS:START` 交给内核 | 同上 |
+| 20:18:44 | 内核 uptime 起点（`uptime` 反推） | — |
+| 20:19:07 | `sleepimage` mtime 被更新 | `stat %Sm` |
+| 20:19:29 | **新 console 登录** | `last` |
+
+#### 二、★ OC 日志：H:IS 1，完整休眠引导路径（无 `H:NOT`）
+
+```
+00:000  #[EB|H:IS] 1
+00:170  #[EB.H.CHK|BM] 0x0000000000000000
+00:176  #[EB|H:BI] <02010c00d041...39 0030 0066 0035 0038 0032 0065 0030 0030 0030 00...>
+00:191  #[EB.H.CHK|!] Err(0xE) <- BS.LocDP 5B27263B-9083-415E-889E-6432CAA9B813
+00:197  #[EB|H:WCK]
+00:201  #[EB|H:BOOT.1]
+00:207  #[EB|H:DLW] 0
+00:220  #[EB|H:SIG] 0x73696D65          ← "sime"，镜像头有效
+00:235  #[EB.H.HB|!] Err(0x84) <- 17407E5A-AF6C-4EE8-98A8-00210453CDD9.R MSWr
+00:258  #[EB|H:HBOPT] 0 1 1 0
+00:272  #[EB|H:RDST]
+00:277  #[EB|LOG:REAN:START] 2026-10-29T12:17:35
+00:915  #[EB|LOG:REAN:END]   2026-10-29T12:17:36
+00:920  #[EB|H:RDEND]
+00:925  #[EB.H.HB|DT] 3 0
+00:939  #[EB|LOG:EXITBS:START] 2026-10-29T12:17:36
+```
+
+**`H:NOT` 没有出现**，说明 boot.efi 判定这是休眠唤醒并完整走了 REAN + EXITBS。
+
+#### 三、★ 但这**不是新现象**：今天 16:47 那次逐字段完全相同
+
+`opencore-2026-10-29-084752.txt`（UTC 08:47 = 本地 16:47，D7 之前）同样：
+
+```
+H:IS 1 → H:BI → H:WCK → H:BOOT.1 → H:DLW 0 → H:SIG 0x73696D65
+→ H:HBOPT 0 1 1 0 → REAN:START/END → H:RDEND → EXITBS:START
+```
+
+两份日志**有效文本长度同为 4596 字节**，字段集合一致。
+⇒ **「boot.efi 认镜像」在 D7 之前就已成立**，不能算 D7 的成果。
+（真正的 D7 变化在 19:33 那次：带 `hfile=`/`-hbfxforce` 时反而是 `H:IS 0` + `H:NOT`。）
+
+#### 四、★ D7 带来的唯一实质变化：**不再 panic**
+
+| 轮次 | OC 判定 | 内核结果 | 新 panic |
+|---|---|---|---|
+| 16:47 | H:IS 1 | panic `e00002bc @2921` | 有 |
+| 19:33 | H:IS 0 + H:NOT | panic（`-hbfxforce` 强拉） | 有 |
+| **20:15（D7）** | H:IS 1 | **无 panic** | **无**（仍 4 份旧 panic） |
+
+`DiagnosticReports` 计数未变，`Kernel-2019-01-01-080631.panic` 仍是最新一份。
+
+#### 五、★ 结论层面：仍是**冷启动**，不是恢复
+
+三条独立判据，互相印证：
+
+1. `last`：`console 20:07 - 20:19 (00:12)` 旧会话**在 20:19 结束**，随后 `console 20:19 still logged in` 新会话。
+   成功的休眠唤醒不会产生新的 console 登录记录。
+2. `ioreg -rc IOPMrootDomain` → `"IOHibernateState" = <00000000>`（0 = 未处于休眠态）。
+3. 用户侧终端输出 `[恢复于 2026-10-29 20:19:45]` + `Last login: 20:19:29 on console` = Terminal 被状态恢复重新拉起，不是原会话延续。
+
+#### 六、★★ 自我更正：`sleepimage` 开机后的尺寸**不能**作为写镜像成败的判据
+
+```
+birth  = Oct 29 20:06:59     ← 上一轮开机时创建
+modify = Oct 29 20:19:07     ← 本轮开机后 ~23 秒被改写
+size   = 1073741824（1 GiB），blocks=2097152（真实分配）
+```
+
+- 文件 **在 20:06:59 开机时创建**，而不是 20:15 睡眠时；20:19:07 又被内核动了一次。
+- 结合 3z.26 反汇编：`IOHibernateSystemSleep` 打开文件时按内存页算出真实长度 `r15`；
+  若 20:15 真的写成过大文件，**开机后 20:19:07 这次触碰会把长度重置回 `Hibernate File Min`=1 GiB**。
+- ⇒ **「睡完回来还是 1 GiB」既可能是没写，也可能是写了被开机重置**，二者不可区分。
+
+**因此 3z.25 §五 与 3z.26 §五 里以「文件大小是否涨到 16 GB」作判据的设计（D9/D10 判据矩阵）全部作废。**
+
+#### 七、★ 新发现的疑点：EXITBS 到内核起点之间有 68 秒空档
+
+| 时刻 | 事件 |
+|---|---|
+| 20:17:36 | `EXITBS:START`（boot.efi 交棒） |
+| 20:18:44 | 内核 uptime 起点（`uptime` 在 20:22:44 报 up 4 mins） |
+
+正常冷启动从 EXITBS 到内核跑起来是**秒级**；68 秒是异常量级。
+最自然的解释（**推断，未证**）：内核进入 `hibernate_machine_init` 后反复尝试 polled 读盘，
+每次超时后重试，耗尽后放弃恢复、**回退到冷启动**而不是 panic。
+这与「无 panic + 冷启动 + 68 秒延迟」三者自洽，但**缺内核日志直接证据**。
+
+#### 八、待办：唯一能定性的证据是内核日志（`sudo` 在本环境被禁）
+
+```
+# 1) 内核启动日志里的休眠相关行
+sudo dmesg | grep -iE "hiber|sleepimage|polled|restore"
+
+# 2) 当前镜像头（前 64 字节）
+sudo xxd -l 64 /var/vm/sleepimage
+```
+
+判读：
+
+| 观测 | 结论 |
+|---|---|
+| 有 `hibernate_machine_init` / polled IO 相关报错 | 内核确实尝试恢复并失败 ⇒ 死点仍在 NVMe polled 读 |
+| 完全没有任何 hibernate 行 | 内核**没尝试**恢复（boot.efi 的 H:IS 1 没传到内核）⇒ 死点在 OC 与内核的传参，`HibernateMode=NVRAM` 是首要嫌疑 |
+| 镜像头仍有 `sime` + 合理 imageSize | 镜像完整写出过，病在恢复 |
+| 镜像头全零 | 开机即被清零，无法判读（与前几轮一致） |
