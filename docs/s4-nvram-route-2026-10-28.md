@@ -1910,3 +1910,24 @@ if (callbackHBFX->correct_pci_config_command && offset == WIOKit::PCIRegister::k
 | **为何必须先重启** | `IOHibernateIO` 在启动时把文件大小读进内核对象，运行中改文件不更新已缓存值 |
 
 脚本：`EFI/scripts/s4-expand-image.sh`（`status` / 默认扩 8 GiB / `restore`）。
+
+#### 3z.8 E1 判定：**扩容无效，系统强制重建**（2026-10-29 15:45，铁证）
+
+| 时间 | 事件 |
+|---|---|
+| 15:41:11 | 脚本执行，日志记录 `before: size=1073741824` / `target: 8 GiB` |
+| 15:41:1x | `mkfile -n 8g` 把文件扩到 8 GiB |
+| 15:42:00 | 重启（`kern.boottime`） |
+| **15:42:18** | **文件 `birth`（全新 inode）—— 系统删掉 8 GiB 文件、新建 1 GiB** |
+| 15:42:24 | `mtime` / `ctime` |
+
+`stat` 三时间戳同时落在 boottime 之后 18–24 秒 ⇒ 这是**系统主动重建**，不是残留。
+
+⇒ **E1 作废**。但要说清作废的准确含义：
+不是"1 GiB 证明够用"，而是"macOS 在启动时校验 sleepimage header，不合格就按
+`Hibernate File Min` 重建；`mkfile` 造出来的空文件没有合法 header，必然被重建"。
+**这次实验根本没跑到"8 GiB 能否工作"那一步。**
+
+⇒ 推论：想让大镜像生效，必须**保留合法 header 只扩大小**，即先让系统写一次真镜像，
+再在保留 header 的前提下扩展。而"写一次真镜像"可以用 `hibernatemode 3` 做到（见 E2）。
+
