@@ -600,3 +600,69 @@ sudo sysctl -w kern.hibernatemode=25
 **已加固**：`s4-arm.sh` 的 arm 段在下发后**硬核对**内核态，不是 25 就 sysctl 直写；
 仍不是 25 则回滚到安全档并中止武装。check 的 C 段也会把"pmset vs 内核态"不一致判成 ✘，
 避免"看着武装好、其实按模式 1 睡"这种不可判读的测试。
+
+## 3g RTC 路线的实测否决 + 回到 NVRAM（2026-10-29 09:20）
+
+**现场时间线**（`pmset -g log`，都是本机原话，非推断）：
+
+```
+09:03:31  Display is turned off
+09:04:01  Entering Sleep state due to 'Software Sleep pid=219' … Using AC (Charge:100%)
+09:04:02  Wake Requests  … [*process=powerd request=UserWake deltaSecs=23
+                            wakeAt=2026-10-29 09:04:26
+                            info="com.apple.alarm.user-invisible-GaugingMitigationActions,104"]
+09:05:27  ShutdownCause  SMC shutdown cause: 5: Software initiated shutdown
+09:05:27  Start          powerd process is started
+```
+
+- 09:04:01 睡下去，`hibernatemode=25` ⇒ 写镜像后**真断电**（09:05:27 记到的
+  「SMC shutdown cause 5: Software initiated shutdown」就是这次 S4 掉电）。
+- 09:04:26 那个 23 秒的 `GaugingMitigationActions` 闹钟把机器从断电状态叫了回来，
+  POST + OC + boot 约 60 s，09:05:27 起 powerd ⇒ 这是一次**冷启动**，日志里没有任何 Wake 条目。
+- **决定性证据**：`HibernateSkipsPicker=true` 时 OC 只要认出休眠唤醒就必然跳过选择界面，
+  而这次仍然弹了选择界面 ⇒ `OcActivateHibernateWake` 在 CMOS `0x80–0xAB` 没读到 `'AAPL'`。
+
+**为什么不是「密钥没生成」**：密钥生成过，而且现在就躺在 NVRAM 里，44 字节、签名完整：
+
+```
+$ nvram IOHibernateRTCVariables
+IOHibernateRTCVariables  AAPL%01%00%00%003M%16%09…     # 4+4+20+16 = 44 B
+$ ioreg -lw0 -p IODeviceTree | grep -A0 IOHibernateRTCVariables
+IOHibernateRTCVariables = <4141504c 01000000 …>        # 与上面逐字节一致
+```
+
+⇒ 断点在**「RTC 跨断电没保住」**，属固件行为（与历史 005 = RTC Power Loss 同源），
+用户侧改不动。RTC 这条腿到此为止。
+
+**回到 NVRAM 腿**。`Library/OcBootManagementLib/AppleHibernate.c` 的真实逻辑：
+
+| 行 | 行为 |
+|---|---|
+| `:134-146` | `RTC` 掩码：`OcRtcRead(0x80..0xAB)` 校验 `'AAPL'` ⇒ 本机恒为 0 |
+| `:148-181` | `NVRAM` 掩码：读变量 `IOHibernateRTCVariables`，要求 `Size == sizeof(AppleRTCHibernateVars)`（44）且签名 `AAPL` |
+| `:171-181` | **读到后立刻把该 NVRAM 变量删掉** ⇒ 一次性消费，不会残留造成下次误判 |
+| `:189-204` | 判定成立后写 `boot-image-key` / `boot-signature`（`BOOTSERVICE` 易失） |
+| `:232-268` | `OcIsAppleHibernateWake()` 只看这两个变量在不在 ⇒ 决定是否跳选择器 |
+
+`:151` 那句注释 `Prior to 10.13.6` 说的是**上游 macOS 自己不再往这个变量里写**，
+不是「这个变量没用」：本机装的是自编译 fork，`-hbfxforce` 绕过了
+`checkRTCExtendedMemory()` 门控（改动见本文第三节），**变量确实被写出来了** ——
+08-28 记的「`nvram -p | grep -i hiber` 至今 = 0」只对上游 1.5.4 成立。
+7a5fc09 那次「NVRAM 必失败」的判定就是漏算了这一点。
+
+**配置（2026-10-29 已改并同步 ESP，`adbde6f`）**
+
+| 项 | 值 | 理由 |
+|---|---|---|
+| `Misc/Boot/HibernateMode` | `RTC` → **`NVRAM`** | 只读 NVRAM；不带 RTC 分支，避免对固件行为下注 |
+| `HibernateSkipsPicker` | `true`（不变） | 同时充当**识别指示器**：不弹选择器 = OC 认了 |
+| `DisableRtcChecksum` / `rtcfx_exclude` | `false` / `0E-57,5A-7F`（不变） | 让「内容改了就跟着改校验和」成立，避免 `AppleRtcRamReset` 清 `0x40–0xFF` ⇒ 这是 005 的机制；换个路子后这条仍要留着 |
+
+**`s4-arm.sh` 新增**：睡前 `nvram -d IOHibernateRTCVariables`。
+fork 的写入门控是 `!nvstorage.exists(...)`（只在不存在时写）⇒ 旧 key 会永久占位、
+永不更新；不清掉它，下次休眠交出的可能是上一轮的 key，与当前镜像不匹配。
+睡下后 fork 会重新写一份，开机时 OC 消费并删除，正好形成闭环。
+
+**下一步的唯一判据**：改完配置**必须重启**（OC 只在启动时读 config）。
+重启前先 `sudo nvram -d IOHibernateRTCVariables` 清掉旧 key ——
+否则这一次开机 OC 会拿旧 key 当真、去解一张已被截断的镜像。
