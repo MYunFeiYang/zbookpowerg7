@@ -427,10 +427,20 @@ do_arm() {
   # 静态 config 改过但没重启 ⇒ quirk 不会生效，睡了也是旧配置，纯白测
   local CFG_MT BOOT_T
   CFG_MT="$(stat -f %m "$CFG" 2>/dev/null || echo 0)"
-  BOOT_T="$(sysctl -n kern.boottime 2>/dev/null | sed 's/.*sec = \([0-9]*\).*/\1/')"
-  if [[ -n "$BOOT_T" && "$CFG_MT" -gt "$BOOT_T" ]]; then
-    echo "  ✘ config.plist 修改时间晚于本次启动（$(( (CFG_MT-BOOT_T)/60 )) 分钟）⇒ 改动未生效，必须重启"
-    blocked=1
+  # ★ 不能用 `sed 's/.*sec = \([0-9]*\).*/\1/'`：`.*` 贪婪，而输出里的 "usec = 854061"
+  #   本身就含子串 "sec = " ⇒ 抓到的是微秒值。2026-10-29 09:00 实测因此报出
+  #   "修改时间晚于本次启动（29872146 分钟）"的假 ✘，把一次已就绪的武装挡掉了。
+  #   改为按字段取：{ sec = N, usec = M } ⇒ 找到 sec 后的第二个 token。
+  BOOT_T="$(sysctl -n kern.boottime 2>/dev/null \
+    | awk '{gsub(/[{},]/," "); for(i=1;i<=NF;i++) if($i=="sec"){print $(i+2); exit}}')"
+  # 合理性兜底：秒数必须 > 2001-09-09。解析异常时宁可不判，也不做假拦截。
+  if [[ -n "$BOOT_T" ]] && (( BOOT_T > 1000000000 )); then
+    if (( CFG_MT > BOOT_T )); then
+      echo "  ✘ config.plist 修改时间晚于本次启动（$(( (CFG_MT-BOOT_T)/60 )) 分钟）⇒ 改动未生效，必须重启"
+      blocked=1
+    fi
+  else
+    echo "  ! 无法解析 kern.boottime（${BOOT_T:-空}），跳过「改完没重启」判据"
   fi
   if [[ "$RBA" == *"-hbfxforce"* ]]; then
     echo "  ✔ 运行态 boot-args 含 -hbfxforce"
