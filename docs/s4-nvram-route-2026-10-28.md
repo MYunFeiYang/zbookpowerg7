@@ -2067,3 +2067,48 @@ header 校验通过、boot.efi 照样全绿，死点一模一样。容量不是�
 | **判据** | 开机后立刻 `stat`：size 仍 8 GiB、mtime 仍 `2019-01-01`、前 4 字节 = `73 69 6D 65`（ASCII `sime`，magic `0x73696D65`） |
 | **回滚** | `cp docs/backups/config-2026-10-29-1612-pre-capture.plist EFI/OC/config.plist` + 同步 ESP |
 | **不可逆风险** | 无。只影响 OC 引导阶段是否转发休眠信息 |
+
+#### 3z.13 "取镜像是否必要"——不必要，改走 `DiscardHibernateMap`（2026-10-29 16:20）
+
+用户提问：`HibernateMode=None` 取样那套是不是必要动作？答案：**不是**。取镜像属**取证**，
+本身不改变任何结果；它只把下一轮从"盲改"变成"有据"。而同样一次重启 + 一次睡眠的成本，
+可以直接投给一条有文档依据的修复候选。
+
+**先看不用动机器就能查到的现状**（`EFI/OC/config.plist`）：
+
+| Booter/Quirks | 当前值 | 与本问题的关系 |
+|---|---|---|
+| `RebuildAppleMemoryMap` | **True** | 每次开机重建 map ⇒ 唤醒时的 map 与休眠时不同源 |
+| `DiscardHibernateMap` | **False** | 正是"让内核忽略唤醒时新 map"的开关 |
+| `ProtectMemoryRegions` | False | 修正 CSM/MMIO 类型误标；OC 称"仅极老固件需要" |
+| `ProtectUefiServices` | False | 防固件改写服务指针；针对 VMware / GRUB 链式加载 |
+| `AllowRelocationBlock` | False | OC 明写"使用重定位块时 hibernation 不受支持" |
+
+**`DiscardHibernateMap` 的 OC 官方原文**（`Booter → Quirks`）：
+
+> "This option forces the XNU kernel to ignore a newly supplied memory map and assume that it
+> did not change after waking from hibernation. This behaviour is required by Windows to work.
+> Windows mandates preserving runtime memory size and location after S4 wake."
+>
+> Note: "…workaround defective memory map implementations on older, rare legacy hardware…
+> Do not use this option without a full understanding of the implications."
+
+**为什么把 §3w 的排除改判**：我当时写"只改映射描述符，不改 boot.efi 的物理写回"就把它排除了——
+那是**我的推断**，不是文档。文档说的是"**让内核假定 map 未变**"，而本机的客观事实恰恰是
+冷启动 POST 之后 map 与休眠瞬间不同源。语义贴合度高于我此前给它的评价，应降级为"未验证"。
+
+⚠️ 未取证的一点：我在 OpenCorePkg 的 `OcMainLib/OpenCoreKernel.c`、`OpenCorePlatform.c`、
+`OcAppleKernelLib/CommonPatches.c` 三处均未找到该 quirk 的实现（`OcAfterBootLib` 路径 404），
+**它到底是内核补丁还是引导期改 boot_args，未坐实**。风险按"未知但仅作用于休眠语义"处理。
+
+#### 实验 D4（已落盘，2026-10-29 16:20）
+
+| 项 | 内容 |
+|---|---|
+| **假设** | 内核恢复期用的是"唤醒时新给的 map"，与本机冷启动后的真实布局不一致 ⇒ 页表重建指向错误内容 |
+| **改动** | ① `Booter/Quirks/DiscardHibernateMap`：false → **true**；② `Misc/Boot/HibernateMode`：None → **NVRAM**（回基线，否则根本不会尝试恢复） |
+| **不变量** | `RebuildAppleMemoryMap` 仍 true、`ReservedMemory` 仍 1 条 0x8B000/4 KiB、boot-args 不动 |
+| **预期形态** | 成功 = 按电源键后进桌面、App 原样；失败 = 与 §3z.12 完全一致（黑屏 → 自复位 → POST 005） |
+| **判据** | **只有现象**。若该 quirk 是内核侧补丁，OC/boot.efi 日志**不会有任何变化**，别拿日志不变当"没生效" |
+| **回滚** | `cp docs/backups/config-2026-10-29-1620-pre-discard.plist EFI/OC/config.plist` + 同步 ESP；ESP 上另留 `config.plist.bak-none`（HibernateMode=None 态）与 `config.plist.safe`（10:05 态） |
+| **不可逆风险** | 低。该 quirk 只作用于休眠语义；若误伤正常启动，从 Windows 侧改 ESP 上的 config 即可恢复 |
