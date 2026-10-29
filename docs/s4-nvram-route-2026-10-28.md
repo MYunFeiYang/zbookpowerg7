@@ -3156,3 +3156,118 @@ sudo pmset -c hibernatemode 3 standby 0 autopoweroff 0
 - 合盖变成普通内存睡眠，**不会丢 RTC、不会报 005、不会 panic**。
 - 要再测 S4 时，由 `s4-arm.sh` 显式把 `hibernatemode 25 / standby 1 / standbydelayhigh 60` 设回去。
 - 电池分支当前已是 `hibernatemode 0 / standby 0`，无需改动。
+
+---
+
+### §3z.24 D6 实测（standbydelay 1）：仍失败，但首次抓到完整恢复日志 —— 内核对镜像的判断与 boot.efi 分裂（2026-10-29 19:45）
+
+#### 一、D6 执行时间线（全部本地时间）
+
+| 时刻 | 事件 | 来源 |
+|---|---|---|
+| 19:33:08 | 屏幕关闭，`darkwakelinger` 建 15 s | `pmset -g log` |
+| **19:33:38** | `Entering Sleep state due to 'Software Sleep pid=31107'`（`pmset sleepnow`） | `pmset -g log` |
+| 19:33:40 | 排 `*UserWake deltaSecs=159 wakeAt=19:36:19 GaugingMitigationActions` | `pmset -g log` |
+| 19:34 前后 | 写盘 → 断电（`standbydelayhigh 1` 已生效） | 推断 |
+| 上电后 | RTC 归零为 **2019-01-01 00:00 UTC**，固件自动上电引导 | 见下 |
+| 00:05:58 UTC | OC 写日志 `opencore-2019-01-01-000558.txt` | ESP |
+| **00:06:31 UTC** | **panic 写入** `Kernel-2019-01-01-080631.panic` | DiagnosticReports |
+| 19:41:01 | 复位后正常 boot（`kern.boottime`），**无 wtmp 记录** = 非正常重启 | `sysctl` / `last` |
+
+`pmset -g` 确认八连全部生效：`hibernatemode 25 / standby 1 / standbydelaylow 1 / standbydelayhigh 1 / powernap 1 / sleep 1 / womp 0 / proximitywake 0`。
+
+#### 二、panic 与 D4/D5 逐项一致（第三次同源）
+
+`Kernel-2019-01-01-080631.panic` 原文：
+
+```
+panic(cpu 0 caller 0xffffff801e8866ab): Hibernate restore error e00002bc @IOHibernateIO.cpp:2921
+_hibernate_machine_init + 0x12db
+_ml_hibernate_active_post + 0x27
+Kernel version: Darwin 25.6.0 ... root:xnu-12377.161.15.701.48~2/RELEASE_X86_64
+System model name: MacBookPro16,4
+Hibernation exit count: 0
+```
+
+与 08:01:03 / 08:01:17 两份**同一个 panic string、同一个偏移、同一个错误码**。文件大小亦同为 9490 B。
+
+**附带更正**：当前内核已是 `xnu-12377.161.15.701.48~2`，不是先前取证用的 `xnu-12377.121.6`。
+源码行号 2921 由 panic string 自带，不受影响；但若再引用行号对应的源码段落，须重新对 `161.15` 分支核对。
+
+#### 三、★ 首次拿到完整恢复日志，发现全新事实
+
+`/Volumes/ESP/opencore-2019-01-01-000558.txt`（9629 字节非零内容，其余补零）。关键段落原文：
+
+```
+00:000 00:000 AAPL: #[EB.H.IS|!] Err(0xE) <- RT.GV boot-signature 7C436110-AB2A-4BBB-A880-FE41995C9F82
+00:003 00:003 AAPL: #[EB.H.IS|!] Err(0xE) <- RT.GV boot-image-key 7C436110-AB2A-4BBB-A880-FE41995C9F82
+00:007 00:003 AAPL: #[EB|H:IS] 0
+00:010 00:003 AAPL: #[EB|LOG:INIT] 2019-01-01T00:06:03
+...
+00:108 00:003 AAPL: #[EB.H.LV|!] Err(0xE) <- RT.GV boot-signature ...
+00:114 00:003 AAPL: #[EB.H.LV|!] Err(0xE) <- RT.GV boot-image-key ...
+00:121 00:003 AAPL: #[EB.H.LV|!] Err(0xE) <- RT.GV boot-image ...
+00:125 00:004 AAPL: #[EB.H.LV|!] Err(0xE) <- RT.SV- boot-signature ...   ← 尝试删除，也不存在
+00:135 00:002 AAPL: #[EB|H:NOT]
+```
+
+两条硬结论：
+
+**(1) `#[EB|H:IS] 0`** —— Hibernate Image Status = **0 = 没有休眠镜像**。
+之前用户贴的 `084752.txt` 是 `H:IS 1`（有镜像）。**这次是 0。**
+
+**(2) `#[EB|H:NOT]`** —— boot.efi 明确判定 **"这不是休眠唤醒"**。
+
+**(3) 三个元数据变量全部 `Err(0xE) = EFI_NOT_FOUND`**：
+`boot-signature`、`boot-image-key`、`boot-image`（GUID `7C436110-AB2A-4BBB-A880-FE41995C9F82`）—— **NVRAM 里根本不存在**。
+
+⇒ **boot.efi 认为这是普通冷启动，可内核照样进了 `hibernate_machine_init` 并 panic。**
+
+#### 四、矛盾的解释：`-hbfxforce` 与 `hfile=` 让两侧判断分裂
+
+这是本轮最重要的推断，但有直接依据：
+
+| 参数 | 作用 | 依据 |
+|---|---|---|
+| `hfile=/var/vm/sleepimage` | 让内核**直接使用指定路径**的 hibernation 文件，绕过标准 NVRAM 元数据变量 | HibernationFixup 参数语义；与 `562f881`「真正根因是内核没有写镜像路径 —— boot-args 补 hfile」的自诊断一致 |
+| `-hbfxforce` | **强制**内核按 hibernate 恢复路径执行，不看 boot.efi 的判定 | HibernationFixup 参数语义 |
+
+于是形成死局：
+- 内核侧：被 `hfile=` 告知路径、被 `-hbfxforce` 强制进恢复 → 调 `_hibernate_machine_init`
+- 固件侧：NVRAM 无 `boot-signature`/`boot-image-key`/`boot-image` → boot.efi `H:IS 0`、`H:NOT`
+- 内核去 `IOPolledFileRead` 读一个**未经 boot.efi 认可**的镜像 → `IOStartPolledIO` → NVMe polled `startIO` → `kIOReturnError`
+- **一页都没恢复，全部对得上。**
+
+⇒ 之前锁定在 NVMe 的那个死点，**可能不是 NVMe 的问题，而是"读的入口本就不该被打开"**。
+
+#### 五、D6 顺带排除的变量
+
+| 变量 | 结论 | 依据 |
+|---|---|---|
+| `standbydelayhigh 300` 的「S3 窗口期」 | **排除** | D6 改成 1 秒后失败方式完全不变 |
+| `powernap 0` | **排除**（本轮已改 1，仍失败） | 同上 |
+| `sleep 0` | **排除**（本轮已改 1） | 同上 |
+| 「Dell 成功案例的 pmset 八连」 | **不是充分条件** | 八连全生效仍 panic |
+
+#### 六、D7 方案（下一步，单变量）
+
+移除 `-hbfxforce` 与 `hfile=`，让**内核与 boot.efi 用同一套原生元数据**：
+
+```
+-hbfxdbg -hbfxforce hfile=/var/vm/sleepimage   ← 删掉这三个
+rtcfx_exclude=0E-57,5A-7F                      ← 保留（hibernation 变量区 0x80-0xAB 本就未排除）
+```
+
+**预期形态（必须先写清）**：
+- **成功** → 日志出现 `H:IS 1`，且 NVRAM 三变量可读，恢复段走通
+- **失败形态 A（最可能）** → `H:IS 0` + 正常冷启动，**不再 panic**，等于"休眠静默失败、当普通开机"
+- **失败形态 B** → 若移除 `hfile=` 后内核报"没有写镜像路径"（回到 `562f881` 之前的状态），说明原生 NVRAM 元数据写入确实被阻断，问题定位到 NVRAM 写入侧
+
+**回滚点**：三个 boot-arg 原样加回即可；备份 `config-2026-10-29-1945-pre-d7.plist`。
+**不可逆风险**：无（只改 boot-args，不写固件、不写系统卷）。
+
+#### 七、仍需并行的硬件侧事实
+
+RTC 每次断电归零（`POST 005`）这件事本身没变。而 `boot-*` 三变量在 **NVRAM（SPI Flash）不掉电**，
+理论上断电不该丢 —— 所以"为什么不在 NVRAM"要么是内核没写（`hfile=` 绕过），要么是写入被阻断。
+D7 正是用来分辨这两者的。
