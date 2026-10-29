@@ -968,3 +968,75 @@ docs/backups/config-2026-10-29-knowngood.plist        60deb40d  ← 10:24 验证
 2. 任何一次 ESP 写入前，先确认 `docs/backups/` 里有一份已验证可启动的副本；
 3. 优先在 Windows 侧改 ESP（Windows 对 FAT 的写入路径比 macOS fskit 稳），
    再由 macOS 侧读回来比对 sha。
+
+## 3m 体检：本机 BIOS 根本没有 CSM/Legacy 开关 —— ReservedMemory 路线作废（2026-10-29 12:45）
+
+**问题的由来**：3k/3l 之后我提议「进 BIOS 开/关 CSM，各导一份内存映射，diff 出 S4 缺失区，
+写成 `Booter/ReservedMemory`」。但**我从没确认过这台机器的 BIOS 里到底有没有这个开关**。
+
+**查证结果：没有。HP 官方 BIOS 白皮书把 ZBook Power G7 明确列在「UEFI only」表里。**
+
+出处：*HP PC Commercial BIOS (UEFI) Setup*，HP 官方技术白皮书，文档号 **919946-004**，July 2020，
+§2.1「Supported models – 2020 (UEFI only)」：
+
+> The models covered in this first section **only support UEFI based operating systems.
+> There is no support for legacy DOS, Windows, or Linux configurations** in the products listed below:
+>
+> **Table 1 Notebook Generations (UEFI only)** — Platforms 2020 (most are 'S' Family)，UEFI Spec 2.7：
+> HP ZBook Firefly 14, 15 G7 / HP ZBook Fury 15, 17 G7 / HP ZBook Create G7 / HP ZBook Studio G7 /
+> **HP ZBook Power G7** / HP EliteBook 850·840·830·855·845·835 G7
+
+同一文档 §2.2 才是「Supported models – prior generations (**with legacy support**)」，
+列的是 N(2015)/P(2016)/Q(2017-2018)/R(2019) 家族（ZBook G3–G6 等）—— **Power G7 不在其中**。
+文档开头亦写明本代是「'S' family of BIOS, introduced in 2020」。
+
+**我先前的取证错误（必须记下）**
+
+提出该路线时我引用了两份「HP 维护手册里有 `Configure Legacy Support and Secure Boot` 三个选项」，
+但那两份经核对机型为：
+
+| 手册号 | 实际机型 |
+|---|---|
+| `c06440089` | **HP ProDesk 400 G5 Desktop Mini**（台式迷你机） |
+| `c06072587` | **HP EliteOne 800 G4**（一体机） |
+
+两份都不是 ZBook Power G7。**这是「拿同品牌别机型的手册当本机依据」，属共性当可比性，与上午
+`RebuildAppleMemoryMap` 那次同类错误。** 正确做法是先核对文档封面机型再引用。
+
+**这对 C 路线是致命的，不是「有风险」而是「前提不存在」**
+
+OC 文档里 `ReservedMemory` 的原文是：
+
+> Some types of firmware may not allocate memory areas used by S3 (sleep) and S4 (hibernation) code
+> **unless CSM is enabled** causing wake failures. **After comparing the memory maps with CSM disabled
+> and enabled**, these areas can be found in the lower memory and can be fixed up by doing the reservation.
+
+三个前提逐条对照本机：
+
+| 前提 | 本机 |
+|---|---|
+| 固件存在 CSM 开关 | ✘ 无（UEFI only，见上） |
+| 能做「CSM 关 vs 开」两态内存映射对比 | ✘ 只有一个态，无从对比 |
+| 能据此定位「S4 缺失的低端内存区」 | ✘ 失掉唯一定位方法 |
+
+⇒ 处方本身依赖「修好 CSM 那台机器的对照实验」来取地址；本机没有 CSM，
+**`ReservedMemory` 就退化成手工猜地址填表**。而猜错的后果已有实例：
+10:05 那次 `RebuildAppleMemoryMap=false` 直接把正常启动打成 0.3 s 内核 panic。
+**因此 `ReservedMemory` 在本机判为不可执行，不是「高风险」，是「没有可依循的方法」。**
+
+**顺带一个反向收获**：本机是 UEFI-only / 'S' family BIOS，说明固件里不存在为 legacy BIOS/SMI
+保留低端内存区的需求 —— 而 OC 文档所指的「CSM 开启才分配」的正是这类 legacy 区域。
+这从另一侧解释了为什么 `RebuildAppleMemoryMap` 不能置 false：S family 的内存映射本身就复杂，
+必须由 OC 整理成 Apple 能吃（≤4096 字节、单 4K 页）的形态。
+
+**剩余候选的重新归零**
+
+| 候选 | 状态 |
+|---|---|
+| `Booter/ReservedMemory` | **作废**（无 CSM 可对比，只剩猜地址） |
+| `DevirtualiseMmio=false` + `MmioWhitelist` | 本机 `MmioWhitelist` = 0 条 ⇒ 同样需要自己找地址；置 false 有启动风险，成功率无法给出 |
+| `Booter/Quirks/ResetHwSig` | 单键可试，但症状不符（签名不符会回落正常启动，本机是无 UI 硬挂） |
+
+**结论：本机能动的层已经全部出局。** ⑥ 层（boot.efi 恢复内部）的两个有文档依据的候选，
+一个因本机无 CSM 失去方法、一个因白名单为空失去输入；加上诊断通道关闭（3e/3k），
+再往下只能是纯猜地址，代价是可能开不了机。S4 在本机到此为止。
