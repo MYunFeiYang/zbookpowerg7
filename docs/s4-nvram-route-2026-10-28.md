@@ -1986,3 +1986,33 @@ if (callbackHBFX->correct_pci_config_command && offset == WIOKit::PCIRegister::k
 
 **对 E2 的影响：无。** E2 用的是 `hibernatemode 3`（写镜像 + 保 RAM），不是 S3。
 物理睡眠态仍由平台选 Deep Idle，不经过 `_S3`，所以 09-17 那条 EC/PS2 死等链路不会被触发。
+
+#### 3z.11 E2（mode 3 取样）判定：**失败——Deep Idle 平台下 mode 3 不写镜像**（2026-10-29 15:56）
+
+实测（一次完整 mode 3 睡眠）：
+
+| 项 | 睡前 | 醒后 | 判读 |
+|---|---|---|---|
+| `pmset` AC `hibernatemode` | 3 | 3 | 配置生效 |
+| `IOPMrootDomain "Hibernate Mode"` | 3 | 3 | 内核对象生效 |
+| `kern.hibernatecount` | 0 | **0** | `IOHibernateSystemSleep` 根本没跑 |
+| sleepimage `mtime` | 15:51:51 | **15:51:51（未变）** | 一个字节都没写 |
+| 睡眠区间 | 15:54:09 → 15:56:13（**124 s**） | `Wake from Deep Idle [CDNVA] : due to PWRB/User` | 走的 Deep Idle，不是 S3 |
+| `HibernateStats` | hibmode=25 #80 | **hibmode=3 #81** | 模式已切，但仍未写盘 |
+
+⇒ **mode 3 + `standby 0` 在本机不产生镜像。** macOS 早已把 safe sleep 的写盘动作
+从"入睡瞬间"推迟到"**转 standby 时**"；`standby 0` 关掉了那个转换 ⇒ 永远不写。
+
+⚠️ 顺带记一条观测陷阱：`sysctl kern.hibernatemode` 醒来后读 **0**、睡前读 **25**，
+而 `pmset`/`IOPMrootDomain` 一直是 **3**。**这个 legacy sysctl 不可用作判据**，
+唯一权威是 `ioreg -n IOPMrootDomain` 的 `"Hibernate Mode"`。
+
+#### 取镜像的两条剩余通道（未执行）
+
+| 路 | 做法 | 得到什么 | 代价 |
+|---|---|---|---|
+| **P1** | `s4-arm.sh arm`（mode 25）→ 睡眠 → 写盘断电 → 恢复失败 → 冷启动后立刻拷 sleepimage | 镜像样本 + **顺带第一次真正测到 E1**（现在文件 8 GiB、`Hibernate File Min` 也是 8 GiB，之前 1 GiB 那轮等于没测） | 一次黑屏 + 自复位 + POST 005 |
+| **P2** | 先把 `Misc/Boot/HibernateMode` 改 `None` 再 arm+睡：OC 不把 NVRAM 里的 hibernate key 交给 boot.efi ⇒ 冷启动、**镜像不被消费** | 干净的镜像，不触发失败恢复 | 要改 config + 重启；本轮多一次引导 |
+
+P1 优先：它同时是一次**功能性实验**（8 GiB 若够，S4 可能直接成功）与一次取样。
+只有 P1 之后镜像被启动流程清掉，才退到 P2。
