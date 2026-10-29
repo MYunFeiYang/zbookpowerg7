@@ -3449,3 +3449,81 @@ sudo pmset sleepnow
 
 **风险**：`hibernatemode 3` + `standby 0` 不会断电，最坏情况是唤醒黑屏但机器还在（不 panic、不丢数据）。
 **回滚**：`sudo pmset -c hibernatemode 25`（若要继续测 S4）。
+
+---
+
+### 3z.26. 反汇编 `IOHibernateSystemSleep`：1 GiB 的位置找到了，但"尺寸限死写入"假说被削弱（20:15）
+
+#### 一、先更正 3z.25 的 D9 设计错误（用户当场指出）
+
+`hibernatemode 3` 是 deepidle：内存持续供电，**正常睡眠不写镜像**，只有电池告急或转 standby 才写。
+用它测"写镜像是否成功"根本不会触发写盘。用户指出"之前不是试过吗？deepidle 不会写 sleepimage"——**成立**。
+10-29 15:56 那次 `hibmode=3` 全程零 `HibernateError`，即为此机制。
+
+#### 二、定位过程（本机内核二进制，非推测）
+
+```
+nm -a /System/Library/Kernels/kernel | grep -i ibernate
+→ __Z22IOHibernateSystemSleepv @ 0xffffff8000998790
+→ __Z21IOHibernateSystemInitP14IOPMrootDomain @ 0xffffff800099ab80
+```
+
+`IOPMrootDomain::getHibernateSettings(p1,p2,p3)` 只读三个属性键（实测字符串）：
+`Hibernate Mode`、`Hibernate Free Ratio`、`Hibernate Free Time` —— **不含尺寸**。
+
+`IOHibernateSystemSleep` 内命中三处关键指令：
+
+| 地址 | 指令 | 含义 |
+|---|---|---|
+| `0xffffff8000998af5` | `lea "Hibernate File Min"` → 存 `rbx+0x28` | 读最小尺寸属性 |
+| `0xffffff8000998d2d` | `lea "Hibernate File Max"` → 存 `rbx+0x50` | 读最大尺寸属性（**本机该属性不存在**） |
+| `0xffffff8000999006` | **`movl $0x40000000, %r8d`** | **硬编码 1 GiB 常量，作为第 5 参数传给 `IOPolledFileOpen`** |
+
+#### 三、★ 但真正的文件长度不是这个 1 GiB
+
+紧邻调用前的计算（`0xffffff8000998f0d`~`0xffffff8000998f18`）：
+
+```
+leaq  (%rax,%rdx,8), %r15      ; r15 = 页数 × 页大小 类算式
+andq  $-0x100000, %r15         ; 向下对齐到 1 MiB
+addq  $0x100000, %r15          ; 再加 1 MiB
+```
+
+然后：
+
+```
+movq %r14, %rdx   ; arg3 = file_offset = max(FileMax, r15)
+movq %r15, %rcx   ; arg4 = file_length = r15   ← 真实大小走这里
+movl $0x40000000, %r8d   ; arg5 = 1 GiB（常量）
+call IOPolledFileOpen    ; mangled: (PKc j y y y Pv m ...)
+```
+
+⇒ **内核确实按内存页数算出了真实文件长度（`r15`）并作为 `file_length` 传入**；
+那个 1 GiB 是**另一个独立参数**（第 5 个），不是文件长度。
+
+**因此 3z.24 §三 的「1 GiB 太小导致写不进去 ⇒ 不写元数据」这条因果链证据不足，暂降级为「未成立的假说」。**
+「sleepimage 开机即 1 GiB」更可能是内核预分配/占位的固定下限值，未必是病因。
+
+#### 四、这一轮真正站得住的结论
+
+1. `Hibernate File Max` 属性在本机**不存在**（ioreg 查不到），所以 `file_offset` 会退化为 `r15`。
+2. 1 GiB 常量位置已精确定位到 `0xffffff8000999006`，若后续要动它需改内核，不可行。
+3. 尺寸假说被削弱后，**最有效的下一步不再是查尺寸，而是拿一次 D7 条件下的真实睡眠数据**。
+
+#### 五、下一步 D10：D7 条件下睡一次（唯一会写镜像的模式是 25）
+
+```
+# 睡之前先记基线
+ls -l /var/vm/sleepimage
+
+sudo pmset sleepnow
+```
+
+**三个判据（醒来后）**：
+
+| 观测 | 含义 |
+|---|---|
+| `sleepimage` 涨到 ≈16 GB | 写镜像真的执行了 ⇒ 病根在恢复侧，不在写入 |
+| `sleepimage` 仍是 1 GiB 且 mtime 更新 | 打开文件后没写入任何有效数据 ⇒ 写入阶段失败 |
+| `sleepimage` 仍是 1 GiB 且 mtime 不变 | 内核压根没走到写文件这步 |
+| 新增 panic / `H:IS` 值 | 与历史三次对照是否同源 |
