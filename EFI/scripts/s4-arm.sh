@@ -3,16 +3,22 @@
 # S4 休眠 —— RTC 密钥路线 的体检 / 武装 / 回滚
 #
 # ── 一句话策略
-#   让 macOS 内核把休眠密钥写进 **真实 RTC 0x80–0xAB**（AppleRTCHibernateVars，44 字节），
-#   由 OpenCore 的 HibernateMode=RTC 在下次启动时读回并还原成 boot-signature / boot-image-key。
+#   让 macOS 内核把休眠密钥（AppleRTCHibernateVars，44 字节，'AAPL' 签名）留在系统读得到的地方，
+#   由 OpenCore 的 HibernateMode=NVRAM 在下次开机时读回，还原成 boot-image-key / boot-signature
+#   ⇒ boot.efi 才会走休眠恢复，而不是冷启动。
 #
-# ── 为什么必须走 RTC（2026-10-28 18:15 源码定论）
-#   OcBootManagementLib/AppleHibernate.c:148 的 NVRAM 分支读的是
-#   `IOHibernateRTCVariables` 这个 NVRAM 变量，注释原文 "Prior to 10.13.6"
-#   ⇒ 现代 macOS 根本不写它 ⇒ HibernateMode=NVRAM 永远判定「非休眠唤醒」⇒ 必然冷启动。
-#   只有 :134 的 RTC 分支（OcRtcRead 读 0x80–0xAB、校验 'AAPL' 签名）在现代系统上成立。
+# ── 为什么从 RTC 换成 NVRAM（2026-10-29 09:20，源码 + 现场双重定论）
+#   ① RTC 分支（AppleHibernate.c:134-146）直读 CMOS 0x80–0xAB 校验 'AAPL'。
+#      本机 10-29 09:04 睡眠、09:05:27 开机**仍出现 OC 选择界面**，而 HibernateSkipsPicker=true
+#      ⇒ OC 在 RTC 里没读到 'AAPL'。密钥本身是生成过的（nvram 里就有一份 44 B 有效 'AAPL'），
+#        断点在「RTC 跨断电没保住」——与历史 005(RTC Power Loss) 同源，属固件行为，用户侧改不动。
+#   ② NVRAM 分支（:148-181）读 NVRAM 变量 `IOHibernateRTCVariables`，读完**立刻删除**（:171-181）
+#      ⇒ 一次性消费，不会残留造成下次误判。
+#      上游注释 "Prior to 10.13.6" 只说明现代 macOS 自己不写这个变量；
+#      本机装的是自编译 fork（-hbfxforce），kern_hbfx.cpp 会把同样 44 B 额外写进该变量
+#      ⇒ 变量在（现场实测：44 B，签名 'AAPL'，rev=1）⇒ NVRAM 路线成立，且抗固件擦 CMOS。
 #
-# ── 三层封锁，缺一不可地全部解开（这是本机历史「坏 RTC / 冷启动」的完整成因）
+# ── 三层封锁（RTC 路线必须全解开；走 NVRAM 后只剩第一层还影响内核写密钥本身）
 #   ① Kernel/Quirks/DisableRtcChecksum = true
 #        阻止 AppleRTC 更新主校验和 0x58/0x59 ⇒ 内容变了校验和不跟 ⇒ boot.efi 判 mismatch
 #        ⇒ 调 AppleRtcRamReset 清 0x40–0xFF ⇒ 密钥自毁。必须 false。
@@ -29,8 +35,8 @@
 #   TRACE_DATA            = 0xB0–0xB6（唤醒进度日志）
 #   ⇒ rtcfx_exclude 取 0E-57,5A-7F：封 BIOS 设置区，放开校验和与密钥区。
 #
-# ── 本机配置（2026-10-28 18:20）
-#   Misc/Boot/HibernateMode      RTC
+# ── 本机配置（2026-10-29 09:20）
+#   Misc/Boot/HibernateMode      NVRAM（读 NVRAM 变量 IOHibernateRTCVariables，读后即删）
 #   Kernel/Quirks/DisableRtcChecksum  false（必须允许更新 0x58/0x59）
 #   boot-args                    rtcfx_exclude=0E-57,5A-7F -hbfxdbg -hbfxforce hfile=/var/vm/sleepimage
 #   Misc/Debug/Target            69 (0x45)
@@ -44,8 +50,10 @@
 #   sudo ./s4-arm.sh disarm 回滚到 Deep Idle 基线
 #
 # ── 判读（一次睡眠后三选一）
-#   方向先记住：OC 读到 IOHibernateRTCVariables 后**立刻把它删掉**（AppleHibernate.c:173-183）
-#   ⇒ 醒后 nvram 里还查得到它 = OC 压根没消费，是**坏信号**；查不到才是正常。
+#   方向先记住：OC 读到 IOHibernateRTCVariables 后**立刻把它删掉**（AppleHibernate.c:171-181）
+#   ⇒ 睡之前 arm 会先删掉旧值（保证 key 新鲜）；睡下去由 kext 写一份新的；
+#     如果 OC 认了这次休眠唤醒，它会消费并删除 ⇒ **醒后查不到 = 正常**，
+#     醒后还查得到 = OC 压根没消费（＝没当成休眠唤醒），是**坏信号**。
 #
 #   ★ kern.hibernatecount **不是**成功判据（2026-10-28 17:50 源码坐实）：
 #     `gIOHibernateCount++` 在 `IOHibernateDone()`（IOHibernateIO.cpp:1442）里，而它有两条调用路径：
@@ -122,15 +130,15 @@ else:
 
 # 3 HibernateMode
 hm = d['Misc']['Boot'].get('HibernateMode')
-if hm == 'RTC':
-    p("Misc/Boot/HibernateMode = RTC（读 CMOS 0x80-0xAB 的 AAPL 签名，现代 macOS 唯一有效路径）")
+if hm == 'NVRAM':
+    p("Misc/Boot/HibernateMode = NVRAM（读 NVRAM 变量 IOHibernateRTCVariables，读后即删，抗固件擦 CMOS）")
 elif hm == 'Auto':
-    w("Misc/Boot/HibernateMode = Auto（RTC+NVRAM；RTC 读到即用，NVRAM 只作兜底，可用但多一层变量）")
-elif hm == 'NVRAM':
-    f("Misc/Boot/HibernateMode = NVRAM ⇒ OC 只读 NVRAM 变量 IOHibernateRTCVariables，"
-      "源码注释写明该变量仅存在于 10.13.6 之前 ⇒ 本机永远判定'非休眠唤醒'，必然冷启动")
+    w("Misc/Boot/HibernateMode = Auto（RTC+NVRAM；RTC 有残留会优先被用，比 NVRAM 多一层变量）")
+elif hm == 'RTC':
+    f("Misc/Boot/HibernateMode = RTC ⇒ 本机实测 RTC 跨断电保不住密钥（09:05 那次开了机仍出选择界面），"
+      "应改 NVRAM")
 else:
-    f("Misc/Boot/HibernateMode = %r（应为 RTC）" % hm)
+    f("Misc/Boot/HibernateMode = %r（应为 NVRAM）" % hm)
 
 # 3b Debug Target 是否含 0x40（本机 OC 文件日志坏；0x40 是否真能出 boot-log 未验证成功）
 tgt = d['Misc']['Debug'].get('Target', 0) or 0
@@ -280,9 +288,10 @@ PY
   local HIB
   HIB="$(nvram -p 2>/dev/null | awk -F'\t' '$1=="IOHibernateRTCVariables"')"
   if [[ -n "$HIB" ]]; then
-    echo "  ! IOHibernateRTCVariables 存在 ⇒ 上次休眠没被 OpenCore 消费（残留，不是好消息）"
+    echo "  ! IOHibernateRTCVariables 已存在（NVRAM 里有一份 ${#HIB} 字符的密钥）"
+    echo "     它可能是上次睡眠留下的旧 key；arm 会先删掉它，保证下次睡下去写的是新的"
   else
-    echo "  ✔ IOHibernateRTCVariables 不存在（正常：OC 读到后会立刻删除它）"
+    echo "  ✔ IOHibernateRTCVariables 不存在（要么已被 OC 消费，要么还没睡过）"
   fi
 
   # ── 内核侧镜像路径：**唯一的硬判据**（2026-10-28 17:30 定位到真正根因）
@@ -567,6 +576,26 @@ do_arm() {
   echo
   $PMSET -g custom | grep -E "hibernatemode|standby|sleep" | sed 's/^/    /'
   echo
+  # ★ key 新鲜度：OC 在 NVRAM 里找 `IOHibernateRTCVariables`（AppleHibernate.c:148-181，读后即删），
+  #   而 fork 的写入策略是「不存在才写」⇒ 旧 key 会一直占位、永不更新。
+  #   睡之前先删，逼本次睡眠写一份与当前镜像匹配的新 key。
+  if nvram -p 2>/dev/null | awk -F'\t' '$1=="IOHibernateRTCVariables"{f=1} END{exit !f}'; then
+    if nvram -d IOHibernateRTCVariables >/dev/null 2>&1; then
+      echo "  ✔ 已清除旧的 IOHibernateRTCVariables（本次睡眠会写新 key）"
+    else
+      echo "  ✘ 清除 IOHibernateRTCVariables 失败 ⇒ 旧 key 可能和新镜像不匹配，别睡"
+    fi
+  else
+    echo "  ✔ NVRAM 里没有遗留 key，睡眠时会新写一份"
+  fi
+  # 定时唤醒会截断测试：GaugingMitigationActions 曾让机器睡下 23 s 就自己开机
+  local SCHED
+  SCHED="$($PMSET -g sched 2>/dev/null | grep -v '^Repeating' | tail -n +2 | sed '/^$/d')"
+  if [[ -n "$SCHED" ]]; then
+    echo "  ! 有已排定的唤醒：$SCHED"
+    echo "     建议 sudo pmset schedule cancelall（内部维护闹钟不受它管，但用户级唤醒会立刻截断这次测试）"
+  fi
+  echo
   echo "=== 接下来的人工步骤"
   echo "  1) 拔掉外接 USB 鼠标 / U 盘（鼠标一动就立刻唤醒，会截断这次测试）"
   echo "     └ **外接显示器不用拔**：日常就是接屏用的，S4 必须在接屏状态下成立才有意义。"
@@ -580,6 +609,8 @@ do_arm() {
   echo "     standbydelay 300 s 会兜底 —— 但它只负责「写盘」，断电与否看电源灯"
   echo "     判据：电源灯灭、功率计掉到 ~0 W、风扇停"
   echo "  4) 按电源键唤醒 —— 不要指望开盖：本机 pmset 里没有 lidwake 项，开盖唤醒不可依赖"
+  echo "     └ **关键观测点**：HibernateSkipsPicker=true ⇒ 只要 OC 认出休眠唤醒就**不会出选择界面**。"
+  echo "       开机时菜单直接跳过 = OC 认了（好信号）；照旧弹选择界面 = 还是没认出（说明 NVRAM 里也没 key）"
   echo "  5) 若内建屏也不亮：先拔插一次 HDMI 再等 10 s。仍黑则长按电源键重启，"
   echo "     开机后查 pmset -g log 判「恢复了但屏没亮」还是「压根没恢复」"
   echo
