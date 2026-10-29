@@ -2855,3 +2855,160 @@ sudo pmset schedule cancelall && pmset -g sched
 18:07:10 那次（panic 之后）的启动日志是 `opencore-2019-01-01-000047.txt`
 （`LOG:INIT 2019-01-01T00:00:49`，`H:IS 0`）。
 ⇒ **RTC 归零后所有日志都落到 `opencore-2019-*`，用 `ls -t` 会排到最后**，取日志必须 `ls -t opencore-*.txt` 全匹配。
+
+---
+
+### §3z.22 突破：找到"断电后自己上电"的机制候选 —— `GaugingMitigationActions` 的 RTC 闹钟（2026-10-29 19:00）
+
+#### 一、用户提供的关键判据
+
+> "平时肯定不报 005 啊。"
+
+⇒ **完全关机（S5）再开机不报 005**，只有 S4 后才报。
+
+| 场景 | 报 005 | RTC 归零 | 结论 |
+|---|---|---|---|
+| S5 关机 → 开机 | ✘ | ✘ | CMOS 电池正常，RTC 靠电池维持 |
+| **S4 断电 → 上电** | **✔** | **✔**（日志 INIT 全在 `2019-01-01T00:00:3X`） | **S4 路径特有** |
+
+⇒ **CMOS 电池这条线彻底排除**（此前建议换 CR2032 的方案作废）。
+⇒ 005 与 RTC 归零是 S4 断电时机序异常的**结果**，不是电池没电。
+
+#### 二、决定性证据：每次睡眠后都有 1–4 分钟的 RTC 唤醒闹钟
+
+`pmset -g log | grep "Wake Requests"` 逐条实测（本地时间）：
+
+| 睡眠时刻 | `UserWake` 间隔 | 唤醒时刻 | 排定者 |
+|---|---|---|---|
+| 09:55:29 | 59 s | 09:56:29 | `GaugingMitigationActions,104` |
+| 12:59:49 | 155 s | 13:02:24 | 同上 |
+| 14:29:24 | 153 s | 14:31:57 | 同上 |
+| 15:04:45 | 229 s | 15:08:34 | 同上 |
+| 15:54:10 | 187 s | 15:57:18 | 同上 |
+| 15:59:52 | 145 s | 16:02:18 | 同上 |
+| 16:47:07 | 163 s | 16:49:51 | 同上 |
+| **18:05:17** | **89 s** | **18:06:46** | 同上 |
+
+日志格式原文：
+```
+[*process=powerd request=UserWake deltaSecs=89 wakeAt=2026-10-29 18:06:46
+  info="com.apple.alarm.user-invisible-GaugingMitigationActions,104"]
+```
+
+**关键性质**（三条，缺一不可）：
+
+1. **类型是 `UserWake`，不是 `DarkWake`** —— `UserWake` 是"用户可见唤醒"，会真正把系统拉起来，不只是维护性 DarkWake。
+2. **用 RTC 硬件闹钟实现** —— 写在 RTC 的 alarm 寄存器里，**独立于 OS 是否运行，S4 断电后依然有效**（RTC 由 CMOS 电池供电）。
+3. **每次睡眠都被重新排定，间隔 89–229 秒** —— 正好落在"灯灭后马上又亮"的观察窗口内。
+
+`GaugingMitigationActions` = Apple 内部的**电池电量计校准**子系统（`powerd` 的未文档化 alarm），无任何用户可见开关。
+社区记录（AlDente issue #1760）确认：它以 `com.apple.alarm.user-invisible-GaugingMitigationActions,<n>` 形式反复出现在 Wake Requests 中，
+且 `pmset schedule cancelall` 清掉后**睡眠时会被重新排上**。
+
+#### 三、这条链如何解释全部现象
+
+```
+合盖 → hibernatemode 25 写盘 → 断电（灯灭）          ← S4 成立
+     → RTC alarm 到点（89–229 s 后）                  ← 硬件层，断电也有效
+     → EC/固件被 RTC alarm 拉起 → 上电（灯亮）         ← 用户看到"自己亮"
+     → 但 RTC 已在本轮断电中丢失 → 报 005，时间归 2019
+     → 固件走的不是"用户按电源键的 S4 resume"，而是"RTC 闹钟唤醒"
+     → boot.efi 凭 NVRAM 里的 boot-image 判 H:IS 1 → REAN → EXITBS
+     → 内核 hibernate_machine_init → polled NVMe startIO 失败 → e00002bc
+```
+
+**这一条同时解释了此前所有孤立事实**：
+
+| 观察 | 由本条解释 |
+|---|---|
+| 灯灭后自己亮，用户没碰 | RTC alarm |
+| 每次必报 005、RTC 归 2019 | 断电时 RTC 域被带走 |
+| S5 关机不报 005 | S5 不设 RTC alarm，且 RTC 供电正常 |
+| `H:IS 1` 但 NVMe `startIO` 失败 | 固件走 alarm-wake 而非 resume，控制器未按 resume 初始化 |
+| 4 次都是确定性失败 | alarm 每次都排、每次都触发 |
+
+**⚠ 强度声明**：机制链条中的"RTC alarm 触发上电"这一段，有实测数据（alarm 存在 + 间隔吻合 + 类型为 UserWake + RTC 硬件闹钟性质），
+但"18:06:02 那次上电就是这个 alarm 触发"**没有直接日志**（当时 clock 已被清零，alarm 记录失效）。
+属于**强推断**，需用下面的一次性实验确认。
+
+#### 四、一次性验证（1 分钟，不涉及 S4，零风险）
+
+```bash
+sudo pmset schedule cancelall      # 清掉当前 alarm
+pmset -g sched                     # 确认已空
+# 然后立刻合盖/睡眠，计时观察
+```
+
+| 观察（睡下后 5 分钟内） | 结论 |
+|---|---|
+| **不再自己亮** | 确认元凶是 RTC alarm ⇒ 转入"抑制 alarm"路线 |
+| **仍然自己亮** | 不是（或不只是）alarm ⇒ 转 EC/固件层，需 Windows 对照 |
+
+注意：`cancelall` 只能清**当前**已排的；`powerd` 会在睡眠过程中重新排定。
+因此若结果仍是"自己亮"，还需做第二步（见下）。
+
+#### 五、若确认是 alarm：抑制路线
+
+`GaugingMitigationActions` 是电池 gauging 触发，可能的抑制点：
+
+| 手段 | 依据 | 风险 |
+|---|---|---|
+| `hibernatemode 3` + `standby 1` + `standbydelayhigh 300` | alarm 每 89–229 s 来一次，**每次唤醒都重置 standby 计时器** ⇒ 永远到不了 300 s ⇒ 永不进入 S4 断电 | 等于不用 S4，但合盖唤醒全部走内存，快速且不 panic |
+| 关闭"优化电池充电"/电池健康 | 未验证能否停止 gauging | 低 |
+| 电池校准一次（完整充放） | gauging 的目的是校准；电量计一旦认为已校准，可能停止 | 低，耗时 |
+
+**其中最实际的是第一条**：它不是在"修 S4"，而是把系统固定在"永不进入 S4 断电"的状态，
+从而彻底避免 panic + 005 + RTC 归零。日常使用等价于把 `hibernatemode 0` 的效果做扎实。
+
+#### 六、附带查清：`SSDT-PCI0.LPCB-Wake-AOAC` 是坏的，且内容与文件名不符
+
+反编译 `EFI/OC/ACPI/SSDT-PCI0.LPCB-Wake-AOAC.aml`（OEM Table ID `CLWAKE`）实际内容是：
+
+```asl
+Method (_DSW, 3, NotSerialized)
+{
+    If (!_OSI ("Darwin")) { Return (Zero) }
+    If ((Arg0 == 0x03))              // ← 致命错误
+    {
+        OperationRegion (AOWR, SystemIO, 0x1800, 0x02)
+        Field (AOWR, ByteAcc, NoLock, Preserve) { AOAC, 8, AOEN, 1 }
+        AOEN = Arg2                   // ← 参数也错位
+    }
+}
+Method (_PRW, 0) { ... Darwin 返回 {0x6D, Zero} ... }
+```
+
+**按 ACPI 6.4 §7.3.1 原文**：
+```
+Arguments (3):
+  Arg0 — device wake capability control: 0 = Disable, 1 = Enable
+  Arg1 — target system state (0-4)
+  Arg2 — target device state (0-3)
+```
+⇒ `Arg0` **只能是 0 或 1，永远不等于 3** ⇒ `If (Arg0 == 0x03)` **恒假** ⇒ 这段在 Darwin 下**从未执行过**
+⇒ 这个"防唤醒"补丁**自部署起就是空操作**，等于从未测试过"压制 AOAC 唤醒"这条方向。
+
+**而 OC-Little 官方 `SSDT-PCI0.LPCB-Wake-AOAC` 的内容根本不同**（原文实引）：
+```asl
+Scope (_SB.PCI0.LPCB) {
+    If (_OSI ("Darwin")) {
+        Method (_PS0, 0, Serialized) { \_WAK(0x03) }
+        Method (_PS3, 0, Serialized) { }
+    }
+}
+```
+用途是修"唤醒后**不能点亮屏幕**/电源数据不更新"——不是 `_PRW`/`_DSW`。
+⇒ **本机这份文件被换成了自定义内容，且写错了参数语义。**
+
+**但要说清**：即使改成官方 `_PS0`/`\_WAK(0x03)`，也**解决不了当前 panic** ——
+`_PS0` 在 LPCB 上电到 D0 时执行，而 panic 发生在 `ml_hibernate_active_post`（IOKit 恢复之前），阶段更早。
+
+#### 七、本轮排除清单新增
+
+| 变量 | 结论 | 依据 |
+|---|---|---|
+| CMOS 电池 | **排除** | 用户实测 S5 关机开机不报 005 |
+| macOS 软件唤醒源（womp/powernap/tcpkeepalive/proximitywake/networkoversleep/ttyskeepawake） | **全部已 0** | `pmset -g custom` 实测 |
+| `SSDT-PCI0.LPCB-Wake-AOAC` 的防唤醒作用 | **从未生效** | ACPI 规范 + 反编译，`If` 恒假 |
+| `SSDT-LID-G7` 新增的 `_GPE._L00` | **高风险待查** | 原生 DSDT 无 `_L00`（只有 `_L66/_L69/_L61/_L62/_L6F/_L72`），新增其为 GPE 0x00 注册 handler，内含 `Sleep(0x03E8)` |
+| ACPI 中声明可从 S4 唤醒的 `_PRW` | **53 处** | DSDT 全表扫描（GPE 0x69 最多，0x6D 为 GLAN/XDCI，0x72 一处） |
