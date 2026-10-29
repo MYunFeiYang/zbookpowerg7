@@ -666,3 +666,63 @@ fork 的写入门控是 `!nvstorage.exists(...)`（只在不存在时写）⇒ �
 **下一步的唯一判据**：改完配置**必须重启**（OC 只在启动时读 config）。
 重启前先 `sudo nvram -d IOHibernateRTCVariables` 清掉旧 key ——
 否则这一次开机 OC 会拿旧 key 当真、去解一张已被截断的镜像。
+
+## 3h 首次真正走到恢复段：OC 认了，boot.efi 挂住（2026-10-29 09:30）
+
+**现场（用户口述 + 本机取证）**
+
+| 观测量 | 结果 |
+|---|---|
+| 电源灯 | 睡下后熄灭（= 真断电写法），**未动它自己又亮了** |
+| OC 选择界面 | **没出现**（`HibernateSkipsPicker=true` 下这是唯一判据） |
+| 之后 | 黑屏、一直挂着，按电源键才重启 |
+| 重启后 | HP POST **005**（RTC Power Loss，会 load factory defaults） |
+
+**硬证据**
+
+```
+09:30:13  Entering Sleep state due to 'Software Sleep pid=218'  Using AC (Charge:100%)
+09:30:14  Wake Requests … [*powerd request=UserWake deltaSecs=254
+                            wakeAt=09:34:29 info="com.apple.alarm.user-invisible-GaugingMitigationActions,104"]
+本次开机：09:33:29（= 用户强制重启那一次）
+NVRAM   ：boot-image / boot-signature / IOHibernateRTCVariables 全为空
+last -x ：console 09:24–09:33 直接接 console 09:33 —— **中间没有任何登录会话**
+          （09:33 也没有 "reboot time" 条目 = 上一次关机不是干净关机）
+```
+
+09:30:13 之后 `pmset -g log` 里**没有一条 Wake、也没有一条 Start**，`last` 里也没有中间会话
+⇒ 黑屏那一段**从未进入用户态**。这不是「恢复了但屏没亮」，是**挂在恢复段**。
+
+**进展（本轮唯一的实质结论）**：OC 跳过了选择界面，只可能来自 `AppleHibernate.c:148-181`
+—— 它从 NVRAM 读到了那 44 字节、校验通过、写下 `boot-image-key` / `boot-signature` 并删掉源变量。
+**NVRAM 这条腿在 OC 段已经验证通过**，前几轮争的「NVRAM 到底能不能用」到此结案（能用）。
+
+**失败点前移**到 boot.efi → 内核恢复段。一条重要的旁证：如果 boot.efi 找不到镜像或密钥对不上，
+按 Apple 的设计会**回落到正常启动**（能进系统），而本机是**硬挂、无 fallback**
+⇒ 镜像头是读成功了的，密钥也对得上，挂的是**恢复阶段的物理布局/硬件状态**。
+
+`sleepimage` 大小 1.0 GiB 不是异常：`IOPMrootDomain` 的 `Hibernate File Min` 就是 1 GiB
+（`stat` 的 mtime/ctime = `2019-01-01 08:00:54` 是内核给该文件打的固定标记，不能用它判写入时间）。
+
+**社区先例（同症状，已核对原文）**
+
+`5T33Z0/Lenovo-T530-Hackintosh-OpenCore` issue #48：*"before these fixes I was only getting a
+black screen or a restart when trying to wake from hibernation"*，处方为
+
+1. `HibernateFixup` + `RTCMemoryFixup` —— 本机已有
+2. `HibernateMode = NVRAM` —— 本机已有
+3. `RebuildAppleMemoryMap = false`（Booter/Quirks）—— 本机是 **true**
+4. `ReservedMemory` 条目 —— 本机**没有**（值随机型，暂不猜）
+5. `rtcfx_exclude=80-AB` —— 本机是 `0E-57,5A-7F`（未封 0x80–0xAB）
+6. `HibernateSkipsPicker = true` —— 本机已有
+
+同帖 #10（Dell Precision 5550，"black screen & KP upon every wake"）用同一组改动修好。
+
+**本次只改一个键**：`Booter/Quirks/DiscardHibernateMap` `false → true`。
+理由是它只作用于唤醒路径（OC 文档：*forces the XNU kernel to ignore a newly supplied memory map
+and assume that it did not change after waking from hibernation*；Windows S4 亦要求如此），
+**正规启动不受影响，也就不可能把机器搞到开不了机**。
+`RebuildAppleMemoryMap=false` 会改变每次开机的内存映射，有启动风险，留作下一步（届时需准备可回滚的 USB / Windows 侧改 config）。
+
+**判据升级**：黑屏时按 Caps Lock——
+指示灯能亮灭 = 内核活着（问题在显示）；毫无反应 = 真挂死（问题在恢复）。

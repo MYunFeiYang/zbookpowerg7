@@ -373,7 +373,7 @@
 			<key>DisableVariableWrite</key>
 			<false/>
 			<key>DiscardHibernateMap</key>
-			<false/>
+			<true/>
 			<key>EnableForAll</key>
 			<false/>
 			<key>EnableSafeModeSlide</key>

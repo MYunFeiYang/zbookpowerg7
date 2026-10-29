@@ -236,6 +236,23 @@ elif hits(val, 0x58, 0x59):
 else:
     p("rtcfx_exclude=%s：放开 0x58/0x59 校验和与 0x80–0xAB 密钥区（其余仍受保护）" % val)
 
+# 6d 唤醒阶段的内存映射（2026-10-29 黑屏实测后的新增检查）
+# OC 一旦认出休眠唤醒（HibernateMode=NVRAM），boot.efi 必然走恢复流程；
+# 恢复要求物理内存布局与写镜像时一致。DiscardHibernateMap=true 让 XNU 忽略
+# 固件新给的映射、直接采用镜像里的那份（OC 文档：Windows S4 亦要求如此）。
+try:
+    bq = d['Booter']['Quirks']
+    if bq.get('DiscardHibernateMap'):
+        p("DiscardHibernateMap=true（恢复时复用镜像内的内存映射）")
+    else:
+        w("DiscardHibernateMap=false ⇒ 恢复会采用固件新映射；映射一变就挂在恢复段（黑屏、无 fallback）")
+    if bq.get('RebuildAppleMemoryMap'):
+        w("RebuildAppleMemoryMap=true（OC 每次开机重建映射，与恢复所需的一致性相冲，是下一个待改项）")
+    else:
+        p("RebuildAppleMemoryMap=false（不重建映射，与恢复要求一致）")
+except Exception as e:
+    w("无法读取 Booter/Quirks：%s" % e)
+
 # 7 rtc-blacklist + AppleRtcRam（固件层，只拦 EfiBoot 的 EFI_RTC 访问，不拦内核写入）
 try:
     bl = d['NVRAM']['Add']['4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102']['rtc-blacklist']
