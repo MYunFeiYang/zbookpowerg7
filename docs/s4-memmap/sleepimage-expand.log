@@ -1,0 +1,5 @@
+--- 2026-10-29 15:41:11 ---
+before: size=1073741824 blocks=2097152
+target: 8 GiB
+hw.memsize: 17179869184
+wired: 983355.
