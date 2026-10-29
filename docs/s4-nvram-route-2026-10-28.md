@@ -3389,3 +3389,63 @@ ls -l /var/vm/sleepimage # 不存在属正常
 
 **回滚点**：`cp EFI/OC/config-2026-10-29-1948-pre-d7.plist EFI/OC/config.plist`（并回写 ESP）。
 **不可逆风险**：无。删 sleepimage 是 Apple 官方认可的安全操作（会自动重建）。
+
+---
+
+### 3z.25. D7 已生效，但镜像重建后仍是 1 GiB（2026-10-29 20:10）
+
+#### 一、D7 生效确认
+
+`nvram boot-args` 实测：
+
+```
+-v -igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall
+revpatch=sbvmm rtcfx_exclude=0E-57,5A-7F keepsyms=1 -vi2c-force-polling
+```
+
+`-hbfxforce` / `hfile=` **均已消失**，boot 时间 20:06:44。D7 达成。
+
+#### 二、★ 关键事实：删掉后系统立刻重建，仍是 1 GiB
+
+```
+-rw------T 1 root wheel 1073741824 2026-10-29 20:07 sleepimage
+```
+
+mtime 20:07 = 开机后约 1 分钟内生成。⇒ **不是文件残留，是内核主动按 1 GiB 创建**。
+`ioreg` 同步复核：`Hibernate File Min = 1073741824`，`Hibernate File = /var/vm/sleepimage`。
+
+#### 三、1 GiB 是不是 macOS 26 的新策略？——不是
+
+三份独立公开资料（CleanWithCrumb、IsItSafeToDelete、Digitash）与 osxdaily/CNET 口径一致：
+**sleepimage 大小应等于物理内存**（16 GB 机器 → 约 16 GB）；均未提及 Tahoe 改了此策略。
+Digitash 另提到 Apple Silicon 上可能接近 0 字节，但**本机是 Intel**，不适用。
+
+⇒ 1 GiB / 16 GB = 6.25%，判定为异常。
+
+#### 四、内核里也没有 `hfilesize` 参数可以解释它
+
+`strings /System/Library/Kernels/kernel | grep -E '^(hfile|hibernatefile|hibernatemode)$'`
+只有这三条，**没有 `hfilesize`**。⇒ 1 GiB 不是 boot-arg 设的，是内核自身计算/硬编码行为。
+
+#### 五、下一步 D9：用 `hibernatemode 3` 做"NVRAM 是否写入"的直接观测（不重启、不断电）
+
+设计理由：`hibernatemode 25` 写完就断电，无法在睡眠后检查 NVRAM；
+换成 `hibernatemode 3`（写镜像但保持内存供电）+ `standby 0`（禁止转 S4 断电），
+睡一次再唤醒，就能**直接看 `boot-image-key` 三个变量有没有被写进 NVRAM**，同时看 `sleepimage` 是否增长。
+
+```
+sudo pmset -c hibernatemode 3 standby 0 autopoweroff 0
+sudo pmset sleepnow
+```
+
+**判据矩阵**：
+
+| 唤醒后看到 | 结论 |
+|---|---|
+| NVRAM 有三变量 **且** sleepimage ≈16 GB | 写镜像与写元数据在 mode 3 下都成功 ⇒ mode 25 的断电才是断点 |
+| NVRAM 有三变量 **但** sleepimage 仍 1 GiB | 元数据写入正常，尺寸不阻碍 ⇒ 死点在恢复侧 |
+| NVRAM **无**三变量 | 写镜像阶段根本没走完 ⇒ 1 GiB 尺寸限制是首要嫌疑 |
+| 唤醒后直接 panic | mode 3 也坏 ⇒ 与休眠模式无关，是 restore 路径本身 |
+
+**风险**：`hibernatemode 3` + `standby 0` 不会断电，最坏情况是唤醒黑屏但机器还在（不 panic、不丢数据）。
+**回滚**：`sudo pmset -c hibernatemode 25`（若要继续测 S4）。
