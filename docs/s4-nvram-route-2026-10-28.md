@@ -3724,3 +3724,92 @@ Hibernate restore error %x @%s:%d      ← 三次 panic 用的就是它
 
 配套动作：灯亮起来、登录之后立刻跑
 `pmset -g log | grep "Wake Requests" | tail -2`，把这一次排的闹钟 deltaSecs 和实测间隔对账。
+
+---
+
+### 3z.29. ★ RTC 闹钟假设正式证伪 —— 内核早就把它禁掉了（2026-10-29 20:34）
+
+#### 一、`Kernel/Patch` 里唯一一条就是它，且一直启用
+
+`EFI/OC/config.plist` → `Kernel/Patch` 共 **1 条**：
+
+```
+Enabled    = true
+Comment    = Disable RTC wake scheduling
+Identifier = com.apple.driver.AppleRTC
+Base       = __ZN8AppleRTC18setupDateTimeAlarmEPK11RTCDateTime
+Find       = (空)
+Replace    = C3            ← x86 的 ret
+Count      = 1  Limit = 0  Skip = 0
+MinKernel  = 19.0.0   MaxKernel = (空)   Arch = Any
+```
+
+- `Find` 为空 ⇒ OpenCore 直接在 `Base` 符号地址写入 `Replace`。
+- `C3` = `ret`，即 `AppleRTC::setupDateTimeAlarm(RTCDateTime const*)` **函数入口立刻返回**。
+- ⇒ **内核永远不会把任何唤醒时间写进 RTC 硬件**。`pmset -g sched` 里那些
+  `com.apple.alarm.user-invisible-*` 只是 `powerd` 的账面记录，落到硬件那一步被直接跳过。
+
+#### 二、补丁不是死配置：符号存在、kext 已加载
+
+`strings` 在 `.kc` 上取不到（容器格式），改用二进制 grep：
+
+| 文件 | `setupDateTimeAlarm` | `AppleRTC` |
+|---|---|---|
+| `BootKernelExtensions.kc` | **3 处** | 13 处 |
+| `SystemKernelExtensions.kc` | 0 | 0 |
+
+```
+kmutil showloaded --list-only | grep AppleRTC
+→ 83  0 0xffffff8001c25000 0x5324 0x5324 com.apple.driver.AppleRTC (2.0.1)
+```
+
+⇒ 符号在 BootKC 中存在、kext 已加载 ⇒ OC 能解析到 `Base`，补丁会实际写入 `C3`。
+
+#### 三、它从第一版 EFI 就在，从未关闭
+
+```
+6cb1b20 2024-10-10 init          ← 首次引入
+9ebfa57 2024-11-17 update
+496fe15 2025-06-22 修复深度空闲
+```
+
+后续若干提交（`f27dc63`/`42895ac`/`25fd013` 等）对该条只有**缩进/序列化差异**，`Enabled` 从未改成 false。
+
+#### 四、⇒ 3z.28 §四 的「107 秒闹钟上电」时间线**作废**
+
+既然从 2024-10 起闹钟就没有被写进硬件，那么**每一次"灯灭后自己亮"都发生在闹钟被禁的条件下**。
+RTC 闹钟这条线彻底排除，连同 3z.28 §四 的拟合一起撤回。
+
+#### 五、时间线需要重算：断电视作「瞬间」
+
+若 16 GB 镜像的同步 polled 写入耗时约 2 分钟（DRAM-less SN570，写入速率未知），
+则真正的断电时刻在 **20:17:3x**，而 boot.efi 是 20:17:34 ⇒ **断电后几秒就自亮**。
+
+这个版本同时解释了另外两件事：
+1. 与你最早的描述「电源指示灯黑了之后马上又亮」一致；
+2. 本次 RTC 没有归零、没报 005 —— 因为只断了十几秒，电容/电池撑得住。
+
+#### 六、剩余唯一可能：固件 / EC 层
+
+软件侧（macOS 排程、OpenCore、ACPI `_PRW`、USB/键盘/网络唤醒）已全部排除，
+剩下的只能发生在「主电源轨被切断再重建」的那一瞬间，属 HP 固件/EC 行为。
+
+**待查（BIOS F10 → Advanced → Power Management Options）**：
+
+| 选项 | 为什么要看 |
+|---|---|
+| `Power On When AC Detected` / `AC Recovery` | AC 瞬间跌落再恢复会被当成"插电"而自动开机 |
+| `Wake On LAN`（含 S4/S5 WOL） | 固件级 WOL 独立于 macOS 的 `womp` |
+| `Power On from Keyboard Ports` | 合盖压键可触发 |
+| `Scheduled Power-On` / `BIOS Power-On` | 固件自带定时开机 |
+
+#### 七、唯一还缺的观测：灯灭 → 灯亮的**实际间隔**
+
+| 实测间隔 | 结论 |
+|---|---|
+| **几秒（< 10 s）** | 断电动作本身触发回电 ⇒ 固件/EC，对应上表第一项 |
+| **约 90–230 s 且每次不同** | 存在非 macOS 的定时唤醒源 ⇒ 固件定时开机 / 外设 |
+| 基本固定值（如整分钟） | 固件 `Scheduled Power-On` |
+
+配套：灯亮登录后立刻 `pmset -g log | grep "Wake Requests" | tail -2`，
+但注意——由于本补丁，这些账面排程**不代表硬件真的被写过**，只能作为参考。
