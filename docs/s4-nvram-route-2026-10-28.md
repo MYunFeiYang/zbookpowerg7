@@ -726,3 +726,52 @@ and assume that it did not change after waking from hibernation*；Windows S4 �
 
 **判据升级**：黑屏时按 Caps Lock——
 指示灯能亮灭 = 内核活着（问题在显示）；毫无反应 = 真挂死（问题在恢复）。
+
+## 3i DiscardHibernateMap 无效；改 RebuildAppleMemoryMap（2026-10-29 10:05）
+
+**09:55 那一轮**（已修正用户口误：电源灯**灭过**）
+
+```
+09:54:58  Display is turned off
+09:55:28  Entering Sleep state due to 'Software Sleep pid=217'   Using AC
+09:55:29  Wake Requests … UserWake deltaSecs=59 wakeAt=09:56:29
+                            info="com.apple.alarm.user-invisible-GaugingMitigationActions,104"
+本次开机：09:57:38（无 Start powerd 记录 = 上次为非正常断电）
+```
+
+三条观察：选择界面**不出现**、电源灯**灭过**、黑屏时 **Caps Lock 灯无反应**。
+
+- 灯灭 ⇒ S4 真的断电了；选择界面不弹 ⇒ OC 又认了（NVRAM 腿第二次验证）；
+- **Caps Lock 完全无反应 ⇒ 内核从未跑起来** ⇒ 这不是「恢复了但屏没亮」，是死在 **boot.efi 装载镜像**阶段，
+  与「没有 Apple 标志」互相印证（UI 都还没画出来）。
+- `DiscardHibernateMap=true` 对这个症状**无效**，已判定。
+
+**顺带排除 FileVault**：`fdesetup status` = Off，`diskutil apfs list` 五个卷 `FileVault: No`
+⇒ 不是「读不了加密卷」这类原因。
+
+**本次改动（`Booter/Quirks`）**
+
+| 键 | 原 | 新 | 理由 |
+|---|---|---|---|
+| `RebuildAppleMemoryMap` | true | **false** | 镜像必须落回写盘时记录的物理地址；OC 每次开机重建映射会移动/占用这些区域 ⇒ 装载当场死、UI 都来不及画。社区同症状处方（T530 issue #48、Dell 5550 #10）都是置 false |
+| boot-args | — | 前置 `-v` | 纯观察项：恢复路径若打印任何文字就能定位；不改变行为 |
+
+**风险与回滚（已就位）**
+
+`RebuildAppleMemoryMap=false` 会改变每次开机的内存映射，**存在开不了机的可能**（OC 文档也写明这一族
+quirk「即使在相似机器上也没有确定做法」）。回滚件：
+
+```
+/Volumes/ESP/config.plist.safe                         # 放在 ESP 根，避开 EFI/OC 的单向镜像（会同步删除）
+docs/backups/config-2026-10-29-knowngood.plist         # 仓库内副本（Discard=false / Rebuild=true，已验证可启动）
+```
+
+若开不了机：OC 选择界面 → **空格**（`HideAuxiliary=true` 会藏 Recovery）→ Recovery → 终端：
+
+```
+diskutil mount disk0s1
+cp /Volumes/ESP/config.plist.safe /Volumes/ESP/EFI/OC/config.plist
+```
+
+**注意**：`/Volumes/ESP/EFI/OC/config.plist.safe` 会被 EFI→ESP 的单向镜像删掉（仓库里没有同名文件，
+镜像连删除一起同步）。所以回滚件必须放在 `EFI/OC/` 之外。
