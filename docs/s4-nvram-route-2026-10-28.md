@@ -2649,3 +2649,35 @@ sudo pmset -a hibernatemode 0 standby 0 autopoweroff 0
 ```
 
 需要做 S4 实验时再单独 `sudo pmset -a hibernatemode 25` 并 `s4-arm.sh arm`，两者不要混。
+
+---
+
+### §3z.19 D5 实验：禁用 NVMeFix + hibernatemode 29（2026-10-29 17:30）
+
+#### 改动
+- `Kernel/Add[11]`（NVMeFix.kext）`Enabled: true → false`，深递归 diff 确认**仅此一处**。
+- 备份 `docs/backups/config-2026-10-29-1727-pre-nvmefix.plist`，ESP 上留 `config.plist.bak-nvmefix`。
+- 同步 ESP，两侧 sha `f5dbfdc7…27ea5b7` 一致。
+- 运行时 `pmset -a hibernatemode 29 standby 0 autopoweroff 0`（29 = 25 但跳过镜像加密）。
+
+#### 依据
+1. **NVMeFix 会重写控制器 APST 表**（二进制里 `APST unsupported` / `Failed to enable APST` / `-nvmefaspm`），而本机盘
+   WD Blue SN570 1TB (FW 234100WD) 是 DRAM-less + HMB，上游 issue `kvic-z/SsdPmEnabler#24` 记录真 Mac 换 SN570 后
+   合盖数小时必 panic、去掉 SsdPmEnabler 即恢复 ⇒ 该盘与 macOS 低功耗态的配合有实证问题。
+2. `hibernatemode 29` 与 25 的差别是**不加密 hibernate image**，跳过 `cryptvars` 解密路径。
+
+#### 为什么 HibernationFixup 在这条链上无效（已确认，别再指望它）
+panic backtrace：
+```
+_hibernate_machine_init ← _ml_hibernate_active_post ← _IOCPURunPlatformActiveActions ← _acpi_sleep_kernel
+```
+这是**唤醒后第一个 CPU 起来时**执行，IOService 树尚未恢复。HibernationFixup 的 PCI Command 补位挂在
+`IOMachineRestore`（`kMachineRestoreDehibernate`），**比 panic 点晚一个阶段**，来不及执行。
+⇒ `-hbfxforce` / `hbfx-patch-pci` 对本故障无效，无需再调。
+
+#### 判据（不变）
+1. 新日志必须出现 `[EB|H:IS] 1`，否则这轮无效；
+2. 现象：黑屏+复位+005 = 仍失败；panic 但有新错误码 = 推进了；正常亮屏 = 成了。
+
+#### 注意
+**不要用 `s4-arm.sh arm`** —— 它会把 `hibernatemode` 强制改回 25，冲掉本实验的 29。
