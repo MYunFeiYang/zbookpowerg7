@@ -1172,7 +1172,7 @@
                 <key>HibernateMode</key>
                 <string>NVRAM</string>
                 <key>HibernateSkipsPicker</key>
-                <true/>
+                <false/>
                 <key>HideAuxiliary</key>
                 <true/>
                 <key>InstanceIdentifier</key>
@@ -1198,7 +1198,7 @@
                 <key>TakeoffDelay</key>
                 <integer>500</integer>
                 <key>Timeout</key>
-                <integer>5</integer>
+                <integer>0</integer>
             </dict>
             <key>Debug</key>
             <dict>
@@ -1285,7 +1285,30 @@
                 <false/>
             </dict>
             <key>Tools</key>
-            <array/>
+            <array>
+                <dict>
+                    <key>Arguments</key>
+                    <string></string>
+                    <key>Auxiliary</key>
+                    <false/>
+                    <key>Comment</key>
+                    <string>S4 memmap sampling</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>Flavour</key>
+                    <string>OpenShell:UEFIShell:Shell</string>
+                    <key>FullNvramAccess</key>
+                    <false/>
+                    <key>Name</key>
+                    <string>OpenShell</string>
+                    <key>Path</key>
+                    <string>Tools/OpenShell.efi</string>
+                    <key>RealPath</key>
+                    <false/>
+                    <key>TextMode</key>
+                    <true/>
+                </dict>
+            </array>
         </dict>
         <key>NVRAM</key>
         <dict>

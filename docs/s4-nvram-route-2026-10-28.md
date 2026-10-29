@@ -1172,3 +1172,60 @@ RESET:FAIL:POSTEXITBS              ← ExitBootServices 之后复位的专用标
 A 优先：它是把"猜地址"变成"读地址"的唯一动作，且无论结果如何都能收敛问题——
 一致 ⇒ 问题在内核恢复代码与硬件状态（IGPU 等在断电后复位），本机无解；
 不一致 ⇒ 拿到具体差异区，`ReservedMemory` 才有目标。
+
+## 3p 执行方案 A：memmap 冷启动 vs S4 恢复态对比（2026-10-29 13:13）
+
+§3o 把死点缩到「boot.efi 交给 `hibernate_kernel_entrypoint()` 之后」。剩下唯一能直接检验的事，
+是确认**S4 恢复后的物理内存布局与冷启动是否一致**。本节是把这件事做成可重复采样的动作。
+
+### 采样点选在 picker，语义是「boot.efi 的上游输入」
+
+`Misc/Tools` 里跑 Shell 时，OC 的 `Booter/Quirks`（含 `RebuildAppleMemoryMap` 等）**尚未应用**——
+那些处理发生在选定条目、`OcBooterSupport` 阶段。所以 picker 里的 `memmap` 反映的是
+**OC 给 boot.efi 的输入布局**，正是需要对比的量。冷启动与 S4 恢复两条路径的采样点语义完全一致。
+
+并且 OC 的 Booter 变换是确定性的：输入相同 ⇒ 输出相同。因此「输入一致」可以支撑「boot.efi 看到的一致」。
+
+**局限（必须写明）**：仍然看不到 boot.efi 装页那一刻的真实映射。它看的是上游。
+但足以二分——一致 ⇒ 固件布局没问题，问题在内核恢复代码与断电后硬件状态；不一致 ⇒ 固件侧坐实。
+
+### 配置改动（三键 + 一个工具 + 一个脚本）
+
+| 项 | 改前 | 改后 | 理由 |
+|---|---|---|---|
+| `Misc/Tools` | `<array/>` 0 条 | 1 条 `OpenShell`（`Tools/OpenShell.efi`，`Auxiliary=false`、`TextMode=true`、`Enabled=true`） | `OpenShell.efi` 早在 ESP 上（1,187,840 B），只是没入口。`Auxiliary=false` 才能在 `HideAuxiliary=true` 下显示 |
+| `Misc/Boot/HibernateSkipsPicker` | `true` | `false` | 恢复时停在 picker 才能进 Shell 采样 |
+| `Misc/Boot/Timeout` | `5` | `0` | 无限等待，避免 5 秒自动跳过导致采样失败 |
+
+新增 `EFI/OC/Tools/startup.nsh`：UEFI Shell 启动时自动执行，`memmap > memmap.txt` 存文件
+（屏幕上也打一份供拍照兜底），无需手抄。
+
+新增 `EFI/scripts/s4-memmap.py`：`status` / `save cold|s4` / `diff`。
+解析兼容两种排版（旧 `Type Start-End Pages Attrs`、新 `Start-End Pages Attrs Type`），
+按 `(start,end)` 建表比对，输出「仅基线有 / 仅 S4 有 / 地址同类型变 / 差异区间汇总」。
+
+### 采样流程
+
+1. 重启 → picker（`Timeout=0` 会一直等）→ 选 **OpenShell** → 自动跑 `startup.nsh` → 屏幕出现 memmap
+   → 输 `exit` 回 picker → 选 macOS 正常进系统
+2. 进系统后：`python3 EFI/scripts/s4-memmap.py save cold`
+3. `bash EFI/scripts/s4-arm.sh arm` → 菜单睡眠
+4. 恢复时 picker 会**必然出现**（`SkipsPicker=false`），这是预期，不是失败
+   → 选 **OpenShell** → 采样 → `exit` → 选 macOS 继续恢复（仍会黑屏，已知）
+5. 强制重启进系统后：`python3 EFI/scripts/s4-memmap.py save s4` → `diff`
+
+### 判读矩阵
+
+| diff 结果 | 结论 | 下一步 |
+|---|---|---|
+| **完全一致** | 固件在 S4 后恢复了相同布局 ⇒「绝对物理地址还原失败」假设被推翻 | 问题落内核恢复代码 + 断电后硬件状态（IGPU 等），本机无解，S4 收工 |
+| **存在差异** | 固件布局确实变了 ⇒ 假设成立 | 差异区间即 `Booter/ReservedMemory` 候选目标，首次有了具体地址 |
+
+### 已知风险与退路
+
+- `HibernateSkipsPicker=false` 下恢复时必弹 picker，**不再能用「不弹 picker」当OC 认出休眠的判据**；
+  但该判据已有更硬的替代：日志 `#[EB|H|IS] 1`（§3o 实测）。
+- `Timeout=0` 若无人操作会一直停在 picker，属预期。
+- 采样用 `memmap.txt`，两次之间由 `save` 自动把源文件改名为 `memmap-<tag>-sampled.txt`，避免覆盖混淆。
+- 万一启动异常：Windows 下把 `/Volumes/ESP/config.plist.safe`（`60deb40d`，09:17 验证可启动）覆盖回去；
+  本轮改动前版本另存 `docs/backups/config-2026-10-29-1313-memmap-probe.plist`（`ecfd4cab`）。
