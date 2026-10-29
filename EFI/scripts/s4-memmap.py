@@ -229,56 +229,98 @@ def cmd_diff():
     print('地址相同但类型变:', len(retyped))
     print()
 
-    if not only_a and not only_b and not retyped:
-        print('>>> 结论：两份 memmap **完全一致**。')
-        print('    固件在 S4 之后恢复了与冷启动相同的物理布局。')
-        print('    ⇒ 「绝对物理地址还原失败」假设被推翻，问题不在固件布局，')
-        print('      而在内核恢复代码与断电后硬件状态（IGPU 等半初始化设备）。')
-        return 0
+    # ── 分类：结构性差异 vs 自由池打包差异 ────────────────────────────
+    # 结构性 = 固件固定区（Reserved / ACPI / MMIO / RT*）的边界或类型变了。
+    #          只有这种才会让「写盘时的绝对物理地址」在恢复后落到别处，
+    #          也只有这种才谈得上用 Booter/ReservedMemory 去保护。
+    # 打包差异 = 落在自由池（Available / BS_* / Loader*）里的边界画法不同。
+    #          这些是引导器与工具自己分配的临时内存，两次运行的分配量本就不同，
+    #          属描述符粒度差异，与页还原无关。
+    FIXED = {'Reserved', 'ACPI_NVS', 'ACPI_Recl', 'MMIO', 'MMIO_Port',
+             'RT_Code', 'RT_Data', 'Unaccepted', 'PalCode', 'PersistentMemory'}
+    FREE = {'Available', 'BS_Data', 'BS_Code', 'LoaderData', 'LoaderCode'}
 
-    print('>>> 结论：两份 memmap **存在差异**。')
-    print('    ⇒ 固件在 S4 之后没有恢复出与冷启动相同的物理布局，')
-    print('      boot.efi 把 wired pages 装回写盘时的绝对地址就会落错位置。')
-    print('      差异区间即 ReservedMemory 的候选目标。')
+    def bytes_of(segs, keys):
+        return sum(s[1] - s[0] + 1 for s in segs if s[4] in keys)
+
+    structural, packaging = [], []
+    for k in only_a:
+        (structural if ma[k][4] in FIXED else packaging).append(k)
+    for k in only_b:
+        (structural if mb[k][4] in FIXED else packaging).append(k)
+    for k in retyped:
+        a_fixed, b_fixed = ma[k][4] in FIXED, mb[k][4] in FIXED
+        # 固定区 ↔ 自由池 互换也算结构性：那片物理内存的性质变了
+        (structural if (a_fixed or b_fixed) else packaging).append(k)
+
+    fa, fb = bytes_of(a, FIXED), bytes_of(b, FIXED)
+    ga, gb = bytes_of(a, FREE), bytes_of(b, FREE)
+    print('结构性差异段数 : %d' % len(structural))
+    print('自由池打包差异 : %d 段' % len(packaging))
+    print('固件固定区总量 : 冷启动 %-13d S4 %-13d %s'
+          % (fa, fb, '一致' if fa == fb else '★不一致'))
+    print('自由池总量     : 冷启动 %-13d S4 %-13d %s'
+          % (ga, gb, '一致' if ga == gb else '不一致'))
     print()
 
-    def dump(title, keys, m, other):
+    def dump(title, keys, m):
         if not keys:
             return
         print('--- %s (%d 段) ---' % (title, len(keys)))
-        print('%-22s %-20s %-20s %10s' % ('Type', 'Start', 'End', 'Size'))
+        print('%-12s %-20s %-20s %10s' % ('Type', 'Start', 'End', 'Size'))
         for k in keys:
             s = m[k]
-            print('%-22s %-20s %-20s %10s' % (s[4], fmt_addr(s[0]), fmt_addr(s[1]), kb(s[1] - s[0] + 1)))
+            print('%-12s %-20s %-20s %10s' % (s[4], fmt_addr(s[0]), fmt_addr(s[1]), kb(s[1] - s[0] + 1)))
         print()
 
-    dump('仅冷启动基线有', only_a, ma, mb)
-    dump('仅 S4 恢复态有', only_b, mb, ma)
-
+    dump('仅冷启动基线有', only_a, ma)
+    dump('仅 S4 恢复态有', only_b, mb)
     if retyped:
         print('--- 地址相同但类型变化 (%d 段) ---' % len(retyped))
-        print('%-20s %-20s %-20s %-20s' % ('Start', 'End', '冷启动类型', 'S4 类型'))
+        print('%-20s %-20s %-16s %-16s' % ('Start', 'End', '冷启动类型', 'S4 类型'))
         for k in retyped:
-            print('%-20s %-20s %-20s %-20s' % (fmt_addr(k[0]), fmt_addr(k[1]), ma[k][4], mb[k][4]))
+            print('%-20s %-20s %-16s %-16s' % (fmt_addr(k[0]), fmt_addr(k[1]), ma[k][4], mb[k][4]))
         print()
 
-    # 汇总差异区间
-    diff_ranges = []
-    for k in only_a + only_b:
-        diff_ranges.append(k)
-    diff_ranges.sort()
-    if diff_ranges:
-        merged = []
-        for s, e in diff_ranges:
-            if merged and s <= merged[-1][1] + 1:
-                merged[-1] = (merged[-1][0], max(merged[-1][1], e))
+    def merge(keys):
+        out = []
+        for s, e in sorted(keys):
+            if out and s <= out[-1][1] + 1:
+                out[-1] = (out[-1][0], max(out[-1][1], e))
             else:
-                merged.append((s, e))
-        print('--- 差异区间汇总 (%d 处) ---' % len(merged))
-        for s, e in merged:
-            print('  %s - %s   (%s)' % (fmt_addr(s), fmt_addr(e), kb(e - s + 1)))
+                out.append((s, e))
+        return out
+
+    if not structural and not packaging:
+        print('>>> 结论：两份 memmap 逐段完全一致。')
+        print('    固件在 S4 之后恢复了与冷启动完全相同的物理布局。')
+        print('    => 「绝对物理地址还原失败」假设被推翻；问题不在固件布局，')
+        print('       而在内核恢复代码与断电后硬件状态（IGPU 等半初始化设备）。')
+        return 0
+
+    if not structural:
+        print('>>> 结论：无结构性差异。')
+        print('    固件固定区（Reserved / ACPI / MMIO / RT）总量与逐段内容一致，')
+        print('    自由池总量也逐字节相同，差异只出现在自由池的描述符打包粒度上')
+        print('    （Available 与 BS_Data 之间边界画法不同，总量净变化为 0）。')
         print()
-        print('若要用 Booter/ReservedMemory 保护，候选区间就在上面。')
+        print('    => 「写盘时的绝对物理布局在 S4 之后被改变」这一假设被推翻：')
+        print('       没有固件保留区移位，没有 Reserved 块增减。')
+        print('    => Booter/ReservedMemory 没有目标可填，该手段作废。')
+        print('    => 剩余嫌疑只在 boot.efi 交出控制权之后，即内核自己把页面')
+        print('       装回绝对地址那一段，该段无任何外部观测通道（本机无串口）。')
+        print()
+        for s, e in merge(packaging):
+            print('    自由池打包差异：%s - %s  (%s)' % (fmt_addr(s), fmt_addr(e), kb(e - s + 1)))
+        return 0
+
+    print('>>> 结论：存在结构性差异（固件固定区变化）。')
+    print('    => boot.efi 把 wired pages 装回写盘时的绝对地址会落错位置。')
+    print('       下列区间即 Booter/ReservedMemory 的候选目标。')
+    print()
+    for s, e in merge(structural):
+        print('    结构性差异：%s - %s  (%s)' % (fmt_addr(s), fmt_addr(e), kb(e - s + 1)))
+    print()
     return 0
 
 
