@@ -1229,3 +1229,28 @@ A 优先：它是把"猜地址"变成"读地址"的唯一动作，且无论结�
 - 采样用 `memmap.txt`，两次之间由 `save` 自动把源文件改名为 `memmap-<tag>-sampled.txt`，避免覆盖混淆。
 - 万一启动异常：Windows 下把 `/Volumes/ESP/config.plist.safe`（`60deb40d`，09:17 验证可启动）覆盖回去；
   本轮改动前版本另存 `docs/backups/config-2026-10-29-1313-memmap-probe.plist`（`ecfd4cab`）。
+
+### 3p-补 `Misc/Tools/Path` 语义实录（2026-10-29 14:05）
+
+首版把 `Path` 写成 `Tools/OpenShell.efi`，picker 里能看到条目但选不进去。
+13:58 那次启动的 OC 日志（`ESP/opencore-2026-10-29-055846.txt`）给出直接原因：
+
+```
+00:000 OC: Tool Tools\Tools\OpenShell.efi cannot be found!
+00:003 OCB: Custom read failed - Not Found
+00:006 OCB: LoadImage failed - Not Found
+（同一组在其后 05:233 / 10:135 / 19:950 各重试一次，共 4 次）
+```
+
+**OC 自己会拼 `Tools\` 前缀** ⇒ `Path` 实际基准是 `EFI/OC/Tools/`，只能写文件名：
+`Path` = `OpenShell.efi`。
+
+文档侧同构验证：OpenCore 手册里 `ACPI/Add/Path` 的原文是「ACPI tables are loaded from
+the `OC/ACPI` directory」，即配置里只写 `DSDT.aml` 这类相对名，子目录由加载器拼。
+`Misc/Tools` 遵循同一约定。**文档与实测一致。**
+
+同时排除的：`OpenShell.efi` 本身没问题——`file` 与 PE 头实测为
+**PE32+ / x86_64 / Subsystem=10 (EFI Application) / 1,187,840 B**，不是坏镜像。
+
+操作流程相应调整为「先验证 Shell 可用，再走完整采样」：重启 → picker 选 OpenShell →
+看到 memmap 或 Shell 提示符 → `exit` → 进系统 → 检查 `memmap.txt`。这一步通过后再 arm 睡眠。
