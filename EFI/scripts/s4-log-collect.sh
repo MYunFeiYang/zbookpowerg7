@@ -1,24 +1,26 @@
 #!/bin/bash
 #
-# S4 恢复段日志采集 —— 读 ESP 上 OC 写的 opencore-*.txt，看 boot.efi 的
-# `AAPL: #[EB...]` 流停在哪一行。停住的那一行就是失败点。
+# S4 恢复段日志采集 —— 读 ESP 上 OC 写的 opencore-*.txt，用 boot.efi 自己的
+# `AAPL: #[EB...]` 流还原"恢复走到哪一步"。
 #
-# 为什么这份日志能看见恢复段（2026-10-29 12:50 实测坐实）
-#   Misc/Debug/AppleDebug=true  +  Target 含 0x04(DataHub) 与 0x40(文件)
-#   ⇒ boot.efi 自己的调试流被 OC 转发进 ESP 根目录的 opencore-<UTC时间>.txt。
-#   实测样本 opencore-2026-10-29-042738.txt 共 107 行，末行
-#   `AAPL: #[EB|LOG:EXITBS:START]` —— 覆盖到 ExitBootServices 之前最后一条。
-#   而 S4 恢复的关键动作（读镜像头 → 验签 → 解密 → 装回 wired pages → 拷 __HIB → 跳转）
-#   全部发生在 ExitBootServices **之前** ⇒ 这一段是完全可观测的。
+# 通道原理（2026-10-29 13:05 实测坐实）
+#   Misc/Debug/AppleDebug=true + Target 含 0x04(DataHub) 与 0x40(文件)
+#   ⇒ boot.efi 调试流被 OC 转发进 ESP 根目录的 opencore-<UTC时间>.txt。
 #
-# 判读（最重要的一条）
-#   末行含 `LOG:EXITBS:START`  ⇒ 该次启动顺利过了恢复段（或走的是冷启动），不是失败现场
-#   末行不含                  ⇒ 就是失败现场，末行即死点
-#   然后看最后几条 `EB.H.*`：
-#     EB.H.CHK  = 镜像头 / 校验
-#     EB.H.LV   = 装载与解密
-#     EB.H.ST   = 装回页面（这一步之后才需要物理地址）
-#     EB.H.EXIT = 恢复段收尾
+# ★ 判据（2026-10-29 13:10 重写：旧判据「末行含 EXITBS:START 就不是失败现场」是错的）
+#   恢复失败那次同样以 EXITBS:START 结尾——boot.efi 的日志能力到
+#   ExitBootServices 就断了，成功与失败在末行上不可区分。必须分段判读：
+#
+#     ① EB|H:IS] 1            认出休眠（0 = 冷启动）
+#     ② EB|H:BI <...>         拿到镜像所在设备路径
+#     ③ LOG:REAN:START/END    读回镜像并处理（END 前耗时 = 读盘耗时）
+#     ④ EB.H.HB|DT n m        HB 阶段结果
+#     ⑤ EB.H.HB|!] <- BS.Exit ExitBootServices **失败**才出现；没有 = 成功
+#     ⑥ LOG:EXITBS:START      交给内核前最后一条（之后无可观测能力）
+#
+#   ②③④ 齐 + ⑤ 缺 + ⑥ 有 ⇒ 恢复流程**全部成功**，死在 ExitBootServices 之后
+#   的内核恢复入口（hibernate_kernel_entrypoint），即页表/绝对物理地址还原。
+#   本机 2026-10-29 13:00 那次就是这个形态。
 #
 # 用法: bash EFI/scripts/s4-log-collect.sh [份数，默认3]
 #       只读，不改任何东西，不需要 root。
@@ -41,7 +43,8 @@ if [[ -z "$LOGS" ]]; then
   exit 1
 fi
 
-nz() { tr -d '\0' < "$1" | wc -c | tr -d ' '; }
+nz()  { tr -d '\0' < "$1" | wc -c | tr -d ' '; }
+txt() { tr -d '\0' < "$1"; }
 
 echo "=== ESP 上最新 $N 份 OC 日志（文件名时间是 UTC，+8 为北京时间）==="
 echo
@@ -59,40 +62,64 @@ for f in $LOGS; do
     continue
   fi
 
-  # boot.efi 日志首行时间
-  first=$(tr -d '\0' < "$f" | grep -am1 'LOG:INIT' | sed 's/.*LOG:INIT\] //')
+  T=$(txt "$f")
+
+  # ── 分段标记 ──
+  hib=0;  echo "$T" | grep -aqm1 '\[EB|H:IS\] 1' && hib=1
+  bi=0;   echo "$T" | grep -aqm1 '\[EB|H:BI\]'    && bi=1
+  rean_s=0; echo "$T" | grep -aqm1 'LOG:REAN:START' && rean_s=1
+  rean_e=0; echo "$T" | grep -aqm1 'LOG:REAN:END'   && rean_e=1
+  hbdt=0; echo "$T" | grep -aqm1 'EB\.H\.HB|DT'     && hbdt=1
+  bsexit=0; echo "$T" | grep -aqm1 'EB\.H\.HB|!].*BS\.Exit' && bsexit=1
+  exitbs=0; echo "$T" | grep -aqm1 'LOG:EXITBS:START' && exitbs=1
+  postfail=0; echo "$T" | grep -aqm1 'RESET:FAIL:POSTEXITBS' && postfail=1
+
+  first=$(echo "$T" | grep -am1 'LOG:INIT' | sed 's/.*LOG:INIT\] //')
   [[ -n "$first" ]] && echo "    起始: $first (UTC)"
+  last=$(echo "$T" | grep -a . | tail -1)
+  echo "    末行: ${last:0:150}"
+  echo "    分段: H:IS=1[$hib] H:BI[$bi] REAN开始[$rean_s] REAN结束[$rean_e] HB|DT[$hbdt] BS.Exit错[$bsexit] EXITBS[$exitbs]"
 
-  # 末一条非空行
-  last=$(tr -d '\0' < "$f" | grep -a . | tail -1)
-  echo "    末行: ${last:0:160}"
-
-  # 判读：是否越过 EXITBS
-  if tr -d '\0' < "$f" | grep -aq 'LOG:EXITBS:START'; then
-    echo "    ✔ 末段含 LOG:EXITBS:START ⇒ 该次启动**已越过恢复段**（不是失败现场）"
+  # ── 定性 ──
+  if [[ "$hib" -eq 0 ]]; then
+    echo "    → 冷启动（boot.efi 没认出休眠镜像，走的是正常启动）"
+  elif [[ "$rean_e" -eq 0 ]]; then
+    echo "    ★★ 认出休眠，但**没读完镜像**（缺 REAN:END）⇒ 死点在读盘/解密段 ★★"
+  elif [[ "$bsexit" -ne 0 ]]; then
+    echo "    ★★ 恢复流程走完，但 **ExitBootServices 失败** ⇒ 死点在退出引导服务 ★★"
+  elif [[ "$hbdt" -ne 0 && "$exitbs" -ne 0 ]]; then
+    echo "    ★★ 恢复流程**全部成功**（校验 / 读盘 / HB 阶段 / 退出引导服务），"
+    echo "       死在 ExitBootServices **之后**的内核恢复入口 ★★"
+    echo "       ⇒ 这一步是页表与绝对物理地址还原，与「交给内核的内存映射」直接相关"
   else
-    echo "    ★★ 末段**没有** LOG:EXITBS:START ⇒ 这就是失败现场，末行即死点 ★★"
+    echo "    ? 认出休眠但末行不在已知节点，需看全量日志"
   fi
+  [[ "$postfail" -ne 0 ]] && echo "    ⚠ 含 RESET:FAIL:POSTEXITBS（ExitBootServices 之后复位）"
 
-  # EB.H.* 序列
-  cnt=$(tr -d '\0' < "$f" | grep -ac 'EB\.H')
-  echo "    EB.H.* 条目数: $cnt"
+  # ── 休眠/恢复相关行（全量）──
+  cnt=$(echo "$T" | grep -acE 'H:IS|H:BI\]|H:WCK|H:BOOT|H:SIG|H:HBOPT|H:RDST|H:RDEND|EB\.H\.|REAN|EXITBS' || true)
   if [[ "$cnt" -gt 0 ]]; then
-    echo "    --- EB.H 序列（全量）---"
-    tr -d '\0' < "$f" | grep -a 'EB\.H' | sed 's/^/      /'
+    echo "    --- 休眠/恢复相关行（共 $cnt 条）---"
+    echo "$T" | grep -aE 'H:IS|H:BI\]|H:WCK|H:BOOT|H:SIG|H:HBOPT|H:RDST|H:RDEND|EB\.H\.|REAN|EXITBS' | sed 's/^/      /'
   fi
   echo
 done
 
-echo "=== 判读速查 ==="
+echo "=== 判读速查（模板取自本机 /System/Volumes/Preboot/*/System/Library/CoreServices/boot.efi）==="
 cat <<'EOF'
-  EB.H.IS  0        = 不是休眠启动（冷启动的正常值）
-  EB.H.IS  非0      = 认出休眠镜像状态
-  EB.H.CHK BM <hex> = 镜像头校验位图
-  EB.H.LV           = 装载/解密阶段
-  EB.H.ST           = 装回页面阶段 ← 到这一步才和「绝对物理地址」有关
-  LOG:EXITBS:START  = 恢复段走完、即将交接给内核（含此行的不是失败现场）
+  #[EB|H:IS] 0/1          0=冷启动  1=认出休眠
+  #[EB.H.CHK|BM] 0x..     镜像头校验位图，0 = 通过
+  #[EB|H:BI] <hex>        镜像所在设备路径
+  #[EB|H:SIG] 0x..        hibernate 签名
+  #[EB.H.HB|!] .. <- ..R MSWr   读 NVRAM 变量 MSWr 失败（实测不阻断流程）
+  LOG:REAN:START/END      读回镜像；间隔 = 读盘耗时（本机 534 ms）
+  #[EB.H.HB|DT] n m       HB 阶段结果
+  #[EB.H.HB|!] .. <- BS.Exit    ExitBootServices 失败（**没有这行 = 成功**）
+  LOG:EXITBS:START        交给内核前最后一条，之后无任何日志能力
+  RESET:FAIL:POSTEXITBS   ExitBootServices 之后复位（特殊失败标记）
 
-  若停在 EB.H.LV   ⇒ 密钥/解密问题，与地址无关
-  若停在 EB.H.ST   ⇒ 物理布局问题，此时才需要 UEFI Shell memmap 取地址
+  三种死点
+    缺 REAN:END                 ⇒ 读盘/解密段（密钥或代码签名）
+    有 BS.Exit                  ⇒ 退出引导服务段
+    以上都过、只到 EXITBS       ⇒ 内核恢复入口（页表/绝对物理地址还原）
 EOF

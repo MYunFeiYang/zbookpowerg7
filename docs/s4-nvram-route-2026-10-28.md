@@ -1040,3 +1040,135 @@ OC 文档里 `ReservedMemory` 的原文是：
 **结论：本机能动的层已经全部出局。** ⑥ 层（boot.efi 恢复内部）的两个有文档依据的候选，
 一个因本机无 CSM 失去方法、一个因白名单为空失去输入；加上诊断通道关闭（3e/3k），
 再往下只能是纯猜地址，代价是可能开不了机。S4 在本机到此为止。
+
+## 3n 归因定稿：固件支持 S4，卡点在「绝对物理地址还原」这条契约（2026-10-29 12:50）
+
+这一节只回答一个问题：**当前的固件能不能进 S4？进不去是配置问题还是固件问题？**
+
+### 事实侧：固件的 S4 能力齐备（四条，均为一手或官方）
+
+| # | 证据 | 读数 | 出处 |
+|---|---|---|---|
+| ① | 本机真实 BIOS 版本 | `firmware-revision=<00001901>` → LE `0x01190000` = **T75 01.25.00** | 本轮实测 `ioreg -p IODeviceTree -n efi -r -d 1 -w0` |
+| ② | Windows `powercfg /a` 原文 | *「此系统上有以下睡眠状态: 待机 (S0 低电量待机) 连接的网络 ／ **休眠** ／ 快速启动」*；S1/S2 明写**「系统固件不支持此待机状态」**，S4 无此备注 | `docs/firmware-facts-ledger.md` §8.1b（2026-09-20 Windows 侧只读导出） |
+| ③ | `hiberfil.sys` 在位且已配置 | `6,588,555,264 B` = 6.14 GiB ≈ 16 GiB RAM × 38.4%（Windows 默认 reduced 40%） | 本轮实测 `/Volumes/TZBOOK/hiberfil.sys` |
+| ④ | 固件升版未动 ACPI | 01.24.02 → 01.25.00 全部 **51 张 ACPI 表逐字节一致** ⇒ ②的 S4 声明在 01.25.00 上继续成立 | `docs/firmware-facts-ledger.md` §1.1 |
+
+外加用户一手见证：**Windows 与 Linux 在本机都能休眠并正常恢复**。
+
+⇒ **「固件不支持 S4」这个说法可以被 `powercfg /a` 直接推翻。** S4 声明有、休眠文件在用、断电与冷 POST 都正常。
+**HP 官方已把 01.25.00 标为最新**（ish_15558503，2026-08 芯片组固件安全更新）⇒ 刷固件无效。
+
+### 机制侧：同一个「S4」，两个恢复模型
+
+| | Windows / Linux 休眠 | macOS 休眠（hibernatemode 25） |
+|---|---|---|
+| 谁读镜像 | bootmgr / GRUB，**用户态软件** | **boot.efi**（BootX），不是内核 |
+| 页表 | 重建（可重定位） | **不重建**，内核页表直接从镜像恢复 |
+| 页落点 | 相对可调整 | **必须是写盘时的绝对物理地址**（`IOHibernateIO.cpp:78-88`） |
+| 跳转 | 正常内核入口 | `hibernate_kernel_entrypoint()`，**translation off** |
+| 对固件的要求 | 只需断电 + POST | 额外要求 **POST 后物理内存布局与写盘时逐字节一致** |
+
+Windows 天天成功，证明的是「①②③④⑤ 段固件没毛病」——这一点与本项目 3h 的实测完全一致
+（电源灯灭 = 真断电、冷 POST 正常、OC 认出休眠唤醒并跳过选择器）。**它证明不了 ⑥ 段。**
+
+### 配置侧：能动的键已穷尽，且每条都有实测或原文依据
+
+| 手段 | 判定 | 依据 |
+|---|---|---|
+| `Booter/Quirks/DiscardHibernateMap = true` | **无效** | 10:05 实测，症状不变（层错：作用于内核收到的映射，而挂在内核启动之前） |
+| `RebuildAppleMemoryMap = false` | **打坏普通启动** | 10:21 实测 panic；OC 文档原文 *"the Apple kernel will crash on boot"* |
+| `Booter/ReservedMemory` | **不可执行** | 文档要求 CSM 开/关两态映射对比取地址；本机 UEFI-only 无 CSM（HP 白皮书 919946-004 Table 1） |
+| `DevirtualiseMmio=false` / `MmioWhitelist` | **无输入** | 白名单 0 条；文档要求「需虚拟地址才能工作的 NVRAM/休眠区域」地址清单，本机无从取得 |
+| `Booter/Quirks/ResetHwSig` | **症状不符** | FACS 签名不符时 macOS 回落正常启动，本机是无 UI 硬挂 |
+| 诊断通道 | **官方关闭** | `wake-save-log=4` / `console=2` 在 OC 1.0.9 已 unavailable；`serial` 本机无串口 |
+
+### 断点定位（为什么能确定在 ⑥ 而不是更前/更后）
+
+Apple 的设计：boot.efi 若读不到镜像头或密钥对不上，**回落到正常启动**（能进系统、镜像丢弃）。
+本机是**无 UI 硬挂、Caps Lock 无反应、`last` 里没有任何登录会话** ⇒ 镜像头读到了、密钥对上了，
+死在**把 wired pages 装回绝对物理地址 / 拷 `__HIB`** 这一步。
+
+### 诚实边界
+
+无法直接观测「S4 恢复后的物理布局 vs 写盘时的布局」——该段唯一可信通道是串口（本机无）。
+所以「布局不一致」是由症状反推的**唯一剩余解释**，不是直接测到的量。
+严格表述：**已排除「配置可修」，未证实「布局必然不一致」，且已无手段分辨。**
+
+### 定性
+
+- ❌ 不是「固件不支持 S4」——`powercfg /a` 与 `hiberfil.sys` 直接否掉。
+- ❌ 不是「配置还没调对」——能在该段起作用的键已穷尽，且全部出局。
+- ✅ 是**「固件不提供 macOS 所需的绝对物理地址还原保证」这条契约缺失**，落在黑苹果引导层，
+  OC 已无手段补齐（补它需要地址，而地址来源已被无 CSM / 白名单为空双重切断）。
+
+**后续**：不动固件（已最新）、不再试键。日常用普通睡眠（5.5–5.6 %/h）+ 出门关机替代。
+
+## 3o ★★ 首次拿到恢复段完整分段证据：全流程成功，死在 ExitBootServices 之后（2026-10-29 13:00）
+
+这是 S4 攻关以来第一次**不是靠症状反推**，而是按 boot.efi 自己的分段标记读出死点。
+
+### 实验
+
+12:53 恢复 3h 基线（`Misc/Boot/HibernateMode`=`NVRAM`、`HibernateSkipsPicker`=`true`、
+boot-args 前置 `-hbfxdbg -hbfxforce hfile=/var/vm/sleepimage`、kext 换回 fork 1.5.4）。
+用户 13:00 arm 后睡眠，现象四段：电源灯灭 → 灯自己亮 → **OC 选择界面没出现** → 黑屏卡住。
+
+产生日志 `ESP/opencore-2026-10-29-050032.txt`（4596 B，UTC 05:00:32 = 北京 13:00:32）。
+同机 04:57:03（12:57）那份 8790 B 是重启后的冷启动，作天然对照组。
+
+### 分段证据（原文摘录，非解读）
+
+| 阶段 | 冷启动 04:57 的表现 | 恢复 05:00 的表现 | 判定 |
+|---|---|---|---|
+| 认出休眠 | `#[EB.H.IS|!] Err(0xE) <- RT.GV boot-signature`、`boot-image-key` 两条 NOT_FOUND | **无这两条**，直接 `#[EB|H:IS] 1` ×3 | **NVRAM 密钥在，OC 第 ⑤ 段成功** |
+| 镜像头校验 | `#[EB.H.CHK|BM] 0x0` | `#[EB.H.CHK|BM] 0x0` | 通过 |
+| 定位镜像 | 后接 `EB.H.LV|!] Err(0xE) <- RT.GV boot-image` ×3 + `RT.SV-` ×3 | `#[EB|H:BI] <02010c00d041030a…7fff0400>`（设备路径） | **拿到镜像位置** |
+| 签名 | — | `#[EB|H:SIG] 0x73696D65` | — |
+| 读回镜像 | 无 | `LOG:REAN:START` → **`LOG:REAN:END`（耗时 534 ms）** → `#[EB|H:RDEND]` | **镜像读完并处理** |
+| HB 阶段 | 无 | `#[EB.H.HB|DT] 3 0` | 完成 |
+| 退出引导服务 | `LOG:EXITBS:START` | `LOG:EXITBS:START` | **无 `EB.H.HB|!] … <- BS.Exit` ⇒ 成功** |
+| 之后 | 进系统 | 黑屏卡住，无任何日志 | 死在 EXITBS 之后 |
+
+两处非致命报错，均**不阻断流程**（其后仍有进度标记并继续）：
+
+- `#[EB.H.CHK|!] Err(0xE) <- BS.LocDP 5B27263B-9083-415E-889E-6432CAA9B813` — LocateDevicePath NOT_FOUND
+- `#[EB.H.HB|!] Err(0x84) <- 17407E5A-AF6C-4EE8-98A8-00210453CDD9.R MSWr` — 读 NVRAM 变量 `MSWr` 失败
+
+### 判据来源（可复验）
+
+日志模板全部取自本机 `boot.efi`（`/System/Volumes/Preboot/324C1FDC…/System/Library/CoreServices/boot.efi`，723512 B）的字符串表：
+
+```
+#[EB|H:IS] %d                      0=冷启动 1=认出休眠
+#[EB.H.CHK|BM] 0x%016qx            镜像头校验位图
+#[EB|H:BI] <%.*b>                  镜像设备路径
+#[EB.H.HB|DT] %d %d                HB 阶段结果
+#[EB.H.HB|!] %r <- BS.Exit         ← ExitBootServices 失败专用；日志里**没有**这一行
+LOG:EXITBS:START / EXITBS:END      ← EXITBS:END 在成功/失败两次里都没出现
+RESET:FAIL:POSTEXITBS              ← ExitBootServices 之后复位的专用标记；也没有
+```
+
+`EXITBS:END` 之所以两次都缺席：boot.efi 的日志能力经 Data Hub/文件，而 ExitBootServices
+之后这两条服务都已不可用 ⇒ **EXITBS 是观测能力的物理上限，末行相同不代表结果相同**。
+（这推翻了 12:53 版脚本「末行含 EXITBS:START 就不是失败现场」的判据，已重写。）
+
+### 死点定论
+
+**boot.efi 的恢复流程全部成功：认出休眠 → 密钥在 → 校验通过 → 定位镜像 → 读回并处理
+（534 ms）→ HB 阶段完成 → ExitBootServices 成功。黑屏发生在交给 `hibernate_kernel_entrypoint()`
+之后，即内核侧把页表与 wired pages 装回绝对物理地址、MMU 关闭状态下跳进内核的那一刻。**
+
+⇒ 与 12:50（§3n）的定性一致，但精度大幅提升：不再是"⑥ 段某处"，而是"⑥ 段的最后一跳"。
+**密钥、验签、读盘、解密、退出引导服务全部排除。**
+
+### 下一步仅剩两条，性质不同
+
+| 方案 | 需要什么 | 能证明什么 | 风险 |
+|---|---|---|---|
+| **A. memmap 冷启动 vs 恢复态对比** | 加 `Misc/Tools` 一条（`OpenShell.efi` 已在 ESP）；设 `HibernateSkipsPicker=false` 让恢复时弹 picker，在 picker 里进 Shell 跑 `memmap` | **直接验证「POST 后物理布局在两种路径下是否一致」**——这是"绝对物理地址"假设唯一的直接检验 | 只读命令，无破坏性；但需一次重启 + 一次睡眠 + 手动操作 |
+| B. `DevirtualiseMmio=false` | 单键，不需要地址 | 相关性弱（该 quirk 影响的是交给内核前的 MMIO 虚拟映射，而失败在 EXITBS 之后） | 置 false 可能打坏启动，有 `config.plist.safe` 兜底 |
+
+A 优先：它是把"猜地址"变成"读地址"的唯一动作，且无论结果如何都能收敛问题——
+一致 ⇒ 问题在内核恢复代码与硬件状态（IGPU 等在断电后复位），本机无解；
+不一致 ⇒ 拿到具体差异区，`ReservedMemory` 才有目标。
