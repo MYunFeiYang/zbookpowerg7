@@ -1931,3 +1931,30 @@ if (callbackHBFX->correct_pci_config_command && offset == WIOKit::PCIRegister::k
 ⇒ 推论：想让大镜像生效，必须**保留合法 header 只扩大小**，即先让系统写一次真镜像，
 再在保留 header 的前提下扩展。而"写一次真镜像"可以用 `hibernatemode 3` 做到（见 E2）。
 
+
+#### 3z.9 E2：不再盲改——用 `hibernatemode 3` 取一份真镜像做观测（2026-10-29 15:50）
+
+**这一轮不是改配置，是举证。** 前面的困境是 `acpi_wake_prot_entry` 之后没有任何观测通道，
+所以每条假设都要烧一次硬复位。但有一条绕过去的办法：**镜像本身就是恢复的全部输入**，
+把镜像拿出来分析，等于在恢复发生之前看到"内核准备还原什么"。
+
+| 为什么 mode 25 拿不到，mode 3 可以 | |
+|---|---|
+| mode 25 | 写完镜像立刻断电 → 恢复后内核 truncate 镜像 ⇒ 内容没了 |
+| mode 3 | 写**同一份**镜像，但保持 RAM 供电走 S3 → 唤醒不经过 `boot.efi` → **镜像原样保留** |
+
+**等价性依据**：两者都走 `IOHibernateSystemSleep` → `hibernate_page_list_allocate` →
+`hibernate_page_list_setall` → 写 header + bitmap + 页数据，**唯一的差别是写完之后的动作**
+（mode 25 断电 / mode 3 留 RAM）。所以 mode 3 拿到的镜像，就是 mode 25 会拿去恢复的那一份。
+
+| 项 | 内容 |
+|---|---|
+| **改动** | `sudo pmset -a hibernatemode 3` + `sudo pmset -a standby 0`（防 5 分钟后自动转 S4）。**不动 config、不动 kext** |
+| **预期** | 电源灯不灭、风扇停、1–2 分钟后按电源键直接回桌面（S3 路径，不经过 boot.efi，不会黑屏） |
+| **判据** | 醒后 `/var/vm/sleepimage` 仍是完整镜像；`hib-header.py` 输出 signature 有效、`imageSize ≤` 文件大小、三项校验和 `actual == 计划` |
+| **意外收获** | 若 1 GiB 真装不下 3.7 GiB wired，写镜像阶段就会失败，`imageSize` 字段或日志会直接露馅——**这就是 E1 想验而没验成的那件事** |
+| **回滚** | `sudo pmset -a hibernatemode 25`（或直接 `s4-arm.sh arm`） |
+| **不可逆风险** | 无。不写 disk 结构、不碰 NVRAM 布局 |
+
+解析器：`EFI/scripts/hib-header.py`（按 `IOHibernateImageHeader` 固定偏移解析前 232 字节，
+`--memmap` 可与归档的 RT 段对照）。

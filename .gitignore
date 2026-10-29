@@ -77,3 +77,6 @@ tools/sleep-power-measure.sh
 
 # config.plist 的本地改动前快照（未提交状态无法靠 git 恢复，故本地留一份；不入库）
 EFI/OC/config.plist.bak-*
+
+# S4 镜像样本（体积大，仅本机分析用）
+docs/s4-memmap/*.bin
