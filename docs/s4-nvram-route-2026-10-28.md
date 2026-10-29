@@ -2016,3 +2016,54 @@ if (callbackHBFX->correct_pci_config_command && offset == WIOKit::PCIRegister::k
 
 P1 优先：它同时是一次**功能性实验**（8 GiB 若够，S4 可能直接成功）与一次取样。
 只有 P1 之后镜像被启动流程清掉，才退到 P2。
+
+#### 3z.12 P1 结果：**E1 排除（8 GiB 同样失败）+ 镜像在下次启动被销毁**（2026-10-29 16:05）
+
+**时间线**（本次为 8 GiB sleepimage 下的第一次有效 S4 测试）：
+
+```
+15:51:51  文件被扩到 8 GiB（原地扩展，birth 仍是 15:42:18）
+15:59:51  Entering Sleep（hibernatemode 25 已武装）
+16:00:38  OC 日志：H:IS 1 → CHK BM 0x0 → H:BI → REAN:START
+16:00:39  REAN:END（939 ms）→ HB|DT 3 0 → EXITBS:START
+          → 黑屏 → 硬复位
+16:01:43  新内核 boottime（冷启动，无第二份 OC 日志）
+```
+
+**日志形态与 1 GiB 那次逐项同构**（070528 vs 080038）：
+
+| 行 | 15:05（1 GiB） | 16:00（8 GiB） |
+|---|---|---|
+| `H:IS` | 1 | 1 |
+| `EB.H.CHK\|BM` | `0x0` | `0x0` |
+| `EB.H.HB\|!` | `Err(0x84) <- …R MSWr` | `Err(0x84) <- …R MSWr`（同一条） |
+| `REAN:START→END` | 686 ms | **939 ms**（唯一差别） |
+| `HB\|DT` | `3 0` | `3 0` |
+| `EXITBS:START` | 有 | 有 |
+| `HB\|! <- BS.Exit` | 无 | 无 |
+
+⇒ **E1（1 GiB 装不下 3.5 GiB wired）正式排除**：8 GiB 下镜像写得更长（939 vs 686 ms）、
+header 校验通过、boot.efi 照样全绿，死点一模一样。容量不是原因。
+
+**镜像拿不到（关键新事实）**：冷启动后 `dd` 出来的前 4 MiB **全零**：
+
+| 观测 | 值 |
+|---|---|
+| `sleepimage-p1-head.bin` 非零字节 | **0 / 4,194,304** |
+| 文件 size | 8,589,934,592 → **1,073,741,824**（被截回） |
+| mtime | **2019-01-01 08:01:00**（hibernate writer 写的哨兵时间戳，非真实时间） |
+| birth | 15:42:18（inode 未变 ⇒ 原地截断+清零，不是重建） |
+
+⇒ 恢复失败后**下一次 macOS 启动会把镜像截断并清零**。所以"冷启动后拷 sleepimage"这条
+取样路走不通——必须在镜像被清理**之前**读它，或者让 macOS 这次启动**根本不去清理**。
+
+#### P2′：用 `Misc/Boot/HibernateMode=None` 让启动不碰镜像（已落盘，2026-10-29 16:12）
+
+| 项 | 内容 |
+|---|---|
+| **改动** | `Misc/Boot/HibernateMode`：`NVRAM` → **`None`**（ESP sha `ae94f155`，仓库/ESP 一致；深递归 diff 仅此一处） |
+| **语义** | OC 不再把 macOS 写的 hibernation 数据交给 boot.efi ⇒ boot.efi 冷启动（`H:IS 0`）、**不会走恢复路径、不会黑屏** |
+| **待验假设** | 镜像的截断/清零是"恢复失败后的启动清理"还是"每次启动都清理"。若只是前者，`None` 下镜像应留在盘上 |
+| **判据** | 开机后立刻 `stat`：size 仍 8 GiB、mtime 仍 `2019-01-01`、前 4 字节 = `73 69 6D 65`（ASCII `sime`，magic `0x73696D65`） |
+| **回滚** | `cp docs/backups/config-2026-10-29-1612-pre-capture.plist EFI/OC/config.plist` + 同步 ESP |
+| **不可逆风险** | 无。只影响 OC 引导阶段是否转发休眠信息 |
