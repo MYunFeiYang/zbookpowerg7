@@ -3647,3 +3647,80 @@ sudo xxd -l 64 /var/vm/sleepimage
 | 完全没有任何 hibernate 行 | 内核**没尝试**恢复（boot.efi 的 H:IS 1 没传到内核）⇒ 死点在 OC 与内核的传参，`HibernateMode=NVRAM` 是首要嫌疑 |
 | 镜像头仍有 `sime` + 合理 imageSize | 镜像完整写出过，病在恢复 |
 | 镜像头全零 | 开机即被清零，无法判读（与前几轮一致） |
+
+---
+
+### 3z.28. 内核日志与镜像头取证 —— 两条都不足以定性，但挖出 107 秒闹钟时间线（2026-10-29 20:30）
+
+#### 一、`sudo dmesg | grep -iE "hiber|sleepimage|polled|restore"` → **零输出**
+
+不能直接读成「内核没尝试恢复」，先验证日志是否被编译进发行版内核：
+
+```
+strings -a /System/Library/Kernels/kernel | grep -ic hibernate   → 96
+```
+
+抽样命中（说明日志代码与格式串都在）：
+
+```
+hibernate image path: %s
+hibernate handoff @%s:%d
+hibernate file open timed out
+hibernate file busy
+hibernate file close due timeout
+hibernate_alloc_pages act %d, inact %d, anon %d, throt %d, spec %d, wire %d, wireinit %d
+Hibernate restore error %x @%s:%d      ← 三次 panic 用的就是它
+```
+
+⇒ 内核里**有** 96 条休眠日志串，dmesg 却一条都没有。
+最合理的解释（**推断**）：内核确实进了 `hibernate_kernel_entrypoint`，恢复失败后
+**回退成完整冷启动，冷启动会重建内核日志缓冲区（msgbuf）**，把休眠阶段的记录冲掉。
+这与 3z.27 §七 的 68 秒空档互相印证——所以「无 panic + 无日志 + 冷启动 + 68 s 延迟」是同一件事的四个面。
+
+#### 二、`sudo xxd -l 64 /var/vm/sleepimage` → **64 字节全零**
+
+结合 `birth=20:06:59 / mtime=20:19:07`：镜像在**开机后 23 秒被清零**。
+⇒ 任何「事后看镜像头 / 看镜像大小」的判据在本机**结构性失效**，不是这次写没写的问题。
+（3z.27 §六 的结论再次成立，且现在是直接观测到的。）
+
+#### 三、★★ 新证据：这次 RTC **没有**归零，OC 日志文件名是真实日期
+
+| 日志文件名 | 含义 |
+|---|---|
+| `opencore-2019-01-01-000032/33/34/47/000558.txt`（5 份） | RTC 归零，POST 报 005 的那几次 |
+| **`opencore-2026-10-29-121734.txt`（本次）** | **RTC 正常，时间正确（UTC 12:17:34 = 本地 20:17:34）** |
+
+其余 27 份也是 2026 日期，属正常开关机。⇒ **本次 S4 断电期间 RTC 一直有电、没丢时间**，
+说明断电时间很短，与「没报 005」一致。
+
+#### 四、★★ 由此得到一个精确到秒的上电时间线（这是本轮最硬的推断）
+
+| 时刻 | 事件 | 来源 |
+|---|---|---|
+| 20:15:11 | 入睡 | pmset log |
+| 20:15:12 | 排 `*UserWake 107s → 20:16:59`（GaugingMitigationActions） | pmset log |
+| ~20:15:4x | 写盘完成、断电（灯灭） | 推断 |
+| **20:16:59** | **RTC 闹钟到点** | 排程值 |
+| 20:17:34 | boot.efi 起来（闹钟后 +35 s，正好是一次 POST + OC 的耗时） | OC 日志 |
+| 20:18:44 | 内核起来（+68 s） | uptime 反推 |
+
+⇒ 机器**不是**「你按电源键从 S4 唤醒」，而是**被 RTC 闹钟从断电状态硬拉起来做了一次完整 POST**。
+
+这能同时解释两件事：
+1. RTC 没丢 → 断电只有 ~75 秒，电容/电池撑得住，不会报 005；
+2. **完整 POST 会重新初始化 NVMe 控制器**（HP 固件要为引导枚举硬盘），
+   于是 `IONVMeControllerPolledAdapter::startIO` 拿到的是一个被固件重置过的控制器状态，
+   返回 `kIOReturnError` —— 与三次 panic 的落点完全一致。
+
+#### 五、唯一还没做过、且有判别力的观测：灯灭到灯亮的**实际间隔**
+
+判据：
+
+| 观察 | 结论 |
+|---|---|
+| 间隔 ≈ 90–230 s（与闹钟 deltaSecs 区间吻合） | 确认是 RTC 闹钟拉起 ⇒ 固件走冷上电而非 S4 resume ⇒ 本机 S4 结构性无解 |
+| 间隔 < 30 s 或每次都在固定值附近（与闹钟无关） | 不是闹钟 ⇒ 固件 AC/EC 自动上电，也是冷上电 |
+| 灯一直不亮，直到手动按电源键 | **首次真正的 S4 唤醒，可能直接成功** |
+
+配套动作：灯亮起来、登录之后立刻跑
+`pmset -g log | grep "Wake Requests" | tail -2`，把这一次排的闹钟 deltaSecs 和实测间隔对账。
