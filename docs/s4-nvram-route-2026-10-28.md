@@ -1585,3 +1585,39 @@ A 与 B 是互斥的两条路，必须先用一次对照实验判定"当前映�
 与镜像内保存的映射逐字节相同——这才是缺口所在，也是下一步该先取证的点：
 需要一份**休眠镜像头部保存的映射**与**当前 boot 映射**的对比。
 
+
+### 3v. 复位性质判定 + kext 能力清单（2026-10-29 15:20）
+
+用户确认：**复位是机器自己触发的，非人工长按**。
+
+配套取证（三条同时为空）= 硬复位，无软件 panic：
+
+| 取证点 | 结果 |
+|---|---|
+| `/Library/Logs/DiagnosticReports/*.panic` | **0 份**（含 Retired） |
+| `/cores/` | 空 |
+| `nvram -p` 里的 panic 痕迹 | 无（只有 `prev-lang:kbd`） |
+
+⇒ 内核在恢复早期就触发了复位（triple fault / machine check 一类），**来不及写 panic**。
+这与"死在 `hibernate_kernel_entrypoint()` 之后的 wired pages 还原"完全吻合，
+且比 13:00 的"卡死"更早失败——`ReservedMemory` 改变了内存布局，只是换了失败形态。
+
+### 本机 HibernationFixup 1.5.4 实际支持的开关（`strings` 实测）
+
+```
+-hbfxoff  -hbfxdbg  -hbfxbeta  -hbfxforce
+-hbfx-dump-nvram  -hbfx-disable-patch-pci
+hbfx-patch-pci  hbfx-ahbm
+```
+
+上游 README 关键三条（lvs1974/HibernationFixup，已核实原文）：
+
+1. **`-hbfx-disable-patch-pci`** — 禁用 IOPCIFamily patch。而该 patch 的官方定位正是
+   *"to avoid hang & black screen after resume"*，且 *"automatically enabled in macOS Sierra 10.12.1 or later"*
+   ⇒ **本机（macOS 26）本就自动开着**，症状与它要解决的问题同型，说明 patch 在跑但没兜住。
+2. `hbfx-patch-pci=XHC,IMEI,IGPU` — 指定"**不**调用 `restoreMachineState`"的设备白名单，支持 `none|false|off`。
+3. `hbfx-ahbm=N` — 只控制**何时**自动休眠，与恢复失败无因果关系。
+
+⇒ 参数层面上**没有**针对"恢复入口崩"的开关可用。`-hbfx-disable-patch-pci` 属反向验证，
+README 明写它会放弃一个正是用来防黑屏的补丁，预期更差。
+
