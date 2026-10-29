@@ -1331,3 +1331,65 @@ the `OC/ACPI` directory」，即配置里只写 `DSDT.aml` 这类相对名，子
 | `boot-image` / `boot-signature` / `boot-image-key` 残留 | **全部不存在** | 与 boot.efi 自己删 `boot-image` 的设计一致（§3o 引 `:1250-1252`），也印证它确实走完了这段 |
 | `H:BI` 设备路径解出的文件名 | `91a344f000`（10 位十六进制，非 `sleepimage`） | APFS 下 boot.efi 的设备路径以文件对象 ID 表示，不是可读文件名；与"镜像写在 sleepimage"不矛盾 |
 | sleepimage 的 mtime | `2019-01-01 08:01:05` | **仅作观察，不作判据**：内核写休眠镜像走裸块 I/O，不保证更新 VFS 时间戳。我无法独立验证这一点，故不据此推断"镜像没写" |
+
+## 3r 社区方案核查（2026-10-29 14:50）
+
+用户问"网上也没说法吗"。本节把公开资料逐条核过，并标注每条对本机的适用性。
+
+### 来源可信度分级（按本项目约定）
+
+| 等级 | 来源 |
+|---|---|
+| **可作判据** | `github.com/lvs1974/HibernationFixup` README；`github.com/5T33Z0/Lenovo-T530-Hackintosh-OpenCore` issue #48；`github.com/balopez83/Surface-Pro-7-Hackintosh` issue #7（引用 Tyler Nguyen 的 `x1c6-hackintosh`）；`docs.chrultrabook.com`（MrChromebox 项目文档） |
+| 仅方向 | 上述 issue 里转述的他人经验 |
+| **不可作判据** | `ask.csdn.net` / `blog.csdn.net/gitblog_*` / `ufcn.cn` 等中文聚合站。它们声称 HibernationFixup 能"强制重写内存休眠文件头""绕过 ACPI_PRW 检查""唤醒失败时自动 fallback"，**上游 README 全文没有这些能力**（README 只声明四件事：把 `IOHibernateRTCVariables` 从系统注册表同步进 NVRAM、dump NVRAM 到文件、打 IOPCIFamily 补丁避免恢复后挂起/黑屏、自动休眠策略）。属编造，直接排除 |
+
+### 社区处方的完整清单，以及对本机的判定
+
+| 处方 | 出处 | 对本机 |
+|---|---|---|
+| `Misc/Boot/HibernateMode = NVRAM` | 全部三个 repo | **已做**（OC 第 ⑤ 段成功，§3o 已证 `[EB\|H:IS] 1`） |
+| `Misc/Boot/HibernateSkipsPicker = true` | 同上 | 已做（采样时临时改 false） |
+| `Booter/Quirks/DiscardHibernateMap = true` | 同上 | **已做，无效果**（§3i 实测症状不变） |
+| `Booter/Quirks/RebuildAppleMemoryMap = false` | 同上，**三个 repo 全部要求** | **本机置 false 直接 panic**（§3j 实测）。这是与所有社区处方的**硬冲突**：它们的前提条件本机不满足 |
+| `Booter/ReservedMemory`：Address `569344`(0x8B000) / Size `4096` / Type `RuntimeCode` / 注释 "Fix hibernate mode 25 black screen on wake" | `x1c6-hackintosh` → chrultrabook 文档 → Surface #7，三处一致 | **未试**。本机 memmap 实测该区段 `0x88000-0x9EFFF` 为 Available，冷启动与 S4 两份**完全一致**，故该 4 KiB 存在且可用作保留区 |
+| `RTCMemoryFixup` + `rtcfx_exclude=80-AB` | Lenovo T530 issue #48 | **不适用**：走 NVRAM 路线后作者本人确认"不需要 RTCMemoryFixup"；且本机 `rtcfx_exclude=0E-57,5A-7F` 不与 0x80-0xAB 重叠 |
+| GPRW 即时唤醒补丁 | Surface #7 | **已有**（`EFI/OC/ACPI/SSDT-GPRW.aml`） |
+| `pmset restoredefaults` + `rm /var/vm/sleepimage` 让其重建 | Surface #7 明确列入"若仍不工作"的步骤 | **未试**。本机 sleepimage 为 1.00 GiB（= `Hibernate File Min`），mtime 停留在 2019-01-01，从未重建过 |
+| BIOS 必须 UEFI-only、CSM 关闭 | Lenovo T530 issue #48 | **满足**（HP 白皮书 919946-004 §2.1，本代无 CSM） |
+
+### 一条可直接排除的关键项：SS3 已经是 One
+
+Surface #7 称"修复的关键是在 DSDT 里启用 ACPI S3"（把 `Name (SS3, Zero)` 改成 `One`）。
+本机 `docs/SysReport/ACPI/DSDT.dsl` 实测：
+
+```
+5708:    Name (SS3, One)
+5709:    Name (SS4, One)
+...
+38259:    If (SS3) { Name (_S3, Package (0x04) { 0x05, Zero, Zero, Zero }) }
+38270:    If (SS4) { Name (_S4, Package (0x04) { 0x06, Zero, Zero, Zero }) }
+```
+
+⇒ 本机 `_S3` 与 `_S4` 均已导出，**该"关键步骤"对本机无意义**，不需要任何 ACPI 补丁。
+这也解释了为什么普通睡眠（S3）在本机工作正常。
+
+### 社区里"同一处方在不同系统版本上结局不同"的记录
+
+- Lenovo T530 issue #48 第 10 条（Dell Precision 5550 用户）：照抄整套处方（含
+  `RebuildAppleMemoryMap=false`）**在 Monterey 上完整可用**，但 *"Now, while this all worked
+  beautifully under Moneterey, it fails miserably for Ventura. So, the research continues…"*
+- 同一 issue 第 11 条：去掉 RTC blacklist、只留 ReservedMemory 后，*"I still have black screen
+  wake and likely KP as fan runs full on wake."*
+- 本机是 macOS 26.7.2，比 Ventura 又晚三代。
+
+⇒ 社区共识不是"有通用解"，而是"**2018–2021 年代的处方在 Monterey 前后有效，Ventura 起大面积失效**"。
+
+### 结论：网上有说法，但对本机只剩两条未验证项
+
+1. `Booter/ReservedMemory` 加一条 `0x8B000 / 4096 / RuntimeCode`（三个独立项目一致，本机地址可用）。
+2. 重建休眠镜像 + 重置电源管理偏好（`pmset restoredefaults`、`rm /var/vm/sleepimage`）。
+
+两条都只改配置或只删一个可再生文件，可逆、不写固件。但按 §3o 的分段证据，黑屏发生在
+ExitBootServices 之后；而这两条处方针对的都是**boot.efi 及更早**的行为，与 §3o 的死点层级不符。
+即：**能试，但机制上对不齐**，期望值应压低。
