@@ -2702,3 +2702,71 @@ _hibernate_machine_init ← _ml_hibernate_active_post ← _IOCPURunPlatformActiv
 
 #### 注意
 **不要用 `s4-arm.sh arm`** —— 它会把 `hibernatemode` 强制改回 25，冲掉本实验的 29。
+
+---
+
+### §3z.20 D5 结果：禁用 NVMeFix 完全无效，错误位点逐字节一致（2026-10-29 18:15）
+
+#### 一、实验失败，且失败点一字未变
+
+| 项 | D4（NVMeFix **on**） | D5（NVMeFix **off**） |
+|---|---|---|
+| 日志 | `084752`（UTC 08:47:52） | `100602`（UTC 10:06:02） |
+| `H:IS` | 1 | **1** |
+| `H:SIG` | — | **`0x73696D65` = `sime`（镜像头签名有效）** |
+| `H:BI` → `REAN` → `EXITBS` | 全走完 | **全走完** |
+| panic 文件 | `Kernel-2019-01-01-080117.panic` | `Kernel-2019-01-01-080103.panic` |
+| **panic 内容** | `Hibernate restore error e00002bc @IOHibernateIO.cpp:2921`<br>`_hibernate_machine_init + 0x12db` | **完全相同** |
+| `Hibernation exit count` | 0 | 0 |
+| `Last Sleep: Wake` | 0 | 0 |
+
+⇒ **NVMeFix 与本故障零相关，已排除。** 这是干净的单变量对照：只改了 `Kernel/Add[11].Enabled`，
+panic 的调用者地址、函数偏移（`+0x12db`）、源码行号（2921）、错误码（`e00002bc`）四项**全部一致**。
+
+#### 二、本次坐实的两条新事实
+
+1. **`#[EB|H:SIG] 0x73696D65`** —— boot.efi 从镜像头读到的签名就是 `sime`。
+   **镜像本身有效、header 完好**，与"header 全零"那次的结论区分开：全零是**恢复失败后被清零**的结果。
+2. 本次日志新增可见字段 `H:WCK` / `H:BOOT.1` / `H:DLW 0` / `H:HBOPT 0 1 1 0` / `H:RDST` / `H:RDEND`，
+   均为 boot.efi 恢复路径的标准输出，无异常。
+
+#### 三、时间线核对（第 N 次自我校验，全部吻合）
+
+```
+18:06:02  boot.efi LOG:INIT（UTC 10:06:02）
+18:06:03  REAN:END + EXITBS:START
+          → 内核 hibernate_machine_init → panic e00002bc
+          → 硬复位，RTC 丢失归零到 2019-01-01 00:00
+18:06:03  sleepimage 被清零（mtime 记为 RTC 08:01:07 = UTC 00:01:07）
+18:06:06  生成 Kernel-2019-01-01-080103.panic
+18:07:10  新内核起来（kern.boottime）
+```
+panic 里 `Uptime = 0x1e05a9dc478` ≈ 2064 s ≈ 34.4 min，与 17:31:30 → 18:06:02 的 34.5 min 吻合；
+`sleepimage` mtime 与 panic 文件 mtime **同为 08:01:07**，是同一次事件写下的。
+
+#### 四、已回滚
+
+`Kernel/Add[11].Enabled` 恢复 `true`，与实验前备份 `config-2026-10-29-1727-pre-nvmefix.plist`
+**深递归 diff 差异 0 条**；ESP 同步，两侧 sha `d2f02935…a4668c`（= D4 基线值）。
+
+#### 五、排除清单（累计，全部有实测或源码依据）
+
+| 变量 | 结论 | 依据类型 |
+|---|---|---|
+| 镜像内容 / header / 加密 / 签名 | 排除 | `H:SIG=sime` + 一页未读即失败 |
+| `imageSize` 越界 | 排除 | 失败在 2921（第 1 站 readahead），非 2940/2955 |
+| RT 区 scratch / `ReservedMemory` | 排除 | 内存恢复未开始 |
+| 页表 / `BootPTD` / AREA / `pagesDone` | 排除 | 同上 + 非 3030 站 |
+| `HibernationFixup` 全部参数 | 排除 | 阶段错位（panic 早于 `IOMachineRestore`） |
+| `hibernatemode 29` / `1` | 不存在 | `man pmset`：只支持 0/3/25；位定义 29=25\|Encrypt |
+| `hibernatefile` 移到非根卷 | 排除 | `man pmset`：Image may only be located on the root volume |
+| **NVMeFix** | **排除** | **本次单变量对照，panic 位点逐项一致** |
+
+#### 六、剩下的只有一层
+
+`IONVMeControllerPolledAdapter::startIO(kIOPolledRead, …)` 返回 `kIOReturnError`。这是 Apple 闭源实现，
+XNU 无开关、OpenCore 无开关。唯一还没碰过的是**固件层**：
+
+- BIOS 里的 **PCIe ASPM**（L1 / L1.2）。SN570 与 ASPM 是已知问题组合；若 S4 后链路停在 L1.2 且无唤醒事件，
+  控制器不响应命令。**HP 商务本 BIOS 通常不暴露该选项**，需进 F10 确认是否可见。
+- 否则只剩**换盘**：换带 DRAM 缓存的 NVMe（SN750 / 铠侠 RC20），或换 SATA 盘走另一套 poller 代码。
