@@ -1894,3 +1894,19 @@ if (callbackHBFX->correct_pci_config_command && offset == WIOKit::PCIRegister::k
 若写镜像阶段空间见底，`pagesOut` 与实际写入量不匹配，恢复时序号错位 ⇒ 必崩。
 **这条从来没被检查过**，而且完全在软件侧可控（扩文件 + 重启）。
 
+
+#### 3z.7 实验 E1：扩容 sleepimage（已就绪，2026-10-29 15:40）
+
+按"实验三件事"先写清楚，再动手：
+
+| 项 | 内容 |
+|---|---|
+| **假设** | 镜像容量 1 GiB < wired 3.7 GiB 的压缩需求 ⇒ 写镜像阶段截断/页序错位 ⇒ 恢复时 `hibernate_restore_phys_page` 把 A 页内容写进 B 页地址 |
+| **改动** | 仅 `/var/vm/sleepimage`：1 GiB → 8 GiB（`mkfile -n`，稀疏）。**不动 config.plist、不动 kext、不动 boot-args** |
+| **预期形态** | 成功 = 唤醒后进入桌面、App 原样；失败 = 与 §3u 完全一致（灯灭 → 自复位 → POST 005） |
+| **判据** | ① 重启后 `size` 是否仍为 8 GiB（若被系统缩回 1 GiB ⇒ 系统强制按 `Hibernate File Min` 裁剪，本假设作废）；② `pmset -g log` 有无 `insufficient` / `HibernateError`；③ 唤醒后 `kern.boottime` 是否连续 |
+| **回滚点** | `sudo bash EFI/scripts/s4-expand-image.sh restore`（删文件，下次启动系统按 Min 重建 1 GiB） |
+| **不可逆风险** | 无。只占 8 GiB 磁盘（卷余 192 GiB）；sleepimage 内容无价值（写时被整体覆盖） |
+| **为何必须先重启** | `IOHibernateIO` 在启动时把文件大小读进内核对象，运行中改文件不更新已缓存值 |
+
+脚本：`EFI/scripts/s4-expand-image.sh`（`status` / 默认扩 8 GiB / `restore`）。
