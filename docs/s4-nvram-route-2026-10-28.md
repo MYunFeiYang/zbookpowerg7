@@ -900,3 +900,71 @@ S4 属加分项，不值得用"可能开不了机"去换。
 **必须先验证通道再谈故障**：下次开机能正常进系统后，第一件事是看 ESP 根上有没有新的
 `opencore-YYYY-MM-DD-HHMMSS.txt`。**有内容 = 文件通道活了**，那以后失败现场可以直接落盘事后读，不用抢拍；
 仍然为空/不存在 = 只剩余屏上文字，且只能靠录像。
+
+## 3l 10:36 那版配置启动不了系统 —— 逐键比对与结论（2026-10-29 11:50）
+
+**事实链（全部本机可核）**
+
+```
+10:24:35  banner 60deb40d 启动成功
+10:36:30  f27dc63 提交并写入 ESP（AppleDebug/Target/DisableWatchDog/-v 四项）
+   ~10:4x  重启 → 进不了系统（用户操作：进 Windows，改 config）
+10:58:26  ESP 上 config.plist 被改写（Windows 侧保存）
+11:43:59  正常启动
+```
+
+`pmset -g log` 在 10:24:50 与 11:44:11 之间**零记录**，`last` 无会话 ⇒ 这 79 分钟里没有任何一次成功进入系统。
+
+**三份配置的逐键差异（plistlib 深比对，非文本 diff）**
+
+| 键 | 60deb40d（10:24 成功） | f27dc63（失败） | 8af3023a（11:43 成功） |
+|---|---|---|---|
+| `Misc/Debug/AppleDebug` | false | **true** | **true** |
+| `Misc/Debug/Target` | 69 (`0x45`) | **71 (`0x47`)** | **71** |
+| `Misc/Debug/DisableWatchDog` | false | **true** | false |
+| `boot-args` 含 `-v` | 无 | **有** | **有** |
+| `Misc/Boot/HibernateMode` | NVRAM | NVRAM | **None** |
+| `Misc/Boot/HibernateSkipsPicker` | true | true | **false** |
+| `boot-args` 含 `-hbfxdbg -hbfxforce hfile=` | 有 | 有 | **无** |
+
+**关键推论**：8af3023a 仍然开着 `AppleDebug=true` / `Target=71` / `-v` 并成功启动 ⇒ 这三项**已被本机实测排除**。
+与 10:24 成功那版相比，只有在失败版里存在、而现在被去掉的项才落在嫌疑范围内 ——
+即 **`DisableWatchDog = true`**。休眠三项（`HibernateMode` / `HibernateSkipsPicker` / `-hbfx* hfile=`）
+在 10:24 的成功启动里全都存在过，因此不是它们。
+
+**但这条推论有两点必须讲明，不能当定论**
+
+1. 只有一次观测、没有日志（OC 文件日志自 03:43 之后一份没生成），**单点无法排除偶发**；
+   `DisableWatchDog=true` 的机制上也谈不上"必然起不来"（OC 只调 `SetWatchdogTimer` 关狗），
+   所以它是**嫌疑最大**，不是**已证**。
+2. 另有一条独立异常支持"写盘不干净"这条竞争解释：**10:37 删掉的 18 份 `opencore-*.txt`，
+   现在有 7 份仍在，mtime 还是凌晨原值**（`ls /Volumes/ESP/opencore-*.txt | wc -l` = 7）。
+   说明在这个 `msdos, fskit` 挂载点上**删除操作可能没有真正落盘**（`sync` 之后仍然如此）。
+   如果写的持久性都不可靠，那 10:36 那次 config 落盘是否完整也无法自证。
+
+**当前状态（8af3023a，正在运行中，ocvalidate 0 问题）**
+
+| 项 | 值 | 含义 |
+|---|---|---|
+| `HibernateMode` | `None` | 彻底关掉 OC 的休眠唤醒识别 |
+| `HibernateSkipsPicker` | `false` | 恢复默认，不再跳过选择器 |
+| `-hbfxdbg / -hbfxforce / hfile=` | 已移除 | 内核态 `kern.hibernatefile` 变空 ⇒ 休眠写盘从根上不可能发生 |
+| `AppleDebug` / `Target` / `-v` | 仍开 | 实测可启动；**建议下次要重启时一并收回**（纯输出项） |
+
+**备份（Windows 侧也能直接取）**
+
+```
+docs/backups/config-2026-10-29-1143-knowngood.plist   8af3023a  ← 当前在跑，11:43 验证可启动
+docs/backups/config-2026-10-29-knowngood.plist        60deb40d  ← 10:24 验证可启动
+/Volumes/ESP/config.plist.safe                        60deb40d  ← ESP 根，避开 EFI/OC
+```
+
+`docs/backups/` 位于 Common 卷（ExFAT，Windows 侧同盘可直接访问）⇒ 下次再进不了系统，
+**不需要在 Windows 里手改 plist**，直接把这个文件拷到 `EFI\OC\config.plist` 覆盖即可。
+
+**操作规则（针对本机 ESP 写的不可靠性）**
+
+1. 改 config 后**不要立刻重启**，先 `shasum -a 256` 双侧比对，再 `diskutil unmount` 干净卸载；
+2. 任何一次 ESP 写入前，先确认 `docs/backups/` 里有一份已验证可启动的副本；
+3. 优先在 Windows 侧改 ESP（Windows 对 FAT 的写入路径比 macOS fskit 稳），
+   再由 macOS 侧读回来比对 sha。
