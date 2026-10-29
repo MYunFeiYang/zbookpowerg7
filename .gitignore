@@ -39,7 +39,8 @@ docs/fan-kext/
 docs/fixes/
 
 # 工具脚本（本地辅助，不入库）
-tools/
+# 注意限定在仓库根目录：原先写 tools/ 会连带忽略 EFI/OC/Tools/ 下的 startup.nsh
+/tools/
 
 # 单篇弃用文档
 docs/macos-sleep-power-verification.md
