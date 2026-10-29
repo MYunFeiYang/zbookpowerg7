@@ -1774,3 +1774,123 @@ D2 与 D3 都是"改一次、睡一次、看黑不黑"的二分法，**没有任
 管不到的那一层（恢复期的物理页布局）。所以准确说法是：**在现有可观测手段下，投入产出比已经为负**，
 不是"物理上不可能"。
 
+
+---
+
+### 3z. 恢复链的完整硬约束 + 全部剩余干预点（2026-10-29 15:35，源码级）
+
+来源（均逐字核对原文）：
+- `osfmk/i386/hibernate_restore.c` — `pal_hib_map` / `hibernate_restore_phys_page`
+- `osfmk/i386/hibernate_i386.c` — `hibernate_page_list_allocate` / `hibernate_page_list_set_volatile` / `hibernate_processor_setup`
+- `osfmk/i386/pal_hibernate.h` — AREA 常量与 `HIB_ENTRYPOINT`
+- `HibernationFixup/kern_hbfx.cpp` — PCI 补丁真实行为
+
+#### 3z.1 AREA 布局（`pal_hibernate.h` 原文，这解释了之前所有"4GB"的说法）
+
+```c
+#define HIB_MAP_SIZE    (2*I386_LPGBYTES)      /* 4 MB */
+#define DEST_COPY_AREA  (4*GB - HIB_MAP_SIZE)  /* 4GB - 4MB  = 0xFFC00000 */
+#define SRC_COPY_AREA   (DEST_COPY_AREA - HIB_MAP_SIZE)
+#define COPY_PAGE_AREA  (SRC_COPY_AREA  - HIB_MAP_SIZE)
+#define BITMAP_AREA     (COPY_PAGE_AREA - HIB_MAP_SIZE)
+#define IMAGE_AREA      (BITMAP_AREA    - HIB_MAP_SIZE)
+#define IMAGE2_AREA     (IMAGE_AREA     - HIB_MAP_SIZE)
+#define SCRATCH_AREA    (IMAGE2_AREA    - HIB_MAP_SIZE)
+#define WKDM_AREA       (SCRATCH_AREA   - HIB_MAP_SIZE)  /* 4GB - 32MB = 0xFFE00000 */
+#define HIB_ENTRYPOINT  acpi_wake_prot_entry
+```
+
+⇒ 八个 AREA 全部挤在 `4GB-32MB` ~ `4GB-4MB`，各占 4 MB。映射靠 `BootPTD[2040..2047]` 这 8 项。
+⇒ 入口是 `acpi_wake_prot_entry`，不是泛指的"hibernate_kernel_entrypoint"。
+
+#### 3z.2 `hibernate_restore_phys_page` 的两个致命细节（原文）
+
+```c
+if (src == 0) return (uintptr_t)dst;          /* ① 零页直接跳过，不写！ */
+d = (uint64_t *)pal_hib_map(DEST_COPY_AREA, dst);
+__nosan_memcpy(d, s, len);
+```
+
+```c
+if (phys < WKDM_AREA) return phys;            /* ② < 4GB-32MB 直接当虚拟地址用 */
+...
+BootPTD[index] = phys; invlpg(virt);          /* ③ ≥ 该值才动态改页表 */
+```
+
+```c
+default: asm("cli;hlt;"); break;              /* ④ 非法 AREA 直接停机，不是复位 */
+```
+
+④ 是"卡死不动"这个失败形态在源码里的唯一对应物（13:00 那次）。
+
+#### 3z.3 新增关键事实：EFI runtime 区被显式标成 scratch（原文）
+
+```c
+void hibernate_page_list_set_volatile(hibernate_page_list_t *page_list, ...)
+{
+	boot_args *args = (boot_args *)PE_state.bootArgs;
+	if (args->efiRuntimeServicesPageStart) {
+		hibernate_set_page_state(page_list, page_list_wired,
+		    args->efiRuntimeServicesPageStart, args->efiRuntimeServicesPageCount,
+		    kIOHibernatePageStateFree);
+		*pagesOut -= args->efiRuntimeServicesPageCount;
+	}
+}
+```
+
+配合 `hibernate_processor_setup()` 把同一组值写进镜像头：
+
+```c
+header->runtimePages        = args->efiRuntimeServicesPageStart;
+header->runtimePageCount    = args->efiRuntimeServicesPageCount;
+header->runtimeVirtualPages = args->efiRuntimeServicesVirtualPageStart;
+```
+
+⇒ 恢复期内核会把 **`efiRuntimeServicesPageStart` 起的全部 RT 页当作可自由使用的 scratch**。
+本机该范围 = `RT_Code` 1280 页 + `RT_Data` 740 页 = **2020 页 ≈ 7.9 MiB**，物理落在
+`0x764BB000-0x76C9EFFF`（约 1.85 GB 处）——**而 OpenRuntime.efi / OpenVariableRuntimeDxe.efi 的代码此刻正躺在这里。**
+
+#### 3z.4 实测推翻上一轮的"地址漂移"假设
+
+三次独立采样，RT/ACPI_Recl 段地址**逐字节相同**：
+
+| 采样 | RT_Code | RT_Data | ACPI_Recl |
+|---|---|---|---|
+| `memmap-cold.txt`（3h 基线） | `0x764BB000` | `0x769BB000` | `0x77B9F000` |
+| `memmap-cold-reservedmem.txt` | `0x764BB000` | `0x769BB000` | `0x77B9F000` |
+| `memmap-s4.txt`（唤醒前） | `0x764BB000` | `0x769BB000` | `0x77B9F000` |
+
+⇒ §3x 里"OC runtime 每次开机落点不同、与 header 记录不符"的说法**作废**。
+地址是稳定的，`header->runtimePages` 在恢复时仍然指向同一批物理页。
+
+⇒ 但**另一个问题反而被这条坐实**：地址既然稳定，那么"恢复期把这块当 scratch 写"就
+**必然覆盖 OpenRuntime 的代码**（而不是"可能覆盖到别处去"）。
+
+#### 3z.5 HibernationFixup 的 PCI 补丁真相（与 §3v 的记录不同，特此更正）
+
+hook 的是 `IOPCIBridge::restoreMachineState` 与 `IOPCIDevice::extendedConfigWrite16`，
+**不保存也不还原任何配置数据**，只在 `kMachineRestoreDehibernate` 期间把标志置位，
+然后给 PCI **Command 寄存器**强制补 `kIOPCICommandMemorySpace` 位：
+
+```cpp
+if (callbackHBFX->correct_pci_config_command && offset == WIOKit::PCIRegister::kIOPCIConfigCommand) {
+	if (!(data & kIOPCICommandMemorySpace)) data |= kIOPCICommandMemorySpace;
+}
+```
+
+⇒ 这说明 **Apple 自己承认 de-hibernate 路径下 PCI Command 寄存器的 Memory Space Enable
+可能丢失**，需要软件补。补丁生效范围仅此一位，MSI/MSI-X enable、BAR、PCIe ASPM 均未回放。
+
+#### 3z.6 从未验证过的一项：镜像容量
+
+| 项 | 值 |
+|---|---|
+| 物理内存 | 16 GiB |
+| `Pages wired down` | 940,251 页 = **3.59 GiB** |
+| `/var/vm/sleepimage` | **1.00 GiB** |
+| `IOPMrootDomain: Hibernate File Min` | 1,073,741,824（= 1 GiB，即当前文件正好等于系统下限） |
+
+⇒ 1 GiB 要装下 3.59 GiB wired 的压缩结果，压缩比必须 ≥ 3.6:1（WKDM 典型 2–3:1）。
+若写镜像阶段空间见底，`pagesOut` 与实际写入量不匹配，恢复时序号错位 ⇒ 必崩。
+**这条从来没被检查过**，而且完全在软件侧可控（扩文件 + 重启）。
+
