@@ -1302,7 +1302,7 @@
                     <key>Name</key>
                     <string>OpenShell</string>
                     <key>Path</key>
-                    <string>Tools/OpenShell.efi</string>
+                    <string>OpenShell.efi</string>
                     <key>RealPath</key>
                     <false/>
                     <key>TextMode</key>
