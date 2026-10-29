@@ -1666,3 +1666,68 @@ boot.efi 从磁盘读镜像。钉住固件 S4 代码的内存，对一条根本�
 `DiscardHibernateMap=true` 只影响 macOS 侧的**映射描述符**，不改 boot.efi 的**物理写回**行为，
 所以原理上也救不了——不建议再试。
 
+
+### 3x. 机制层：恢复期的三条硬约束（xnu 源码实证，2026-10-29 15:25）
+
+来源：`apple-oss-distributions/xnu @ xnu-8792.61.2`
+- `osfmk/i386/hibernate_restore.c`
+- `osfmk/i386/hibernate_i386.c`
+
+#### 约束一：恢复早期只有前 4 GB 是恒等映射
+
+`pal_hib_map()` 原文：
+
+```c
+if (phys < WKDM_AREA) {
+    // first 4Gb is all mapped,
+    // and do not expect source areas to cross 4Gb
+    return phys;
+}
+index = (virt >> I386_LPGSHIFT);
+...
+BootPTD[index] = phys;
+invlpg(virt);
+```
+
+配合 `extern pd_entry_t BootPTD[2048]`：2048 × 2 MB = **4 GB**。
+前 4 GB 直通，超过 4 GB 的物理页必须靠动态改写 `BootPTD[index]` 来临时映射。
+注释里那句 *"do not expect source areas to cross 4Gb"* 是 Apple 自己写死的假设：
+源缓冲区不得跨 4 GB 边界。本机 16 GiB，镜像页绝大部分在 4 GB 以上。
+
+#### 约束二：镜像存什么，由 EFI MemoryMap 的**类型**决定，不是"整块内存"
+
+`hibernate_page_list_allocate()` 按 `args->MemoryMap` 逐条分类：
+
+| EFI 类型 | 是否进镜像 |
+|---|---|
+| `ConventionalMemory` / `LoaderCode` / `LoaderData` / `BootServicesCode` / `BootServicesData` | **保存** |
+| `ACPIMemoryNVS` / `PalCode` | 保存（计入 non_os_pagecount） |
+| `RuntimeServicesCode` / `RuntimeServicesData` | **不保存** — 注释 `runtime services will be restarted, so no save` |
+| `ACPIReclaimMemory` | **不保存** — 注释 `contents are volatile once the platform expert starts` |
+| `Reserved` / `Unusable` / `MMIO` / `MMIOPortSpace` | 不保存 |
+
+⇒ 镜像内容的正确性，**完全取决于 boot.efi 拿到的那张 MemoryMap 是否与内核休眠时所见的真实占用一致**。
+
+#### 约束三：这张表在黑苹果上不是固件给的
+
+`args->MemoryMap` 来自 `PE_state.bootArgs`，而 boot_args 由 boot.efi 填写，boot.efi 从 UEFI 拿表——
+本机上那就是 **OpenCore 重建后**的表（`RebuildAppleMemoryMap=true` 每次开机重排）。
+
+真机的闭环是：Apple 固件产表 → 内核按表存页 → S4 → 固件 resume 后**重建 runtime services** → boot.efi 按同一语义还原。
+黑苹果的闭环缺最后一环：`OpenRuntime.efi` 驻留在 `kEfiRuntimeServicesCode` 里，
+按约束二**不进镜像**，于是恢复期那片区域被视为 scratch 可随意使用，
+而 OC 的 runtime 代码恰恰常驻其中。
+
+#### 这套机制能一次性解释全部三个反常
+
+| 反常现象 | 机制解释 |
+|---|---|
+| boot.efi 全流程绿灯（`H:IS 1` → `REAN:END` → `HB\|DT 3 0` → `EXITBS`） | 它只负责"按表还原"，表错了它也照样报告成功 |
+| 零 panic / 零 core / 硬复位 | 页表模板指向垃圾 ⇒ 取指 fault ⇒ IDT 尚未恢复 ⇒ 三重故障 |
+| 改 ReservedMemory 后从"卡死"变成"自动复位" | 约束一：改的是 4 GB 内的映射与占用，扰动 `BootPTD` 的真实映射关系，换了个崩法 |
+
+⚠️ 依据强度：约束一、二、三是**源码原文**（可直接核对）。
+"OC runtime 区被当 scratch 覆盖"是**由约束二推出的机制假设**，尚无本机实证——
+验证需要镜像内的 page bitmap 与本次 boot 的 MemoryMap 逐段比对，而镜像在恢复后被 truncate，
+除非在睡眠后、唤醒前抓到 sleepimage，否则无法取证。
+
