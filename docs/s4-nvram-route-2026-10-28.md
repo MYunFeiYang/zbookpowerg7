@@ -1527,3 +1527,61 @@ RT_Code    000000000008B000-000000000008BFFF 0000000000000001 800000000000000F
 
 ⚠️ 测完必须 `sudo bash EFI/scripts/s4-arm.sh disarm` 回滚，否则 AC 侧长期停在
 `sleep 0 / hibernatemode 25`，任何一次手动睡眠都会走 S4 黑屏。
+
+---
+
+### 3u. ReservedMemory 实测**未能救回唤醒**，并推翻一条判据（2026-10-29 15:15）
+
+现场（用户口述 + 事后取证）：
+
+```
+15:04:43  Entering Sleep（AC 100%，hibernatemode 25）
+15:05:28  boot.efi 启动，H:IS 1 → 认出休眠
+15:05:29  REAN:END 686ms / HB|DT 3 0 / EXITBS:START（无 HB|! <- BS.Exit）
+          → 黑屏
+15:06:2x  机器**自动复位**（非人工长按），POST 阶段报 **005**
+15:06:32  新内核 boottime
+```
+
+⇒ 与 §3o（13:00）**同形态**，死点不变：仍在 `hibernate_kernel_entrypoint()` 之后。
+唯一可观测的差别是**失败表现**：那次是卡死不动，这次是自动复位。
+
+### 判据更正（重要，写下来防止再犯）
+
+| 我曾用的判据 | 为什么错 |
+|---|---|
+| "ESP 上没有第二份 `opencore-*.txt` ⇒ 没有重启" | **不成立**。硬件复位/自动复位后那次引导不保证落到 AppleDebug 文件（本次就没有）。同理也不能反推"有日志=正常"。 |
+| "powerd 报 `since boot at 14:58:34` ⇒ 内核是 14:58 那个实例" | 不可靠，powerd 的 boot 标识可跨复位沿用。 |
+| `kern.hibernatemode` 25→1 | 本次实测**会**回 1，不能当"内核被重建"的证据，也不能当反证。 |
+
+**唯一可靠的两条**：
+- `kern.boottime` + `uptime`（新内核就是新的 boottime，且与上一 boot 的时间戳不连续）
+- 用户侧现象（是否黑屏、是否手动复位、App 是否原样）
+
+### 005 是什么：设计内副作用，不是新问题
+
+`005` = HP BIOS 的 **RTC Power Loss / CMOS 校验和错误**。根因就是本路线的武装项本身：
+
+- `Kernel/Quirks/DisableRtcChecksum=false` ⇒ 允许 AppleRTC 更新 `0x58/0x59` 主校验和
+- `rtcfx_exclude=0E-57,5A-7F` ⇒ 放开该区，不被 RTCMemoryFixup 挡
+
+macOS 睡下时改了 CMOS 内容，BIOS 侧的校验和对不上 ⇒ 冷启动 POST 报 005。
+这是"让密钥活过断电"必须付的代价，与 ReservedMemory 无关，也与 S4 失败无因果。
+
+### 结论与下一步（候选，未执行）
+
+`ReservedMemory` 这条线可以判定为**无效**——它精确生效了（§3t），但没有改变死点。
+
+剩下三条未验证方向，按风险从低到高：
+
+| 方向 | 改动 | 理由 | 风险 |
+|---|---|---|---|
+| A | `Booter/Quirks/RebuildAppleMemoryMap` true → **false** | 恢复要求 boot.efi 交出的映射与写镜像时一致；OC 每次重建映射与"绝对物理地址装回"直接冲突 | 中：老系统需要 Apple 映射，可能起不来 |
+| B | `Booter/Quirks/DiscardHibernateMap` false → **true** | 反过来：丢弃镜像里的映射、改用当前映射。语义与 A 相反，只能二选一 | 中：改错方向等于放弃镜像里的正确映射 |
+| C | 接受现状：不改 config，把 AC 侧 `hibernatemode` 退回 3（S3 standby） | S3 在本机可用且不掉电风险低 | 低，但等于放弃 S4 |
+
+A 与 B 是互斥的两条路，必须先用一次对照实验判定"当前映射与镜像映射谁是对的"，
+**不能同时改**。§3q 的 memmap 对照只证明了固定区一致，未证明 boot.efi 交出的映射
+与镜像内保存的映射逐字节相同——这才是缺口所在，也是下一步该先取证的点：
+需要一份**休眠镜像头部保存的映射**与**当前 boot 映射**的对比。
+
