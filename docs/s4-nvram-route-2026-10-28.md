@@ -850,3 +850,53 @@ MACH Reboot
 S4 属加分项，不值得用"可能开不了机"去换。
 
 **订正**：3i 里写的「`s4-arm.sh` 里也加了这两个键的体检项」不成立 —— 脚本里实际没有这两项检查（`grep` 无匹配）。
+
+## 3k 打开 boot.efi 日志转发（`Misc/Debug/AppleDebug`）—— 这是唯一能看见恢复段的通道（2026-10-29 10:35）
+
+**为什么之前看不到**：`Misc/Debug/Target` 这类开关只能记录 **OpenCore 自己**的动作，
+故障点在 OC 把控制权交给 `boot.efi` **之后**，所以一直看不见。但 OC 有一个专门的转发键：
+
+> `Misc/Debug/AppleDebug` — **Enable writing the `boot.efi` debug log to the OpenCore log.**
+> *Note*: This option only applies to 10.15.4 and newer.
+
+本机此键**一直是 `false`**，等于把唯一能看到恢复段的通道关着。
+
+**顺带发现：现在连"上屏"都是关的**
+
+`Target = 69 = 0x45`，按官方位表拆开：
+
+| 位 | 值 | 含义 | 本机 |
+|---|---|---|---|
+| bit 0 | `0x01` | 总开关（不开则全部丢弃） | ✔ |
+| bit 1 | `0x02` | **basic console（上屏）日志** | ✘ **未开** |
+| bit 2 | `0x04` | Data Hub | ✔ |
+| bit 6 | `0x40` | 文件 | ✔ |
+
+所以这轮之前，屏幕上根本没有 OC 日志可看。
+
+**四条读取通道的真实状态**
+
+| 通道 | 状态 |
+|---|---|
+| 屏幕（`0x02`） | 可开。但 boot.efi 一旦重新设显示模式屏就黑、字全没 ⇒ **必须手机录像兜住最后一帧** |
+| 文件（`0x40`） | **当前坏的**：ESP 上最后一份日志是 `2026-10-29 02:24`，之后 8 次开机一份都没生成；剩余 740 MiB 不是满盘 ⇒ 原因未掌握，需单独查 |
+| Data Hub（`0x04`）/ UEFI 变量（`0x10`/`0x20`） | **每次开机覆盖** ⇒ 失败那次的日志会被下一次开机冲掉，**天然救不了失败现场** |
+| 串口（`0x08`） | 本机无串口 |
+
+官方另注：文件日志 *"attempted in the safest manner and thus, is very slow. Ensure that `DisableWatchDog` is set to `true` when a slow drive is used."* —— 本机 `DisableWatchDog` 原是 `false`。
+
+**本轮改动（全部是观察项，不动任何功能键）**
+
+| 键 | 原 | 新 | 作用 |
+|---|---|---|---|
+| `Misc/Debug/AppleDebug` | false | **true** | 把 boot.efi 的日志转发进 OC 日志（本轮核心） |
+| `Misc/Debug/Target` | 69 (`0x45`) | **71 (`0x47`)** | 加 `0x02`，让日志真的出现在屏幕上 |
+| `Misc/Debug/DisableWatchDog` | false | **true** | 官方为慢速文件日志推荐 |
+| `boot-args` | — | 加回 `-v` | boot.efi 自身的 `AAPL:` 行在 verbose 下才吐 |
+
+`DisplayLevel = 0x80000042`（ERROR+INFO+WARN）不动。`ocvalidate` 0 问题，sha `8402ac43` 两侧一致。
+顺手清掉 ESP 根 18 份废日志（4.5 MB，17 份全零、1 份只有两行 config 警告）。
+
+**必须先验证通道再谈故障**：下次开机能正常进系统后，第一件事是看 ESP 根上有没有新的
+`opencore-YYYY-MM-DD-HHMMSS.txt`。**有内容 = 文件通道活了**，那以后失败现场可以直接落盘事后读，不用抢拍；
+仍然为空/不存在 = 只剩余屏上文字，且只能靠录像。
