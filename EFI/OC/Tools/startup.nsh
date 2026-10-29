@@ -1,4 +1,5 @@
 @echo -off
+fs0:
 cls
 echo ============================================
 echo  S4 memmap sampling

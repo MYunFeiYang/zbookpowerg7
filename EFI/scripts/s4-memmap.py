@@ -29,15 +29,23 @@ ESP_CANDIDATES = [
     '/Volumes/ESP/EFI/OC/memmap.txt',
 ]
 
+# 内存类型名：UEFI Shell 的 memmap 用简写（BS_Data / ACPI_NVS / MMIO …），
+# 部分版本用全称，两套都收，避免因类型名不匹配而解析出 0 段。
 TYPES = {
-    'Available', 'Reserved', 'LoaderCode', 'LoaderData',
+    # 简写（EDK2 Shell 实测输出，本机 2026-10-29 确认）
+    'Available', 'Reserved',
+    'BS_Code', 'BS_Data',
+    'LoaderCode', 'LoaderData',
+    'RT_Code', 'RT_Data',
+    'ACPI_NVS', 'ACPI_Recl',
+    'UnusableMem', 'MMIO', 'MMIO_Port',
+    'PalCode', 'PersistentMem', 'ConventionalMemory',
+    # 全称（部分构建）
     'BootServicesCode', 'BootServicesData',
     'RuntimeServicesCode', 'RuntimeServicesData',
-    'ConventionalMemory', 'UnusableMemory',
     'ACPIReclaimMemory', 'ACPIMemoryNVS',
     'MemoryMappedIO', 'MemoryMappedIOPortSpace',
-    'PalCode', 'PersistentMemory', 'FreeMemory',
-    'MaxMemoryType',
+    'UnusableMemory', 'PersistentMemory', 'FreeMemory', 'MaxMemoryType',
 }
 
 RANGE_RE = re.compile(r'^([0-9A-Fa-f]{8,16})-([0-9A-Fa-f]{8,16})$')
@@ -51,6 +59,23 @@ def find_memmap():
     return None
 
 
+def read_text(path):
+    """读取 memmap.txt，自动识别编码。
+
+    UEFI Shell 的 `>` 重定向默认写 UCS-2/UTF-16LE（带 BOM ff fe），
+    不是 UTF-8 —— 这是首版解析出 0 段的原因。也兼容 `>a` 生成的 ASCII。
+    """
+    raw = open(path, 'rb').read()
+    if raw[:2] == b'\xff\xfe':
+        return raw[2:].decode('utf-16-le', errors='replace')
+    if raw[:2] == b'\xfe\xff':
+        return raw[2:].decode('utf-16-be', errors='replace')
+    # 无 BOM 但零字节密集 -> UTF-16LE
+    if raw and raw.count(b'\x00') > len(raw) // 4:
+        return raw.decode('utf-16-le', errors='replace')
+    return raw.decode('utf-8', errors='replace')
+
+
 def parse(path):
     """解析 memmap 输出，返回 [(start, end, pages, attrs, type), ...]
 
@@ -59,49 +84,48 @@ def parse(path):
       新: Start-End  Pages  Attributes  Type
     """
     segs = []
-    with open(path, 'r', errors='replace') as f:
-        for raw in f:
-            line = raw.strip().replace('\t', ' ')
-            if not line or line.startswith('#'):
-                continue
-            toks = line.split()
-            if len(toks) < 2:
-                continue
+    for raw in read_text(path).splitlines():
+        line = raw.strip().replace('\t', ' ')
+        if not line or line.startswith('#'):
+            continue
+        toks = line.split()
+        if len(toks) < 2:
+            continue
 
-            start = end = None
-            type_name = None
-            pages = None
-            attrs = None
+        start = end = None
+        type_name = None
+        pages = None
+        attrs = None
 
-            for t in toks:
-                m = RANGE_RE.match(t)
-                if m:
-                    start = int(m.group(1), 16)
-                    end = int(m.group(2), 16)
-                    break
-            if start is None:
-                continue
+        for t in toks:
+            m = RANGE_RE.match(t)
+            if m:
+                start = int(m.group(1), 16)
+                end = int(m.group(2), 16)
+                break
+        if start is None:
+            continue
 
-            # 类型：第一个 token 或最后一个 token
-            if toks[0] in TYPES:
-                type_name = toks[0]
-                rest = [t for t in toks[1:] if not RANGE_RE.match(t)]
-            elif toks[-1] in TYPES:
-                type_name = toks[-1]
-                rest = [t for t in toks[:-1] if not RANGE_RE.match(t)]
-            else:
-                continue
+        # 类型：第一个 token 或最后一个 token
+        if toks[0] in TYPES:
+            type_name = toks[0]
+            rest = [t for t in toks[1:] if not RANGE_RE.match(t)]
+        elif toks[-1] in TYPES:
+            type_name = toks[-1]
+            rest = [t for t in toks[:-1] if not RANGE_RE.match(t)]
+        else:
+            continue
 
-            hexes = [t for t in rest if ADDR_RE.match(t) or re.fullmatch(r'[0-9A-Fa-f]+', t)]
-            if len(hexes) >= 1:
-                try:
-                    pages = int(hexes[0], 16)
-                except ValueError:
-                    pages = None
-            if len(hexes) >= 2:
-                attrs = hexes[1]
+        hexes = [t for t in rest if ADDR_RE.match(t) or re.fullmatch(r'[0-9A-Fa-f]+', t)]
+        if len(hexes) >= 1:
+            try:
+                pages = int(hexes[0], 16)
+            except ValueError:
+                pages = None
+        if len(hexes) >= 2:
+            attrs = hexes[1]
 
-            segs.append((start, end, pages, attrs, type_name))
+        segs.append((start, end, pages, attrs, type_name))
 
     segs.sort(key=lambda s: s[0])
     return segs
@@ -154,8 +178,10 @@ def cmd_save(tag):
         return 1
     os.makedirs(STORE, exist_ok=True)
     dst = os.path.join(STORE, 'memmap-%s.txt' % tag)
-    shutil.copy2(p, dst)
-    print('已归档 ->', os.path.relpath(dst, REPO))
+    # 归档统一转 UTF-8：UEFI Shell 写的是 UTF-16LE，原样复制不便阅读与 diff
+    with open(dst, 'w', encoding='utf-8', newline='\n') as f:
+        f.write(read_text(p))
+    print('已归档 ->', os.path.relpath(dst, REPO), '（已转为 UTF-8）')
     print('段数 =', len(segs), '| 范围 %s .. %s' % (fmt_addr(segs[0][0]), fmt_addr(segs[-1][1])))
 
     # 把 ESP 上的源文件改名，避免下一次采样覆盖后两份混在一起
