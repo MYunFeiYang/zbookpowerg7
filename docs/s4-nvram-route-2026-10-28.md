@@ -3271,3 +3271,121 @@ rtcfx_exclude=0E-57,5A-7F                      ← 保留（hibernation 变量�
 RTC 每次断电归零（`POST 005`）这件事本身没变。而 `boot-*` 三变量在 **NVRAM（SPI Flash）不掉电**，
 理论上断电不该丢 —— 所以"为什么不在 NVRAM"要么是内核没写（`hfile=` 绕过），要么是写入被阻断。
 D7 正是用来分辨这两者的。
+
+---
+
+### 3z.24. D7 已实施 + 三项新证据（2026-10-29 19:50）
+
+#### 一、D7 改动（已落盘并镜像到 ESP）
+
+```
+删：-hbfxdbg -hbfxforce hfile=/var/vm/sleepimage
+留：-v -igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall
+    revpatch=sbvmm rtcfx_exclude=0E-57,5A-7F keepsyms=1 -vi2c-force-polling
+```
+
+- 备份：`EFI/OC/config-2026-10-29-1948-pre-d7.plist`
+- 新 sha256：`8d101db5…2d0da1`，仓库与 `/Volumes/ESP/EFI/OC/config.plist` **两侧一致**
+- 需**重启**生效（boot-args 属启动参数，非 `pmset` 类可即时生效项）
+
+#### 二、★ 证据一：`nvram -p` 证明三个休眠元数据变量压根不存在，且 NVRAM 本身健在
+
+本机开机态 `nvram -p` **只有 13 个变量**，其中 9 个是 OC `NVRAM/Add` 硬注入
+（`boot-args`、`csr-active-config`、`prev-lang:kbd`、`SystemAudioVolume(DB)`、
+`bluetoothExternalDongleFailed`、`bluetoothInternalControllerInfo`、
+`ForceDisplayRotationInEFI`、`run-efi-updater`），
+
+**真正由 macOS 自己写下并存活至今的只有 4 个**：
+`aapl,panic-info`、`AAPL,PanicInfo000K`、`backlight-level`、`LocationServicesEnabled`。
+
+⇒ **NVRAM 持久化是好的**（这 4 个变量经历了多次 S4 断电与 RTC 归零仍在）。
+⇒ 所以 `boot-signature` / `boot-image-key` / `boot-image` 的 `Err(0xE)`
+**不是「断电后 NVRAM 失忆」，而是「内核/kext 从来没把它们写进去」**。
+这把 §3z.23 里「要么没写、要么被阻断」的二选一，收敛到「没写」。
+
+#### 三、★ 证据二：sleepimage 只有 1 GiB，而物理内存 16 GB（严重的尺寸不匹配）
+
+| 项 | 值 | 来源 |
+|---|---|---|
+| 物理内存 | 16.0 GB | `sysctl hw.memsize` |
+| `sleepimage` 逻辑大小 | 1 073 741 824 = **1 GiB** | `ls -l` |
+| `sleepimage` 实际占用块 | blocks=2 097 152 × 512 = **1 GiB**（非稀疏） | `stat` |
+| `Hibernate File Min` | **1 073 741 824** | `ioreg -rc IOPMrootDomain` |
+| `Hibernate File` | `/var/vm/sleepimage` | 同上 |
+| `Hibernate Mode` | 25 | 同上 |
+| `sleepimage` mtime | 2019-01-01 08:06（= RTC 归零期那次 panic 时刻） | `ls -l` |
+
+**公开文档口径**（osxdaily / CNET / `man pmset` 引用一致）：
+> sleepimage 的大小「一般与物理内存完全一致；2 GB 内存则 sleepimage 也是 2 GB」。
+
+⇒ 16 GB 内存应有 ~16 GB 镜像，实测仅 **6.25%**。
+⇒ 这给出一条比 NVMe 更靠前的因果：**镜像目标文件只有 1 GiB，16 GB 内存的内容写不进去
+⇒ 写镜像阶段失败 ⇒ 不写元数据（证据一）⇒ boot.efi `H:IS 0` ⇒ 恢复无镜像 ⇒ panic**。
+⇒ 之前把死点锁在 `IONVMeControllerPolledAdapter::startIO`，可能是**在追一个下游症状**。
+
+#### 四、★ 证据三（对 §3z.23 的更正）：`-hbfxforce` 与 `hfile=` 都不是 HibernationFixup 的参数
+
+HibernationFixup 官方 README 的 boot-args 完整列表只有：
+
+```
+-hbfxoff  -hbfxdbg  -hbfxbeta  -hbfx-dump-nvram
+hbfx-patch-pci=<devs>  -hbfx-disable-patch-pci  hbfx-ahbm=<bits>
+```
+
+**列表里没有 `-hbfxforce`，也没有 `hfile=`。**
+
+- `-hbfxforce`：**不是该 kext 的参数**，§3z.23 四把它归因为「强制内核走恢复路径」缺乏依据。
+  （它可能来自某个教程的臆造，或早期分支，但当前主线 README 无此项。）
+- `hfile=`：**是 XNU 内核自己的 boot-arg**（`strings /System/Library/Kernels/kernel` 里确有 `hfile` 与
+  `hibernatefile` 两个独立字符串），语义为覆盖休眠文件路径，**与 HibernationFixup 无关**。
+
+顺带更正 §3z.23 的因果：`-hbfxforce` 未必在"强拉内核恢复"，**D7 的真实价值是删掉两个无效/越权参数，
+让镜像尺寸与元数据都回到内核原生计算路径**。
+
+#### 五、README 给出的另一条关键机制（解释元数据为何必须由 kext 代写）
+
+> By design the mach kernel encrypts hibernate sleepimage and writes the encryption key to variable
+> `IOHibernateRTCVariables` in the system registry (PMRootDomain). Somehow this value has to be written
+> into RTC (or SMC) in order the boot.efi could read it. ... Fortunately, boot.efi can read key
+> `IOHibernateRTCVariables` from NVRAM! **This kext detects entering into "hibernate" power state, reads
+> variable IOHibernateRTCVariables from the system registry and writes it to NVRAM.**
+
+⇒ 黑苹果上「元数据进 NVRAM」这一步**本来就要靠 HibernationFixup 代劳**，前提是
+① 内核真正进入 `kIOHibernateStateHibernating`，② 它能拿到 `IOHibernateRTCVariables`。
+若①因写镜像失败而不成立，kext 无物可同步 —— **与证据二完全自洽**。
+
+#### 六、新发现的配置矛盾（待判，暂不动）
+
+| 来源 | hibernatemode |
+|---|---|
+| `pmset -g` | **25** |
+| `ioreg` `Hibernate Mode` | **25** |
+| `sysctl kern.hibernatemode` | **1** |
+| `ioreg` `SystemPowerProfileOverrideDict` → AC Power | **3** |
+
+`sysctl` 与 `pmset` 不一致时以 `pmset`/`ioreg` 的行动值（25）为准；`kern.hibernatemode=1` 疑为
+boot 期初值或旧式取值残留，`SystemPowerProfileOverrideDict` 是备用 profile，均**未证实有实际作用**，
+本节仅登记，不作为判据。
+
+#### 七、D8（下一步，需重启 + 一次 sudo）
+
+```
+# 1) 删除尺寸异常的镜像（系统会在下次睡眠时按内存重建）
+sudo rm -f /var/vm/sleepimage
+
+# 2) 重启，让 D7 的 boot-args 生效
+sudo reboot
+
+# 3) 醒来后先核 D7 是否生效
+nvram boot-args          # 应不含 -hbfxforce / hfile=
+ls -l /var/vm/sleepimage # 不存在属正常
+```
+
+随后睡一次（`sudo pmset sleepnow`），**三个判据**：
+
+1. 新 `sleepimage` 大小 —— **≈16 GB ⇒ 病根确认在尺寸；仍是 1 GiB ⇒ 有东西在限死尺寸，继续追**
+2. 是否还 panic（`ls -t /Library/Logs/DiagnosticReports/*.panic`）
+3. 新 OC 日志的 `H:IS` 是 0 还是 1
+
+**回滚点**：`cp EFI/OC/config-2026-10-29-1948-pre-d7.plist EFI/OC/config.plist`（并回写 ESP）。
+**不可逆风险**：无。删 sleepimage 是 Apple 官方认可的安全操作（会自动重建）。
