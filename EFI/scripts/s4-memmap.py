@@ -12,6 +12,7 @@ S4 memmap 采样归档与比对
   python3 EFI/scripts/s4-memmap.py save cold     # 归档为冷启动基线
   python3 EFI/scripts/s4-memmap.py save s4       # 归档为 S4 恢复态
   python3 EFI/scripts/s4-memmap.py diff          # 两份比对
+  python3 EFI/scripts/s4-memmap.py probe 0x8B000 # 查某个物理地址归谁（验预留区是否生效）
 """
 
 import os
@@ -324,6 +325,47 @@ def cmd_diff():
     return 0
 
 
+def cmd_probe(addr_s):
+    """查某个物理地址在当前 ESP memmap.txt 里落在哪个描述符内。
+
+    用来验证 UEFI/ReservedMemory 是否生效：OC 的 OcReserveMemory 在显示 picker
+    之前就 AllocatePages 占位，所以在 picker 里进 Shell 采的 memmap 应当能直接
+    看到该地址已从 Available 变成 RT_Code（OC 是 RELEASE 版，不打印
+    `OC: Reserving region`，日志里查不到，只能这样看）。
+    """
+    try:
+        addr = int(addr_s, 0)
+    except ValueError:
+        print('地址格式不对：%r（用 0x8B000 或 569344）' % addr_s)
+        return 1
+    p = find_memmap()
+    if not p:
+        print('ESP 上找不到 memmap.txt，先跑一次 Shell 生成它。')
+        return 1
+    segs = parse(p)
+    if len(segs) < 5:
+        print('memmap.txt 解析到的段数只有 %d，疑似文件不完整。' % len(segs))
+        return 1
+    hit = [s for s in segs if s[0] <= addr <= s[1]]
+    print('源文件 = %s   段数 = %d' % (p, len(segs)))
+    print('查询地址 = %s (%d)' % (fmt_addr(addr), addr))
+    print()
+    if not hit:
+        print('>>> 没有任何描述符覆盖该地址。')
+        return 1
+    for s in hit:
+        print('落在  %-12s  %s - %s  (%s)' % (s[4], fmt_addr(s[0]), fmt_addr(s[1]), kb(s[1] - s[0] + 1)))
+    print()
+    types = {s[4] for s in hit}
+    if types == {'Available'}:
+        print('>>> 该地址仍是 Available ⇒ 预留**未生效**（或被别的东西先占了）。')
+    elif types & {'RT_Code', 'RT_Data', 'Reserved'}:
+        print('>>> 该地址已变成 %s ⇒ 预留**已生效**。' % '/'.join(sorted(types)))
+    else:
+        print('>>> 该地址归 %s，既不是 Available 也不是 RT_*/Reserved，需人工判断。' % '/'.join(sorted(types)))
+    return 0
+
+
 def main():
     args = sys.argv[1:]
     if not args:
@@ -333,12 +375,17 @@ def main():
     if cmd == 'status':
         return cmd_status()
     if cmd == 'save':
-        if len(args) < 2 or args[1] not in ('cold', 's4'):
-            print('用法: save cold | save s4')
+        if len(args) < 2:
+            print('用法: save cold | save s4 | save <自定义tag>')
             return 1
         return cmd_save(args[1])
     if cmd == 'diff':
         return cmd_diff()
+    if cmd == 'probe':
+        if len(args) < 2:
+            print('用法: probe 0x8B000')
+            return 1
+        return cmd_probe(args[1])
     print(__doc__)
     return 1
 

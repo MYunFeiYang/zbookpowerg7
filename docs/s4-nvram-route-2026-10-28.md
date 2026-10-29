@@ -1393,3 +1393,86 @@ Surface #7 称"修复的关键是在 DSDT 里启用 ACPI S3"（把 `Name (SS3, Z
 两条都只改配置或只删一个可再生文件，可逆、不写固件。但按 §3o 的分段证据，黑屏发生在
 ExitBootServices 之后；而这两条处方针对的都是**boot.efi 及更早**的行为，与 §3o 的死点层级不符。
 即：**能试，但机制上对不齐**，期望值应压低。
+
+## 3s 执行最后一条社区处方：UEFI/ReservedMemory（2026-10-29 14:50）
+
+§3r 列出两条未验项，本轮只做其中真正构成变量的那一条。
+
+### 为什么"重建 sleepimage"不算变量
+
+休眠镜像在每次 hibernate 时**原地重写**，所以现在删掉它，下次休眠写出来的内容与不删没有区别。
+而 `pmset restoredefaults` 重置的那些值（`hibernatemode`/`standby`/`hfile`）`s4-arm.sh arm` 立刻又会写回去。
+⇒ 该条对失败链路没有任何输入，若一起改只会造成混淆归因（§3l 的教训：一次动 4 键导致无法归因）。
+**本轮只改一个变量：`ReservedMemory`。**
+
+### 配置落地，以及三处与社区配方的差异
+
+条目写在 **`UEFI/ReservedMemory`**，不是社区资料常写的 `Booter/ReservedMemory`。
+
+```xml
+<key>ReservedMemory</key>
+<array>
+    <dict>
+        <key>Address</key><integer>569344</integer>   <!-- 0x8B000 -->
+        <key>Comment</key><string>Fix hibernate mode 25 black screen on wake (low S3/S4 area)</string>
+        <key>Enabled</key><true/>
+        <key>Size</key><integer>4096</integer>         <!-- 0x1000 -->
+        <key>Type</key><string>RuntimeCode</string>
+    </dict>
+</array>
+```
+
+三处差异（每一处都有源码或原文依据）：
+
+| # | 社区配方 | 实际正确写法 | 依据 |
+|---|---|---|---|
+| ① | `Booter/ReservedMemory` | **`UEFI/ReservedMemory`** | `OcConfigurationLib.c:874` 只有一条：`OC_SCHEMA_ARRAY_IN ("ReservedMemory", OC_GLOBAL_CONFIG, Uefi.ReservedMemory, ...)`；表结构体名就叫 `mUefiReservedMemorySchema`。全文再无第二处。官方 `Docs/Configuration.tex` 的 `\subsection{ReservedMemory Properties}\label{uefirsvdprops}` 也位于 **UEFI 节**（6528 行起）内。`Booter` 节只有 `MmioWhitelist` / `Patch` / `Quirks` 三项（`Sample.plist` 同） |
+| ② | 社区帖子只给 Address/Size/Type/Comment | 必须补 **`Enabled`**（failsafe `false`） | 源码 `OcReserveMemory()` 第一句就是 `if (!...->Enabled) continue;` ⇒ **不写 Enabled 等于没加** |
+| ③ | — | `Address`/`Size` 必须 4 KB 对齐 | 源码对非对齐直接 `Status = EFI_INVALID_PARAMETER` 并跳过 |
+
+地址核对（用本机实测 memmap，不靠猜）：`0x8B000` 落在 `Available 0x88000-0x9EFFF`，
+**冷启动与 S4 两份完全一致**；`0x8B000`/`0x1000` 均 4 KB 对齐；该区段属 `EfiConventionalMemory`
+⇒ 满足文档「必须属于内存映射、类型为 EfiConventionalMemory、4 KB 对齐」三项前提。
+
+### 机制上这次是能对上的（与 §3r 的判断不同）
+
+`Docs/Configuration.tex` 对 `UEFI/ReservedMemory` 的原文说明正是一条 S4 处方：
+
+> *Note: Some types of firmware may not allocate memory areas used by S3 (sleep) and S4 (hibernation)
+> code unless CSM is enabled causing wake failures. After comparing the memory maps with CSM disabled
+> and enabled, these areas can be found in the lower memory and can be fixed up by doing the reservation.*
+
+即「UEFI-only 固件可能根本不分配 S3/S4 代码所需的内存区，导致唤醒失败；用保留区把它钉住」。
+本机恰好是 UEFI-only 无 CSM，与这段话描述的前提完全吻合。
+
+### 生效时机：在 picker 之前，因此可以当场验证
+
+`OcReserveMemory()` 被 `OcLoadUefiSupport()` 调用（`OpenCoreUefi.c:994`），位于
+**驱动连接之前、picker 显示之前**；它用的是 `gBS->AllocatePages(AllocateAddress, Type, ...)`
+实打实占位，不会被释放 ⇒ 冷启动与休眠唤醒两条路径都会生效，保留区也一定进到 boot.efi 看到的映射里。
+
+副作用是**可验证**：既然在 picker 之前就完成，那么在 picker 里进 OpenShell 采 memmap，
+应当能直接看到 `0x8B000` 从 `Available` 变成 `RT_Code`。
+
+而 OC 本机是 **RELEASE** 版，`OC: Reserving region %Lx of %Lx size - %r` 是 `DEBUG_INFO`
+级（仅 DEBUG/NOOPT 构建输出）⇒ **日志里查不到**，只能靠 memmap 看。
+为此给 `s4-memmap.py` 加了 `probe <addr>` 子命令。
+
+### 本轮同时做的两件事
+
+| 项 | 改动 | 理由 |
+|---|---|---|
+| `Misc/Boot/HibernateSkipsPicker` | `false` → `true` | 采恢复态时临时关掉，现在回到 §3o 验证过的基线：`true` 下"不弹 picker"才是 OC 认出休眠的表现 |
+| `s4-memmap.py` | 新增 `probe 0x8B000`；`save` 放开自定义 tag | 验证保留区是否生效；便于把验证采样单独归档 |
+
+`Misc/Tools` 的 OpenShell 条目保留（验证要用）。`Timeout` 保持 `5`。
+
+### 判读
+
+| 现象 | 含义 | 下一步 |
+|---|---|---|
+| picker 里 `probe 0x8B000` 报 `RT_Code` | 保留区生效，配置被 OC 接受 | 继续睡，看能否恢复 |
+| 仍报 `Available` | `OcReserveMemory` 分配失败（该地址在 OC 运行前已被占用） | 换地址（在低端 Available 里另选），或判定该手段对本机无效 |
+| 配置读错（比如 Key 拼错） | OC 会整段忽略 | 见上：必然报 `Available` |
+
+无论哪一种，本轮之后 `ReservedMemory` 这条线都可以收敛，不再有"也许没配对"的余地。
