@@ -3012,3 +3012,147 @@ Scope (_SB.PCI0.LPCB) {
 | `SSDT-PCI0.LPCB-Wake-AOAC` 的防唤醒作用 | **从未生效** | ACPI 规范 + 反编译，`If` 恒假 |
 | `SSDT-LID-G7` 新增的 `_GPE._L00` | **高风险待查** | 原生 DSDT 无 `_L00`（只有 `_L66/_L69/_L61/_L62/_L6F/_L72`），新增其为 GPE 0x00 注册 handler，内含 `Sleep(0x03E8)` |
 | ACPI 中声明可从 S4 唤醒的 `_PRW` | **53 处** | DSDT 全表扫描（GPE 0x69 最多，0x6D 为 GLAN/XDCI，0x72 一处） |
+
+---
+
+### §3z.23 对照组实测：Deep Idle 从不自发唤醒 —— §3z.22 的 RTC 闹钟假设被推翻（2026-10-29 18:55）
+
+#### 一、用户提供的对照事实
+
+> **"deepidle不会自己亮"**
+
+这是一条**对照实验结论**：内存睡眠（Deep Idle）状态下，机器不会自己上电/亮起；只有 S4 断电路径会出现"自己亮"。
+
+#### 二、日志实证：6 次 Deep Idle 唤醒，6 次都是用户按电源键
+
+`pmset -g log` 全量（跨 boot 保留，最早 10-27）：
+
+| 时间（本地） | 唤醒记录 | 唤醒原因 |
+|---|---|---|
+| 10-27 13:59:30 | `Wake from Deep Idle [CDNVA]` | `PWRB/UserActivity Assertion` |
+| 10-27 19:01:06 | `Wake from Deep Idle [CDNVA]` | `PWRB/UserActivity Assertion` |
+| 10-27 20:25:56 | `Wake from Deep Idle [CDNVA]` | `PWRB/UserActivity Assertion` |
+| 10-28 10:20:37 | `Wake from Deep Idle [CDNVA]` | `PWRB/Notification` |
+| 10-28 17:08:35 | `Wake from Deep Idle [CDNVA]` | `PWRB/User` |
+| 10-29 15:56:13 | `Wake from Deep Idle [CDNVA]` | `PWRB/User` |
+
+**`PWRB` = Power Button，电源键。6/6 全是人为按键，自发唤醒 0 次。**
+⇒ 用户的观察在日志上完全成立。
+
+#### 三、关键否证：7 次 `*UserWake` 闹钟，实际触发 0 次
+
+10-29 当天，powerd 每次睡眠后都排了 `GaugingMitigationActions` 的 1–4 分钟闹钟，且都带 `*` 前缀
+（`*` = powerd 当前选中的生效排程，即已写入 RTC）：
+
+| 入睡时刻 | 排程延迟 | 应醒时刻 | 实际是否唤醒 |
+|---|---|---|---|
+| 12:59:49 | 155 s | 13:02:24 | **否** |
+| 14:29:24 | 153 s | 14:31:57 | **否** |
+| 15:04:45 | 229 s | 15:08:34 | **否** |
+| 15:54:10 | 187 s | 15:57:18 | 15:56:13 是 `PWRB/User`（用户按的），**非闹钟** |
+| 15:59:52 | 145 s | 16:02:18 | **否** |
+| 16:47:07 | 163 s | 16:49:51 | **否** |
+| 18:05:17 | 89 s | 18:06:46 | **否**（见下条，18:38 才 boot） |
+
+**7 排 0 触发。** 说明 `com.apple.alarm.user-invisible-*` 这类闹钟在本机**排得上但不会真的拉起系统**——
+这与它的命名语义一致（user-invisible = 不打扰用户，只在系统本就醒来时顺带处理）。
+
+⇒ **§3z.22 提出的"RTC 闹钟把机器从 S4 拉起"假设，作废。**
+（§3z.22 当时已自我标注为"强推断、缺直接日志"，现由对照实验证伪。原文保留不改，以此节为准。）
+
+#### 四、顺带核出的四条硬事实
+
+**(1) 10-29 全天 14 次重启，SMC 一律记录 `shutdown cause: 5`（Software initiated shutdown）。**
+原文样例：`2026-10-29 18:39:11 +0800 ShutdownCause  SMC shutdown cause: 5: Software initiated shutdown`
+⇒ 固件侧看到的都是"软件请求的关机/断电"，**不是掉电（power loss）**。这与 hibernatemode 25 的语义吻合，
+也说明"断电"这一步是软件正常下发的，不是供电意外中断。
+
+**(2) 真实的 S4 恢复失败只有 2 次，不是 4 次。**
+`/Library/Logs/DiagnosticReports/` 下 panic 文件**仅 2 个**：
+`Kernel-2019-01-01-080117.panic`、`Kernel-2019-01-01-080103.panic`。
+文件名时间戳是 **2019-01-01 08:01** —— 即 **RTC 已归零后约 1 分钟**写下的（RTC 丢失是 S4 断电的直接后果）。
+⇒ 其余十几次重启都是用户手动开关机，没有产生 panic。
+
+**(3) 18:38 那次 boot 没有对应的 shutdown 记录。**
+`last reboot` 序列：`17:30 shutdown` → `17:31 reboot` → **`18:38 reboot`（前无 shutdown）**。
+而 18:05:16 刚睡着。⇒ **这是一次非正常断电重启**，与用户描述的"自己亮 → 黑屏 → 复位"吻合。
+时间跨度 32 分钟说明：上电后引导未完成、卡在恢复阶段，最后由外部手段断开。
+
+**(4) 10-29 15:56:13 的 `HibernateStats` 显示 `hibmode=3`。**
+原文：`2026-10-29 15:56:13 HibernateStats  hibmode=3 standbydelaylow=300 standbydelayhigh=300  81`
+⇒ **当时 AC 侧 hibernatemode 是 3，不是 25**（现在 `pmset -g custom` 已变 25，由 `s4-arm.sh` 强设）。
+这条解释了"为什么 10-29 一次 `/HibernateError` 都没有"：hibernate 模式不同，路径不同。
+
+**(5) 10-28 有 2 次 hibernate 写盘失败，10-29 一次没有。**
+- `2026-10-28 17:23:50 DarkWake from Standby [CDN] : due to /HibernateError`（45 s）
+- `2026-10-28 17:44:56 DarkWake from Standby [CDN] : due to /HibernateError`（18 s）
+`/HibernateError` 是内核内部原因标记，含义是"standby 到期要写盘，但写盘失败，退回内存睡眠"。
+⇒ **10-28 那两次 S4 尝试根本没走到断电**，卡在写盘；**10-29 走的是另一条路（断电成功）**。
+
+#### 五、排除矩阵（deepidle 对照法）
+
+用户这条对照实验的价值：**凡是"内存睡眠时也会生效"的唤醒源，全部一次性排除。**
+
+| 唤醒源 | 内存睡眠是否生效 | deepidle 实测 | 结论 |
+|---|---|---|---|
+| 键盘/触控板（含合盖压键） | 是 | 6 次全 PWRB，无一例 | **排除** |
+| USB 设备热插拔 | 是 | 同上 | **排除** |
+| EC SCI / `_L00` / GPE 0x69 | 是 | 同上 | **排除**（`SSDT-LID-G7` 风险降级） |
+| 网络 / `womp` / `powernap` / `proximitywake` | 是 | 全为 0，且无网络唤醒 | **排除** |
+| `GaugingMitigationActions` RTC 闹钟 | 排了但**不触发** | 7 排 0 触发 | **排除** |
+| `calaccessd.travelEngine` 闹钟 | 同上 | 当前 sched 有 2 条（00:48/01:45），同类 | **同类待观** |
+| 电源键 | 是 | —— | 用户未操作，**排除** |
+
+**剩下的机制必须满足：仅在"主电源轨被切断后重新建立"时才能发生。**
+⇒ 候选收敛到 **固件/EC 层的断电-上电路径**，与操作系统、OpenCore、ACPI 全部无关。
+
+#### 六、新的最强候选：S4 断电被固件当成"供电恢复"处理
+
+假设链：`hibernatemode 25` 写盘完成 → 内核下发断电 → **EC 执行时切断了主电源轨（等效 S5 级）** →
+某个环节（适配器检测抖动 / EC 状态机超时 / 电容放电曲线）让供电轨在数十秒内重新建立 →
+固件检测到"AC 插入/恢复" → 按 BIOS 的 **`AC Power Recovery` / `Power On When AC Detected`** 策略**自动开机** →
+POST 时 RTC 已随断轨丢失 → 报 **005** → OC 引导 → 读到残留镜像头 → 尝试恢复 → `startIO` 失败 → panic/黑屏。
+
+该假设能同时解释全部五条现象：005 只在 S4 报、S5 不报、deepidle 不触发、断电后必然上电、上电后必然走恢复失败路径。
+
+**标注：这是推断，尚无直接证据。** 判据在下面第五节。
+
+#### 七、判别实验（按性价比排序，均不涉及修 S4）
+
+**F3（首选，5 分钟，零风险，一刀切开)**
+```
+1) sudo shutdown -h now            # 走 S5
+2) 等电源灯完全熄灭、风扇停转
+3) 拔掉电源适配器，等 10 秒，插回
+4) 观察：机器是否自己开机
+```
+- **自己开机** ⇒ BIOS 的 `AC Power Recovery` 处于 `Power On` ⇒ **§六假设成立**，根因找到，去 BIOS 关掉即可。
+- **保持关机** ⇒ AC 恢复自动开机被排除，转 F1。
+
+**F1（电池路径对照，需要临改配置）**
+```
+sudo pmset -b hibernatemode 25
+# 拔适配器，用电池跑一次 S4
+```
+- 电池供电下**仍自己上电** ⇒ 与 AC 无关，指向 EC 对 S4 断电的处理（下一步需 Windows 对照）。
+- 电池供电下**不上电** ⇒ 问题锁定在 AC 供电路径。
+
+**F2（BIOS 核对，与 F3 同时做）**
+HP 的 `Advanced → Power Management Options`（或 `Built-In Device Options` 附近）逐项核对：
+`AC Power Recovery`（或 `Power On When AC Detected`）、`Scheduled Power-On`、`Power On from Keyboard Ports`、
+`S5 Maximum Power Savings`、`PCI Express Power Management (ASPM)`。
+**注意 BIOS 里任何名字带 `S4`/`Hibernate` 的项也要看**，HP 消费/商务线的 S4 支持常被固件裁剪。
+
+#### 八、止血状态（未执行，`sudo` 在本会话不可用）
+
+`pmset -g custom` 现状：**AC = `hibernatemode 25` + `standby 1` + `standbydelayhigh 300`**。
+⇒ 合盖 5 分钟必然走一遍"写盘→断电→005→恢复失败"，与是否在做实验无关。
+
+建议止血（需用户手动执行）：
+```
+sudo pmset -c hibernatemode 3 standby 0 autopoweroff 0
+```
+- `hibernatemode 3` = 内存+磁盘双写（safe sleep），`standby 0` = **永不进入断电阶段**。
+- 合盖变成普通内存睡眠，**不会丢 RTC、不会报 005、不会 panic**。
+- 要再测 S4 时，由 `s4-arm.sh` 显式把 `hibernatemode 25 / standby 1 / standbydelayhigh 60` 设回去。
+- 电池分支当前已是 `hibernatemode 0 / standby 0`，无需改动。
