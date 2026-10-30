@@ -3954,3 +3954,108 @@ pmset sleepnow
 「macOS 的 polled 恢复路径与本机固件的交接状态不兼容」，两者都不存在用户侧可调开关。
 「Windows 休眠正常」是一条**有价值的前提事实**（它砍掉了「硬件不支持」这个分支），
 但**不构成「再试一次就会成功」的依据**。
+
+---
+
+### 3z.32. 遗漏审查：查出 1 条未验证配置、1 处理解错误、2 条未解释观测（2026-10-30 11:05）
+
+本节是对 §3z.31 结论的自查——「还有没有漏掉的考虑」。结论：**没有新的可用旋钮，但有几处此前未交代清楚，其中一处是我的理解错误。**
+
+#### 一、★ 排除两项此前从未查过的前提（本轮新增）
+
+| 前提 | 实测 | 结论 |
+|---|---|---|
+| **磁盘加密**（FileVault 若开，polled 裸读读到密文必失败） | `fdesetup status` → **FileVault is Off**；`diskutil info` 对 disk1s1/s4/s6 全部 `Encrypted: No` / `FileVault: No` | **排除** |
+| **根卷空间不足**（8 GiB 镜像无法分配） | `df -h /var/vm` → 190 GiB 可用；APFS 容器 `Capacity Not Allocated: 204.2 GB` | **排除** |
+
+顺带确认：`vm.swapusage: total = 0.00M`（swap 未启用），`/System/Volumes/VM/kernelcore` 仅 1 MiB
+（mtime `2019-01-01 08:01`，即上次 panic 时留下的 core，太小、无回溯价值）。
+macOS 26 新增独立 `disk1s6 (VM)` 卷且已挂载在 `/System/Volumes/VM`，但 `sleepimage` 仍在
+`/var/vm`（Data 卷 firmlink）——**与 `man pmset` 的「镜像只能在根卷」不冲突，且 boot.efi 已能读到
+`H:SIG=sime`，说明路径与卷映射都不是障碍**。
+
+#### 二、★ 我的理解错误：`hbfx-ahbm` 不是 Host Memory Buffer
+
+上一轮我曾把 `hbfx-ahbm` 联想成本机 SN570 的 HMB（DRAM-less 主控用主机内存做缓存），**这是错的**。
+HibernationFixup README 原文：`hbfx-ahbm` 是 **Auto Hibernate 的位掩码**，与 HBM 无关：
+
+```
+1=EnableAutoHibernation   2=WhenLidIsClosed   4=WhenExternalPowerIsDisconnected
+8=WhenBatteryIsNotCharging   16=WarnLevel   32=CriticalLevel
+64=DoNotOverrideWakeUpTime   128=DisableStimulusDarkWakeActivityTickle
+256/512/1024/2048=剩余电量百分比位
+```
+
+其中只有两位与本问题沾边：
+- `64 = DoNotOverrideWakeUpTime`：不修改下次唤醒时间。若 kext 默认**会**改，可能引入额外唤醒。
+- `128 = DisableStimulusDarkWakeActivityTickle`：禁止 dark wake→full wake 的刺激事件。
+
+但 deepidle 对照已实测 6/6 唤醒全为 `PWRB`、自发唤醒 0 次（§3z.22/§3z.30），
+**没有任何需要靠这两位去抑制的唤醒**，故不采用。**HMB 这条线本来就该忽略**——Dell 两个成功案例
+（Crucial P3 / WD SN770）同为 DRAM-less + HMB，已证明盘型不是决定因素（§3z.31 §四）。
+
+#### 三、★ 未解释观测之一：`Hibernate File Min` 从 1 GiB 变成 8 GiB
+
+| 时刻 | `Hibernate File Min` | `Hibernate Mode` | `sleepimage` 实际大小 |
+|---|---|---|---|
+| 2026-10-29 19:5x（§3z.24 记录） | **1 073 741 824（1 GiB）** | 25 | 1 GiB |
+| 2026-10-30 11:05（本轮实测） | **8 589 934 592（8 GiB = 内存 50%）** | **0** | 1 GiB |
+
+中间唯一改动是 `pmset -a hibernatemode 0`。
+⇒ `Hibernate File Min` **依赖 `hibernatemode` 而非常量**：mode 25 报 1 GiB、mode 0 报 8 GiB。
+这与 §3z.26 反汇编里那个 `movl $0x40000000`(1 GiB) 常量能够对上——它只在 mode 25 路径上作为参数出现。
+
+**这条观测的含义（谨慎表述，未证）**：昨天「1 GiB 太小写不下 16 GB」的假说（§3z.24 §三）
+虽被 §3z.26 削弱，但现在有了第三种可能——**1 GiB 这个值本身就只存在于 mode 25 路径**，
+它到底是「文件分配上限」还是「别的参数」，反汇编尚未给出完整符号名。
+⇒ 若要再查，方向应是 `IOPolledFileOpen` 的参数序号与 `imageSize` 的关系，而非看文件长度。
+
+#### 四、★ 未解释观测之二：EXITBS→内核的 68 秒，两种解释从未区分
+
+§3z.27 §七 只给了「polled 读反复超时」一种解释，但另有同样自洽的一种：
+
+```
+16 GiB ÷ 68 s ≈ 240 MB/s
+```
+
+**这个速率正好落在 DRAM-less SN570 的 polled 单队列恢复区间**。
+⇒ 68 秒也可能是「真的在读盘、且读完了」，失败发生在读盘之后的页表重建/校验和比对。
+
+两种解释的修法完全不同（前者修 NVMe 交接，后者修内存映射），**而本轮没有任何新证据能区分**。
+唯一的区分手段是内核日志里的 `PMStats: Hibernate read took %qd ms`（字符串已确认存在于内核），
+但冷启动会重建 msgbuf 把它冲掉（§3z.28 §一）。
+⇒ **本条维持「未知」，不再作为推理依据。**
+
+#### 五、★ 唯一一条还没做过单变量验证的配置
+
+`UEFI/ReservedMemory` 只有 1 条，且**注释与病灶不对症**：
+
+```
+Address = 569344 (0x8B000)   Size = 4096   Type = RuntimeCode   Enabled = true
+Comment = "Fix hibernate mode 25 black screen on wake (low S3/S4 area)"
+```
+
+三个问题：
+1. 它是为解决**唤醒黑屏**抄来的偏方，而本机症状是 `polled read → kIOReturnError`，不是黑屏；
+2. 它在 **0x8B000 低内存区**把 4 KiB 标成 `RuntimeCode`，而 `hibernate_machine_init` 的 RT scratch
+   正在这一带——**理论上可能改变 polled 路径的内存布局**；
+3. 自加入以来**从未关闭过做对照**（`git log -S` 可查）。
+
+⇒ 若还要再试一次，**这是唯一一个「配置层、可回滚、单变量」的候选**，优先级高于电池对照。
+
+#### 六、其余散点（价值低，登记备查）
+
+| 项 | 状态 |
+|---|---|
+| OC 日志字段 `#[EB\|H:HBOPT] 0 1 1 0` / `#[EB\|H:DLW] 0` | 语义**从未查证**，未作为判据使用 |
+| OC 在 `ExitBootServices` 时是否 `DisconnectController` 停掉固件 NVMe 驱动 | 未查。此前把「控制器被重置」全归给固件 POST，**未排除 OC 自身参与** |
+| 电池供电下试 S4 | 从未做过（此前全在 AC 下），上轮估计成功率 15% |
+| `hbfx-patch-pci` | 作用域在 `IOPCIFamily` 的 `restoreMachineState`，晚于本机死点（§3z.31 §四），确认无效 |
+
+#### 七、本节结论
+
+- **没有新的可用旋钮**，§3z.31 的「暂停」判定不变。
+- 但有三处此前没交代：① 文件系统侧两个前提（加密/空间）本轮才第一次排除；
+  ② `hbfx-ahbm` 我曾误解为 HBM，已更正；③ `Hibernate File Min` 随 `hibernatemode` 变化这条观测此前完全没提。
+- 若将来还要动手，**唯一值得做的单变量是关掉 `UEFI/ReservedMemory` 那条 0x8B000**
+  （配置层、可回滚、从未验证），而不是电池对照——后者的判别力被「Windows 休眠正常」这条事实削弱了。
