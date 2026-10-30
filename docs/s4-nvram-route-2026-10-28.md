@@ -4832,3 +4832,71 @@ log show --last 30m --predicate 'eventMessage CONTAINS "HBFX" OR eventMessage CO
 若 4 出现 ⇒ 坐实"两层不一致导致误判"，修法是给 `rtcfx_exclude` 补 `80-AB`。
 若 2 出现 ⇒ rtc-blacklist 无罪，死因只剩 polled I/O，封档。
 若 1 返回非 0 ⇒ 镜像确实写失败，且比 `hibernate_machine_init` 更早，可重排因果。
+
+---
+
+## §3z.41 取证脚本的实跑验证：3 个真 bug + 3 个沙箱假象 + 1 条被证伪的通道
+
+> 日期：2026-10-30 11:56
+> 触发：用户「脚本你验证过了吗？别又有问题」——上一轮我只跑了 `bash -n` 就交付了，确实没实跑
+
+### 一、实跑暴露的 3 个真 bug（已修）
+
+| # | 现象 | 根因 | 修法 |
+|---|---|---|---|
+| 1 | `line 71: RC?: unbound variable` | `ng "...（rc=$RC）"` —— 全角 `）` 的 UTF-8 首字节被吃进变量名。**项目 MEMORY.md 早记过这个坑**（`$MODE）`），我又踩了一次 | 全脚本 `$VAR` 紧跟非 ASCII 的一律改 `${VAR}`，并用 python 扫描确认剩余 0 处 |
+| 2 | self-test 把 `cp`/`grep`/`head` 解析到 `/Applications/WorkBuddy.app/.../brokered-bin/` 的 shim | PATH 被 IDE 注入 | 三处改绝对路径 `/bin/cp` `/usr/bin/grep` `/usr/bin/head`；self-test 也改成检查绝对路径下是否 `-x` |
+| 3 | ★ **日志段失败时，`02-key-lines.txt` 里五条判据全显示「(未出现)」** | 没有数据 ≠ 没发生，但读起来一模一样 | 文件顶部加警告横幅：「下面每一处（未出现）都不代表事情没发生，只代表没数据，别据此下结论」 |
+
+另修 2 处会误导的地方：
+
+- `00-env.txt` 原先只记 boot-args。现在会判断**运行时 NVRAM 值**里有没有 `-hbfxdbg`；没有就警告「可能改了 config 但没重启，NVRAM 还是旧值」。**实测当前就命中了这条**——config 已改，NVRAM 仍是旧串，证明这个检查是必要的。
+- `05-panic.txt` 原先目录列表为空时无任何说明。现在会提示这是沙箱隐藏（ENOENT）而非真的没有。
+
+### 二、三个「沙箱假象」——不是脚本 bug，但必须知道
+
+| 现象 | 实测输出 | 结论 |
+|---|---|---|
+| `/Library/Logs/DiagnosticReports` 不可见 | `ls: No such file or directory`、`[ -d ]` 为假 | **沙箱把它隐藏成 ENOENT**。11:20 还能读到 `.contents.panic` 9407 B，现在同一路径报不存在 ⇒ 是访问被拦，不是文件被删 |
+| `log show` | `log: Cannot run while sandboxed`（rc=64） | 沙箱禁止 |
+| 经 `osascript ... with administrator privileges` 提权后跑 `log show` | `Could not open local log store: The specified URL did not refer to a valid log archive`（whoami 已是 root） | **提权能绕过沙箱，但绕不过日志库**。`log stats` 同样空 ⇒ 这条路也不通 |
+
+⇒ **`log show` 这一段我在本环境里无法验证，只能靠 self-test 让用户在自己 Terminal 里确认。**
+
+### 三、一条被证伪的取证通道：`nvram aapl,panic-info`
+
+原本以为这是比 `.contents.panic` 更可靠的 panic 来源（NVRAM 变量，断电也在）。实测：
+
+```
+转义后长度: 17434
+解码后长度: 7680
+前 64 字节: f0b03b3d468de175100c340eb3d965390886379bcd66b3190783e1c6389b2d2c…
+可打印串（≥8 字符）: 仅 1 条，且是乱码
+```
+
+⇒ **加密的，解不出明文。** 脚本只记录其存在与长度，显式注明「不解码」，避免下次又有人往里挖。
+
+### 四、已验证 / 无法验证的分界
+
+| 分支 | 验证方式 | 结果 |
+|---|---|---|
+| `--self-test` 全 8 项 | 实跑 | ✅ 通过，且正确识别沙箱限制并给出针对性建议 |
+| 完整取证（非 root） | 实跑 | ✅ 退出码 0、stderr 0 字节、8 个产物齐全 |
+| panic JSON 解析 | 造两份假 JSON（一份标准键、一份完全不同的键）实跑 | ✅ 都能完整输出；fallback 保证不漏字段 |
+| `nvram.plist` 解析 | 造假 plist，跑 `plutil -p \| grep` | ✅ 正确摘出 `boot-args` / `IOHibernateRTCVariables` / `hbfx-ahbm` |
+| 非法 plist | 造假文件 | ✅ 不崩，走「无相关键」兜底 |
+| 归档文件名 | 实算 | ✅ `plist_nvram.plist` / `plist_System_Volumes_Data_nvram.plist` |
+| **root 下的 `log show` 全段** | — | ❌ **无法验证**（沙箱 + 日志库双重限制） |
+
+### 五、勘误：脚本没有入库
+
+上一提交 `2e77998` 的消息写「新增 tools/capture-hbfx-evidence.sh」——**不准确**。
+`.gitignore:43` 是 `/tools/`（注释原文「工具脚本（本地辅助，不入库）」），整个目录被排除，
+所以那次提交实际只进了 `config.plist` 的 boot-args 改动。脚本本身**不在版本库里**。
+要留档得改 `.gitignore` 加 `!/tools/capture-hbfx-evidence.sh`，或手动复制——目前选择尊重既有约定，不动。
+
+### 六、当前脚本的已知能力边界（写进脚本头注释）
+
+1. `log show` 在受限 shell 里必然失败，自检会第一时间暴露
+2. `aapl,panic-info` 加密，不解码
+3. `-hbfxdbg` 走内核 kprintf，panic 后立即断电可能未落盘 ⇒ `/nvram.plist` 是互补通道
