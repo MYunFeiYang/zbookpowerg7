@@ -4302,3 +4302,129 @@ movl $0x40000000, %r14d ; 1 GiB（另一分支）
 ⚠️ 但按 80% 标准，**「控制器被固件 POST 重置」这一句本身把握不足 80%**——
 它是解释 `startIO` 失败的一种机制假说，不是观测结果。
 观测到的只有：**polled 读在恢复阶段返回 `kIOReturnError`，且发生在第一页之前**。
+
+---
+
+## §3z.35 ★重大修正：panic 发生在**睡前**，不是醒来；且 `IOPolledFilePollersOpen` 返回值无人检查
+
+> 日期：2026-10-30 11:20
+> 触发：用户问「不能确定的是挖掘的信息不够吗」→ 自查发现**关键证据一直存在、我没读**
+
+### 一、漏读的文件：`.contents.panic`
+
+`/Library/Logs/DiagnosticReports/` 下：
+
+```
+-rw-rw-rw-  1 root _analyticsusers   9407  2019-01-01 08:01  .contents.panic
+```
+
+文件名**以点开头（隐藏）**，所以历次 `ls Kernel-*.panic` / `ls *.panic` 全部漏掉。
+它里面是 JSON，含**完整 `panic_string` + 完整 backtrace + boot-args + uptime 字段**。
+
+**教训**：抓 panic 必须 `ls -la`（含隐藏文件），且要同时捞 `.contents.panic`。
+`.panic` 原文件（含 `Debugger message:` / debug_buf）已被系统清理，只剩 `.contents.panic` 这一份。
+
+### 二、backtrace 定性：这是**睡眠进入路径**
+
+```
+_hibernate_machine_init + 0x12db      ← panic 点
+_ml_hibernate_active_post + 0x27
+_IOCPURunPlatformActiveActions + 0x6b
+_acpi_sleep_kernel + 0x2be
+AppleACPIPlatformExpert::sleepPlatform + 0x1f9
+AppleACPICPU::haltCPU + 0x85
+_IOCPUSleepKernel + 0x21c
+IOPMrootDomain::powerChangeDone + 0xa4a
+IOService::all_done
+```
+
+`acpi_sleep_kernel → ml_hibernate_active_post` 是**睡前**执行 platform active actions 的链路
+（`ml_hibernate_active_post()` 在 `gIOHibernateState != 0` 时调 `hibernate_machine_init()`）。
+醒来路径不会走 `acpi_sleep_kernel`。**把握 >95%。**
+
+同一个 panic 里还有两条独立佐证：
+
+| 字段 | 值 | 含义 |
+|---|---|---|
+| `Hibernation exit count` | `0` | 从未有一次 hibernation 正常退出 ⇒ 从没写成功过 |
+| `System shutdown begun` | `NO` | 不是关机路径 |
+| `panic` | `Hibernate restore error e00002bc @IOHibernateIO.cpp:2921` | `e00002bc = kIOReturnError` |
+
+### 三、⇒ 直接推翻的三条旧结论
+
+| 旧结论（已作废） | 实际 |
+|---|---|
+| 「写镜像成功，死在恢复期的 polled read」 | **镜像从未写出**。`sleepimage` 恒 1 GiB / 64 字节全零因此解释得通：它就没被写过 |
+| 「断电后固件重置 NVMe ⇒ 恢复失败」 | 与死点无关。机器在**断电之前**、睡前就 panic 了，压根没进 S4 断电 |
+| 「RTC 交接失败导致冷启动」 | 同上，不是本 panic 的原因（RTC 坏是**另一件事**，见 §旧记） |
+
+### 四、反汇编：真正的错误源可能是 `IOPolledFilePollersOpen`
+
+`_hibernate_machine_init` 内（`/tmp/hmi.asm`）：
+
+```
+0x99db81:  callq  _IOPolledFilePollersOpen
+0x99db86:  movl   %eax, %ebx            ← 返回值只存起来
+0x99db88:  ...    _rtc_nanotime_read / 算耗时
+0x99dbba:  kdb_printf "IOPolledFilePollersOpen returned 0x%x"  ← **只打印**
+0x99dbdb:  kprintf   同上
+0x99dbf3:  cmpb   $0x0, gIOHibernateMode相关(0xed847a)
+0x99dbfa:  je     0x99dc47             ← 直接进 Seek + Read，**全程没有 testl %ebx,%ebx**
+```
+
+对比紧邻的 `IOPolledFilePollersSetEncryptionKey`（0x99dc11）：
+
+```
+0x99dc16:  movl %eax, %ebx
+0x99dc3c:  testl %ebx,%ebx
+0x99dc3e:  jne  0x99e1e6              ← **有检查，失败会跳去单独处理**
+```
+
+⇒ **`PollersOpen` 失败会被静默吞掉**（>90%，二进制直读），然后第一次 `IOPolledFileRead`
+必然返回 `kIOReturnError`，报成 2921。
+
+而那次 Read 的实参是 `IOPolledFileRead(gIOHibernateFile, NULL /*rsi*/, 0 /*rdx*/, %r15)`：
+**读 0 字节**。读 0 字节都返回 `e00002bc` ⇒ polled 通路从根上就没起来，
+不是"读到某页出错"。
+
+### 五、22 秒不再是矛盾，而是一个**稳定常数**
+
+同一份 panic 的 `Last Sleep` 段：
+
+```
+  Uptime  : 0x0000007f2504bc64   = 546.081913956 s
+  Sleep   : 0x0000007a0c51714f   = 524.192674127 s
+```
+
+差 = **21.889 s**。此前另一份样本是 `788.6 / 766.6`，差 = **22.0 s**。
+**两个独立样本都是 22 秒** ⇒ 这是「入睡 → panic」的稳定间隔，不是矛盾数据。
+
+之前把它和「`EXITBS`→`kern.boottime` 68 秒」当矛盾的错在于：两者根本不是同一个量。
+68 秒是 boot.efi 交接→内核就绪，22 秒是 `hibernate_machine_init` 自身耗时。
+⇒ §3z.33 表格第 2、4 项由「未知」改判为**已知（>90%）**。
+
+### 六、信息到底缺不缺：分三类
+
+| 类别 | 内容 | 现状 |
+|---|---|---|
+| **A. 信息在，我没取** | panic backtrace、debug_buf（`IOPolledFilePollersOpen returned 0x…`、`hibernate_machine_init: state %d … imageSize 0x%qx`） | 上一轮全部漏读。`.contents.panic` 已找回；debug_buf 随 `.panic` 原件被清，**需复现时立刻 `cp`** |
+| **B. 可挖但没挖** | `IOPolledFilePollersOpen` 内部为何失败（`IONVMeControllerPolledAdapter::startIO` 的调用前条件） | 已定位到"未检查"这一层；再往下需要反汇编 `IOPolledFilePollersOpen` + NVMe polled adapter |
+| **C. 软件里没有** | 固件 POST 行为、BIOS 四项设置值、电池供电差异 | 只能实测/进固件界面 |
+
+**结论：卡住的不是挖掘深度，主要是 A 类——证据一直在，检索方式错了。**
+
+### 七、下一步（成本极低、收益最高）
+
+复现一次睡前 panic，**重启后 10 秒内**抓三样：
+
+```bash
+cp -a /Library/Logs/DiagnosticReports/.contents.panic ~/Desktop/panic-contents-$(date +%H%M).json
+cp -a /Library/Logs/DiagnosticReports/Kernel-*.panic ~/Desktop/ 2>/dev/null
+ls -la /Library/Logs/DiagnosticReports/ | head -40
+```
+
+> 文件名会打成 `2019-01-01`（RTC 已坏），所以**不能靠日期筛选**，必须全量 `cp -a`。
+
+拿到 `.panic` 原件的 `Debugger message:` 段，就能直接读到：
+- `IOPolledFilePollersOpen returned 0x…` → **是不是它先失败的，一次定死**
+- `hibernate_machine_init: state %d, image pages %d, … imageSize 0x%qx` → 镜像尺寸/分支
