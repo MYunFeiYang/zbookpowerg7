@@ -44,6 +44,8 @@ docs/fixes/
 
 # 睡眠日志采集产物（含 465 MB 级 .logarchive，绝不入库）
 /hbfx-capture/
+# 开机自动留档产物（每次约 860 KB，本地留存不入库）
+/boot-reports/
 
 # 单篇弃用文档
 docs/macos-sleep-power-verification.md
