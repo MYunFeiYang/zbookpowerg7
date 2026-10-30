@@ -4716,3 +4716,119 @@ X250/T530 的做法是**二分法找坏区，只封坏的**（Dortania 那页教
 
 但抄作业能揭示一件事：**本机的 242 字节全封是一个从未被审视的暴力解**，
 而它按官方原文就足以让 hibernation 失效。这解释了"即使不 panic 也恢复不了"的那一半。
+
+---
+
+## §3z.40 ★更正 §3z.39：rtc-blacklist 全封**不是**死因；真隐患是两层配置不一致
+
+> 日期：2026-10-30 11:40
+> 触发：用户问「值得尝试吗？」→ 补查 HibernationFixup 官方 README + 本地 kext 1.5.4 strings
+
+### 一、§3z.39 的结论被官方 README 直接否定
+
+§3z.39 写了「按官方原文，`0x80–0xAB` 被封 ⇒ hibernation 不应工作」。**这句是错的。**
+HibernationFixup README 首段原文：
+
+> By design the mach kernel encrypts hibernate sleepimage and writes the encryption key to
+> variable "IOHibernateRTCVariables" in the system registry (PMRootDomain). Somehow this value
+> has to be written into RTC (or SMC) in order the boot.efi could read it. **But in case if you
+> have to limit your RTC memory to 1 bank (128 bytes), it doesn't work**: there are no any
+> variables in SMC/NVRAM/RTC. **Fortunately, boot.efi can read key "IOHibernateRTCVariables"
+> from NVRAM!** This kext detects entering into "hibernate" power state, reads variable
+> IOHibernateRTCVariables from the system registry and writes it to NVRAM.
+
+**这个 kext 的存在理由，就是「RTC 只有 1 个 bank（即 0x80–0xFF 不可用）」。**
+本机 `rtc-blacklist` 恰好封掉 `0x0E–0xFF`（第二 bank 全在禁写区）⇒ 正是 README 描述的场景
+⇒ 应当由这个 kext 自动兜到 NVRAM，而本机 `Misc/Boot/HibernateMode = NVRAM` 正好与之配套。
+
+⇒ **"封了 80-AB 就必然不工作"不成立。** §3z.39 该条作废。
+
+### 二、本地 kext（HibernationFixup 1.5.4）里有对应的可观测日志
+
+`strings EFI/OC/Kexts/HibernationFixup.kext/Contents/MacOS/HibernationFixup` 命中：
+
+```
+%s%10s: @ %s%02d.%02d.%04d %02d:%02d:%02d: IOHibernateSystemSleep is called, result is: 0x%x
+%s%10s: @ %sCurrent hibernate state from IOPMRootDomain is: %d
+%s%10s: @ %sNVStorage path entered (forceNvram=%d), PMRootDomain key %s
+%s%10s: @ %skIOHibernateRTCVariables is %u bytes
+%s%10s: @ %sall nvram kernel patches will be skipped since the second bank of RTC memory is available
+%s%10s: @ %sboot-arg %s specified, routing hibernation variables to NVRAM regardless of RTC size
+```
+
+最后两条是关键：kext **自己会判定 "second bank of RTC memory" 是否 available**，
+可用就**跳过** nvram patch。而且有一条 boot-arg 可以**强制**路由到 NVRAM
+（`... routing hibernation variables to NVRAM regardless of RTC size`）。
+
+### 三、★真隐患：kext 层与固件层对 0x80–0xFF 的处置**互相矛盾**
+
+实测本机两侧取值：
+
+| 层 | 配置 | 对 0x80–0xFF 的处置 |
+|---|---|---|
+| 固件层 | `rtc-blacklist`（242 B，`0x0E–0xFF`）+ `AppleRtcRam = True` | **禁止写入** |
+| kext 层 | `rtcfx_exclude=0E-57,5A-7F`（RTCMemoryFixup） | **放行**（未列入） |
+
+⇒ 两层对同一段给出相反答案。若 HibernationFixup 依据 kext 层视野判定
+「第二 bank 可用」，它就会**跳过 NVRAM 兜底、真去写 RTC**，写入被固件层静默丢弃，
+`IOHibernateRTCVariables` 丢失 ⇒ 与 T530 那台的现象一致。
+
+**这与 X250 / T530 的做法对照能看清意图**：
+
+| | 固件层 | kext 层 | 效果 |
+|---|---|---|---|
+| X250 | `5859`（只封校验和） | 不用 RTCMemoryFixup | 第二 bank 可用 ⇒ 直写 RTC，靠 2 字节坏区规避 |
+| T530 | 未列 | `rtcfx_exclude=80-AB` | **主动让第二 bank 不可用** ⇒ 逼 kext 走 NVRAM |
+| **本机** | `0E–FF`（含 80-AB） | `0E-57,5A-7F`（**放行** 80-FF） | **两层打架** ⇒ 可能被误判 |
+
+⇒ 本机该抄的是 **T530 的意图**（让第二 bank 明确不可用），但只做了一半——
+固件层封了，kext 层没封。
+
+**把握：链条自洽但未实测，<80%，属"未知"，不能当结论。**
+
+### 四、`IONVMeFamily` / `IOPCIFamily` 里都搜不到 `PolledAdapter`
+
+```
+$ strings IONVMeFamily | grep -i polled   → 0 命中
+$ strings IOPCIFamily  | grep -i Polled   → 0 命中
+$ strings kernel | grep -E "IOPolledFile"  → 全部命中（IOPolledFilePollers / Open / Read / Seek / Flush）
+```
+
+⇒ 之前记忆里的 "`IONVMeControllerPolledAdapter::startIO` 返回 kIOReturnError" **表述不准**，
+polled 路径的**调度器**在内核 `IOPolledFilePollers`，具体存储设备的 polled 接口由
+`IOPolledInterfaceStack` 逐层下发（ioreg 里确实有 `IOPolledFilePollers` / `IOPolledInterface` /
+`IOPolledInterfaceStack` 三个实例）。
+
+### 五、`DisableIoMapper` = absent（默认 false）——一条新假说，但 <80%
+
+`Booter/Quirks/DisableIoMapper` 未设置。若 BIOS 中 VT-d 开启，polled 模式的 DMA 可能被
+IOMMU 拦下 → `startIO` 返 `kIOReturnError`。**纯机制假说，无观测支撑，不构成建议**，
+仅作为"若取证确认 PollersOpen 失败"之后的下一个可查方向。
+
+### 六、结论：什么值得做、什么不值得
+
+| 动作 | 价值 | 成本 | 判断 |
+|---|---|---|---|
+| 抄 X250/T530 **全清单** | 低（治的是恢复侧） | 高（含 2 条本机实测会启动 panic 的项） | **不值得** |
+| 加 `-hbfxdbg` + `-hbfx-dump-nvram` 取证 | **高**（一次收敛 3 个疑点） | 一条 boot-arg + 一次重启 | **值得** |
+| 让 kext 层与固件层对 80-FF 的处置一致 | 中（消除自相矛盾） | 一个 boot-arg | 取决于取证结果 |
+| `ReservedMemory @0x8B000` 关掉 | 中（唯一从未验的注入） | 零 | 顺手 |
+| 改 `RebuildAppleMemoryMap` / `EnableWriteUnprotector` | 负（`f443862` 实测启动 panic） | — | **禁止** |
+| 改 `MmioWhitelist` / 抄 `ReservedMemory` 地址 | 负（机型相关） | — | **禁止** |
+
+### 七、取证要抓的 4 条日志（`-hbfxdbg` 后）
+
+```bash
+log show --last 30m --predicate 'eventMessage CONTAINS "HBFX" OR eventMessage CONTAINS "hbfx"' --info
+```
+
+| # | 日志行 | 一次性回答 |
+|---|---|---|
+| 1 | `IOHibernateSystemSleep is called, result is: 0x…` | 写镜像成功还是失败 |
+| 2 | `NVStorage path entered (forceNvram=%d)` | 有没有走 NVRAM 兜底 |
+| 3 | `kIOHibernateRTCVariables is N bytes` | 休眠变量到底有没有生成 |
+| 4 | `all nvram kernel patches will be skipped since the second bank of RTC memory is available` | 它怎么判定第二 bank |
+
+若 4 出现 ⇒ 坐实"两层不一致导致误判"，修法是给 `rtcfx_exclude` 补 `80-AB`。
+若 2 出现 ⇒ rtc-blacklist 无罪，死因只剩 polled I/O，封档。
+若 1 返回非 0 ⇒ 镜像确实写失败，且比 `hibernate_machine_init` 更早，可重排因果。
