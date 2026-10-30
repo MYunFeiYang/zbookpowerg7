@@ -4637,3 +4637,82 @@ acidanthera/HibernationFixup README 原文：
 | 5 | 以上都做完仍失败 → 试 `DiscardHibernateMap=False` | X250 | 中，可能影响二次休眠 |
 
 **不动**：`RebuildAppleMemoryMap` / `EnableWriteUnprotector`（`f443862` 已证 False → 启动 panic）。
+
+---
+
+## §3z.39 原理：RTC 黑名单的粒度决定 hibernate 生死；本机封了 242 字节
+
+### 一、`rtc-blacklist` / `rtcfx_exclude` 到底是什么
+
+三份权威原文：
+
+1. **RTCMemoryFixup README**（acidanthera 官方）
+   > `rtcfx_exclude=offset1,offset2,start-end...` — list of offsets or ranges of offsets **where writing is not allowed**
+
+   ⇒ 语义是「**禁止写入**」，不是"跳过校验"。被列入的 offset，macOS/AppleRTC 的写操作被丢弃。
+
+2. **Dortania《Fixing RTC write issues》**
+   > `UEFI → ProtocolOverrides → AppleRtcRam` + `NVRAM → Add → rtc-blacklist`
+   > 在**固件级别**上黑名单某些区域（同时覆盖 boot.efi 和内核，比 kext 层更早生效）
+   > "with `rtc-blacklist` you must include **every entry**"（逐字节列，不能用范围）
+
+3. **`DisableRtcChecksum`**（Dortania 同页）
+   > "已集成进 OpenCore，但**只保护 0x58–0x59**，且只在**内核层**生效"
+
+### 二、RTC 各段的实际用途（官方原文）
+
+| 区间 | 用途 | 封掉的后果 |
+|---|---|---|
+| `0x00–0x0D` | RTC 时钟寄存器 | 时间读不出来 |
+| `0x0E–0x7F` | 固件/BIOS 自用 | 机型相关，封多了会触发 CMOS 校验错 |
+| `0x58–0x59` | **主校验和** | 正是 `DisableRtcChecksum` 保护的那两个字节 |
+| `0x80–0xAB` | **`IOHibernateRTCVariables`（休眠变量）** | README 原文：**"you can exclude it, but hibernation won't work"** |
+| `0xB0–0xB4` | PowerManagement | "they don't work on hacks anyway" |
+
+### 三、三份配置的粒度对比（这才是"作业"的实质）
+
+| | 黑名单内容 | 字节数 | 思路 |
+|---|---|---|---|
+| **X250** | `5859` | **2** | 只封主校验和，其余全放行 |
+| **T530** | `rtcfx_exclude=80-AB` | **32** | 放弃 RTC 存休眠变量，改走 NVRAM，所以把 80-AB 让出去 |
+| **本机** | `0E`–`FF` | **242** | 把整片 RTC 全封（只剩时钟 0x00–0x0D） |
+
+### 四、★本机的前提条件成立，所以这个封禁是真的
+
+```
+UEFI/ProtocolOverrides/AppleRtcRam = True
+```
+
+`AppleRtcRam` 协议覆盖开着 ⇒ `rtc-blacklist` **在固件层生效**，不是死配置。
+
+⇒ **本机从固件层起就禁止写入 RTC 0x0E–0xFF 的全部 242 个 offset，其中包含
+0x80–0xAB（休眠变量区）与 0xB0–0xB4（PM 区）。**
+
+按官方 README 原文，`0x80–0xAB` 被封 ⇒ **hibernation 不应工作**。
+这条与 §3z.35 的「睡前 polled I/O panic」是**两个独立死因**，不是同一件事。
+
+### 五、为什么本机会走到 242 字节全封
+
+历史：`005 (RTC Power Loss)` —— CMOS 校验和错误导致设置丢失。
+当时的解法是"把整片 RTC 都封掉，谁也别写"。这是**暴力解**，代价是连 hibernate 变量区一起牺牲。
+X250/T530 的做法是**二分法找坏区，只封坏的**（Dortania 那页教的就是这个二分流程）。
+
+### 六、能不能抄：分项判断
+
+| 项 | 能否抄 | 理由 |
+|---|---|---|
+| `rtc-blacklist` 收窄 | **可以，且应该** | 但目标值不能直接抄 X250 的 `5859`（那是它的坏区），要先确定本机坏区 |
+| 去掉 RTCMemoryFixup + `rtcfx_exclude` | **可以** | X250 明说不需要；且本机固件层已封，内核层 kext 是重复劳动 |
+| `RebuildAppleMemoryMap=False` + `EnableWriteUnprotector=True` | **不能** | `f443862` 实测 → 启动 panic（OEM 固件缺 `MEMORY_ATTRIBUTE_TABLE`） |
+| `MmioWhitelist` 两组地址 | **不能直接抄** | 地址是机型 BAR 相关，抄错更糟 |
+| `HibernateMode=NVRAM` | 已同 | — |
+| `-hbfx-dump-nvram` | **可以** | 官方 README，零风险 |
+| `ReservedMemory` 特定条目 | **不能** | 机型相关；本机自己的 0x8B000 也未验 → 先关掉 |
+
+### 七、原理层的真结论
+
+**这两份作业解决的是「RTC 写入冲突」问题，本机当前症状是「睡前 polled I/O 起不来」，
+两者不同层。** 抄作业不会直接治好 panic。
+
+但抄作业能揭示一件事：**本机的 242 字节全封是一个从未被审视的暴力解**，
+而它按官方原文就足以让 hibernation 失效。这解释了"即使不 panic 也恢复不了"的那一半。
