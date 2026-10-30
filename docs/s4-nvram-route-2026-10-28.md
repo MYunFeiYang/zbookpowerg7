@@ -3903,3 +3903,54 @@ pmset sleepnow
 
 判据仍为：OC 日志 `H:IS`、是否新增 panic、`last` 是否有新 console 登录。
 **当前 S4 的死点已定位到「固件断电-上电后 NVMe 控制器被重置」，属固件/EC 行为，用户侧软件不可改。**
+
+---
+
+### 3z.31. ★ 关键前提补录：Windows 侧休眠（S4）正常 —— 定性修正（2026-10-30 11:00）
+
+#### 一、事实
+
+用户指出「**Windows 休眠正常**」这条信息此前已经说过多次。
+**核查结果：`grep -rn "Windows.*休眠" .workbuddy/memory/ docs/` 全库零命中** ⇒ 确实是漏记，
+只在对话里出现过，未被落盘。此为记录缺陷，本节补录并据此修正 §3z.30 的定性。
+
+#### 二、它与 macOS 侧失败并不矛盾（两者恢复机制不同）
+
+| 环节 | Windows（S4 正常） | macOS（本机失败） |
+|---|---|---|
+| 镜像位置 | `C:\hiberfil.sys`（NTFS） | `/var/vm/sleepimage`（APFS 根卷，`man pmset` 强制） |
+| 上电后 | 完整固件 POST → `bootmgr` 读 hiberfil | 完整固件 POST → `boot.efi` 读镜像头 → 跳入内核 |
+| 谁读镜像 | **完整存储驱动栈**（`stornvme.sys` 重新 probe 控制器） | **`IONVMeControllerPolledAdapter`**，在加载任何 kext **之前**裸操作 BAR |
+| 对控制器状态的假设 | 无假设，任何状态都能重新初始化 | 假设控制器可被 polled 路径直接接管 |
+| 结果 | 成功 | `startIO` → `kIOReturnError`（`IOHibernateIO.cpp:2921`） |
+
+⇒ **Windows 正常证明的是「硬件与固件能完成 S4 断电-上电-恢复循环」，不能推出「macOS 也该成功」**，
+因为 macOS 走的是**驱动加载之前的 polled 裸读**那条路，Windows 完全不经过它。
+
+#### 三、对 §3z.30「固件/EC 行为，用户侧软件不可改」的措辞修正
+
+原表述过强。更准确的说法：
+
+> 硬件层面 S4 可用（Windows 已验证）；macOS 的失败源于**其 polled NVMe 恢复路径与本机固件在
+> `EXITBS` 交接时留下的控制器状态不兼容**。这是 macOS 侧实现与本机固件的组合问题，
+> 不是硬件缺陷，也不是 EC 策略问题。
+
+责任归属变了（从「固件坏」改为「组合不兼容」），但**可动的旋钮没有增加**，见下节。
+
+#### 四、剩余变量复核：已无可用项
+
+| 候选 | 结论 |
+|---|---|
+| 加载 OC 的 `NvmExpressDxe.efi` 接管控制器 | **排除**。本机 `UEFI/Drivers` 只有 8 个非 NVMe 驱动（HfsPlus/OpenRuntime/OpenCanopy/ToggleSipEntry/FirmwareSettingsEntry/ResetNvramEntry/ext4_x64/OpenLinuxBoot），**完全没有 NVMe 驱动**，全程用固件原生驱动。社区共识：已在固件原生支持 NVMe 的平台上强行加载 `NvmExpressDxe` 会导致启动延迟、内存分配冲突，甚至卡在选单。**风险 > 收益** |
+| `MemoryAllocation.efi` | 不适用（官方明确「要用 hibernation 就不要用它」），本机也未加载 |
+| `hbfx-patch-pci=` / `-hbfx-disable-patch-pci` | **排除**。README 原文：该 patch 的作用是「resume 后不调用 `restoreMachineState` 以避免 hang & black screen」，属 `IOPCIFamily` 阶段；本机死点在更早的 `hibernate_machine_init` readahead，**不在其作用域内** |
+| `HibernateMode` | 当前 `NVRAM`（`git log -S` 显示自 2024-10-10 init 起从未改过值）。它只决定密钥存放位置，不影响 polled 读盘 |
+| 换 NVMe / 换 SATA | 唯一剩下能改物理变量的路。但 Dell 两个成功案例用的都是 **DRAM-less + HMB** 的盘（Crucial P3 / WD SN770），与本机 SN570 同类 ⇒ **盘型不是决定因素**，换盘更像买彩票 |
+| 等 macOS 更新 | 被动，无法预期 |
+
+#### 五、结论（本节定稿）
+
+**S4 在本机维持「暂停」判定。** 与 3z.30 的差别只在措辞：不是「固件坏了」，而是
+「macOS 的 polled 恢复路径与本机固件的交接状态不兼容」，两者都不存在用户侧可调开关。
+「Windows 休眠正常」是一条**有价值的前提事实**（它砍掉了「硬件不支持」这个分支），
+但**不构成「再试一次就会成功」的依据**。
