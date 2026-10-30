@@ -5038,7 +5038,7 @@ ioreg ... | sed 's/.*<\(.*\)>.*/\1/' | xxd -r -p      # 解出即 boot.efi 日�
 
 | 现象 | 真相 |
 |---|---|
-| `log show` 报 `Could not open local log store: ... not a valid log archive`（rc=65，真终端里也复现） | 库目录被删了，logd 还在往**已 unlink 的 inode** 里写 ⇒ 写得出、读不到 |
+| `log show` 报 `Could not open local log store: ... not a valid log archive`（rc=65，真终端里也复现） | **库目录被删了（已证）**；至于 logd 是否在往已 unlink 的 inode 里继续写，属推断（~70%），未有观测直接证明 |
 | `logd runs=1 / never exited / state=running` 却找不到库 | 同上，进程活着，目录没了 |
 | 11:20 我能 `cat` 到 `.contents.panic`（9407 B），11:52 同路径 ENOENT | **11:43:38 被 Lemon 删了**，前后只差 23 分钟 |
 | 之前记的「4 份 `Kernel-2019-01-01-*.panic` 被系统当陈旧报告清理」 | **不是系统干的，是 Lemon 10-28 14:35 删的** |
@@ -5070,7 +5070,7 @@ ioreg ... | sed 's/.*<\(.*\)>.*/\1/' | xxd -r -p      # 解出即 boot.efi 日�
 | # | 动作 | 说明 |
 |---|---|---|
 | 1 | **关掉柠檬的「系统日志/垃圾」自动清理**，或取证期间直接退出柠檬 | 否则重启后重建的库还会被删。`is_watching_automatic = true` |
-| 2 | 重启（本来就为 `-hbfxdbg` 要重启） | logd 会重建 `/var/db/diagnostics` |
+| 2 | 重启（本来就为 `-hbfxdbg` 要重启） | **预期** logd 会重建 `/var/db/diagnostics`（未实测，故第 3 步必须验证；若重启后仍无，则要 `sudo launchctl kickstart -k system/com.apple.logd`） |
 | 3 | 重启后先验证：`ls -ld /var/db/diagnostics` 与 `log show --last 1m \| tail -2` | 两者都正常才谈取证 |
 | 4 | 再睡一次、抓 `07-bootlog.txt` + `04-nvram-plist.txt` | 即使日志仍不可用也有料 |
 
