@@ -4544,3 +4544,96 @@ d827468 10-29 14:53 feat(sleep): 加入 UEFI/ReservedMemory 0x8B000 保留区（
 - boot-args：穷尽（HibernationFixup 全部 7 个）
 - **config.plist：1 条未验**（`ReservedMemory @0x8B000`）
 - **但以上全部是"唤醒侧"处方，与真实症状不同层** ⇒ 它们的结果无论成败都不构成对"睡前失败"的排除
+
+---
+
+## §3z.38 找到完整教程了：X250 / T530 两份可照抄清单，对照本机出 3 处硬差异
+
+### 一、来源（都是"笔记本 + NVMe + hibernatemode 25 实测成功"）
+
+1. `zamkara/Lenovo-Thinkpad-X250-Hackintosh/issues/11` — flo-at-work，2024-04，**hibernatemode 25 实测成功**
+2. `5T33Z0/Lenovo-T530-Hackintosh-OpenCore/issues/48` — T530，Catalina/Sonoma 实测稳定
+
+> 注：Dortania 官方 `OpenCore-Post-Install/universal/sleep.html` **不含 S4 内容**，
+> 原文只写 `Misc → Boot → HibernateMode → None` + "We're gonna avoid the black magic that is S4 for this guide"。
+> ⇒ 官方文档不是 S4 教程，别指望它。
+
+### 二、X250 完整清单（原文逐条）
+
+```
+DevirtualiseMmio          -> True
+MmioWhitelist             -> 加两组地址（截图）
+DiscardHibernateMap       -> False
+EnableWriteUnprotector    -> True
+RebuildAppleMemoryMap     -> False
+SyncRuntimePermissions    -> True
+DisableLinkeditJettison   -> True
+DisableRtcChecksum        -> False
+HibernateMode             -> NVRAM
+WriteFlash                -> True
+NVRAM 4D1FDA02-…-4BCCA8B30102 -> rtc-blacklist = 5859
+boot-args                 -> （若用 RTCMemoryFixup 才加 rtcfx_exclude=58-59）
+NVRAM 加 E09B9297-7928-4440-9AAB-D1F8536FBF0A（Add + Delete 两段）
+ReservedMemory            -> 加一条（截图）
+pmset -a hibernatemode 25；重启一两次
+```
+**关键**：作者明说「只需 HibernationFixup.kext 1.5.0，**不需要 RTCMemoryFixup**」。
+
+### 三、T530 清单（原文）
+
+```
+HibernationFixup + RTCMemoryFixup
+boot-args: rtcfx_exclude=80-AB
+Misc/Boot: HibernateMode = NVRAM，HibernateSkipsPicker = true
+Booter/Quirks: RebuildAppleMemoryMap = False
+ReservedMemory: 用仓库附件条目
+二次休眠黑屏 → DiscardHibernateMap 开启 + 重置 NVRAM
+BIOS 必须 UEFI only、CSM disabled
+```
+
+### 四、本机对照（实测读 config.plist）
+
+| 项 | X250 | 本机 | 判定 |
+|---|---|---|---|
+| `DevirtualiseMmio` | True | True | 同 |
+| `MmioWhitelist` | 2 组 | **0 条** | 差异（Dortania 允许空，不致命） |
+| `RebuildAppleMemoryMap` | False | **True** | **不能改**：`f443862` 实测 False → 启动 panic |
+| `EnableWriteUnprotector` | True | False | 与上配套，同上 |
+| `DiscardHibernateMap` | False | True | 差异 |
+| `SyncRuntimePermissions` | True | True | 同 |
+| `DisableLinkeditJettison` | True | 未设（默认 True） | 等价 |
+| `DisableRtcChecksum` | False | 未设（默认 False） | 等价 |
+| `WriteFlash` | True | 未设（默认 True） | 等价 |
+| `HibernateMode` | NVRAM | NVRAM | 同 |
+| **`rtc-blacklist`** | **`5859`（2 字节）** | **`0E`–`FF`（242 字节，几乎全 RTC）** | **硬差异** |
+| **`rtcfx_exclude`** | `58-59` | `0E-57,5A-7F` | **硬差异** |
+| **RTCMemoryFixup** | **不用** | **加载中（Kernel/Add[2]）** | **硬差异** |
+| `E09B9297-…` NVRAM | 有 | 无 | 缺（HibernationFixup 选项组，可空） |
+
+**本机 `rtc-blacklist` 实测值**：
+`0e0f1011…fdff`，242 字节连续，即一个不落地把 RTC `0x0E–0xFF` 全拉黑。
+
+⇒ 三种思路完全不同：X250 只避 `58-59`、T530 只避 `80-AB`（`IOHibernateRTCVariables` 区）、
+本机把**整片 RTC 都放弃**。后者最激进，且与已加载的 RTCMemoryFixup 职责重叠。
+
+### 五、另一条官方遗漏：`-hbfx-dump-nvram` 能带 panic info 落盘
+
+acidanthera/HibernationFixup README 原文：
+
+> `-hbfx-dump-nvram` **Saves NVRAM to a file nvram.plist before hibernation and after kernel panic (with panic info)**
+
+之前只理解成"睡前 dump"，漏了 **"after kernel panic (with panic info)"**。
+⇒ 这条 boot-arg 可以在睡前 panic 时把 NVRAM + panic info 写进 `nvram.plist`，
+比"重启后抢 `.panic` 文件"更可靠。
+
+### 六、可执行清单（按风险从低到高）
+
+| # | 动作 | 依据 | 风险 |
+|---|---|---|---|
+| 1 | boot-args 加 `-hbfx-dump-nvram` | 官方 README | 仅落一个文件 |
+| 2 | `rtc-blacklist` 由 242 字节改为 `5859` | X250 实测成功值 | 可能触发 CMOS checksum 报错（历史 `005`），可回滚 |
+| 3 | 停用 RTCMemoryFixup，boot-args 去掉 `rtcfx_exclude` | X250 明说不需要 | 同上 |
+| 4 | `UEFI/ReservedMemory` 关掉（唯一未验项） | §3z.37 | 无（删注入） |
+| 5 | 以上都做完仍失败 → 试 `DiscardHibernateMap=False` | X250 | 中，可能影响二次休眠 |
+
+**不动**：`RebuildAppleMemoryMap` / `EnableWriteUnprotector`（`f443862` 已证 False → 启动 panic）。
