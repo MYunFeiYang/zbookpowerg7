@@ -42,6 +42,9 @@ docs/fixes/
 # 注意限定在仓库根目录：原先写 tools/ 会连带忽略 EFI/OC/Tools/ 下的 startup.nsh
 /tools/
 
+# 睡眠日志采集产物（含 465 MB 级 .logarchive，绝不入库）
+/hbfx-capture/
+
 # 单篇弃用文档
 docs/macos-sleep-power-verification.md
 docs/windows-side-power-prompt.md
