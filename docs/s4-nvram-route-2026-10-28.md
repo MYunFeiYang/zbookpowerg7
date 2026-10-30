@@ -5000,3 +5000,78 @@ ioreg ... | sed 's/.*<\(.*\)>.*/\1/' | xxd -r -p      # 解出即 boot.efi 日�
 | `05-panic.txt`（`.contents.panic`） | 否 | 当前目录不可见，待真终端复测 |
 | `06-power.txt`（`pmset -g log`） | 否 | ✅ 可用 |
 | `01-hbfx-log.txt`（unified log） | **是** | ❌ 不可用，原因未定 |
+
+---
+
+## §3z.43 ★★ 真凶找到：腾讯柠檬清理删掉了统一日志库与全部崩溃报告（S4 取证证据反复消失的原因）
+
+> 日期：2026-10-30 12:10
+> 触发：用户在自己终端跑 `ls /var/db/diagnostics; log show` 仍报 rc=65 → 追目录 mtime → 定位到 Lemon
+
+### 一、决定性日志（`/Library/Logs/Lemon/LemonDaemon-loadBySystem.log`）
+
+```
+2026-10-28 14:35:28.804  LemonDaemon[306:81285]  filesRemove remove path: /var/db/diagnostics
+2026-10-28 14:35:28.805  LemonDaemon[306:81285]  filesRemove remove path: /Library/Logs/DiagnosticReports
+2026-10-30 11:43:38.001  LemonDaemon[328:882603] filesRemove remove path: /var/db/diagnostics
+2026-10-30 11:43:38.002  LemonDaemon[328:882603] filesRemove remove path: /Library/Logs/DiagnosticReports
+```
+
+`/var/db/diagnostics` 是 **unified log 的库本体**，`/Library/Logs/DiagnosticReports` 是**全部崩溃/panic 报告**所在地。
+两次都被整棵删掉。
+
+### 二、11:43 那一轮删的完整清单（11 条）
+
+```
+/Library/Logs/MCXTools.log            /private/var/log/install.log
+/private/var/log/shutdown_monitor.log /private/var/log/fsck_apfs.log
+/private/var/log/wifi.log             /var/log/asl
+/var/log/DiagnosticMessages           /var/db/diagnostics            ← 库本体
+/private/var/log/fsck_apfs_error.log  /Library/Logs/DiagnosticReports ← 全部崩溃报告
+/private/var/log/fsck_hfs.log
+```
+
+触发方式：`MCCMD_FILEACTION cmd` + `receive new connection exe_path == /Applications/Tencent Lemon.app/...`
+⇒ 是**柠檬主 App 下发的文件操作**（清理动作），不是系统行为。
+
+### 三、这解释了一连串"灵异现象"
+
+| 现象 | 真相 |
+|---|---|
+| `log show` 报 `Could not open local log store: ... not a valid log archive`（rc=65，真终端里也复现） | 库目录被删了，logd 还在往**已 unlink 的 inode** 里写 ⇒ 写得出、读不到 |
+| `logd runs=1 / never exited / state=running` 却找不到库 | 同上，进程活着，目录没了 |
+| 11:20 我能 `cat` 到 `.contents.panic`（9407 B），11:52 同路径 ENOENT | **11:43:38 被 Lemon 删了**，前后只差 23 分钟 |
+| 之前记的「4 份 `Kernel-2019-01-01-*.panic` 被系统当陈旧报告清理」 | **不是系统干的，是 Lemon 10-28 14:35 删的** |
+| `/var/db` mtime 11:43、`/Library/Logs` mtime 11:48 | 分别是删除目录项、以及 `LemonDaemon-loadBySystem.log` 自身被重写 |
+| `dmesg`/`log show` 全部为零 | 同一原因 |
+
+**这不是"沙箱隐藏"**。已用对照实验排除：
+
+| 路径 | 结果 |
+|---|---|
+| `/var/db/sudo`（drwx--x--x，仅 root） | **存在** |
+| `/var/root`（drwxr-x---） | **存在** |
+| `/var/db/.AppleSetupDone`（-r--------） | **存在** |
+| `/var/db/uuidtext`（日志库伴生，drwxr-xr-x） | **存在**（但 mtime 停在 2026-04-16，说明很久没写入） |
+| `/var/db/diagnostics` | **ENOENT** |
+
+且用户属 `admin` 组（`id -Gn` 确认），机器未重启（boot 于 10-29 20:18:46，已 up 15:47），
+磁盘 192 GiB 空闲。⇒ 不是权限、不是重启、不是空间回收。
+
+### 四、对 S4 项目的实际影响（严重）
+
+1. **10-28 14:35 那次删除，正好在两个 S4 实验（D6/D7）之间** ⇒ 当时的日志/panic 证据被销毁，
+   这解释了为什么"panic 文件全为 0、`.contents.panic` 只剩一份"。
+2. 现在 `log show` 不可用 ⇒ `-hbfxdbg` 的输出**根本读不到**，原计划的取证方案作废。
+3. 只剩三条不依赖日志库的通道：`07-bootlog.txt`（ioreg）、`04-nvram-plist.txt`、`06-power.txt`。
+
+### 五、处置（按顺序）
+
+| # | 动作 | 说明 |
+|---|---|---|
+| 1 | **关掉柠檬的「系统日志/垃圾」自动清理**，或取证期间直接退出柠檬 | 否则重启后重建的库还会被删。`is_watching_automatic = true` |
+| 2 | 重启（本来就为 `-hbfxdbg` 要重启） | logd 会重建 `/var/db/diagnostics` |
+| 3 | 重启后先验证：`ls -ld /var/db/diagnostics` 与 `log show --last 1m \| tail -2` | 两者都正常才谈取证 |
+| 4 | 再睡一次、抓 `07-bootlog.txt` + `04-nvram-plist.txt` | 即使日志仍不可用也有料 |
+
+**不要**手动 `mkdir /var/db/diagnostics`——日志库目录与内部结构由 logd 自己建，手建无益。
