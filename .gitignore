@@ -83,5 +83,10 @@ tools/sleep-power-measure.sh
 # config.plist 的本地改动前快照（未提交状态无法靠 git 恢复，故本地留一份；不入库）
 EFI/OC/config.plist.bak-*
 
+# ★ config 的“改动前快照”一律不入库（2026-10-30 用户明确：config 靠 git 历史回滚，不要快照）
+# 背景：config-2026-10-30-1144-pre-hbfxdbg.plist 曾被提交（2e77998），
+# exFAT 掉文件后 git checkout 又把它恢复出来，看起来像“一直在自动生成”。
+EFI/OC/config-*.plist
+
 # S4 镜像样本（体积大，仅本机分析用）
 docs/s4-memmap/*.bin
