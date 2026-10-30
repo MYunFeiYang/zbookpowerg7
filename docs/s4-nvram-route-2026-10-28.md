@@ -4487,3 +4487,60 @@ CMOS 电池、FileVault、根卷空间、OC 触碰 NVMe（`OpenCore.efi` 中 `nv
    OC NVMe quirk / `DisableIoMapper` / BIOS NVMe 模式这一层，属于**可能无解**的区间。
 5. **建议处置：保持 deepidle（`hibernatemode 0` + `standby 0` + `powernap 0`），停止投入。**
    唯一代价：无磁盘镜像兜底，电池耗尽会丢未保存数据。
+
+---
+
+## §3z.37 勘误：§3z.36 的"5% 构成"有两条说错了
+
+用户追问「你确定这些点之前从没试过？」→ 复查 git 历史，确有两处表述错误。
+
+### 一、`Misc/Boot/HibernateMode`：**四种取值全试过**（我上一条说"未验证"是错的）
+
+| 时间 | 提交 | 取值变化 | 说明 |
+|---|---|---|---|
+| 10-28 早 | — | `Auto` | 初始 |
+| 10-28 16:42 | `bafb2cb` | `Auto` → `NVRAM` | 收成纯 NVRAM |
+| 10-28 18:21 | `7a5fc09` | `NVRAM` → `RTC` | 当时判定"NVRAM 分支只认 10.13.6 前变量" |
+| 10-29 09:19 | `adbde6f` | `RTC` → `NVRAM` | **实测否定 RTC**（见下） |
+| 10-29 16:09 | `42895ac` | `NVRAM` → `None` | 保留镜像取样 |
+| 10-29 16:15 | `25fd013` | `None` → `NVRAM` | 回基线 |
+
+`adbde6f` 的实测记录（原文）：
+
+> 10-29 09:04 睡眠 → 09:05:27 开机仍出现 OC 选择界面，而 `HibernateSkipsPicker=true`
+> ⇒ `OcActivateHibernateWake` 在 CMOS 0x80–0xAB 没读到 `'AAPL'`。密钥本身生成过
+> （`nvram IOHibernateRTCVariables` 现存 44 B，签名 `AAPL/rev=1`，与 IODeviceTree 副本逐字节一致）
+> ⇒ 断点在「RTC 跨断电没保住」，与历史 `005 (RTC Power Loss)` 同源。
+
+**这是本机自己的实测，不是外部推断** ⇒ `HibernateMode` 不是缺口。
+
+### 二、`UEFI/ReservedMemory @0x8B000`：**确实从未验证过**
+
+```
+$ git log -S "569344" -- EFI/OC/config.plist
+d827468 10-29 14:53 feat(sleep): 加入 UEFI/ReservedMemory 0x8B000 保留区（最后一条未验社区处方）
+```
+
+加入之后 5 个动过 config 的提交（`42895ac` / `25fd013` / `1063b25` / `82da125` / `6844aa2`）
+**没有一个碰过它**，当前仍 `Enabled: true`。⇒ 这一条是真空缺。
+
+### 三、比"漏试参数"更严重的问题：**所有实验都打偏了**
+
+上面那串 `HibernateMode` / `DiscardHibernateMap` / `RebuildAppleMemoryMap` /
+`ReservedMemory` 实验，处方的目标症状都是「**唤醒黑屏 / 恢复失败**」。
+而 §3z.35 已把定性改成「**睡前 `hibernate_machine_init` panic，镜像从未写出**」。
+
+⇒ **处方与症状不在同一条路径上。**
+「试过没效果」不能算「已排除」——因为本来就不可能有效。
+
+**推论**：针对真实症状（睡前 polled I/O 起不来）的针对性实验，**一次都没做过**。
+
+### 四、§3z.36 第三节的表述需要修正
+
+原文「pmset / boot-args / config.plist 这一层已经穷举干净，没有可调项了」**不准确**。
+准确说法：
+
+- pmset 参数：穷尽（`hibernatemode` 0/1/3/25/29、`standby`、`standbydelay*`、`powernap`、`autopoweroff`、`womp`）
+- boot-args：穷尽（HibernationFixup 全部 7 个）
+- **config.plist：1 条未验**（`ReservedMemory @0x8B000`）
+- **但以上全部是"唤醒侧"处方，与真实症状不同层** ⇒ 它们的结果无论成败都不构成对"睡前失败"的排除
