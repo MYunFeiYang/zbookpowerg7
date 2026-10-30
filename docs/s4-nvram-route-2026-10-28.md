@@ -4182,3 +4182,123 @@ ffffff800099dcb2:  jne   0xffffff800099e68f  ← 只此一处跳到 2921 的 pan
 - 本轮坐实 3 处，其中第 3 处（`IOPolledFileRead` 无 len==0 早退）**把「零长度调用自己报错」这条退路堵死了**，
   等于确认「I/O 真的执行并失败了」。
 - **更正 §3z.26**：尺寸假说从「未成立」回退为「未定」，因为第 5 参数的名字没解开，不能凭参数位置就排除它。
+
+---
+
+### 3z.34. 「能自己定的问题」收口：模糊点从 6 处降到 2 处（2026-10-30 11:15）
+
+用户要求：**任何结论都必须有 ≥80% 把握，否则只能标"未知"，不许当结论说。** 本节按此标准逐条重定。
+全部依据为本机二进制实测，不依赖被墙的 XNU 源码。
+
+#### 一、★ 硬结论 1：恢复路径**根本不调用** `IOPolledFileOpen`（把握 >95%）
+
+全内核扫描 `call rel32`，`IOPolledFileOpen` 只有 **3 个**调用点：
+
+| 调用点 | 所在函数 | 用途 |
+|---|---|---|
+| `0xffffff800099902a` | `IOHibernateSystemSleep` | **写镜像**（那个 `0x40000000`） |
+| `0xffffff8000a4ceb3` | `IOKitBSDInit` | **core dump**（`gIOPolledCoreFileVars`） |
+| `0xffffff8000a4cf2b` | `IOKitBSDInit` | core dump 重试（1 MiB 分支） |
+
+**`hibernate_machine_init` 里一个都没有**，它只调：
+
+```
+IOPolledFilePollersOpen(gIOHibernateFile, 3, 0)
+IOPolledFilePollersSetEncryptionKey(...)
+IOPolledFileSeek(gIOHibernateFile, header+8)
+IOPolledFileRead  × 4
+IOPolledFilePollersClose(...)
+```
+
+⇒ **那个 1 GiB 参数不参与恢复**。§3z.33 #1 虽仍不知"名字"，但它对本机死点的**影响面为 0**。
+这条是本轮最有价值的收口：悬了两天的"1 GiB 嫌疑"从"决定尺寸假说生死"降级为"与死点无关"。
+
+#### 二、★ 硬结论 2：`IOPolledFileOpen` 打印的 size **不是**那个常量（把握 ~85%）
+
+`IOPolledFileOpen` 内的日志格式串（`0xffffff8000bf1f0e`，实测取出）：
+
+```
+"Opened file %s, size %qd, extents %ld, maxio %qx ssd %d\n"
+```
+
+其 `size %qd` 取自 `-0x140(%rbp)`，而该槽在打印前被 `-0x168(%rbp)` 覆盖
+（`movq -0x168(%rbp),%rax; movq %rax,-0x140(%rbp)`）；`-0x168` 是 `kern_open_file_for_direct_io`
+经 arg4（`leaq -0x170(%rbp)` 指向的结构体，size 在其 +8）**回填的真实文件尺寸**。
+
+⇒ **文件实际大小由 VFS 回填，不是写死 1 GiB。**「1 GiB 太小 ⇒ 文件写不下」这条在"文件大小"语义上不成立。
+
+#### 三、★ 硬结论 3：`0x40000000` 是 polled 文件的通用尺寸参数，非 hibernate 专属（把握 ~80%）
+
+`IOKitBSDInit` 的 core dump 路径（`0xffffff8000a4ce56`~`0xffffff8000a4ce6c`）：
+
+```
+movl $0x100000, %r14d   ; 1 MiB
+movl $0x100000, %r15d   ; 1 MiB
+movl $0x40000000, %r14d ; 1 GiB（另一分支）
+```
+
+同一个 `0x40000000` 出现在 core dump 分支里，与 hibernate 无关。
+⇒ 它是 `IOPolledFileOpen` 的**尺寸类参数**（`u64`），在两种调用里都作为上限类实参出现，
+**不是"hibernate 镜像被限死 1 GiB"的证据**。
+
+#### 四、★ 硬结论 4：OpenCore **不碰 NVMe**，§3z.33 #5 排除（把握 >85%）
+
+`OpenCore.efi` 全量字符串：
+
+| 关键词 | 命中 |
+|---|---|
+| `nvme` / `NVMe` | **0** |
+| `DisconnectController` | 0 |
+| `DisconnectHda` | **1**，邻居串为 `AudioDevice` / `AudioOutMask` / `AudioSupport` / `MaximumGain` / `MinimumGain` |
+
+⇒ OC 唯一的 disconnect 逻辑是 **HDA 音频 quirk**，作用域 `AppleHDACodec` 一类，与存储完全无关。
+加上 `UEFI/Drivers` 里 8 个驱动**无一为 NVMe**（§3z.31 §四），
+**「OC 在 ExitBootServices 时停掉固件 NVMe 驱动」这条可以排除。**
+
+#### 五、★ 硬结论 5：`H:HBOPT` / `H:DLW` 来自 Apple 的 boot.efi，不是 OC（把握 >95%）
+
+这些格式串在 `/System/Volumes/Preboot/324C1FDC-…/System/Library/CoreServices/boot.efi`
+（723 512 B）里全部存在，而 `OpenCore.efi` 中**一条都没有**：
+
+```
+#[EB|H:IS] %d          #[EB|H:HBOPT] %d %d %d %d      #[EB|H:DLW] %d
+#[EB|H:SIG] 0x%X       #[EB|H:LKST] %d                #[EB|H:MSPS] 0x%x
+#[EB|H:NOT]            #[EB|H:MSWr] 0x%x              #[EB|H:WK!] Kernel entry failed
+```
+
+⇒ 全部 `H:` 字段是 **boot.efi 自己的诊断输出**，OC 只做转发。
+**语义仍未解**（只有 `%d` 占位，无文字说明），但确认"不该拿它推断 OC 行为"。
+另注：`H:LKST` / `H:MSPS` / `H:MSWr` / `H:FAIL` 在本机日志**从未出现** ⇒ 那几条是失败分支才打印的。
+
+#### 六、仍然「未知」的两处（<80%，不作结论）
+
+| # | 项 | 为什么不能定 |
+|---|---|---|
+| **A** | panic 里 `Uptime 788.6 / Sleep 766.6` 差 **22 秒** | 若 uptime 在 hibernate 恢复后延续，22 s = 恢复阶段实耗；但本次 `kern.boottime` 被重置为 20:18:44（说明是**冷启动**而非恢复），两者语义冲突，无法用同一模型解释 |
+| **B** | EXITBS(20:17:36) → `kern.boottime`(20:18:44) 的 **68 秒** | 两个时间戳都精确，差值真实；但"polled 反复超时"与"真在读盘"两种解释**没有任何新证据能区分**（内核日志被冷启动冲掉） |
+
+⇒ A 与 B **互相矛盾**（22 s vs 68 s），说明我对 hibernate 恢复期 uptime 语义的理解仍有缺口。
+**这两条一律不再作为推理依据。**
+
+#### 七、§3z.33 六处模糊的最终状态
+
+| # | 原模糊点 | 现状态 | 把握 |
+|---|---|---|---|
+| 1 | 1 GiB 参数名字 | 名字仍未知，但**与死点无关**（恢复路径不调用） | **>95%** |
+| 2 | 22 秒含义 | **未知**（与 68 秒冲突） | <80% |
+| 3 | `Hibernate File Min` 公式 | **降为无关**：它属同一尺寸参数体系，且不影响恢复 | ~80% |
+| 4 | 68 秒 | **未知** | <80% |
+| 5 | OC 是否 Disconnect NVMe | **已排除**（无 NVMe 字符串，唯一 disconnect 是 HDA） | **>85%** |
+| 6 | `H:HBOPT` / `H:DLW` 语义 | 来源已定（boot.efi），**语义未知**；从未作判据 | 来源 >95% |
+
+#### 八、本轮对整体判断的影响
+
+**没有改变「死点在恢复侧 polled read」这个主结论**，但把它的支撑收窄得更干净：
+
+- 写镜像阶段：**不再是嫌疑**（1 GiB 与恢复无关；boot.efi 已从文件读出 `H:SIG=sime` 且 REAN 重定位成功）
+- OC 侧：**不再是嫌疑**（不碰 NVMe）
+- 剩下的唯一嫌疑仍是 `IONVMeControllerPolledAdapter::startIO` → `kIOReturnError`
+
+⚠️ 但按 80% 标准，**「控制器被固件 POST 重置」这一句本身把握不足 80%**——
+它是解释 `startIO` 失败的一种机制假说，不是观测结果。
+观测到的只有：**polled 读在恢复阶段返回 `kIOReturnError`，且发生在第一页之前**。
