@@ -1324,7 +1324,7 @@
 			<key>ConsoleAttributes</key>
 			<integer>0</integer>
 			<key>HibernateMode</key>
-			<string>Auto</string>
+			<string>NVRAM</string>
 			<key>HibernateSkipsPicker</key>
 			<true/>
 			<key>HideAuxiliary</key>
@@ -1514,7 +1514,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>-v -igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall revpatch=sbvmm rtcfx_exclude=0E-57,5A-7F keepsyms=1 -vi2c-force-polling -hbfxdbg -hbfx-dump-nvram</string>
+				<string>-v -igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall revpatch=sbvmm rtcfx_exclude=58-59,7F-83,B0-B3,B7,DE-DF keepsyms=1 -vi2c-force-polling -hbfxdbg -hbfx-dump-nvram -hbfxforce</string>
 				<key>csr-active-config</key>
 				<data>
 				/w8AAA==
