@@ -4428,3 +4428,62 @@ ls -la /Library/Logs/DiagnosticReports/ | head -40
 拿到 `.panic` 原件的 `Debugger message:` 段，就能直接读到：
 - `IOPolledFilePollersOpen returned 0x…` → **是不是它先失败的，一次定死**
 - `hibernate_machine_init: state %d, image pages %d, … imageSize 0x%qx` → 镜像尺寸/分支
+
+---
+
+## §3z.36 S4 最终结论（2026-10-30 11:30 定稿）
+
+### 一、失败模式（实测，两套独立记录）
+
+**模式 A — 睡前 panic（有 panic 留档）**
+
+```
+panic: Hibernate restore error e00002bc @IOHibernateIO.cpp:2921
+backtrace: hibernate_machine_init + 0x12db ← ml_hibernate_active_post ← acpi_sleep_kernel ← …
+Hibernation exit count: 0
+```
+
+**模式 B — 睡前未 panic，但转 hibernate 失败**
+
+```
+2026-10-28 17:23:50  DarkWake from Standby [CDN] : due to /HibernateError  45 secs
+2026-10-28 17:44:56  DarkWake from Standby [CDN] : due to /HibernateError  18 secs
+（hibmode=25, standbydelaylow/high=300）
+```
+
+`pmset -g log` 里 `HibernateError` **总共只出现这两次**，且都在 `hibmode=25` 期间；
+`hibmode=3`（10-29 15:56 / 19:26）与 `hibmode=0`（10-29 20:55 之后）**零次**。
+
+**共通事实**：`/var/vm/sleepimage` 恒 1,073,741,824 B、前 64 字节全零 ⇒ **从未有一次镜像写成功**。
+
+### 二、根因定位
+
+| 层 | 判断 | 把握 |
+|---|---|---|
+| 死在恢复侧（醒来读镜像） | **否**。backtrace 是 `acpi_sleep_kernel` 睡前链路 | **>95%** |
+| 死在断电后的固件行为 | **否**。机器在断电前就失败了 | **>95%** |
+| 死在睡前 `hibernate_machine_init` 的 polled I/O | **是**。`IOPolledFileRead(vars,NULL,0,0)` 返回 `e00002bc` | **>90%** |
+| 触发点在 `IOPolledFilePollersOpen` 失败且被静默吞 | **高度可疑**。该调用返回值全段无 `testl` 检查 | **>85%** |
+| `PollersOpen` 为何失败 | **未知**。debug_buf 随 `.panic` 原件被清 | <80% |
+
+### 三、已排除项（累计，均有实测或二进制依据）
+
+恢复侧全部假说、断电后固件重置、RTC 闹钟（`setupDateTimeAlarm` 被 `C3` 打死）、
+镜像内容/加密/签名、`imageSize` 越界、RT scratch、页表/AREA/pagesDone、
+HibernationFixup 全部 7 个 boot-args、`hibernatemode 29/1`、镜像移出根卷、NVMeFix、
+CMOS 电池、FileVault、根卷空间、OC 触碰 NVMe（`OpenCore.efi` 中 `nvme` 命中 0）、
+`hbfx-patch-pci`、1 GiB 尺寸参数。
+
+**即：pmset / boot-args / config.plist 这一层已经穷举干净，没有可调项了。**
+
+### 四、结论
+
+1. **S4 在本机当前状态下不可用**，把握 **>95%**。
+2. 失败点不在"最后一步"，而在**睡前的 polled I/O 初始化**——是入口就过不去，不是擦边失败。
+3. **调参路线已走到尽头**：所有公开可调的参数组合都试过、都已排除。
+4. 剩余唯一有意义的动作是**取证**（复现一次，立刻抓 `.contents.panic` + `Kernel-*.panic`
+   的 `Debugger message` 段），读到 `IOPolledFilePollersOpen returned 0x…` 才能定死。
+   **取证成功 ≠ 能修**：若确认是 NVMe polled adapter 起不来，修复要落到
+   OC NVMe quirk / `DisableIoMapper` / BIOS NVMe 模式这一层，属于**可能无解**的区间。
+5. **建议处置：保持 deepidle（`hibernatemode 0` + `standby 0` + `powernap 0`），停止投入。**
+   唯一代价：无磁盘镜像兜底，电池耗尽会丢未保存数据。
