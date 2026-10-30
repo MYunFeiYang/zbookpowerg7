@@ -5075,3 +5075,81 @@ ioreg ... | sed 's/.*<\(.*\)>.*/\1/' | xxd -r -p      # 解出即 boot.efi 日�
 | 4 | 再睡一次、抓 `07-bootlog.txt` + `04-nvram-plist.txt` | 即使日志仍不可用也有料 |
 
 **不要**手动 `mkdir /var/db/diagnostics`——日志库目录与内部结构由 logd 自己建，手建无益。
+
+---
+
+## §3z.44 ★日志库已修复（无需重启），`log show` 以 root 实测可用——取证通道全部打通
+
+> 日期：2026-10-30 12:40
+> 触发：用户「请继续执行任务」→ 不再等重启，直接验证「logd 能否自己重建库」这个此前标为"预期"的点
+
+### 一、修复实测：`launchctl kickstart -k` 立刻重建日志库
+
+```bash
+sudo launchctl kickstart -k system/com.apple.logd
+```
+
+执行后 3 秒内（实测 2026-10-30 12:37）：
+
+```
+drwxr-x--- 11 root admin 352 2026-10-30 12:37 /var/db/diagnostics
+HighVolume  Persist  Signpost  Special  logd.0.log
+logdata.statistics.0.jsonl  logdata.statistics.0.txt  timesync  version.plist
+```
+
+⇒ **§3z.43 里「重启后 logd 会重建」这条由"预期"升级为"实测成立"，且根本不用重启。**
+`logd` 的 pid 也随之从 102 变为 41143（`launchctl print` 的 `runs` 计数 +1）。
+**不要手动 `mkdir /var/db/diagnostics`** —— 目录与内部结构（`Persist`/`HighVolume`/`Signpost`/`Special`/
+`version.plist`）必须由 logd 自己建。
+
+### 二、`log show` 以 root 实测 rc=0
+
+```
+$ sudo log show --last 60s --style syslog | tail -3
+2026-10-30 12:38:16.817769+0800  localhost kernel[0]: process_is_plugin_host: ...
+2026-10-30 12:38:16.825982+0800  localhost bash[41985]: (libsystem_info.dylib) Created Activity ID: ...
+rc=0
+```
+
+⇒ **rc=65 已消失。**（沙箱内仍报 rc=64 `Cannot run while sandboxed`，那是父进程限制，与库无关。）
+
+### 三、脚本里唯一"无法验证"的那段，现在验证通过了
+
+此前 §3z.41 记「root 下的 `log show` 全段 ❌ 无法验证」。本轮用
+`osascript -e 'do shell script "…" with administrator privileges'` 以 root 跑完整脚本，结果：
+
+| 产物 | 结果 |
+|---|---|
+| `01-hbfx-log.err` | **0 字节**（无错误） |
+| `01-hbfx-log.txt` | 565 B / 3 行，含真实日志行与 `log show --last 60m --info --style syslog --predicate …` 的自我记录 |
+| `00-env.txt` | 正确报出 `uid: 0 / whoami: root`，并正确警告 boot-args **不含** `-hbfxdbg` |
+| `07-bootlog.txt` | 3443 B，ioreg 通道正常 |
+| `06-power.txt` | 6882 B，`pmset -g log` 正常，判据 6 直接抓到两条 `HibernateError`（10-28 17:23 / 17:44） |
+
+⇒ **`log show` 段从"无法验证"变为"已验证"**，脚本全部 8 个产物在 root 下均正常生成。
+本轮唯一没料到的细节：脚本自检会往 `~/.Trash` 写探针，触发 FSEvents（日志里能看到
+`Received FSEvent about /Users/thinkway/.Trash/.hbfx-probe`），跑完记得删。
+
+### 四、仍未解决：柠檬还在跑
+
+```
+328  /Library/Application Support/Lemon/LemonDaemon loadBySystem
+2585 /Applications/Tencent Lemon.app/.../LemonMonitor
+```
+
+`com.tencent.Lemon.trash.plist` 只 `WatchPaths: ~/.Trash`，**不是删日志的元凶**；
+真正下发删除的是主 App 的 `MCCMD_FILEACTION`（11:43 那轮日志里是连续 `sendDataToDaemon` / `cmdDispather` 爆发）。
+主 App 当前未运行，但 `LemonMonitor` 的 `is_watching_automatic = true` 仍在。
+⇒ **取证前请退出柠檬（至少退出 LemonMonitor 登录项），或关掉它的自动清理**，否则库可能再次被删。
+
+### 五、现在只剩一件事：重启使 `-hbfxdbg` 生效
+
+`sysctl -n kern.bootargs` 实测：
+
+```
+-v -igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall
+revpatch=sbvmm rtcfx_exclude=0E-57,5A-7F keepsyms=1 -vi2c-force-polling
+```
+
+**不含 `-hbfxdbg` / `-hbfx-dump-nvram`** ⇒ config.plist 改了但没重启，NVRAM 仍是旧串。
+这一步无法用软件绕过，必须重启。
