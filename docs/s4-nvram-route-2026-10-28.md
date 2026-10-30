@@ -4098,3 +4098,87 @@ HibernationFixup README 原文：
 | 3 | 关掉 `UEFI/ReservedMemory` 0x8B000 | 配置单变量 | 改 config + 重启 | 中低 |
 | 4 | 电池供电下试 S4 | 供电方式 | 一次失败重启 | 低（Windows 正常已削弱判别力） |
 | 5 | UEFI Shell 查 `PchSetup` RTC Memory Lock 偏移 | 固件变量 | 需 IFR 提取，有写错风险 | 未知 |
+
+---
+
+### 3z.33. 「模棱两可」专项清算：坐实 3 处、仍存 6 处、更正 1 处说过头的话（2026-10-30 11:10）
+
+用户追问「没有模棱两可的点了？」。本节把全部结论按证据强度重排，不自留余地。
+
+#### 一、★ 本轮新坐实的三件事（均为本机二进制实测）
+
+**① `IOPolledFileOpen` 的完整签名 —— 第 5 参数确定是 `unsigned long long` 类型的大小**
+
+mangled：`__Z16IOPolledFileOpenPKcjyyyPvmPP18IOPolledFileIOVarsPP6OSDataPhPm`
+解出：
+
+```
+IOPolledFileOpen(char const*, unsigned int, unsigned long long, unsigned long long,
+                 unsigned long long, void*, unsigned long,
+                 IOPolledFileIOVars**, OSData**, unsigned char*, unsigned long*)
+```
+
+按 SysV ABI：`rdi`=path / `rsi`=uint / `rdx`=`u64` / `rcx`=`u64` / **`r8`=`u64`（就是那个 `0x40000000`）**。
+⇒ 它是**尺寸类参数**，不是标志位、不是指针。**但名字仍未知**（见 §二.1）。
+
+**② 2921 确认是「第一处」`IOPolledFileRead` 的错误分支**
+
+全函数只有 4 处 `IOPolledFileRead`（`094dcab` / `094dd59` / `094dde3` / `094de26`），
+panic 块被编译器集中在函数尾部。用跳转目标反查：
+
+```
+ffffff800099dca6:  xorl %edx, %edx          ← len = 0
+ffffff800099dca8:  movq %r15, %rcx
+ffffff800099dcab:  callq _IOPolledFileRead
+ffffff800099dcb0:  testl %eax, %eax
+ffffff800099dcb2:  jne   0xffffff800099e68f  ← 只此一处跳到 2921 的 panic 块
+```
+
+`0xffffff800099e68f` 正是 `movl $0xb69(2921), %ecx` 那条 panic 的入口。
+⇒ **「死在第一处 readahead」这个定位成立，无误。**
+
+**③ `IOPolledFileRead` 没有 `len == 0` 的早退 ⇒ 那次调用真的碰了硬件**
+
+入口处 `movq %rdx,%rbx` 存下 len 后 **`jmp` 直接进主循环**（`0xffffff80009e23b3`），
+主循环用 `0x30(%r15)`(readEnd) 与 `0x44(%r15)`(readOffset) 算读取量，全程不看 `%rbx`。
+⇒ 「`Read(NULL, 0)` 是空操作、失败只是参数检查」这个替代解释**被排除**。
+`hibernate_machine_init` 里那两行 `movl 0x30(%rax),%ecx; movl %ecx,0x44(%rax)` 是把 readOffset 复位到 readEnd，
+所以这次调用实际读的是 `imageSize - image1Size` 那一段。**I/O 是真的发生了。**
+
+#### 二、★ 仍然模棱两可的六处（如实列出）
+
+| # | 模糊点 | 为什么模糊 | 影响 |
+|---|---|---|---|
+| **1** | 那个 **1 GiB 参数的名字/语义** | 只解到类型 `u64`，名字未知。XNU 源码三通道全被墙（`gh-proxy`/`ghfast`/直连 raw 一律返回 **14 字节**错误页） | **决定「尺寸假说」生死** |
+| **2** | panic 里 `Uptime 788.6s / Sleep 766.6s` 差 **22 s** 的含义 | 我按「入睡时刻→写入 uptime」解释成「写镜像耗时 22 s」，但这是推断。22 s 对应 1 GiB(46 MB/s) 或 8 GiB(372 MB/s) **都算合理** | 同上，定量 |
+| **3** | `Hibernate File Min` 随模式变（mode25→1 GiB，mode0→8 GiB）**公式不明** | 今天首次发现，无解释 | 与 #1 同源 |
+| **4** | EXITBS→内核的 **68 s** | 「polled 超时」与「真在读盘 240 MB/s」两种解释未区分 | 决定修 NVMe 还是修内存映射 |
+| **5** | OC 在 `ExitBootServices` 时是否 `DisconnectController` 停掉固件 NVMe 驱动 | **从未查**。此前把「控制器被重置」全归给固件 POST | 可能整条归因错 |
+| **6** | OC 日志 `H:HBOPT 0 1 1 0` / `H:DLW 0` 的字段语义 | 从未查证 | 低 |
+
+#### 三、★ 更正：§3z.26 说「尺寸假说降级为未成立」—— 说过头了
+
+§3z.26 的原文推理是：反汇编看到 `r15`（按内存页算出）作为 `file_length` 传入 ⇒
+「1 GiB 只是另一个参数」⇒ 尺寸假说不成立。
+
+**这个推断有漏洞**：我只证明了 `r15` 落在第 4 个参数位，**没有证明第 5 个参数（1 GiB）不是上限类约束**。
+若它的语义是 `maxLength` / `minSize` 一类，那么「`file_length` 按内存算出、而 `maxLength` 只有 1 GiB」
+**本身就是矛盾参数**，写镜像照样会失败。
+
+⇒ 正确表述应为：**§3z.24 的「1 GiB 太小 ⇒ 写不下 ⇒ 不写元数据」假说，状态从「未成立」回退为「未定」。**
+它既未被证实，也**未被证伪**——证伪需要知道第 5 参数的名字。
+
+#### 四、★ 这六个模糊点收敛到同一个盲区
+
+#1 / #2 / #3 全都指向同一件事：**「写镜像阶段实际发生了什么」，至今没有任何直接观测。**
+现有全部证据（H:IS / H:SIG / panic 栈 / dmesg）都发生在**写完之后**。
+
+⇒ 唯一的直接观测手段仍是 `-hbfx-dump-nvram`（§3z.32 §九），它在**睡前**落盘完整 NVRAM。
+若 dump 出的 `nvram.plist` 里带镜像尺寸/密钥变量，则 #1~#3 可一次性收敛。
+
+#### 五、本节结论
+
+- **模棱两可的点有 6 处，不是 0 处。** 其中 #1（1 GiB 参数语义）最关键，直接决定尺寸假说的生死。
+- 本轮坐实 3 处，其中第 3 处（`IOPolledFileRead` 无 len==0 早退）**把「零长度调用自己报错」这条退路堵死了**，
+  等于确认「I/O 真的执行并失败了」。
+- **更正 §3z.26**：尺寸假说从「未成立」回退为「未定」，因为第 5 参数的名字没解开，不能凭参数位置就排除它。
