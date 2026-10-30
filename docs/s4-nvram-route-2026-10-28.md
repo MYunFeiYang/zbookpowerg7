@@ -4059,3 +4059,42 @@ Comment = "Fix hibernate mode 25 black screen on wake (low S3/S4 area)"
   ② `hbfx-ahbm` 我曾误解为 HBM，已更正；③ `Hibernate File Min` 随 `hibernatemode` 变化这条观测此前完全没提。
 - 若将来还要动手，**唯一值得做的单变量是关掉 `UEFI/ReservedMemory` 那条 0x8B000**
   （配置层、可回滚、从未验证），而不是电池对照——后者的判别力被「Windows 休眠正常」这条事实削弱了。
+
+#### 八、★★ 追加：我的一处推理漏洞（§3z.31 §四 表格最后一行）
+
+§3z.31 里我写「`setup_var PchSetup 0x16` 是 Dell 三家共同点，但那是解 RTC Memory Lock（保密钥）；
+你这边 `H:SIG=sime` 说明密钥早就通了，不相干」——**这句话推理不成立**。
+
+- `H:SIG = 0x73696D65`(`sime`) 是 **镜像文件头里的签名**，boot.efi 从 `sleepimage` 文件本身读出；
+- `IOHibernateRTCVariables` 是 **RTC 变量**（内核写注册表 → HibernationFixup 同步到 NVRAM）；
+- 两者**完全无关**。用 `H:SIG` 有效去论证「RTC 通道正常」，是偷换概念。
+
+⇒ **「RTC Memory Lock / `setup_var PchSetup 0x16`」这条不能凭上述理由排除，应维持「未验证」。**
+本机 PchSetup 中该位的偏移与 Dell 的 `0x16` 不同，需从 HP BIOS IFR 提取，且需 UEFI Shell，
+非零成本、有变砖风险（写错变量），故**不作为首选**。
+
+#### 九、★★ 追加：一个从未试过的官方取证参数 `-hbfx-dump-nvram`
+
+HibernationFixup README 原文：
+> `-hbfx-dump-nvram` saves NVRAM to a file nvram.plist **before hibernation** and after kernel panic.
+
+它的价值在当前所有手段里是**唯一**的：
+
+| 特性 | 意义 |
+|---|---|
+| 在**休眠前**写盘 | 文件的 mtime 就是入睡时刻，能证明"写镜像/写元数据"走到了哪一步 |
+| 写到**磁盘文件** `/nvram.plist` | S4 断电后仍在，不像 dmesg 会被冷启动冲掉（§3z.28 §一） |
+| 内容是**完整 NVRAM** | 可直接回答「`boot-image-key` / `boot-signature` / `boot-image` 到底有没有被写进去」这个悬了两天的核心问题 |
+
+⇒ 此前一直靠「开机后 `nvram -p` 反推」，而开机后这些变量可能已被清理。
+**`-hbfx-dump-nvram` 是唯一能拿到「睡前快照」的手段，却从未试过——这是本次自查中最实质的遗漏。**
+
+#### 十、修正后的「若再试一次」优先级
+
+| 优先级 | 动作 | 层 | 成本 | 判别力 |
+|---|---|---|---|---|
+| **1** | 加 `-hbfx-dump-nvram`，睡一次，读 `/nvram.plist` | kext 取证 | 一条 boot-arg + 重启 | **最高**：直接看睡前 NVRAM 有没有三个休眠变量 |
+| 2 | 掐表：`pmset sleepnow` 后记录灯灭→灯亮秒数 | 观测 | 零 | 高：区分「真 S4 断电」与「瞬断回电」 |
+| 3 | 关掉 `UEFI/ReservedMemory` 0x8B000 | 配置单变量 | 改 config + 重启 | 中低 |
+| 4 | 电池供电下试 S4 | 供电方式 | 一次失败重启 | 低（Windows 正常已削弱判别力） |
+| 5 | UEFI Shell 查 `PchSetup` RTC Memory Lock 偏移 | 固件变量 | 需 IFR 提取，有写错风险 | 未知 |
