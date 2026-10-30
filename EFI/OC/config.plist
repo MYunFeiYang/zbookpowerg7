@@ -118,6 +118,14 @@
 				<key>Path</key>
 				<string>SSDT-dGPU-PowerOff-Darwin.aml</string>
 			</dict>
+			<dict>
+				<key>Comment</key>
+				<string>GPRW handler: GPE 0x6D -&gt; {0x6D, 0} under Darwin; forwards rest to XPRW.</string>
+				<key>Enabled</key>
+				<true/>
+				<key>Path</key>
+				<string>SSDT-GPRW.aml</string>
+			</dict>
 		</array>
 		<key>Delete</key>
 		<array>
@@ -207,6 +215,46 @@
 				<key>Replace</key>
 				<data>
 				VFBOTUdQREk=
+				</data>
+				<key>ReplaceMask</key>
+				<data>
+				</data>
+				<key>Skip</key>
+				<integer>0</integer>
+				<key>TableLength</key>
+				<integer>0</integer>
+				<key>TableSignature</key>
+				<data>
+				RFNEVA==
+				</data>
+			</dict>
+			<dict>
+				<key>Base</key>
+				<string></string>
+				<key>BaseSkip</key>
+				<integer>0</integer>
+				<key>Comment</key>
+				<string>GPRW-&gt;XPRW rename: pair with SSDT-GPRW.aml so GPE 0x6D is not a Darwin sleep wake source.</string>
+				<key>Count</key>
+				<integer>0</integer>
+				<key>Enabled</key>
+				<true/>
+				<key>Find</key>
+				<data>
+				R1BSVwI=
+				</data>
+				<key>Limit</key>
+				<integer>0</integer>
+				<key>Mask</key>
+				<data>
+				</data>
+				<key>OemTableId</key>
+				<data>
+				AAAAAAAAAAA=
+				</data>
+				<key>Replace</key>
+				<data>
+				WFBSVwI=
 				</data>
 				<key>ReplaceMask</key>
 				<data>
