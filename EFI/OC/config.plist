@@ -1325,8 +1325,8 @@
 			<integer>0</integer>
 			<key>HibernateMode</key>
 			<string>NVRAM</string>
-				<key>HibernateSkipsPicker</key>
-				<false/>
+		<key>HibernateSkipsPicker</key>
+		<false/>
 			<key>HideAuxiliary</key>
 			<true/>
 			<key>InstanceIdentifier</key>
