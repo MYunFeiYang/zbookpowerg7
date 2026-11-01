@@ -354,11 +354,11 @@
 				<key>BaseSkip</key>
 				<integer>0</integer>
 				<key>Comment</key>
-				<string>RTC _CRS length 0x08-&gt;0x02: truncate IO region 0x70-0x77 to 0x70-0x71, force AppleRTC to treat RTC as 1-bank so IOHibernateRTCVariables routes to NVRAM; stops HP POST 005 (real root fix re-applied from 3c62998).</string>
+				<string>RTC _CRS length 0x08-&gt;0x02: truncate IO region 0x70-0x77 to 0x70-0x71, force AppleRTC to treat RTC as 1-bank so IOHibernateRTCVariables routes to NVRAM; stops HP POST 005 (real root fix re-applied from 3c62998). DISABLED 2026-11-01: regressed S4 (HibernateFailed/HibernateError 14x on 11-01 vs 0 on 10-31); truncating RTC breaks kernel IOHibernateRTCVariables storage. Restores 10-31 working S4. 005 mitigation retained via rtcfx_exclude+HibernateMode=NVRAM+-hbfxforce; revisit if 005 recurs on S4 failure path.</string>
 				<key>Count</key>
 				<integer>1</integer>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>Find</key>
 				<data>
 				RwFwAHAAAQg=
