@@ -180,6 +180,7 @@
 ## 2026-11-01 第四轮：完整解决方案落地（fork 源码层 + ACPI 1-bank 强制）
 
 > 用户要求"继续，直到找到完整的解决方案"，并提示"当前 HibernationFixup 是我们自己改构建的"——指向在源码/配置层根治，而非放弃 S4。本轮把根因闭环补全，并**已落地配置变更**。
+> ⚠️ **本节（第四轮）结论已被第 11 轮推翻**：`_CRS` 0x08→0x02 补丁**不能**修 S4 的 005（见第二轮 Q7：boot.efi 用原始端口 I/O 直写 0x80–0xAB，不经 ACPI `_CRS`，故 `_CRS` 拦不住；且该补丁截断 RTC 反而使 AppleRTC 存不下 IOHibernateRTCVariables → HibernateFailed，实测 11-01 出现 14 次、10-31 为 0）。该补丁已于 `6630ff3` 永久禁用。本节"~85% 根除 005"表述错误，以第二轮 Q7 + 第 11 轮为准。
 
 ### 一、真正的根因闭环（源码 + 本机 DSDT 双证）
 
@@ -198,7 +199,7 @@
 
 | 层 | 配置 | 作用 |
 |---|---|---|
-| ACPI | **重新启用 3c62998 的 RTC `_CRS` 补丁**（0x70–0x77→0x70–0x71，长度 8→2） | 截断 IO 资源 → AppleRTC 判 RTC 为 1-bank → 内核把 `IOHibernateRTCVariables` 路由到 NVRAM，**不再写 0x80–0xAB** → 005 根除 |
+| ACPI | ~~重新启用 3c62998 的 RTC `_CRS` 补丁~~ **已禁用(6630ff3)** | ❌ 原声称"截断→1-bank→不再写 0x80–0xAB→005 根除"错误：boot.efi 原始端口写绕过 `_CRS`；且截断使 AppleRTC 存不下 IOHibernateRTCVariables→HibernateFailed。详见第 11 轮 / 第二轮 Q7 |
 | kext | `-hbfxforce`（forceNvram，fork 自定义） | 双保险：HibernationFixup 再补写一份 NVRAM 副本 |
 | OC | `Misc/Boot/HibernateMode = NVRAM` | 恢复时 OC 从 NVRAM 读休眠密钥，不碰 RTC |
 
@@ -206,7 +207,7 @@
 
 ### 四、把握度与未决项（不替你决策）
 
-- **该方案根除 005 的把握 ≈ 85%**（机制清晰 + 标准 RehabMan 修法 + DSDT 逐字节吻合 + 之前仅因战略切换被 revert 而非失败）。达到用户"≥80%"标准，但**最后 5–10 个百分点只能由一次真实 S4 周期坐实**（验证内核确实走 NVRAM 路由、RTC 0x80–0xAB 不再被写、005 消失且恢复仍成功）。
+- ❌ **本节"根除 005 把握 ≈85%"已被第 11 轮推翻**：`_CRS` 补丁在原理上无法阻止 boot.efi 固件级写 0x80–0xAB（第二轮 Q7，>85%），且实际导致 S4 写盘失败（HibernateFailed 14x）。005 在 config 层无可靠修复，唯"放弃 S4(E1/E2)"或"让 S4 成功不走失败路径"可避。
 - **唯一未决 = 一次 S4 实测**（有出 005/黑屏/强制断电风险，须你拍板才触发）。若实测 005 仍在 → 说明 AppleRTC 走硬件探测而非 `_CRS`，需退到 fork 增强（hook 更低层内核 RTC 写符号，风险更高）；若 005 消失且恢复成功 → 完整方案坐实。
 - **花屏是独立层**，本方案只解决 005，不触及帧缓冲 surface 损坏；花屏仍走 C1/C2/C3。
 
@@ -257,8 +258,8 @@
 **Dell 成功配置逐点比对（jkbuha 仓库实测解析）**：
 | 维度 | Dell XPS 9500（S4 可用） | 本机 ZBook（当前） | 差异是否相关 |
 |---|---|---|---|
-| RTC 修法 | `SSDT-RTC.aml`：隐藏原 RTC + 新建 RTC0，`_CRS` 截成 0x70-0x71（长度2） | `_CRS` 补丁把原 RTC IO 0x70-0x77→0x70-0x71 | **同一机制**（1-bank 截断）。外部成功案例佐证本机 005 修法方向正确 ✓ |
-| **SMBIOS** | **MacBookAir9,1**（或 MacBookPro16,3） | **MacBookPro16,4**（该机型实为 Iris Plus，与 UHD 630 不匹配） | **强相关**：hackintoshbuilder Fix5 明确"SMBIOS 与显卡不匹配→唤醒黑屏" |
+| RTC 修法 | `SSDT-RTC.aml`：隐藏原 RTC + 新建 RTC0，`_CRS` 截成 0x70-0x71（长度2） | `_CRS` 补丁把原 RTC IO 0x70-0x77→0x70-0x71 | ⚠️ **同一机制但结论不同**：Dell 的 005 属"正常重启 ACPI 写 RTC"型，`_CRS` 能解；**本机 005 是 boot.efi 固件级直写 0x80–0xAB 型，`_CRS` 拦不住（第二轮 Q7，>85%）**。Dell 成功主因是 IFR 改 DVMT64/CfgLock + `agdpmod=vit9696`+`igfxfw=2`，非 `_CRS` 单项 → 不能佐证"本机 `_CRS` 修 005 方向正确" |
+| **SMBIOS** | **MacBookAir9,1**（实为 Ice Lake Iris Plus，对 Dell 的 UHD630 同样不"匹配"，仅作 AGDC 行为参考） | **MacBookPro16,4**（Apple/EveryMac 实测 = **Intel UHD 630 / Coffee Lake**，与本机注入的 CFL framebuffer 完全匹配） | **相关性降级为未知(<80%)**：原"16,4=Iris Plus 不匹配"论断错误（已核实 16,4 即 UHD630）；`agdpmod=vit9696` 官方定义为"Disable check for board-id"，大概率覆盖 SMBIOS 对 AGDC 的影响 ⇒ SMBIOS 非显式必要 |
 | **`agdpmod=vit9696`** | **有**（关 AGDC 的 board-id 检查） | **无**（仅 `disable-agdc=1`，属另一层） | **强相关**：直接对应本机 `AGDC not registered. Unmanaged display` 注册失败签名 |
 | **`igfxfw=2`** | **有**（强制加载 Apple GuC 固件） | **无** | **强相关**：GuC 管 GPU 上下文/电源状态保存恢复，正是 S4 thaw 帧缓冲损坏的缺口；rampagedev 指南把 `igfxfw=2` 列为 wake 花屏标准解法 |
 | `igfxonln=1` / `-igfxblt` | 有 | 有 | 已对齐（普通 S3 唤醒修法，不覆盖 S4 thaw） |
@@ -270,7 +271,7 @@
 **本机当前 framebuffer 内存值（解码）**：`stolenmem=0x1300000`(≈19MB) / `fbmem=0x900000`(≈9MB) / `unifiedmem=0x80000000`(2GB)。Dell 不设这些（靠 IFR 64MB）。若 HP 固件 DVMT 预分配偏低，本机 stolenmem 补偿可能不足，构成花屏的次要诱因（待验证）。
 
 **修正后的把握度（按 ≥80% 才下结论的规矩）**：
-- 005 修法机制 = 外部同硅片成功案例佐证（Dell SSDT-RTC 同机制）→ **>90% 机制正确**；在本机是否真消除 005 = **未知(<80%)**，须一次 S4 实测。
+- 005 修法机制 = ❌ 原"外部同硅片成功案例(Dell SSDT-RTC 同机制)佐证 >90% 正确"**已被推翻**：Dell 成功主因是 IFR+`agdpmod=vit9696`+`igfxfw=2`，且 Dell 005 型与本机不同（见上表）。本机 `_CRS` 补丁按 Q7 原理上**无法**阻止 boot.efi 固件写 0x80–0xAB；该补丁已禁用(6630ff3)。本机 005 config 层**无可靠修复**，把握应标「未知(<80%)」，唯"放弃 S4(E1/E2)"或"S4 成功"可避。
 - **花屏 config 级可解性 = 从"大概率无解(<80%)"翻转为"有强外部先例的可解假设(~75-80%)"** → 仍按规矩标「未知」，但**符号已反转**：现在应有信心"花屏大概率能用 config 解决"，而非"无解"。
 - **「完整 S4（005+花屏 双解）via config」= 未知(<80%)**，但比第五轮显著靠近可行。
 
@@ -279,3 +280,50 @@
 2. 【中风险】考虑 SMBIOS 由 MacBookPro16,4 → MacBookAir9,1（Dell 验证值），但影响 serial/iServices，需谨慎、单独验证。
 2. 【中风险】考虑 SMBIOS 由 MacBookPro16,4 → MacBookAir9,1（Dell 验证值），但影响 serial/iServices，需谨慎、单独验证。
 3. 【高风险】一次取证 S4 实测（验证 005 消除 + 花屏是否随 1)+2) 消失），带 hbfx 取证 + 专滤 `AGDC|Unmanaged|YTiling|Surface|backboardd|rlfg`。
+
+---
+
+**第十轮（2026-11-01 13:5x）SMBIOS 必要性复查（回应"非改不可吗"）**：
+- **事实纠正（>95%）**：MacBookPro16,4 经 Apple 官网 + EveryMac 双源核实 = **Intel UHD Graphics 630（Coffee Lake 9代）**，并非 Iris Plus。本机注入 `device-id=0x3E9B` + `ig-platform-id=0x3EA50009`（CFL）= 与该机型 IGPU **完全匹配**。原 line261 "16,4 实为 Iris Plus 不匹配" 论断**错误**，已推翻。
+- **agdpmod 机制（>95%，WEG 官方 README）**：`agdpmod=vit9696` = "Disable check for board-id"。本机已上车并在 boot-args 生效 ⇒ 直接针对 `AGDC not registered. Unmanaged display` 签名。若此检查被关，SMBIOS 的 `board-id` 在 AGDC 路径上大概率被忽略 ⇒ **SMBIOS 对花屏的影响被 agdpmod 覆盖**。
+  - caveat（<80% 未知）：WEG README 将 agdpmod 列于 "Board-id" 段且标注 "property to external GPU"；本机无 dGPU 枚举（P620 macOS 不枚举），agdpmod 对 IGPU 的 AGDC 是否实际生效需 S4 实测确认，不能 100% 推定。
+- **Dell 用 MacBookAir9,1 的反向证据**：Air9,1 实为 Ice Lake Iris Plus，对 Dell 的 UHD630 同样"不匹配"，说明 Dell 选 Air9,1 是顺带（AGDC/PowerPlay 行为），并非 IGPU 匹配需要 ⇒ 进一步削弱"SMBIOS 必须改"的硬约束。
+- **结论（SMBIOS 必要性）= 未知 <80%**：两力相抵——(支持非必须) 16,4 本就 UHD630 匹配 + agdpmod 关 board-id 检查；(支持可能必要) agdpmod 对 IGPU 生效未坐实 + Dell 确实用了特定 SMBIOS。无法单凭推断下定论。
+- **替代方案（按务实优先级）**：
+  1. **先不碰 SMBIOS**（避免动 serial/iServices 风险），直接做已规划的高风险 S4 取证实测；若 agdpmod+igfxfw 上车后花屏消失 ⇒ 证明 SMBIOS 非必要，全程不用改。
+  2. 若实测花屏仍在 ⇒ 再评估 SMBIOS，但**优先改 `MacBookPro16,3`（同为 Comet Lake UHD630，比 Ice Lake 的 Air9,1 更贴本机 IGPU）** 而非 Air9,1，避免引入 IGPU 不匹配新风险；或试 `igfxagdc=0`（WEG 官方 = disable AGDC）进一步压制 AGDC。
+  3. 或走 **S3 绕开**（代价 3.7W 待机），根除而非修补。
+- **决策建议**：SMBIOS 改动从"必要补一环"降级为"可选后手"。当前机器已处于 `agdpmod=vit9696 igfxfw=2` 上车态，下一步应直接进 S4 取证实测，而非先改 SMBIOS。
+
+---
+
+**第十一轮（2026-11-01 15:5x）RTC _CRS 补丁自我矛盾更正 + 与早期分析冲突的澄清**
+
+> 用户指出："这跟之前的分析也有矛盾啊。" 经查证属实，**本会话 11-01 关于 RTC `_CRS` 补丁的 005 修复叙事，与文档早期（第二轮 Q7）、工作记忆 4.2/4.3/4.6 三条已确立结论直接冲突**。本节为权威更正，覆盖第四轮/第六轮中的错误表述。
+
+### 一、被推翻的错误叙事（第四轮 + 第六轮）
+- 第四轮（原 180–211 行）：声称重新启用 `_CRS` 0x08→0x02 补丁可"让内核把 IOHibernateRTCVariables 路由到 NVRAM，**不再写 0x80–0xAB → 005 根除**"，把握 ~85%。
+- 第六轮（原 260/273 行）：以"Dell SSDT-RTC 同机制"佐证本机 005 修法">90% 机制正确"。
+
+### 二、与早期正确结论的直接冲突（>95% 确认）
+1. **第二轮 Q7（doc 第 107 行，>85%）**：「HP 专属 RTCFix DSDT 补丁(0x08→0x02)**能否修 S4 的 005？不能修 S4 触发**。该补丁改 DSDT 的 RTC _CRS，只限制 macOS 内核态 AppleRTC.kext 可见的 RTC 范围；boot.efi 休眠时用**原始端口 I/O 直写 CMOS，不经 ACPI region→拦不住**。」→ 第四轮"不再写 0x80–0xAB"在机制上不成立。
+2. **工作记忆 4.2（已证伪·别再试）**：`_CRS` 0x08→0x02 早在 10-31 前就列入"黑屏形态不变、别再试"清单；git `e860371` 在 `3c62998` 加回后 **14 分钟即 revert**。11-01 `7c19925` 重开已关之门。
+3. **工作记忆 4.3（005 机制）**：005 = boot.efi **固件阶段原始端口 I/O 写 0x80–0xAB**，绕过 rtcfx_exclude(内核级) 与 rtc-blacklist(EFI 协议级)。`_CRS` 属 macOS ACPI 层，根本碰不到 boot.efi 固件写 → 挡不住 005。
+4. **工作记忆 4.6（10-31 21:00 已结案）**：「**单 config.plist 属性打磨不再投入**——其天花板即原理所限」。11-01 又把 `_CRS` 当 005 修复加回 = 直接违反该结案判据。
+
+### 三、实测证伪（11-01）
+- 启用 `_CRS` 补丁期间（7c19925→6630ff3 前）：`boot-stream.log` 睡眠因子出现 `HibernateFailed` + 唤醒原因 `HibernateError`；`/var/vm/sleepimage` 恒 0 字节（镜像写盘失败）；`HibernateFailed` 在 **11-01 出现 14 次、10-31 为 0**。
+- 实为：截断 RTC IO 区 → AppleRTC 找不到 IOHibernateRTCVariables 存放空间 → 写盘中断 → **S4 整体失效**（而不是"修好 005"）。
+
+### 四、正确的全局判读（取代第四轮叙事）
+- `_CRS` 补丁对 005 **无效**（原理上 boot.efi 绕过它），且**破坏 S4**（实测）。**永久禁用（6630ff3）正确**。
+- 005 在本机（S4 固件级直写型）**config 层无可靠修复**（Q3/Q6/Q7 综合，>85%）。唯一可靠规避：
+  - **E1 改 S3/S0ix**（代价 ~3.7W 待机，已验证干净、无 005、无花屏）；
+  - **E2 `hibernatemode 0`**（失休眠）；
+  - 或**让 S4 成功、不走失败路径**（即不触发 `_CRS` 这类破坏 S4 的补丁 → 无强制断电 → 无 005 暴露）。
+- "Dell 同硅片可用 S4" 的主因是 **IFR 改 DVMT64/CfgLock + `agdpmod=vit9696` + `igfxfw=2`**（针对花屏/AGDC 与 DVMT），**不是 `_CRS` 单项**；Dell 的 005 型（重启 ACPI 写 RTC）也不同于本机的固件级直写型。故 Dell 先例**不能**佐证"本机 `_CRS` 修 005 方向正确"。
+
+### 五、结论
+- **矛盾属实（>95%）**：11-01 给 `_CRS` 安的"005 根因修复"叙事，与 Q7/4.2/4.3/4.6 直接冲突；其机制（"不再写 0x80–0xAB"）在 boot.efi 不经 `_CRS` 的前提下不成立，且被实测（HibernateFailed 14x）证伪。
+- **记录已更正**：config.plist 注释（357 行）已改写为准确表述；文档第四轮加 SUPERSEDED 标注、第四轮表格/把握度、第六轮 Dell 比对 RTC 行、第六轮 005 把握度均改为"已被推翻"。
+- **教训落档**：本次"加→破→禁 `_CRS`"正是 4.6 明令停止的"单 config.plist 属性打磨"反模式，且重开 `e860371` 已 revert 的已关门 = 判断回归。后续 S4 相关改动须先查 Q7/4.2/4.3/4.6，不得再单属性试错。

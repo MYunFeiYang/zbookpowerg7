@@ -354,7 +354,7 @@
 				<key>BaseSkip</key>
 				<integer>0</integer>
 				<key>Comment</key>
-				<string>RTC _CRS length 0x08-&gt;0x02: truncate IO region 0x70-0x77 to 0x70-0x71, force AppleRTC to treat RTC as 1-bank so IOHibernateRTCVariables routes to NVRAM; stops HP POST 005 (real root fix re-applied from 3c62998). DISABLED 2026-11-01: regressed S4 (HibernateFailed/HibernateError 14x on 11-01 vs 0 on 10-31); truncating RTC breaks kernel IOHibernateRTCVariables storage. Restores 10-31 working S4. 005 mitigation retained via rtcfx_exclude+HibernateMode=NVRAM+-hbfxforce; revisit if 005 recurs on S4 failure path.</string>
+				<string>RTC _CRS length 0x08-&gt;0x02: DISABLED 2026-11-01 (commit 6630ff3). Re-added at 7c19925 as a supposed 005 root fix (force AppleRTC 1-bank -&gt; IOHibernateRTCVariables to NVRAM), but INVALID: per doc Q7, _CRS only limits the macOS kernel AppleRTC view; boot.efi writes 0x80-0xAB via raw port I/O that bypasses _CRS entirely, so _CRS CANNOT stop 005. Also regressed S4 (HibernateFailed 14x on 11-01 vs 0 on 10-31) by crippling AppleRTC hibernate-var storage. Permanently disabled. 005 is only reliably avoided by S4 succeeding (no failure-path forced power loss) or abandoning S4 (hibernatemode 0 / S3). Do NOT re-enable.</string>
 				<key>Count</key>
 				<integer>1</integer>
 				<key>Enabled</key>
