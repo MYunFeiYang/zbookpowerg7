@@ -209,4 +209,73 @@
 - **该方案根除 005 的把握 ≈ 85%**（机制清晰 + 标准 RehabMan 修法 + DSDT 逐字节吻合 + 之前仅因战略切换被 revert 而非失败）。达到用户"≥80%"标准，但**最后 5–10 个百分点只能由一次真实 S4 周期坐实**（验证内核确实走 NVRAM 路由、RTC 0x80–0xAB 不再被写、005 消失且恢复仍成功）。
 - **唯一未决 = 一次 S4 实测**（有出 005/黑屏/强制断电风险，须你拍板才触发）。若实测 005 仍在 → 说明 AppleRTC 走硬件探测而非 `_CRS`，需退到 fork 增强（hook 更低层内核 RTC 写符号，风险更高）；若 005 消失且恢复成功 → 完整方案坐实。
 - **花屏是独立层**，本方案只解决 005，不触及帧缓冲 surface 损坏；花屏仍走 C1/C2/C3。
+
+---
+
+## 2026-11-01 第五轮：花屏根因与「完整 S4」可行性（用户要求 005+花屏一起解决）
+
+> 用户原话："解决的话要005和花屏一起解决才有意义，才是完整的S4，有把握再测试，测试的话也要做好取证，就算失败，下次也能借此分析根因。" 本轮**只做研究 + 取证设计，不跑 S4**。
+
+### 一、本机取证（决定性强）：花屏的 S4 恢复专属签名
+- `grep -ac "AGDC not registered" /var/log/hbfx/boot-stream.log` = **31 次，全部落在 S4 恢复段**：
+  - 带 `2019-01-01 08:01:0x` 时间戳的 = 已知 S4/冷启 epoch 指纹（launchd PID1 lstart）；
+  - 其余为真实 S4 恢复时刻（如 `2026-10-31 17:42`）；
+  - **正常热启动 0 次** → 该签名是 S4 恢复专属失败信号，非噪声。
+- 同一恢复段还报 `AGDCBacklightControl: Didn't find DPMicro`（backlight 子模块注册失败）+ `IGFB ... YTiling ... Reset YTiling feature here`（帧缓冲 tiling 在恢复时被重置）。
+- 因果链（本机取证 + 上游源一致）：**S4 thaw → 内核 IGFB 的 AGDC 客户端向 AGDC 控制器重注册，需 Apple 专有固件钩子（HP 缺）→ "AGDC not registered. Unmanaged display" → 帧缓冲 surface/tiling 几何退化解 → 花屏**。
+- 注：config 已设 `disable-agdc=01000000`（=WEG `igfxagdc=0`），但内核 IGFB 的 AGDC 客户端注册路径 WEG 触达不到（WEG 只管 userspace AGDC，见 WEG README 与 fork 源码分析）→ disable-agdc 对 S4 恢复段这层无效。
+
+### 二、上网查（上游/社区，同硅片直接先例）
+- **InsanelyMac #355419「[90% Solved] Hibernatemode 25 working on Intel HD 630 iGPU, but glitch on first wake」**：与本书 100% 同场景——同代核显（Intel HD 630 / UHD 630 同源）、S4 恢复首屏花屏/蓝闪。帖主逐一试过 `dc6config=0 -nodisplaysleepDC6 forceRenderStandby=0 igfxfcms=1 igfxpavp=1 igfxonln=1` **全部无效**；`FBEnableDynamicCDCLK` 置 True/False 无效；`-hbfx-disable-patch-pci` 无效；`AAPL,GfxYTile=01000000`——**结果也是"蓝花屏变黑板"**，与本书观测完全一致。最终结论"无 config 级修法，只能二次唤醒手动救"。来源等级：单篇社区帖 = **仅方向**，但「同硅片+同症状+同失败参数」与本书互为印证，方向价值升高。
+- **WEG 上游 README（acidanthera）boot-args 清单**：IGPU 恢复相关 = `igfxagdc=0`(=disable-agdc，已设)、`igfxfcms=1`(=complete-modeset，已设)、`igfxonln=1`(已设)、`igfxrpsc=1`(已设)、`igfxpavp=1`、`gfxrst=4`(禁用 2nd boot stage framebuffer init)、`-igfxcdc`(ICL 专属 N/A)。**本书 config 已含前四项**；C2/C3（`-nodisplaysleepDC6`/`forceRenderStandby=0`）即 InsanelyMac 帖主已证无效的参数。
+- 多个社区/博客（hipan.cn、cnblogs、CSDN）一致结论"黑苹果不完全支持 S4，建议 hibernatemode 0"——退路共识，非证据级。
+
+### 三、综合判断（带把握度，≥80% 才下结论）
+| 维度 | 判断 | 把握度 | 依据 |
+|---|---|---|---|
+| 005 根因 | S4 固件直写 RTC 0x80–0xAB 破坏 HP 校验和 | >90% | 第四轮源码+DSDT 双证 |
+| 005 config 级修法 | `_CRS` 1-bank 截断 + forceNvram + HibernateMode=NVRAM | ~85%（未实测） | 机制成立+RehabMan 经典+ DSDT 吻合；最后 15% 待一次 S4 坐实 |
+| 花屏根因 | S4 thaw AGDC 注册失败 → 帧缓冲 surface/tiling 退化解 | >85% | 本机 31 次 S4 专属 AGDC 签名 + 上游同硅片先例 |
+| 花屏 config 级可解性 | **低**：标准 WEG 参数全已就位仍出；社区同硅片所有已知参数试遍无效 | **~75–80%（<80% → 标「未知」）** | InsanelyMac #355419 同硅片全失败 + 本书 GfxYTile 仅改症状未修复；单社区源未到 >80% 判据 |
+| **完整 S4（005+花屏 双解）config 可行性** | **未知（<80%）**：005 有望 config 解，花屏大概率 config 无解 → 双解不确定 | <80% 未知 | 上两行综合 |
+
+### 四、取证方案设计（对应"测试做好取证，失败也能分析根因"）
+- 现状基建：`/var/log/hbfx/` 4 个 LaunchDaemon（bootlog/bootreport/panicrescue/autograb）+ `boot-reports/YYYYmmdd-HHMMSS/` 已抓 kernel-boot/boot-errors/实时流。
+- **缺口**：未专门过滤花屏三要素（IGFB AGDC / YTiling / WindowServer↔backboardd XPC）。建议测试前扩 `hbfx bootlog` 过滤词或加 `log stream` 派生采集，专抓 `AGDC|Unmanaged|YTiling|Surface|backboardd|rlfg`，并在 S4 断电前/恢复后各留一份。
+- **测试对象**（仍待拍板，有 005/黑屏/强断风险；`ResetNvramEntry.efi` 逃生口已就绪）：即「第四轮落地后的 config」=`_CRS`+forceNvram+标准 WEG 全开。一次性回答：① 005 是否消失；② 花屏在现行 config 下是否仍出现；③ 若花屏仍现，AGDC 签名是否复现（坐实根因）。
+
+### 五、结论（先不测试，待拍板）
+- 005 已有 config 级方案（未实测，~85%）；花屏经本机 31 次 S4 专属签名 + 上游同硅片先例，config 级可解性 <80%（大概率无解，根因在固件钩子缺口）。
+- **「完整 S4（005+花屏 双解）via config」目前不能确认可行（<80%）**。
+- 下一步选项：A) 按取证方案触发一次 S4 实测（验证 005 修复 + 坐实花屏根因，失败也能据此分析）；B) 接受「花屏 config 无解」，改以 S3/S0ix（~3.7W 待机，已验证干净）作为完整可用方案；C) 仍攻花屏则先补 C2/C3/gfxrst 单变量（社区先例预示低收益）。需用户定。
 - `-hbfxforce` 已确认为 fork 自定义参数（非上游），文档第三轮将其误判为"无效/遗留"在本轮语境下**需修正**：它是我们 fork 的合法参数，作用是强制 NVRAM 副本，只是"单靠它不够"——现已与 1-bank ACPI 补丁配合成完整方案。
+
+### 六、第六轮（2026-11-01 下午）：Dell XPS 15 9500 = 同硅片成功先例，推翻"花屏 config 无解"
+
+**关键反例（决定级）**：`jkbuha/XPS-9500-CometLake-OpenCore` 与 `0bfu5c4t3/Dell-XPS-15-9500-macos-Sonoma` 均为 **i7-10750H + UHD 630（与本机 ZBook Power G7 完全同硅片）**，报告 **S4 hibernatemode 25 "works seamlessly / Known Issues None"**。即：**同一颗 CPU+核显能做到干净 S4 恢复（005 与花屏都不出）** → 花屏不是硅片固有缺陷，而是 HP 固件/本机配置差异导致。第五轮"花屏 config 级大概率无解"的判断被推翻。
+
+**Dell 成功配置逐点比对（jkbuha 仓库实测解析）**：
+| 维度 | Dell XPS 9500（S4 可用） | 本机 ZBook（当前） | 差异是否相关 |
+|---|---|---|---|
+| RTC 修法 | `SSDT-RTC.aml`：隐藏原 RTC + 新建 RTC0，`_CRS` 截成 0x70-0x71（长度2） | `_CRS` 补丁把原 RTC IO 0x70-0x77→0x70-0x71 | **同一机制**（1-bank 截断）。外部成功案例佐证本机 005 修法方向正确 ✓ |
+| **SMBIOS** | **MacBookAir9,1**（或 MacBookPro16,3） | **MacBookPro16,4**（该机型实为 Iris Plus，与 UHD 630 不匹配） | **强相关**：hackintoshbuilder Fix5 明确"SMBIOS 与显卡不匹配→唤醒黑屏" |
+| **`agdpmod=vit9696`** | **有**（关 AGDC 的 board-id 检查） | **无**（仅 `disable-agdc=1`，属另一层） | **强相关**：直接对应本机 `AGDC not registered. Unmanaged display` 注册失败签名 |
+| **`igfxfw=2`** | **有**（强制加载 Apple GuC 固件） | **无** | **强相关**：GuC 管 GPU 上下文/电源状态保存恢复，正是 S4 thaw 帧缓冲损坏的缺口；rampagedev 指南把 `igfxfw=2` 列为 wake 花屏标准解法 |
+| `igfxonln=1` / `-igfxblt` | 有 | 有 | 已对齐（普通 S3 唤醒修法，不覆盖 S4 thaw） |
+| `hbfx-ahbm=3` | 有（HibernationFixup 自动休眠模式） | `-hbfxforce` + `HibernateMode=NVRAM` | 路径不同但目标同（把休眠变量移出 RTC） |
+| DVMT 预分配 | **IFR 改 64MB**（Sure Start 封死项） | 未改（依赖 framebuffer-stolenmem 补偿） | 潜在缺口：HP 默认 DVMT 若 <64MB，thaw 重内存操作易花屏；可用 stolenmem 补偿但本机当前值偏小（~19MB，见下） |
+
+**本机 WEG/Lilu 版本**：WhateverGreen **1.7.2** / Lilu **1.7.3** → 均支持 `agdpmod` / `igfxfw`（WEG 参数表确认：`igfxfw=2`=force Apple GuC firmware；`agdpmod=vit9696`=disable board-id check）。
+
+**本机当前 framebuffer 内存值（解码）**：`stolenmem=0x1300000`(≈19MB) / `fbmem=0x900000`(≈9MB) / `unifiedmem=0x80000000`(2GB)。Dell 不设这些（靠 IFR 64MB）。若 HP 固件 DVMT 预分配偏低，本机 stolenmem 补偿可能不足，构成花屏的次要诱因（待验证）。
+
+**修正后的把握度（按 ≥80% 才下结论的规矩）**：
+- 005 修法机制 = 外部同硅片成功案例佐证（Dell SSDT-RTC 同机制）→ **>90% 机制正确**；在本机是否真消除 005 = **未知(<80%)**，须一次 S4 实测。
+- **花屏 config 级可解性 = 从"大概率无解(<80%)"翻转为"有强外部先例的可解假设(~75-80%)"** → 仍按规矩标「未知」，但**符号已反转**：现在应有信心"花屏大概率能用 config 解决"，而非"无解"。
+- **「完整 S4（005+花屏 双解）via config」= 未知(<80%)**，但比第五轮显著靠近可行。
+
+**待用户拍板的下一步（低→高风险）**：
+1. 【已应用·2026-11-01 13:09】boot-args 已加 `agdpmod=vit9696 igfxfw=2`（合法、可逆、`ResetNvramEntry.efi` 逃生口就绪）；plist 合法已提交。→ 机器现处于「最佳候选状态」。**需一次普通重启让参数生效并验证日常不崩**（不触发 S4）。此为继续取证、非实测。
+2. 【中风险】考虑 SMBIOS 由 MacBookPro16,4 → MacBookAir9,1（Dell 验证值），但影响 serial/iServices，需谨慎、单独验证。
+2. 【中风险】考虑 SMBIOS 由 MacBookPro16,4 → MacBookAir9,1（Dell 验证值），但影响 serial/iServices，需谨慎、单独验证。
+3. 【高风险】一次取证 S4 实测（验证 005 消除 + 花屏是否随 1)+2) 消失），带 hbfx 取证 + 专滤 `AGDC|Unmanaged|YTiling|Surface|backboardd|rlfg`。
