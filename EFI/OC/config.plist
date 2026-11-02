@@ -1452,7 +1452,7 @@
 				<key>Arguments</key>
 				<string></string>
 				<key>Auxiliary</key>
-				<false/>
+				<true/>
 				<key>Comment</key>
 				<string>S4 memmap sampling</string>
 				<key>Enabled</key>
@@ -1518,7 +1518,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>-v -igfxblr -igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall revpatch=sbvmm keepsyms=1 -vi2c-force-polling</string>
+				<string>-igfxblr -igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall revpatch=sbvmm keepsyms=1 -vi2c-force-polling</string>
 				<key>csr-active-config</key>
 				<data>
 				/w8AAA==
