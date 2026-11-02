@@ -685,6 +685,22 @@
 				<key>Arch</key>
 				<string>Any</string>
 				<key>BundlePath</key>
+				<string>RTCMemoryFixup.kext</string>
+				<key>Enabled</key>
+				<true/>
+				<key>ExecutablePath</key>
+				<string>Contents/MacOS/RTCMemoryFixup</string>
+				<key>MaxKernel</key>
+				<string></string>
+				<key>MinKernel</key>
+				<string></string>
+				<key>PlistPath</key>
+				<string>Contents/Info.plist</string>
+			</dict>
+			<dict>
+				<key>Arch</key>
+				<string>Any</string>
+				<key>BundlePath</key>
 				<string>VirtualSMC.kext</string>
 				<key>Comment</key>
 				<string>V1.3.9 | By RapidEFI</string>
@@ -1483,6 +1499,20 @@
 				AAAAAA==
 				</data>
 			</dict>
+			<key>4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102</key>
+			<dict>
+				<key>rtc-blacklist</key>
+				<data>
+				Dg8QERITFBUWFxgZGhscHR4fICEiIyQlJicoKSorLC0u
+				LzAxMjM0NTY3ODk6Ozw9Pj9AQUJDREVGR0hJSktMTU5P
+				UFFSU1RVVldYWVpbXF1eX2BhYmNkZWZnaGlqa2xtbm9w
+				cXJzdHV2d3h5ent8fX5/gIGCg4SFhoeIiYqLjI2Oj5CR
+				kpOUlZaXmJmam5ydnp+goaKjpKWmp6ipqqusra6vsLGy
+				s7S1tre4ubq7vL2+v8DBwsPExcbHyMnKy8zNzs/Q0dLT
+				1NXW19jZ2tvc3d7f4OHi4+Tl5ufo6err7O3u7/Dx8vP0
+				9fb3+Pn6+/z9/v8=
+				</data>
+			</dict>
 			<key>7C436110-AB2A-4BBB-A880-FE41995C9F82</key>
 			<dict>
 				<key>ForceDisplayRotationInEFI</key>
@@ -1504,7 +1534,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>-igfxblr -igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall revpatch=sbvmm keepsyms=1 -vi2c-force-polling</string>
+				<string>-igfxblr -igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall revpatch=sbvmm keepsyms=1 -vi2c-force-polling rtcfx_exclude=58-59,7F-83,B0-B3,B7,D0-DF</string>
 				<key>csr-active-config</key>
 				<data>
 				/w8AAA==
@@ -1522,6 +1552,10 @@
 			<key>4D1EDE05-38C7-4A6A-9CC6-4BCCA8B38C14</key>
 			<array>
 				<string>DefaultBackgroundColor</string>
+			</array>
+			<key>4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102</key>
+			<array>
+				<string>rtc-blacklist</string>
 			</array>
 			<key>7C436110-AB2A-4BBB-A880-FE41995C9F82</key>
 			<array>
@@ -1871,7 +1905,7 @@
 			<key>AppleKeyMap</key>
 			<false/>
 			<key>AppleRtcRam</key>
-			<false/>
+			<true/>
 			<key>AppleSecureBoot</key>
 			<false/>
 			<key>AppleSmcIo</key>
