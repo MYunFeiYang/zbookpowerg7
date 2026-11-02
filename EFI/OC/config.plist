@@ -1825,7 +1825,7 @@
 				<key>Comment</key>
 				<string>EXT4 driver; must load before OpenLinuxBoot.</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>HideVerbose</key>
 				<false/>
 				<key>LoadEarly</key>
@@ -1839,7 +1839,7 @@
 				<key>Comment</key>
 				<string>Linux direct boot; needs ext4_x64 + LauncherOption.</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>HideVerbose</key>
 				<false/>
 				<key>LoadEarly</key>
