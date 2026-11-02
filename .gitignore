@@ -90,3 +90,7 @@ EFI/OC/config-*.plist
 
 # S4 镜像样本（体积大，仅本机分析用）
 docs/s4-memmap/*.bin
+
+# S4 取证原始日志（512K，2026-11-01 唯一一次真恢复现场；不可再生，留本地不入库）
+# 结论的权威去处 = .workbuddy/memory/MEMORY.md §4 + docs/sleep-tests/
+forensics/
