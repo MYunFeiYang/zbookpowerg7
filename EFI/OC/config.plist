@@ -126,6 +126,14 @@
 				<key>Path</key>
 				<string>SSDT-GPRW.aml</string>
 			</dict>
+			<dict>
+				<key>Comment</key>
+				<string>AOAC: restore _S3 for non-Darwin only (on Darwin _S3 stays renamed to XS3 -&gt; S3 disabled; required with SSDT-DeepIdle) [2026-10-09]</string>
+				<key>Enabled</key>
+				<true/>
+				<key>Path</key>
+				<string>SSDT-NameS3-disable.aml</string>
+			</dict>
 		</array>
 		<key>Delete</key>
 		<array>
@@ -375,6 +383,46 @@
 				<key>Replace</key>
 				<data>
 				RwFwAHAAAQI=
+				</data>
+				<key>ReplaceMask</key>
+				<data>
+				</data>
+				<key>Skip</key>
+				<integer>0</integer>
+				<key>TableLength</key>
+				<integer>0</integer>
+				<key>TableSignature</key>
+				<data>
+				RFNEVA==
+				</data>
+			</dict>
+			<dict>
+				<key>Base</key>
+				<string></string>
+				<key>BaseSkip</key>
+				<integer>0</integer>
+				<key>Comment</key>
+				<string>AOAC: rename _S3 to XS3 (disable S3; OC-Little "avoid S3 when using SSDT-DeepIdle"). Find matches exactly 1 site in DSDT at 0x2B258 = If (SS3){Name (_S3, Package(0x04){0x05,0,0,0})}; does NOT touch _S3D/_S3W. [2026-10-09]</string>
+				<key>Count</key>
+				<integer>0</integer>
+				<key>Enabled</key>
+				<true/>
+				<key>Find</key>
+				<data>
+				X1MzXw==
+				</data>
+				<key>Limit</key>
+				<integer>0</integer>
+				<key>Mask</key>
+				<data>
+				</data>
+				<key>OemTableId</key>
+				<data>
+				AAAAAAAAAAA=
+				</data>
+				<key>Replace</key>
+				<data>
+				WFMzXw==
 				</data>
 				<key>ReplaceMask</key>
 				<data>
