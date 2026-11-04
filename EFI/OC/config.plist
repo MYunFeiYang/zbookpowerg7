@@ -136,7 +136,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>睡眠时 XHC(USB 控制器/摄像头/蓝牙)整体断电；配合 _PTS/_WAK rename，唤醒仅靠电源键/开盖</string>
+				<string>Sleep: power off XHC(USB/cam/BT) via _PTS/_WAK rename</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -446,63 +446,85 @@
 			</dict>
 			<dict>
 				<key>Base</key>
-				<string></string>
+				<data>
+				</data>
 				<key>BaseSkip</key>
 				<integer>0</integer>
 				<key>Comment</key>
-				<string>SLEEP: _PTS to ZPTS (pair with SSDT-XHC-Sleep.aml)</string>
+				<string>Rename _PTS to ZPTS (pair SSDT-XHC-Sleep)</string>
 				<key>Count</key>
 				<integer>0</integer>
 				<key>Enabled</key>
 				<true/>
 				<key>Find</key>
-				<string>5F50545301</string>
+				<data>
+				X1BUUwE=
+				</data>
 				<key>Limit</key>
 				<integer>0</integer>
 				<key>Mask</key>
-				<string></string>
+				<data>
+				</data>
 				<key>OemTableId</key>
-				<string>0000000000000000</string>
+				<data>
+				AAAAAAAAAAA=
+				</data>
 				<key>Replace</key>
-				<string>5A50545301</string>
+				<data>
+				WlBUUwE=
+				</data>
 				<key>ReplaceMask</key>
-				<string></string>
+				<data>
+				</data>
 				<key>Skip</key>
 				<integer>0</integer>
 				<key>TableLength</key>
 				<integer>0</integer>
 				<key>TableSignature</key>
-				<string>44534454</string>
+				<data>
+				RFNEVA==
+				</data>
 			</dict>
 			<dict>
 				<key>Base</key>
-				<string></string>
+				<data>
+				</data>
 				<key>BaseSkip</key>
 				<integer>0</integer>
 				<key>Comment</key>
-				<string>SLEEP: _WAK to ZWAK (pair with SSDT-XHC-Sleep.aml)</string>
+				<string>Rename _WAK to ZWAK (pair SSDT-XHC-Sleep)</string>
 				<key>Count</key>
 				<integer>0</integer>
 				<key>Enabled</key>
 				<true/>
 				<key>Find</key>
-				<string>5F57414B01</string>
+				<data>
+				X1dBSwE=
+				</data>
 				<key>Limit</key>
 				<integer>0</integer>
 				<key>Mask</key>
-				<string></string>
+				<data>
+				</data>
 				<key>OemTableId</key>
-				<string>0000000000000000</string>
+				<data>
+				AAAAAAAAAAA=
+				</data>
 				<key>Replace</key>
-				<string>5A57414B01</string>
+				<data>
+				WldBSwE=
+				</data>
 				<key>ReplaceMask</key>
-				<string></string>
+				<data>
+				</data>
 				<key>Skip</key>
 				<integer>0</integer>
 				<key>TableLength</key>
 				<integer>0</integer>
 				<key>TableSignature</key>
-				<string>44534454</string>
+				<data>
+				RFNEVA==
+				</data>
 			</dict>
 		</array>
 		<key>Quirks</key>
