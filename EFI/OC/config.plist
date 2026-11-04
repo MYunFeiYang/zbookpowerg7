@@ -446,8 +446,7 @@
 			</dict>
 			<dict>
 				<key>Base</key>
-				<data>
-				</data>
+				<string></string>
 				<key>BaseSkip</key>
 				<integer>0</integer>
 				<key>Comment</key>
@@ -487,8 +486,7 @@
 			</dict>
 			<dict>
 				<key>Base</key>
-				<data>
-				</data>
+				<string></string>
 				<key>BaseSkip</key>
 				<integer>0</integer>
 				<key>Comment</key>
