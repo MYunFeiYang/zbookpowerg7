@@ -120,7 +120,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>GPRW handler: GPE 0x6D -&gt; {0x6D, 0} under Darwin; forwards rest to XPRW.</string>
+				<string>GPRW: GPE 0x6D -&gt; {0x6D,0} under Darwin; rest-&gt;XPRW.</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -128,7 +128,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>AOAC: restore _S3 for non-Darwin only (on Darwin _S3 stays renamed to XS3 -&gt; S3 disabled; required with SSDT-DeepIdle) [2026-10-09]</string>
+				<string>AOAC: restore _S3 for non-Darwin only (Darwin keeps _S3-&gt;XS3). [2026-10-09]</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -171,7 +171,7 @@
 				<key>BaseSkip</key>
 				<integer>0</integer>
 				<key>Comment</key>
-				<string>PNLF to XNLF Rename</string>
+				<string>PNLF -&gt; XNLF</string>
 				<key>Count</key>
 				<integer>0</integer>
 				<key>Enabled</key>
@@ -250,7 +250,7 @@
 				<key>BaseSkip</key>
 				<integer>0</integer>
 				<key>Comment</key>
-				<string>GPRW-&gt;XPRW rename: pair with SSDT-GPRW.aml so GPE 0x6D is not a Darwin sleep wake source.</string>
+				<string>GPRW-&gt;XPRW rename: pair with SSDT-GPRW (GPE 0x6D not a Darwin wake source).</string>
 				<key>Count</key>
 				<integer>0</integer>
 				<key>Enabled</key>
@@ -370,7 +370,7 @@
 				<key>BaseSkip</key>
 				<integer>0</integer>
 				<key>Comment</key>
-				<string>RTC _CRS length 0x08-&gt;0x02: DISABLED 2026-11-01 (commit 6630ff3). Re-added at 7c19925 as a supposed 005 root fix (force AppleRTC 1-bank -&gt; IOHibernateRTCVariables to NVRAM), but INVALID: per doc Q7, _CRS only limits the macOS kernel AppleRTC view; boot.efi writes 0x80-0xAB via raw port I/O that bypasses _CRS entirely, so _CRS CANNOT stop 005. Also regressed S4 (HibernateFailed 14x on 11-01 vs 0 on 10-31) by crippling AppleRTC hibernate-var storage. Permanently disabled. 005 is only reliably avoided by S4 succeeding (no failure-path forced power loss) or abandoning S4 (hibernatemode 0 / S3). Do NOT re-enable.</string>
+				<string>RTC _CRS 0x08-&gt;0x02: DISABLED (cannot fix 005; regresses S4). Do not re-enable.</string>
 				<key>Count</key>
 				<integer>1</integer>
 				<key>Enabled</key>
@@ -410,7 +410,7 @@
 				<key>BaseSkip</key>
 				<integer>0</integer>
 				<key>Comment</key>
-				<string>AOAC: rename _S3 to XS3 (disable S3; OC-Little "avoid S3 when using SSDT-DeepIdle"). Find matches exactly 1 site in DSDT at 0x2B258 = If (SS3){Name (_S3, Package(0x04){0x05,0,0,0})}; does NOT touch _S3D/_S3W. [2026-10-09]</string>
+				<string>Rename _S3 to XS3: disable S3 for DeepIdle. [2026-10-09]</string>
 				<key>Count</key>
 				<integer>0</integer>
 				<key>Enabled</key>
