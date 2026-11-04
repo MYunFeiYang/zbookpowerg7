@@ -1248,7 +1248,7 @@
 				<key>Comment</key>
 				<string>V1.3.0 | CPU PM data injector</string>
 				<key>Enabled</key>
-				<false/>
+				<true/>
 				<key>ExecutablePath</key>
 				<string>Contents/MacOS/CPUFriend</string>
 				<key>MaxKernel</key>
@@ -1266,7 +1266,7 @@
 				<key>Comment</key>
 				<string>i7-10750H MBP16,2 EPP=Max Power Saving</string>
 				<key>Enabled</key>
-				<false/>
+				<true/>
 				<key>ExecutablePath</key>
 				<string></string>
 				<key>MaxKernel</key>
