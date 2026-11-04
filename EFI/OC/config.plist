@@ -134,6 +134,14 @@
 				<key>Path</key>
 				<string>SSDT-NameS3-disable.aml</string>
 			</dict>
+			<dict>
+				<key>Comment</key>
+				<string>睡眠时 XHC(USB 控制器/摄像头/蓝牙)整体断电；配合 _PTS/_WAK rename，唤醒仅靠电源键/开盖</string>
+				<key>Enabled</key>
+				<true/>
+				<key>Path</key>
+				<string>SSDT-XHC-Sleep.aml</string>
+			</dict>
 		</array>
 		<key>Delete</key>
 		<array>
@@ -435,6 +443,66 @@
 				<data>
 				RFNEVA==
 				</data>
+			</dict>
+			<dict>
+				<key>Base</key>
+				<string></string>
+				<key>BaseSkip</key>
+				<integer>0</integer>
+				<key>Comment</key>
+				<string>SLEEP: _PTS to ZPTS (pair with SSDT-XHC-Sleep.aml)</string>
+				<key>Count</key>
+				<integer>0</integer>
+				<key>Enabled</key>
+				<true/>
+				<key>Find</key>
+				<string>5F50545301</string>
+				<key>Limit</key>
+				<integer>0</integer>
+				<key>Mask</key>
+				<string></string>
+				<key>OemTableId</key>
+				<string>0000000000000000</string>
+				<key>Replace</key>
+				<string>5A50545301</string>
+				<key>ReplaceMask</key>
+				<string></string>
+				<key>Skip</key>
+				<integer>0</integer>
+				<key>TableLength</key>
+				<integer>0</integer>
+				<key>TableSignature</key>
+				<string>44534454</string>
+			</dict>
+			<dict>
+				<key>Base</key>
+				<string></string>
+				<key>BaseSkip</key>
+				<integer>0</integer>
+				<key>Comment</key>
+				<string>SLEEP: _WAK to ZWAK (pair with SSDT-XHC-Sleep.aml)</string>
+				<key>Count</key>
+				<integer>0</integer>
+				<key>Enabled</key>
+				<true/>
+				<key>Find</key>
+				<string>5F57414B01</string>
+				<key>Limit</key>
+				<integer>0</integer>
+				<key>Mask</key>
+				<string></string>
+				<key>OemTableId</key>
+				<string>0000000000000000</string>
+				<key>Replace</key>
+				<string>5A57414B01</string>
+				<key>ReplaceMask</key>
+				<string></string>
+				<key>Skip</key>
+				<integer>0</integer>
+				<key>TableLength</key>
+				<integer>0</integer>
+				<key>TableSignature</key>
+				<string>44534454</string>
 			</dict>
 		</array>
 		<key>Quirks</key>
