@@ -136,7 +136,7 @@
 			</dict>
 			<dict>
 				<key>Comment</key>
-				<string>Sleep: power off XHC(USB/cam/BT) via _PTS/_WAK rename</string>
+				<string>Sleep: disable XHC (USB/cam/BT)</string>
 				<key>Enabled</key>
 				<true/>
 				<key>Path</key>
@@ -450,7 +450,7 @@
 				<key>BaseSkip</key>
 				<integer>0</integer>
 				<key>Comment</key>
-				<string>Rename _PTS to ZPTS (pair SSDT-XHC-Sleep)</string>
+				<string>_PTS to ZPTS</string>
 				<key>Count</key>
 				<integer>0</integer>
 				<key>Enabled</key>
@@ -490,7 +490,7 @@
 				<key>BaseSkip</key>
 				<integer>0</integer>
 				<key>Comment</key>
-				<string>Rename _WAK to ZWAK (pair SSDT-XHC-Sleep)</string>
+				<string>_WAK to ZWAK</string>
 				<key>Count</key>
 				<integer>0</integer>
 				<key>Enabled</key>
