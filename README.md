@@ -34,7 +34,7 @@
 - `igfxblt` —— KBL/CFL 上 macOS 13.4+ 的背光寄存器替代修法
 - `igfxhdmidivs` —— SKL/KBL/CFL 高像素时钟 HDMI 死循环规避
 - `-vi2c-force-polling` —— VoodooI2C 强制轮询；项目实测移除后触控板不跟手，保留
-- `-btlfxallowanyaddr` —— 配合 XHC `built-in` 注入，缓解 Tahoe 下 Intel 蓝牙 S0ix 唤醒后崩溃（commit `336542b` / `945966c`；**未根治**，见项目记忆 §3）
+- `-btlfxallowanyaddr` —— 配合 XHC `built-in` 注入，缓解 Tahoe 下 Intel 蓝牙 S0ix 唤醒后崩溃（commit `336542b` / `945966c`；**未根治**，见项目记忆 §3）。**官方语义（11-13 源码级补证，>95%）**：`acidanthera/BrcmPatchRAM` 的 `BlueToolFixup.cpp` 里，该参数只置 `shouldPatchAddress`，条件是 `Monterey ≥12.4 Beta3 (XNU 21.5)` 或更新内核（本机 26.7.3 满足），patch 的是 `_cs_validate_page` 路径上的「两个蓝牙设备地址相同即报错」检查；官方 README 原文即为此用途。本机 `BlueToolFixup_Mod.kext` **2.7.2 与官方最新 release 同版**，`edadb45`/`04012de` 两次提交说明写明只是**改名以跳过 OCAT 版本检查、内容未变** ⇒ 官方语义适用于本机（>90%）。**但官方语义与「缓解 S0ix 唤醒后崩溃」是否同一机制，属未知（<80%）**：`bt-full.log` 全量中 `same address` / 地址错误 / `allowanyaddr` 均 **0 命中**，而 patch 在 kernel 侧、userspace 日志本就不打印它，0 命中不能证伪。⇒ 保留原值，不作为升级/删改依据，详见 `docs/deepidle-power-audit-2026-11-12.md` §7.6。
 - `revpatch=sbvmm` —— 让不受支持机型也能收到 OTA 更新
 - `keepsyms=1` —— 保留内核符号名，便于定位音频栈问题
 - `rtcfx_exclude=0E-FF` —— 封 RTC `0E–FF` 全域。旧值 `0E-7F,AC-FF` 曾为 `80–AB`（`IOHibernateRTCVariables`）留口，但 S4 已放弃、`hibernatemode=0`，该保留区间不再需要

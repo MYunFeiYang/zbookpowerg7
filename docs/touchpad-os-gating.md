@@ -250,8 +250,10 @@ git mv EFI/OC/ACPI/SSDT-TPD3-PIN.dsl EFI/OC/ACPI/SSDT-TPD3-PIN2.dsl
 ```bash
 ioreg -lw0 | grep -c '<class VoodooI2CHIDDevice,'          # 期望 ≥1
 ioreg -lw0 | grep -o '"gpioPin" = [0-9]*'                  # 期望 258
-ioreg -lw0 -p IODeviceTree | grep -i 'boot-log'            # 有 "Failed to add ACPI" 就是加载失败
+ioreg -lw0 -p IODeviceTree | grep -i 'boot-log'            # 有 "Failed to add ACPI" 就是加载失败（⚠️ 见下方适用条件）
 ```
+
+> ⚠️ **2026-11-13 适用条件修正（>95%）**：第 3 行读的是 **Data Hub 日志**（官方 `Misc/Debug/Target` bit 2 / `0x04`），不是无条件可用的 OC 日志。本机自 11-10 `fbd830e` 起 `Target=7`，实测 `boot-log` 27 条**全部是 `AAPL:` 开头的 Apple `boot.efi` 日志**，`OCA:` / `OCS:` 0 命中 ⇒ **当前配置下这条判据会给出假阴性**（「0 命中」不能证明 ACPI 表加载成功）。10-23 当时能解出 `OCA:` 行，是因为当天配置 `Target=69`(0x45，含 `0x04` Data Hub) 且 **`AppleDebug=False`**，Data Hub 里是纯 OC 日志（`git` 快照 `d7590ce`，>95%）；当前 `AppleDebug=True` 后该属性全是 `AAPL:` 行。差别不在 `0x40` 文件日志位，而在 `AppleDebug`；「为何当前 Data Hub 里没有 OC 行」仍属未知（<80%）。要重新拿到 OC 日志须临时加 `0x40` / `0x10`，属 config 改动、按 `deepidle-power-audit` §9 单变量执行，回退值 `7`。完整证据见 `docs/tooling-gotchas.md` 末章。
 
 - `gpioPin = 0` 而 `Interrupt Mode = GPIO` ⇒ **ACPI 分支对、`TPNM` 没生效** ⇒ 先查表有没有加载
 - `gpioPin = 0` 且 `Interrupt Mode ≠ GPIO` ⇒ `_CRS` 走了 `SBFI` ⇒ 查 `SSDT-I2C0-GNVS` / `OSYS` / `SDM1`

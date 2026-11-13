@@ -159,6 +159,20 @@ ioreg -l -w0 | grep ps-max-latency-us
 - **判据边界**：以上只能证明「这些 timer 没有把系统拉出 S0ix」（>95%），**不能证明 timer 在睡眠期停表** —— timer 完全可在唤醒窗口内运行而不产生 DarkWake 记录。`log show --predicate 'process == "kernel"'` 属 kernel 侧符号级证据，AI 沙箱硬禁、未在用户终端执行，故本节「S0ix 下是否真正停表」**仍属未知（<80%）**，不结案，仅上调「无系统级唤醒」这一项的把握度。
 - 入睡侧 `Delays to Sleep` 有 `com.apple.bluetooth.sleep is slow(524 ms)`；与 §8 已记录的 `PowerUIAgent MaintenanceWake` 同属入睡前行为，非睡眠中。
 
+##### 2026-11-13 二次补证（VirtualSMC 源码级）：三个 kext 的停表行为并不一致，仍不结案
+
+按上游父页→源码的顺序取证（`acidanthera/VirtualSMC` master，源码路径为 `Sensors/<kext>/*.cpp`，不是先前 404 的 `VirtualSMC/kern_*.cpp`）：
+
+| kext | 源码事实 | 判读 |
+|---|---|---|
+| `SMCBatteryManager` | `BatteryManager::sleep()` 函数体只有 `timerEventSource->disable()`；`wake()` 末尾 `timerEventSource->enable()`，`checkDevices()` 里还有 `cancelTimeout()` | **显式停表**（源码级 >95%） |
+| `SMCSuperIO` | `PMinit()` + `joinPMtree()` + `registerPowerDriver(this, powerStates, 2)`；`setPowerState()` 只调 `dataSource->powerStateChanged(state)`，**不碰 timerEventSource** | 有 PM 状态回调，**未见**停表调用 |
+| `SMCProcessor` | 创建 `IOTimerEventSource` + `timerCallback`；源码中 `registerPowerDriver` / `setPowerState` / `disable()` **0 命中** | **没有注册电源管理驱动** |
+
+⇒ 修正 §7.4 正文「三个 kext 都有电源管理钩子」的笼统表述：只有 `SMCBatteryManager` 有显式停表，`SMCSuperIO` 仅转发电源状态，`SMCProcessor` 连 PM 钩子都没有（>90% 源码级）。但**这仍不回答「S0ix 下 timer 是否真正停表」**：源码只能证明代码路径存在，且本机二进制未与 master 源码逐字节核对（版本台账显示本机为 master 构建，>90%，非逐字节验证）；S0ix 是 CPU/芯片组级状态，timer 由内核与硬件统一处理，kext 的 `disable()` 只是显式保险。**故 §7.4 维持未知（<80%）、不结案**，只把「timer 未把系统拉出 S0ix」上调到 >95%、并细化了源码事实。
+
+**工具坑**：`nm` 才能看到这些符号（本机三个 RELEASE 二进制分别命中 4 / 4 / 5 个），`strings` 只有 35 / 194 / 81 行、完全看不到 `IOTimerEventSource` 等符号 —— 正文的「二进制有符号」结论没错，但**用 `strings` 复核会误判为不存在**。
+
 ### 7.5 触控板轮询的三条路径（原 §7.2/§7.3，均未执行、均不牺牲手感）
 
 | 路径 | 内容 | 判断 |
@@ -186,6 +200,16 @@ ioreg -l -w0 | grep ps-max-latency-us
 - 对照组：`12:01:31` 睡 27m42s → `12:29:13` 唤醒，**0 次**；`13:27:17` 睡 83 s → `13:28:40` 唤醒，**0 次**（>95%）。
 - ⇒ 硬结论：**这批崩溃集中在过夜长睡唤醒之后**，与 README / 项目记忆 §3「Intel 蓝牙 S0ix 唤醒后崩溃、未根治」一致。「长睡才崩、短睡不崩」只有 3 个唤醒样本，**样本不足，属未知（<80%）**，只作假设；验证需按 §9 做 ≥4h 拔电睡眠的对照 A/B，不据此改 EFI。
 - 上游交叉：`betteray/BluetoothFix` 用 sleepwatcher 在唤醒时 `kill bluetoothd` 兜底同症状，但项目记忆 §3 已实测 `launchctl kickstart -k` 后立刻又崩 ⇒ **重启进程类兜底对本机已证伪**（>85%）。`OpenIntelWireless/IntelBluetoothFirmware#145`（AX201 `8087:0026` 睡醒后蓝牙不可用，2020）说明症状非 Tahoe 独有，仅作方向参考、不作判据。
+
+##### 2026-11-13 二次补证：`-btlfxallowanyaddr` 的官方语义与「地址重复」假说
+
+按「查证三查」取到源码级硬证据，用于给待办①的取证方向定型：
+
+- **官方语义（>95%）**：`acidanthera/BrcmPatchRAM` 的 `BlueToolFixup.cpp` 中，`shouldPatchAddress = checkKernelArgument("-btlfxallowanyaddr")` 的条件是 `(Monterey && minor >= 5) || > Monterey`（注释 `12.4 Beta 3+, XNU 21.5`），本机 26.7.3 满足；patch 目标是 `_cs_validate_page` 路由上的地址检查。官方 README 原文：*"On macOS 12.4 and newer versions, a new address check has been introduced in `bluetoothd`, thus an error will be triggered if two Bluetooth devices have the same address. However, this check can be circumvented by adding the boot argument `-btlfxallowanyaddr`."*
+- **本机适用性（>90%）**：`BlueToolFixup_Mod.kext` 版本 **2.7.2**，与官方最新 release `2.7.2`(2026-03-20) 同版；二进制含 `-btlfxoff` / `-btlfxdbg` / `-btlfxbeta` / `-btlfxboardid` / `-btlfxallowanyaddr` / `-btlfxnvramcheck` 全套官方 boot-arg；git `edadb45`(10-14) 与 `04012de`(10-19) 提交说明均写明「rename BT/USB kexts … **content unchanged**, skip OCAT version check」⇒ `_Mod` 只是改名，官方语义适用。另：`-btlfxnvramcheck` 源码条件为 `<= Sonoma`，本机 Tahoe 26 不满足，该参数（本机未启用）在此版本**不会生效**。
+- **「地址重复」假说：无正向证据，但也证伪不了（未知，<80%）**。`bt-full.log` 全 203642 行检索：`same address` / `duplicate.*address` / `address.*error` / `allowanyaddr` / `btlfx` **全部 0 命中**；96 条 `localAddress` 全是稳定 PID 169 的 `MUC - _concateBTAddresses … localAddress 0x0` 密钥拼接，9658 条 `duplicate` 全是 `[Server.LE.Scan] duplicate filter` 去重过滤，与地址冲突无关。但 `-btlfxallowanyaddr` 是 **kernel 侧** kext patch（`_cs_validate_page`），userspace 日志本就不打印 patch 是否生效 ⇒ **0 命中不能判定 patch 未生效，也不能排除地址检查是退出原因**。
+- **与项目记录的关系**：README / 项目记忆 §3 把它记为「缓解 Tahoe 下 Intel 蓝牙 S0ix 唤醒后崩溃」的实测手段（commit `336542b` / `945966c`，且**未根治**）。官方语义是「绕过地址重复检查」，两者**是否同一机制未知（<80%）**；短命进程止于 `Registering for WiFi Callback`（HCI 栈初始化之前），地址检查若发生在此阶段则时间上相容，但没有一条日志证据。
+- **⇒ 不产生 EFI 改动**。待办①的取证方向因此收敛：要定机制应看 **kernel 侧 BlueToolFixup / `_cs_validate_page` patch 日志**或真 HCI 包，而不是继续在 `process=="bluetoothd"` 里找；`log show` 在 AI 沙箱硬禁，需用户终端执行，本轮未取。
 
 ---
 

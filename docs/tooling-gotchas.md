@@ -350,5 +350,66 @@ Serialisation returns 3 errors! ... Found 3 issues requiring attention.
 
 **顺带修正历史 commit `9794068`（10-12）**：该提交写「补全 OC 1.0.8 schema 缺失键以通过 ocvalidate」「本机 OpenCore 实为 1.0.0，这些键对其无害(忽略未知键)」。实测官方 1.0.8 `ocvalidate` **不认识**这些键（报 `No schema`，不是 `Missing key`），且当前 MOD 二进制明确解析它们 ⇒ 把 fork 专属键当成「官方 1.0.8 新增键」、以及「OC 会忽略未知键」这两个前提，对当前版本都不成立。补键本身无害，但**理由错误**，别沿用它去删键。
 
-**边界**：`boot-log` 27 条中 `OCS` / `No schema` 相关 **0 命中**（>95%），但日志级别 / `Target` 可能过滤该信息，不据此断言「键被完整解析」；硬证据来自二进制 `strings`，不是日志。
+**边界（2026-11-13 已查实，见下章）**：`boot-log` 27 条中 `OCS` / `No schema` 相关 **0 命中**（>95%）是**假阴性** —— 当前配置下这 27 条全为 `AAPL:` 前缀的 `boot.efi` 行，不含任何 OC 自身（`OCA:` / `OCS:` / `OC:`）的行。硬证据只有二进制 `strings`，不是日志。
+
+---
+
+## ★ `boot-log` 在当前配置下读不到 OC 自身日志（2026-11-13 纠错，勿用「0 命中」当判据）
+
+**为什么必须写这一条**：此前多次用「解码 `boot-log` 后 `Failed to add ACPI` / `only 0 bytes` 0 命中」来判定「ESP 上的 ACPI 表被 OC 正常加载」「OC 没有报 `No schema`」。**这些判据在当前配置下无效**：读到的虽然仍是 Data Hub 属性，但内容里没有 OC 自身的日志行，0 命中不构成任何正面证据。
+
+### 实测（13:53，boot `12:40:57`，>95%）
+
+`ioreg -lw0 -p IODeviceTree` 解出 `boot-log0…26` 共 **27 条 / 2585 B**，全部以 `AAPL:` 开头，样例：
+
+```
+00:006 00:000 AAPL: #[EB|CFG:ARG] boot-save-log 0x0000000000000002 ...
+00:003 00:000 AAPL: #[EB.CFG.DEV|!] Err(0xE) <- RT.GV booter-strict-xmlparser ...
+```
+
+`OCA:` / `OCS:` / `OC:` / `ACPI` / `Failed` / `No schema` **全部 0 命中**；全盘 `find /Volumes/ESP -iname "*.txt"` 也是 **0 结果**。
+
+### 官方位表（可作判据）
+
+`OpenCorePkg/Docs/Configuration.tex`（master，481554 B）`Misc → Debug → Target` 原文：
+
+| 位 | 含义 |
+|---|---|
+| `0x01` | Enable logging，不设则全部丢弃 |
+| `0x02` | 屏幕 console |
+| **`0x04`** | **Data Hub** —— 官方给出的读取命令正是 `ioreg -lw0 -p IODeviceTree \| grep boot-log \| … \| xxd -r -p` |
+| `0x08` / `0x10` / `0x20` | 串口 / UEFI variable / non-volatile UEFI variable |
+| **`0x40`** | **写文件** `opencore-YYYY-MM-DD-HHMMSS.txt` 到 EFI 卷根 |
+
+同段 `AppleDebug` 官方释义：*"Enable writing the `boot.efi` debug log to the OpenCore log."*（≥10.15.4）。
+
+本机 `Misc/Debug` 实测：`Target = 7`（= `0x01+0x02+0x04`）、`AppleDebug = True`、`ApplePanic = True`、`LogModules = '*'`。git 历史逐个 commit 的 `config.plist` 快照：`bba9c58` 前为 `71`(0x47) → `b149d08` 改 `67`(0x43) → `fbd830e` 改 `7`(0x07)，此后未变。按官方位表拆位：
+
+| commit | 值 | 位组合 | 标题 |
+|---|---|---|---|
+| `bba9c58` | `71` = 0x47 | enable + console + **DataHub(0x04)** + **file(0x40)** | 回退 SSDT-XHC-Sleep |
+| `b149d08` | `67` = 0x43 | enable + console + **file(0x40)**（去掉 DataHub） | 「关闭 OC 文件日志」**改错了位** |
+| `fbd830e` | `7` = 0x07 | enable + console + **DataHub(0x04)**（去掉 file，加回 DataHub） | 「真正关闭 OC 文件日志（修正上一版错误的位）」 |
+
+⇒ `0x40` 确是 11-10 主动去掉的（与 ESP 无 `opencore-*.txt` 一致），而 `0x04` Data Hub **当前仍开着**；两次提交的标题与位变化逐字吻合，可作为以后解读 `Target` 的判据。
+
+### 定性（观测 >95%，机制未知 <80%）
+
+- **能确定的**：当前 `boot-log` 内容全是 Apple `boot.efi` 日志，没有 OC 自身的行。因此「0 命中 = ACPI 加载正常 / OC 无报错」**不成立**，是假阴性。
+- **未知的**：`Target=7` 仍含 `0x04`(Data Hub)，为什么里面没有 OC 自身的行 —— 可能是 `AppleDebug=True` 把 boot.efi 日志并入后挤占/覆盖了有限的 `boot-logN` 条目，也可能是 `DisplayLevel` / 本机 OC-MOD 的 Data Hub 写入行为不同。**未实测，不下结论**。
+- **历史为什么能读到（11-13 补查 git 快照，>95%）**：`touchpad-os-gating.md` §7.2（10-23 故障）当时提交 `d7590ce` 的实测是 **`Target=69`(0x45 = 0x40 文件日志 + 0x04 Data Hub + 0x01 enable)、`AppleDebug=False`**；`5cfe21c`(10-22) 提交说明也写明「打开 Data Hub 日志（Target 0x41 → 0x45）」。当时 `boot.efi` 日志**没有**被并入，Data Hub 里是纯 OC 日志，所以能解出 `OCA: Inserted ACPI table is only 0 bytes`。`AppleDebug` 是 11-04 `7819b9c` 才打开的（`Target=71`/0x47），11-10 `fbd830e` 又去掉 `0x40` 变成 `7` ⇒ **差别不在 `0x40`（那是文件日志位，写 ESP 的 `opencore-*.txt`，与 `boot-log` 属性无关），而在 `AppleDebug` 与日志内容构成**；「为何当前 Data Hub 里没有 OC 行」仍属未知（<80%），不编造机制。
+
+### 受影响的历史断言（必须降级）
+
+| 断言 | 原把握度 | 现判定 |
+|---|---|---|
+| `touchpad-os-gating.md` §7.4 第 3 行判据 | 当作通用 | **当前配置下假阴性**，需按下方取日志 |
+| 本会话「ESP 重复 FAT 目录项未造成 OC 加载失败」 | >90% | **降级为未知（<80%）** —— 只保留「两条同 inode 44 / 同 107 B / macOS 视图一致」这一形态观测 |
+| 上一章「`boot-log` 中 `OCS` / `No schema` 0 命中」 | 边界存疑 | 明确为假阴性；fork 键结论仍以二进制 `strings` 为准，**不受影响** |
+
+### 正确取法（属 config 改动，本轮不执行）
+
+按官方，`0x04` Data Hub **当前已开着**，读不到 OC 行更可能与 `AppleDebug=True` 挤占条目有关（未知，<80%）。因此要可靠地拿 OC 日志，两条路都需改 `Misc/Debug`：① 加 `0x40`（如 `Target=71`/0x47）重启后取 EFI 卷根 `opencore-*.txt` —— 独立文件通道，不与 `boot.efi` 共享 `boot-logN` 属性；② 或关掉 `AppleDebug` 后重读 Data Hub；③ 加 `0x10` 后读 `nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:boot-log`。改 `Misc/Debug` 属 `config.plist` 改动，必须按 `docs/deepidle-power-audit-2026-11-12.md` §9 单变量 + 明确回退点（**回退值 `Target=7` / `AppleDebug=True`**）+ 双写仓库/ESP + 重启验证，且 ① 会重新在 ESP 累积日志文件 —— 代价大于收益，本轮不做。
+
+**附带工具坑**：复核 kext 符号要用 `nm`，不要用 `strings`。本机 RELEASE 版 `SMCProcessor` / `SMCSuperIO` / `SMCBatteryManager` 的 `strings` 只有 35 / 194 / 81 行且看不到 `IOTimerEventSource`、`setIdleTimerPeriod` 等，但 `nm` 分别命中 4 / 4 / 5 个 —— 项目 §7.4 的「二进制有这些符号」没错，只是取数工具不同。
 
