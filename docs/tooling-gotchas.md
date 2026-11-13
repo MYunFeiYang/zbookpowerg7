@@ -420,18 +420,24 @@ Serialisation returns 3 errors! ... Found 3 issues requiring attention.
 
 ### `pmset -g log` / `log show` 在 AI 沙箱内返回 0 行时：改用 powerlog 表（>95%）
 
+> ⚠️ **14:5x 勘误**：本章初版给出的 `order by ID desc limit 1` 取 `TimeOffset` **是错的**，见下方 §「TimeOffset 有两簇」。主审计 §12 的绝对时间轴已因此整体修正为 §13。以下为修正后版本。
+
 `pmset -g log` 在本执行环境实测 **0 行**（不是「没有睡眠事件」），`log show` 亦不可用 ⇒ 凡是依赖这两条命令对齐睡眠区间的判据（如主审计 §9 第 1 步②）在 AI 侧都不可判读。替代方案是只读 `/var/db/powerlog/Library/BatteryLife/CurrentPowerlog.PLSQL`：
 
 ```bash
 DB="file:/var/db/powerlog/Library/BatteryLife/CurrentPowerlog.PLSQL?mode=ro"
-OFF=$(sqlite3 "$DB" "select system from PLStorageOperator_EventForward_TimeOffset where system is not null order by ID desc limit 1;")
+# ★ 不要取单一值：TimeOffset.system 可能分簇，必须按 timestamp 分段
+sqlite3 "$DB" "select ID,timestamp,system from PLStorageOperator_EventForward_TimeOffset where system is not null order by ID;"
 ```
 
-- 库内 `timestamp + OFF` = unix 秒；**别把 `EventTime` 也加 OFF**，`PLScheduledWakeAgent_EventForward_ScheduledEvent.EventTime` 本身就是绝对 unix 时间。
-- `PLSleepWakeAgent_EventForward_PowerState`：`Event=1` 入睡、`Event=0 & State=0` 唤醒、`Event=6/4` 是入睡后 ≤31 s 的过渡记账（**别误计成唤醒**，否则每个窗口都会假报 3 次事件）；`SleepTriggers` 直接给 `Software Sleep` / `Clamshell Sleep`，比 `pmset` 更细。
+- **★ `TimeOffset` 有两簇、相差 8 小时（>95%，主审计 §13）**：本机 56 行里 ID 9–54 是 `2474897xx`（早期）、ID 55–64 是 `2474609xx`（晚期），差 −28798.8 s；分界 `timestamp 1547019253 → 1547019256`。`limit 1` 只拿到晚期簇 ⇒ 早期数据的时间戳被**提前 8 h**。判据：用 `PLSleepWakeAgent_EventForward_PowerState.KernelSleepDate`（**绝对 unix，不需 offset**）或 `docs/backups/sleep-power-samples/points.jsonl` 的 `ts` 作锚逐段校验 —— 正确簇误差 ≤5 s，错簇一律 ±28800 s。
+- 分段映射（本机）：`unix = timestamp + (timestamp < 1547019253 ? 247489763.013 : 247460964.215)`；换机器/换库必须重新分段，**不能照抄常数**。
+- 库内 `timestamp + 对应簇的 OFF` = unix 秒；**别把 `EventTime` 也加 OFF**，`PLScheduledWakeAgent_EventForward_ScheduledEvent.EventTime` 本身就是绝对 unix 时间。
+- `PLSleepWakeAgent_EventForward_PowerState`：`Event=1` 入睡、**`Event=0 & State=0` 才是唤醒**、`Event=6/4` 是入睡后 ≤31 s 的过渡记账、`Event=0 & State=5` 是状态记账（跳变点附近会被错误映射进窗口造成假唤醒）；`SleepTriggers` 直接给 `Software Sleep` / `Clamshell Sleep`，比 `pmset` 更细。
 - `PLBatteryAgent_EventBackward_Battery` 的采样空档与上述窗口逐秒对齐（本机实测误差 ≤14 s）⇒ 可替代 `pmset` 判定「空档确实是睡眠」，闭合 `hackintosh-sleep-power-attribution` skill §6 的那个陷阱。
+- **★ 取端点必须取「采样空档两侧」**，不能取「窗口内所有 `AC=0` 采样」的首尾：本机同一次 1.06 h 睡眠，空档端点 Δ340 mAh → **3.772 W**，宽端点 Δ401 mAh → **4.411 W（+17.9%）**，多出的 61 mAh 是拔电瞬间与唤醒后的清醒耗电（主审计 §13.4）。
 - `PLScheduledWakeAgent_EventForward_ScheduledEvent` 是**注册记录不是触发日志**，只能用来看「timer 目标是否落在睡眠窗口内」，**不能**据此断言 timer 停表/触发。
 - 归档 `Archives/*.gz` 可直接 `gzip -dc` 到 `/tmp` 只读分析；时钟跳变产出的归档（本机 `powerlog_2034-08-22…`）`TimeOffset` 为空、无法换算，须排除。
 
-实战结果见 `deepidle-power-audit-2026-11-12.md` §12：两次 ~11.9 h 长睡 0 唤醒事件、4 个计划唤醒 timer 落在睡眠窗口内未触发唤醒、并事后复算出一组 3.771 W 的拔电短睡样本（端点错位仅 ~2 s）。
+实战结果见 `deepidle-power-audit-2026-11-12.md` §12（结构结论）与 **§13（时间轴勘误，以此为准）**：10 个睡眠窗口 `real wakes` 全 0、6 条计划唤醒注册（3 个不同目标时刻）落在睡眠窗口内未触发唤醒；事后复算出当前最终配置下的 1.06 h 拔电短睡 **3.772 W / 5.568 %/h**。
 
