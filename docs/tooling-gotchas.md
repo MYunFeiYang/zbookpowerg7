@@ -321,3 +321,34 @@ osascript -e "do shell script \"chown -R $(id -un):staff '$B' && chmod -R 777 '$
 
 **★ 台账是快照，不是实时**：`HPBIOS-all.csv` 导出日 2026-09-20；此后用户改过 BIOS（10-19 改 `USB Legacy Port Charging` 等）⇒ **引用它时说"9-20 快照值"，不能说"当前值"**。要当前值只能走上面第 1 或第 2 条。
 
+---
+
+## ★ 官方 `ocvalidate` 不能校验 OC-Mod 配置（2026-11-13 实测，防误删 fork 专属键）
+
+**现象**：取官方 `OpenCore-1.0.8-RELEASE.zip` 内的 `Utilities/ocvalidate/ocvalidate`，对 `EFI/OC/config.plist` 做只读校验：
+
+```
+OCS: No schema for EnableForAll at 0 index, context <Quirks>!
+OCS: No schema for EnableForAll at 7 index, context <Quirks>!
+OCS: No schema for SkipCustomEntryCheck at 13 index, context <Boot>!
+Serialisation returns 3 errors! ... Found 3 issues requiring attention.
+```
+
+**定性（>95%）**：这不是配置错误，是**工具与分支不匹配**。
+
+| 证据 | 实测 |
+|---|---|
+| 本机 `OpenCore.efi`（工作区 + ESP 两份）`strings` | 含 `EnableForAll`、`SkipCustomEntryCheck`、`REL-XXX-YYYY-MM-DD \| MOD -` |
+| 本机 NVRAM（本文 BIOS 段已记） | `REL-109-…｜MOD - 草原企鹅` ⇒ 第三方 MOD 构建 |
+| 官方 `Docs/Configuration.tex`（`1.0.8` 与 `master` 均 481554 B） | 两个键 **0 命中** |
+| 官方 `Library/OcConfigurationLib/OcConfigurationLib.c`（master） | 两个键 **0 命中** |
+| `5T33Z0/OC-Little-Translated` → `O_OC_NO_ACPI/README.md`（上游父页） | `EnableForAll` 是 btwise **OpenCore_NO_ACPI_Build** fork 独有 quirk，加在 `ACPI/Quirks` + `Booter/Quirks`；`false` = 不向 macOS 以外的系统注入 ACPI 补丁 / SSDT / Booter 参数 |
+| 本机 config 实际位置 | `/ACPI/Quirks/EnableForAll=False`、`/Booter/Quirks/EnableForAll=False`、`/Misc/Boot/SkipCustomEntryCheck=False` —— 与 fork 文档位置**逐字吻合** |
+| 剥离这 3 个键的临时副本（`/tmp/config-stripped.plist`，不动原文件） | `ocvalidate` → **No issues found** ⇒ 其余配置在官方 1.0.8 schema 下无任何违规项 |
+
+⇒ **这三个键是本机 MOD 的有效配置，禁止按官方 `ocvalidate` 的报错删除**：删 `EnableForAll=False` 会改变「是否向其他 OS 注入 ACPI」的行为。校验 OC-Mod 配置要用该 MOD 自带的校验器；若只有官方 `ocvalidate`，只能解读「剥离 fork 专属键后的副本」的结果。`SkipCustomEntryCheck` 的具体语义**未知（<80%）**，只确认本机 MOD 认识它，不编造解释。
+
+**顺带修正历史 commit `9794068`（10-12）**：该提交写「补全 OC 1.0.8 schema 缺失键以通过 ocvalidate」「本机 OpenCore 实为 1.0.0，这些键对其无害(忽略未知键)」。实测官方 1.0.8 `ocvalidate` **不认识**这些键（报 `No schema`，不是 `Missing key`），且当前 MOD 二进制明确解析它们 ⇒ 把 fork 专属键当成「官方 1.0.8 新增键」、以及「OC 会忽略未知键」这两个前提，对当前版本都不成立。补键本身无害，但**理由错误**，别沿用它去删键。
+
+**边界**：`boot-log` 27 条中 `OCS` / `No schema` 相关 **0 命中**（>95%），但日志级别 / `Target` 可能过滤该信息，不据此断言「键被完整解析」；硬证据来自二进制 `strings`，不是日志。
+
