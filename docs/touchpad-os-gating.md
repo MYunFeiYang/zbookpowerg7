@@ -28,7 +28,7 @@ OpenCore 的 `ACPI/Patch` 与 `ACPI/Add` **不区分操作系统**，所以：
 | SSDT-AWAC / DeepIdle / EC / I2C0-GNVS / LID-G7 / PCI0.LPCB-Wake-AOAC / PLUG / PMC / PNLF / SNDW-off / USBX / dGPU-PowerOff-Darwin / thunderbolt-disable | ✅ 有 |
 | **SSDT-TPD3-PIN** | ⚠️ **无** |
 
-⇒ 项目里"补丁一律 `_OSI("Darwin")` 门控"是既有约定，**只有触控板这张漏了**。
+⇒ 项目里"补丁一律 `_OSI("Darwin")` 门控"是既有约定，**09-18 取证时只有触控板这张漏了**（修复前快照）。该缺口现已封闭：09-29 `docs/opencore-kext-acpi-audit-2026-09-29.md` §D 确认 SSDT 内已补 `_OSI("Darwin")` 分支，当前 `EFI/OC/ACPI/SSDT-TPD3-PIN2.aml` 的 `strings` 亦命中 Darwin。
 
 ### 2.2 项目自己的归档早就标了这个雷
 

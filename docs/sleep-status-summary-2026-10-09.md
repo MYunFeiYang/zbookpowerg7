@@ -109,21 +109,7 @@ AOAC 机器
 
 **不要做的**（已明确撤回）：动 BIOS（关 Thunderbolt Mode / 改 SL 档 / 关 AOAC 相关项）—— 成功窗口里这些设置本来就一样。
 
-### ★ 更正（10-09 17:3x）：**停用 `SSDT-DeepIdle` 是错误方向，不可做**
-
-上一版把"单独停用 `SSDT-DeepIdle`"列为失败后的下一杠杆，**该结论错误，已撤回**。铁证（`docs/firmware-facts-ledger.md` §S3 + `MEMORY.md` 系列，均为实测）：
-
-| 事实 | 证据 |
-|---|---|
-| `SSDT-DeepIdle` 的全部内容 | 注入 `\_SB.LPS0` + `\_GPE.LXEN`（Darwin 下 `Return(One)`）；本机 DSDT 原厂 **0 命中**（复核：只有标准 `_S0`）⇒ 这两个对象**唯一来源就是这张 SSDT** |
-| 它的作用 | 给 macOS 一条**平台声明**，`AppleACPIPlatform` 据此把 `IOPMDeepIdleSupported` 置 **Yes** |
-| **撤掉它会怎样** | `IOPMDeepIdleSupported` **Yes→No** ⇒ 系统**确实转 S3** |
-| 而本机固件 | **AOAC-only**（`Modern Standby` 与 S3 **互斥设计**）⇒ 转 S3 后 **EC 固件罢工**：`AppleACPIEC EC OBF=1 poll timed out` 连绵 ⇒ PS2/SMBus 死等 ⇒ **USB 栈 panic** |
-| 实测代价（2026-09-17 强制 S3 实验） | 唤醒 **159.336 s vs 2.430–2.617 s（65×）**；PS2 恢复 **157735 ms vs 457–466 ms（342×）**；panic **1**（本机唯一，NMIPI TLB flush timeout） |
-
-**三档终局**：**Deep Idle (S0ix) ✅ 唯一可用** ｜ **S3 ❌ 实测坏** ｜ **S4** 不追。**"半档不存在"。**
-
-⇒ `SSDT-DeepIdle` 是**必须保留**的底座，不是可停用的杠杆。我们的 AOAC 修复（**保留 DeepIdle + 禁 S3 + 补 `_PS0`/`_PS3`**）恰是在**消除**这对冲突，与"停 DeepIdle"方向**正好相反**。
+> **停用 `SSDT-DeepIdle` 是错误方向（已撤回）**：完整铁证链、三档终局与 S3 实测代价（159.336 s / 157735 ms）见 `docs/sleep-remaining-candidates-2026-10-09.md` §十二，此处不重复。结论：DeepIdle 是必须保留的底座，唯一可用睡眠态为 S0ix。
 
 **失败后的真·下一杠杆（候选，按确定性排序）：**
 1. **修 `SSDT-LID-G7` 的两处悬空引用**（`\EC0.LIDS` → `\_SB.PCI0.LPCB.EC0.LIDS`；`\S5.S5SL` 全 DSDT 0 命中）—— 唯一**已确证存在**的技术缺陷，且落在唤醒路径上。
