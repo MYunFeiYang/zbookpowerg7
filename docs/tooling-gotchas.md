@@ -360,7 +360,7 @@ Serialisation returns 3 errors! ... Found 3 issues requiring attention.
 
 ### 实测（13:53，boot `12:40:57`，>95%）
 
-`ioreg -lw0 -p IODeviceTree` 解出 `boot-log0…26` 共 **27 条 / 2585 B**，全部以 `AAPL:` 开头，样例：
+`ioreg -lw0 -p IODeviceTree` 解出 `boot-log00000…00026`（**5 位补零编号，与官方源码格式一致**）共 **27 条 / 2585 B**，全部以 `AAPL:` 开头，样例：
 
 ```
 00:006 00:000 AAPL: #[EB|CFG:ARG] boot-save-log 0x0000000000000002 ...
@@ -393,10 +393,15 @@ Serialisation returns 3 errors! ... Found 3 issues requiring attention.
 
 ⇒ `0x40` 确是 11-10 主动去掉的（与 ESP 无 `opencore-*.txt` 一致），而 `0x04` Data Hub **当前仍开着**；两次提交的标题与位变化逐字吻合，可作为以后解读 `Target` 的判据。
 
-### 定性（观测 >95%，机制未知 <80%）
+### 定性（观测 >95%；「挤占」已排除 >90%；真正机制仍未知 <80%）
 
 - **能确定的**：当前 `boot-log` 内容全是 Apple `boot.efi` 日志，没有 OC 自身的行。因此「0 命中 = ACPI 加载正常 / OC 无报错」**不成立**，是假阴性。
-- **未知的**：`Target=7` 仍含 `0x04`(Data Hub)，为什么里面没有 OC 自身的行 —— 可能是 `AppleDebug=True` 把 boot.efi 日志并入后挤占/覆盖了有限的 `boot-logN` 条目，也可能是 `DisplayLevel` / 本机 OC-MOD 的 Data Hub 写入行为不同。**未实测，不下结论**。
+- **★ 已排除（2026-11-13 14:1x 补证，>90%）**：此前猜测「`AppleDebug=True` 把 boot.efi 日志并入后挤占/覆盖了有限的 `boot-logN` 条目」**不成立**。两条硬证据：
+  1. **官方源码**（`OpenCorePkg` master，`Library/OcLogAggregatorLib/OcAppleLog.c`）：`AppleDebugLogPrintToOcLog()` 把 Apple 日志加 `"AAPL: %a"` 前缀后**调用同一个 `OcLog->AddEntry`**，与 OC 自身日志共用一条写入路径，不存在另一条会覆盖的属性通道；`Library/OcMainLib/OpenCoreMisc.c:781` 只是 `OcAppleDebugLogConfigure(Config->Misc.Debug.AppleDebug)` 设一个布尔开关。源码真实路径经 jsDelivr 文件索引确认，此前猜测的 `OcLogLib` / `Platform/OpenCore/` 全部 404。
+  2. **上游 + 本机双证**：`Library/OcLogAggregatorLib/OcLog.c` 的 `InternalLogAddEntry()` 用 `UnicodeSPrint (..., L"%s%05u", OC_LOG_VARIABLE_NAME, Private->LogCounter++)` 生成键名 ⇒ 官方格式是 `boot-log` + 5 位补零递增号。本机实测键名正是 `boot-log00000…00026`，**从 0 起连续 27 条、无跳号、无高位段残留**。若是「挤占/覆盖有限条目」，必然出现编号跳跃或被截断的高编号段，实测没有。
+  - 附带修正：上一版文档写的 `boot-log0…26` 是省略补零的简写，实际为 5 位补零；该格式与官方 master 一致 ⇒ 本机 OC-MOD 的日志键名生成逻辑**未被改过**，可用官方源码解释其键名行为（但 fork 整体行为仍不可直接等同官方）。
+- **仍属未知（<80%）**：`Target=7` 含 `0x04`(Data Hub)，为什么 Data Hub 里一条 OC 自身日志都没有。合理但**未证实**的假说：Data Hub protocol 安装时机晚于 OC 主日志阶段（`OcLog.c:330` 写入前需 `LocateProtocol (gEfiDataHubProtocolGuid)` 成功）、RELEASE 构建下 OC 自身 `DEBUG()` 输出被剥离而 `AppleDebug` 走的是显式 `AddEntry`、或 fork 差异。**不编造机制，不下结论**。
+- **对操作建议的影响**：「关掉 `AppleDebug` 后重读 Data Hub」这条补救路**现在没有机制依据**（挤占已排除），优先级降低；要可靠拿 OC 日志应走独立的 `0x40` 文件日志通道。
 - **历史为什么能读到（11-13 补查 git 快照，>95%）**：`touchpad-os-gating.md` §7.2（10-23 故障）当时提交 `d7590ce` 的实测是 **`Target=69`(0x45 = 0x40 文件日志 + 0x04 Data Hub + 0x01 enable)、`AppleDebug=False`**；`5cfe21c`(10-22) 提交说明也写明「打开 Data Hub 日志（Target 0x41 → 0x45）」。当时 `boot.efi` 日志**没有**被并入，Data Hub 里是纯 OC 日志，所以能解出 `OCA: Inserted ACPI table is only 0 bytes`。`AppleDebug` 是 11-04 `7819b9c` 才打开的（`Target=71`/0x47），11-10 `fbd830e` 又去掉 `0x40` 变成 `7` ⇒ **差别不在 `0x40`（那是文件日志位，写 ESP 的 `opencore-*.txt`，与 `boot-log` 属性无关），而在 `AppleDebug` 与日志内容构成**；「为何当前 Data Hub 里没有 OC 行」仍属未知（<80%），不编造机制。
 
 ### 受影响的历史断言（必须降级）
@@ -409,7 +414,7 @@ Serialisation returns 3 errors! ... Found 3 issues requiring attention.
 
 ### 正确取法（属 config 改动，本轮不执行）
 
-按官方，`0x04` Data Hub **当前已开着**，读不到 OC 行更可能与 `AppleDebug=True` 挤占条目有关（未知，<80%）。因此要可靠地拿 OC 日志，两条路都需改 `Misc/Debug`：① 加 `0x40`（如 `Target=71`/0x47）重启后取 EFI 卷根 `opencore-*.txt` —— 独立文件通道，不与 `boot.efi` 共享 `boot-logN` 属性；② 或关掉 `AppleDebug` 后重读 Data Hub；③ 加 `0x10` 后读 `nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:boot-log`。改 `Misc/Debug` 属 `config.plist` 改动，必须按 `docs/deepidle-power-audit-2026-11-12.md` §9 单变量 + 明确回退点（**回退值 `Target=7` / `AppleDebug=True`**）+ 双写仓库/ESP + 重启验证，且 ① 会重新在 ESP 累积日志文件 —— 代价大于收益，本轮不做。
+按官方，`0x04` Data Hub **当前已开着**；「AppleDebug 挤占条目」已由源码 + 编号连续性排除（见上，>90%），故 ② 不再有机制依据。要可靠地拿 OC 日志，仍都需改 `Misc/Debug`：① **首选** 加 `0x40`（如 `Target=71`/0x47）重启后取 EFI 卷根 `opencore-*.txt` —— 独立文件通道，不依赖 Data Hub 里是否有 OC 行；② ~~关掉 `AppleDebug` 后重读 Data Hub~~（挤占假说已排除，不再作为方案）；③ 加 `0x10` 后读 `nvram 4D1FDA02-38C7-4A6A-9CC6-4BCCA8B30102:boot-log`。改 `Misc/Debug` 属 `config.plist` 改动，必须按 `docs/deepidle-power-audit-2026-11-12.md` §9 单变量 + 明确回退点（**回退值 `Target=7` / `AppleDebug=True`**）+ 双写仓库/ESP + 重启验证，且 ① 会重新在 ESP 累积日志文件 —— 代价大于收益，本轮不做。完整决策与「预期形态 / 回滚点 / 不可逆风险」三要素见该文档 §11。
 
 **附带工具坑**：复核 kext 符号要用 `nm`，不要用 `strings`。本机 RELEASE 版 `SMCProcessor` / `SMCSuperIO` / `SMCBatteryManager` 的 `strings` 只有 35 / 194 / 81 行且看不到 `IOTimerEventSource`、`setIdleTimerPeriod` 等，但 `nm` 分别命中 4 / 4 / 5 个 —— 项目 §7.4 的「二进制有这些符号」没错，只是取数工具不同。
 

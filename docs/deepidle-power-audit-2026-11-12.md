@@ -251,4 +251,71 @@ ioreg -l -w0 | grep ps-max-latency-us
 
 ---
 
-**EFI 全程未改动**，`config.plist` sha256 = `47d9c9bd…`（2026-11-12 复核）。
+## 11. 2026-11-13 补遗：EFI 配置清单体检与优化决策台账
+
+> 承接 11-13 全天 7 轮只读取证，把分散结论收敛成一张可执行决策表。本节仍为**只读 + 文档**，`config.plist` 与 ESP 两份 sha256 全程 `47d9c9bd…900a`，**一字未动**。
+
+### 11.1 配置清单 × 磁盘实物全量交叉核对（>95%）
+
+官方 `ocvalidate` 只校验 schema，**不校验 Path 指向的文件是否真实存在**。按 `config.plist` 四类清单逐项对盘：
+
+| 清单 | 条目 | 文件存在 | BundleIdentifier 不符 | 孤儿文件 |
+|---|---|---|---|---|
+| `ACPI/Add` | 16（全 Enabled） | 16/16 | — | `ACPI/disabled/`（归档目录） |
+| `Kernel/Add` | 31（含 4 个 VoodooI2C PlugIns 内嵌 bundle） | 31/31 | 0 | 0 |
+| `UEFI/Drivers` | 8（2 项 Linux 启动 `Enabled=False`） | 8/8 | — | `AudioDxe.efi` |
+| `Misc/Tools` | 1 | 1/1 | — | `startup.nsh` |
+
+⇒ **0 缺失、0 路径错、0 BundleID 不符、0 孤儿 kext**。配置里没有「残留/失效条目」这类可清理垃圾 —— 这是「优化 EFI」最容易出收益的盲区，已排除（>95%）。
+
+三个孤儿文件均为良性，**不要删**：
+
+- `Drivers/AudioDxe.efi`：`UEFI/Audio/AudioSupport=False`、`PlayChime=Auto`、`PickerAudioAssist=False` ⇒ 未列入 config 是**有意关闭启动音**，与 `Resources/Audio/` 资源目录并存不矛盾。
+- `Tools/startup.nsh`：OpenShell 同目录自动执行脚本，供 S4 memmap 采样用。
+- `ACPI/disabled/`：历史 AML 归档目录。
+
+### 11.2 新发现：`MaxKernel=25.99.99` 是跨代升级阻断项（当前无害，>95%）
+
+`Kernel/Add` 中 `SimpleHDA.kext` 与 `AirportItlwm-Tahoe.kext` 均为 `MinKernel=25.0.0` + `MaxKernel=25.99.99`。本机实测 `uname -r = 25.6.0`（macOS 26.7.3 / build 25G342 —— **Darwin 25，不是 26**），落在门槛内；`kextstat` 实证二者均已加载：`cn.laobamac.SimpleHDA (1.0.0)`、`com.zxystd.AirportItlwm (2.4.0)`。
+
+⇒ 当前正常，但 Darwin 26（下一代 macOS）起这两个 kext 会被 OC **静默跳过**，Wi‑Fi 与音频同时失效。项目文档此前 `MaxKernel` 0 命中、无台账 ⇒ 记此一条，**升级大版本前必须复核**。这不是当前改动项。
+
+### 11.3 全会话 EFI 优化候选收敛表
+
+| # | 候选 | 结论 | 把握度 | 处置 |
+|---|---|---|---|---|
+| 1 | §5 C1–C6 | 逐条否决，无可直接执行且代价可接受的改动 | >95% | **不动** |
+| 2 | §7.1 NVMe APST | `apst=Yes` + `NVMePMProxy=1` ⇒ 已启用，非 1–2 W 耗电源 | >95% | 结案 |
+| 3 | §7.3 `force-online` | WEG 源码 `if (igfxonln) ... else if (force-online)`，本机 `igfxonln=1` ⇒ DP 注入**不被读取**，是死键 | >95% | 可删但零收益，且删它要动 config ⇒ **保留** |
+| 4 | §7.3 IGPU 睡眠前后对照 | 有效深睡 83 s；拓扑/端口/电源状态前后完全一致；ioreg 无 `online`/`link` 属性，该路线**原理上**测不到在线状态 | >95% 观测 | 假设未验证也未证伪，**不动** |
+| 5 | `-igfxblr` / `-igfxblt` 并存 | git 硬证据：S4 单变量 E14 加入→删→为匹配唯一能进 S4 的配置加回；上游 #2560 支持 macOS 26.7 起 `-igfxblt` 失效 | >90% | **保留**，不做单变量删除 |
+| 6 | 升 WEG + Lilu 治 #967 | 本机 10 个 acidanthera 组件均为 **master 源码构建**，无可升目标 | >90% | 结案 |
+| 7 | 蓝牙升 lshbluesky v2.5.3 | 该版只加 BlazarU (`hw_variant 0x1d`)；本机 `ioreg -p IOUSB` 实测 AX201 `8087:0026` ⇒ 零针对性改动 | >90% | **不升** |
+| 8 | `-btlfxallowanyaddr` | 官方语义已定案（patch macOS 12.4+ 蓝牙地址重复检查）；patch 在 kernel 侧，userspace 日志 0 命中不可判读 | 语义 >95% / 是否命中 <80% 未知 | **保留** |
+| 9 | §7.4 睡眠期 timer | 未把系统拉出 S0ix，但「是否停表」无 kernel 侧日志 ⇒ 未证实 | <80% 未知 | 不结案，不动 |
+| 10 | ESP 重复 FAT 目录项 | 两条同 inode 44 / 同 107 B；`boot-log` 判据已判假阴性 ⇒ 运行时影响未知 | <80% 未知 | 修需改 `ACPI/Add[8].Path` + 手工镜像，代价 > 收益 ⇒ **不动**，每次重启监控 |
+| 11 | 官方 `ocvalidate` 3 条 `No schema` | 是 **OC-Mod fork 专属键**（`EnableForAll`×2 / `SkipCustomEntryCheck`），本机二进制 `strings` 认识；剥离后 `No issues found` | >95% | **禁止按报错删键** |
+| 12 | AppleRTC Kernel Patch 空 `Find` | 官方 `Configuration.tex` Kernel Patch 段：空 Find + 有 Base = `Immediate replacement at Base` | >95% | 合法，结案 |
+| 13 | `boot-log` 判据 | 假阴性；「AppleDebug 挤占条目」已由源码（`OcAppleLog.c` 同一 `AddEntry`）+ 本机键名 `boot-log00000…00026` 连续无跳号**排除**；真机制仍未知 | 排除 >90% / 机制 <80% | 见 `tooling-gotchas.md`；②「关 AppleDebug 重读」不再成立 |
+| 14 | 配置清单体检（本轮 §11.1） | 0 缺失 / 0 不符 / 0 孤儿 kext | >95% | 无可清理项 |
+| 15 | `MaxKernel` 门槛（本轮 §11.2） | 当前正常，跨代阻断 | >95% | 仅记账 |
+| 16 | 恢复 OC 日志可观测性（`Target 7→71`） | 唯一能验证 #10 的诊断性改动，需写 ESP | ~85% 方案有效性 | **待用户授权**，见 §11.4 |
+
+### 11.4 唯一建议的可执行下一步（需用户授权，本轮不执行）
+
+按 §9 与「实测前写清三件事」纪律列全：
+
+- **改动**：仅 `Misc/Debug/Target` `7 → 71`（加 `0x40` 文件日志），其余键一律不动；仓库与 ESP 双写，两份 `plutil -lint`。
+- **预期形态**：成功 = 重启后 EFI 卷根出现 `opencore-YYYY-MM-DD-HHMMSS.txt`，含 `OCA:` / `OCS:` 行，据此判定 ESP 重复 FAT 目录项是否导致 `Failed to add ACPI` / `only 0 bytes`；失败 = 无文件生成 ⇒ 回退并记为 OC-MOD 行为差异。
+- **回滚点**：改回 `Target=7`（`AppleDebug=True` 保持）；git 已提交状态按用户约定不做全量备份，靠 git 历史回滚。
+- **不可逆风险**：**无**。不写固件、不改 NVRAM 启动项、不动 ACPI / Kext / 驱动路径；唯一副作用是 ESP 累积日志文件，验证后删除即可。
+- **§9 豁免说明（我的判断，~85%）**：「≥4h 拔电 %/h A/B」针对**功耗类**改动；日志位不进入电源管理路径，单变量 + 单次重启即可判读，无需 4h 对照。
+- **代价**：一次重启 + 一次手工同步 ESP + 事后清理日志。
+
+### 11.5 结论
+
+**当前 `config.plist` 没有值得改的项（>90%）**。7 轮取证把 C1–C6 与 11-13 新增候选全部收敛为「不动 / 结案 / 未知但无可执行路径」，本轮体检进一步证明配置清单与磁盘实物 100% 对齐。§1 #1 继续成立，EFI 保持 sha `47d9c9bd…900a` 不变。若要继续推进，只有 §11.4 这一个动作有信息增益，且必须由用户点头才写 ESP。
+
+---
+
+**EFI 全程未改动**，`config.plist` sha256 = `47d9c9bd…`（2026-11-12 复核；2026-11-13 全程复核一致）。
