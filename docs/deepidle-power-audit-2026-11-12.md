@@ -118,6 +118,15 @@ ioreg -l -w0 | grep ps-max-latency-us
 ```
 若 `apst` 存在且 `NVMePMProxy` 已创建 ⇒ APST 正常，这条线索可关闭。
 
+##### 2026-11-13 补证（只读取证）：本节判据已满足，线索关闭
+
+> 只追加补证，不改写上文定稿内容。
+
+- `ioreg -c IONVMeController -r -d 1 -w0` 实测 **`"apst" = Yes`**；`IOPowerManagement` 五键全为 `2`（`CurrentPowerState=2` / `MaxPowerState=2`）。
+- `ioreg -l -w0` 的 `IOKitDiagnostics → Classes` 实测 **`"NVMePMProxy" = 1`**（同表另有 `"NVMeFix" = 1`）。此前 `ioreg -c NVMePMProxy -r -l -w0` 返回空，是该类不以可枚举 IOService 节点形式出现所致，**不是对象未创建**；按类名直查会误判。
+- `ioreg -l -w0` 实测 `"ps-max-latency-us" = <a086010000000000>` = 100000 µs（100 ms），与本节「APST 容忍上限、非禁用」的描述一致。
+- 结论：**§7.1 两项判据（`apst` 存在 + `NVMePMProxy` 已创建）同时满足 ⇒ APST 正常，NVMe 不是「1–2 W 耗电源」，本节线索关闭**（>95%）。§9 第 1 步的 ① 已完成。
+
 ### 7.2 USB 睡眠供电预算（原 §8.2，C 级）
 
 `SSDT-USBX.dsl`（git `7753b2e1`）实值 `kUSBSleepPowerSupply = 0x13EC (5100)`、`kUSBSleepPortCurrentLimit = 0x0834 (2100)`；文件头注释「**置 0 致唤醒黑屏，勿在本机把 sleep power 设为 0**」，09-29 文档亦记。历史只试过 0（黑屏）与原值，**中间值从未试过**；若睡眠时蓝牙 HS06 / 摄像头 HS04 按预算取电，调低可能省电且不触发黑屏。注意这是「上限」而非实际消耗，无设备取电则收益为零。置信度**中低**，因果未测。一次只改一个值，先验能睡能醒不黑屏，再测 ≥4h %/h；回退=还原 0x13EC。与「整 XHC 断电零收益」不冲突（撤总线 vs 调预算）。
@@ -126,9 +135,29 @@ ioreg -l -w0 | grep ps-max-latency-us
 
 `boot-args` 有 `igfxonln=1`；`DeviceProperties` 的 `Pci(0x2,0x0)` 另有 `force-online=01000000`、`complete-modeset=01000000`、`disable-agdc=1`。C4 只评估了 `igfxonln`，**`force-online` 从未单独评估**，可能让显示管线在 S0ix 下误判外接显示器在线。置信度**低**（属性存在是硬证据，无因果证据）。先只读 `ioreg -c AppleIntelFramebuffer -r -l -w0 | grep -iE "online|power|link"` 看睡眠前后端口状态；**不要与 `igfxonln` 一起动**，否则 panic 无法归因。
 
+##### 2026-11-13 补证（源码级）：上述 `force-online` 假设不成立，本节待办结案
+
+> 只追加补证，不改写上文定稿内容。来源均为 `github.com/acidanthera` 上游。
+
+- WEG `WhateverGreen/kern_igfx.cpp` → `IGFX::ForceOnlineDisplay::processKernel` 原文：
+  `if (PE_parse_boot_argn("igfxonln", &forceOnline, sizeof(forceOnline))) { enabled = forceOnline != 0; ... } else if (WIOKit::getOSDataValue(info->videoBuiltin, "force-online", forceOnline)) { ... }`
+  ⇒ **boot-arg 优先，二者是 `if / else if` 而非叠加**；只要 `igfxonln` 出现在 boot-args，设备属性分支根本不执行。
+- 上游 `acidanthera/bugtracker#1471` 维护者原话「**Boot-args has a priority over Propertys.**」交叉验证同一语义。
+- 本机 `igfxonln=1` 经 config.plist / README / `shutdownStall` 报告头三处实测一致 ⇒ `DeviceProperties` 里的 `force-online=01000000` **不被读取、不生效**（>95%）。故「`force-online` 从未单独评估、可能让 S0ix 误判外接在线」前提不成立：**无需单独评估，也无理由移除**。真正生效的是 `igfxonln=1`，C4 已评估且移除有 panic 复发风险 ⇒ 保持不动。
+- 实现形态：`ForceOnlineDisplay` hook `AppleIntelFramebuffer::getDisplayStatus`，在返回值 `!= 1` 时强制返回 1（online）；该返回值**不写入 IORegistry**。⇒ 本节建议的 `ioreg ... | grep -iE "online|power|link"` **从原理上观测不到该效果**。11-13 睡眠前后两份快照实测 `online`/`link` 键均为 **0 条**，端口对象、`IODisplayConnectFlags`、`CurrentPowerState` 前后完全一致；且睡眠期 CPU 停止本就无法采样。取证路线应换（DEBUG 版 WEG 的 `DBGLOG("igfx", "getDisplayStatus forces %u")` 或 `-igfxfbdump`），但按 §9 不列为可执行改动。
+- 版本核对：本机 WEG 实测 **1.7.2**（kext Info.plist）；官方 tags 无 `1.7.2`（最新为 `1.7.1` + 一个无名 tag `ac8b935`）。`1.7.1` tag 与 master 的 `kern_igfx.cpp` 同为 99940 B、该段逻辑逐字一致 ⇒ 1.7.1→master 区间内未变，本机 1.7.2 落在该区间（>90%）。
+- 结论：**§7.3 的 C 级候选可关闭**，不产生 EFI 改动；§1「当前无可直接执行、代价可接受的 EFI 改动」进一步加强。
+
 ### 7.4 周期性采样 kext 的睡眠期 timer（原 §8.4）
 
 `SMCProcessor` / `SMCSuperIO` / `SMCBatteryManager` 二进制均有 `IOTimerEventSource` + `timerCallback`，同时也有 `registerPowerDriver` / `setIdleTimerPeriod`（`SMCBatteryManager` 还有 `BatteryManager::sleep()`）；`VoodooI2C` 控制器侧有 `setPowerState` / `Going to sleep` / `_PS0`/`_PS3`。⇒ 系统里除已知触控板轮询外还有多条 timer 源，**有**电源管理钩子，但 S0ix 下是否真正停表未见证据。置信度**低**（符号存在 ≠ 睡眠时仍在跑）。验证改用 `pmset -g log` 对照睡眠区间（本沙箱 `log show` 不可用）；本机终端可用 `log show --last 6h --predicate 'process == "kernel"' | grep -iE "SMCProcessor|SMCSuperIO|BatteryManager|VoodooI2C.*sleep"`。
+
+##### 2026-11-13 补证（一次有效睡眠的 `pmset` 记录）：仍不结案
+
+- 11-13 `13:27:17` `Entering Sleep state due to 'Software Sleep pid=50765'` → `13:28:40` `Wake from Deep Idle [CDNVA] due to PWRB/User`，实睡 **83 s**，`WakeTime 2.496 sec`；`pmset -g stats`：**Sleep 1 / Dark Wake 0 / User Wake 1**，睡眠区间内无 DarkWake 行。
+- 两条 `Wake Requests`（`UserWake 13:31:11 com.apple.alarm.user-invisible-GaugingMitigationActions,104`、`CSPNEvaluation 15:27:47`）均为计划唤醒，用户 13:28:38 手动唤醒使其未触发。
+- **判据边界**：以上只能证明「这些 timer 没有把系统拉出 S0ix」（>95%），**不能证明 timer 在睡眠期停表** —— timer 完全可在唤醒窗口内运行而不产生 DarkWake 记录。`log show --predicate 'process == "kernel"'` 属 kernel 侧符号级证据，AI 沙箱硬禁、未在用户终端执行，故本节「S0ix 下是否真正停表」**仍属未知（<80%）**，不结案，仅上调「无系统级唤醒」这一项的把握度。
+- 入睡侧 `Delays to Sleep` 有 `com.apple.bluetooth.sleep is slow(524 ms)`；与 §8 已记录的 `PowerUIAgent MaintenanceWake` 同属入睡前行为，非睡眠中。
 
 ### 7.5 触控板轮询的三条路径（原 §7.2/§7.3，均未执行、均不牺牲手感）
 
@@ -137,6 +166,19 @@ ioreg -l -w0 | grep ps-max-latency-us
 | A（低风险 / 收益不确定） | 在 `PciRoot(0x0)/Pci(0x15,0x0)` 追加 `force-polling = <01000000>`（VoodooI2C ≥2.5.3 官方支持 per-device property），同时移除全局 boot-arg，只让触控板控制器走轮询 | 本机 DSDT 有 6 个 I2C 控制器、实测枚举 2 个 PCI 控制器但仅 1 个 TPD3 ⇒ 全局 boot-arg 至少让一个无 HID 设备的控制器也跳过了 GPIO 中断注册。**⚠️ 收益可能为零**：轮询 timer 由 satellite 持有，第 2 个控制器无 satellite 本就不产生轮询。写错则触控板退回中断模式 ⇒ 不跟手；必须一次只改、先验手感、可加回 |
 | B（理论最优 / 工程量大） | 睡眠时暂停 satellite 轮询 timer、唤醒恢复 | 大概率需改 `VoodooI2CHIDDevice` 源码重编译（需 macOS + Xcode），只作方向记录，不建议当前推进 |
 | C（零永久改动 / 建议先做） | 临时移除 boot-arg → 拔电睡 ≥4h 测 %/h → **立刻加回** | 「轮询拉低 PC10、抬高功耗」只是 `e51cd16` 的推测性描述，**从未 A/B**；期间触控板不跟手但只需一个睡眠周期。无显著变化 ⇒ 轮询不是主因、线索关闭；差异显著 ⇒ 才值得投 B |
+
+### 7.6 蓝牙崩溃：按 `process == "bluetoothd"` 全量重抓的取证结论（2026-11-13）
+
+> 对应项目记忆 §6 待办①「先按 `process=="bluetoothd"` 全量重抓崩前日志，再定是否动 EFI」。日志由用户在终端执行 `log show --last 12h --info --debug --style compact --predicate 'process == "bluetoothd"' > ~/bt-full.log` 产出，AI 侧只读分析；**本节不产生 EFI 改动**。
+
+- 样本：**33.4 MB / 203642 行 / `02:43:25–13:17:01`**。启动标志 `Super Server Robot Destroyer` **28 次、26+ 个不同 PID**，其中 **25 个短命 PID** 各仅 12–14 行。
+- 短命 PID 的日志模板逐条一致，止于 `[Server.Coex] Registering for WiFi Callback` + `No persisted cache`。完整样本 `09:11:59.814–.823 PID 10642`（12 行）：`main -- xpc_transactions_enable()` → `IOKitWaitQuiet()` → `BT_HCI_TRANSPORT` → `HCI Transport is set to USB` → `Warning: BT driver=` → `Registering for WiFi Callback`。**没有一条到达 HCI 栈初始化**。
+- 全日志 `Stack initialization complete` 仅 **3 次**，全部属于稳定 PID `169`，时间 `02:43:29` / `12:32:46` / `12:41:11`（三次开机）⇒ 25 个短命进程**无一次完成 HCI 栈初始化**（>95%）。`LE Scan` / `Local Device Static Random Address` 相关行均出现在 PID 169 的上下文中。
+- 重启间隔 `10s×6 → 20/40/80/160/320/640 → 1200s` 封顶（形态观测 >95%；「launchd 指数退避」为推断 ~85%）。12:41 本次开机后 36 分钟内 **0 个新 PID**，PID 169 稳定运行。12 条 Fault 均为三次开机时固定的 4 条组合（`simulated` HCI error + BiomeStorage `Wrong domain`），属启动固有噪声（>90%）。无 `.panic` / `.ips`。
+- **上游硬证据（`lshbluesky/IntelBluetoothFirmware` release notes 原文）**：`v2.5.0-d3`(06-14) Tahoe 26.5 LE 修复；`v2.5.1`(06-27) 更新 AX201 等固件；`v2.5.2`(10-18) `Inject LE Data Length Change to clear LE_READY_WAIT_FOR_LENGTH`；**`v2.5.3`(11-03) 只有 `Add BlazarU (hw_variant 0x1d) support and ibt-0093-0041 firmware for 8087:0033`**。本机 `ioreg -p IOUSB` 实测蓝牙 `idVendor=32903(0x8087)` / `idProduct=38(0x0026)` = **AX201 `8087:0026`** ⇒ v2.5.3 对本机**零针对性改动**（>90%）。
+- 结论：**待办①把「升 v2.5.3」当目标的理由不成立**（「最新即最优」被 release notes 证伪）。且本次崩前序列发生在 HCI 栈初始化**之前**，与 IntelBTPatcher FAQ 所述「LE Scan 随机地址未设 → 固件返回 0x12 → bluetoothd 立即崩溃」是否同一机制，**属未知（<80%）**：短命进程内无 HCI 命令日志；kernel 侧日志（含 `Resend LE SCAN PARAM` patch 标记）不在本 predicate 内，`Resend LE` 0 命中**不能**据此判定 patch 未生效。要定机制仍需 kernel 侧日志或真 HCI 包（macOS 14.5+ 须先装 Apple Developer Bluetooth logging profile 并重启）。
+- ⇒ **不产生 EFI 改动**，§1「当前无可直接执行、代价可接受的 EFI 改动」维持。
+- 附：§9 第 1 步三项只读取证现状 —— ① APST 完成并结案（§7.1 补证）；② 睡眠期 timer 仅完成 `pmset` 侧、仍未知（§7.4 补证）；③ IGPU 取证完成且**取证路线作废、假设不成立**（§7.3 补证）。
 
 ---
 
@@ -150,6 +192,7 @@ ioreg -l -w0 | grep ps-max-latency-us
 | `com.apple.obc` 等高频断言（1090 次） | `pmset.txt:106-111` 实读为 `PowerUIAgent` 的 `MaintenanceWake [System: BGTask SRPrevSleep kCPU]`，属**入睡前**维护，非睡眠中；与 DarkWake=0 一致 |
 | `system-overhead-audit.md` 常驻软件清单 | 影响的是**亮屏日常开销**（远程控制×2、清理工具、`WindowServer`/`apfsd` 50% CPU），与 DeepIdle 是两条轴，不应混入待机 A/B |
 | 两条常驻 USB 内核断言（BT HS06 + 摄像头 HS04） | 不阻止入睡（`PreventSystemSleep=0`）；整 XHC 断电实测零收益 ⇒ 「USB 断言常驻是功耗主因」诊断强度已下调 |
+| 常用 kext「比官方 release 高 0.0.1」是否算过期（2026-11-13 核对） | **不是过期，无需按 release 号升级**（>90%，版本级证据非二进制哈希）。本机 10 个 acidanthera 组件全部比最新 release 高一个补丁号：Lilu `1.7.3`/`1.7.2`、WEG `1.7.2`/`1.7.1`、AppleALC `1.9.9`/`1.9.8`、VirtualSMC `1.3.9`/`1.3.8`、NVMeFix `1.1.4`/`1.1.3`、RestrictEvents `1.1.7`/`1.1.6`、VoodooPS2 `2.3.8`/`2.3.7`、IntelMausi `1.0.9`/`1.0.8`、CPUFriend `1.3.1`/`1.3.0`、BrightnessKeys `1.0.4`/`1.0.3`（左本机 / 右官方 release）。上游 master 的 `MODULE_VERSION` 实测 Lilu `1.7.3` / WEG `1.7.2` / AppleALC `1.9.9`，与本机逐字一致 ⇒ 本机为 **master 源码构建**，OpenCore `REL-109-2026-10-27` 同为 nightly。唯一明确落后的是一个 fork：蓝牙三件套 `2.5.0` vs lshbluesky `v2.5.3`，但见 §7.6，不建议动 |
 
 ---
 

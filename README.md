@@ -27,14 +27,17 @@
 
 ## 引导参数（boot-args）
 
-当前实际值：`-igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall revpatch=sbvmm rtcfx_exclude=0E-7F,AC-FF keepsyms=1`
+当前实际值：`-igfxblr -igfxblt -igfxhdmidivs igfxonln=1 igfxrpsc=1 -amfipassbeta -lilubetaall revpatch=sbvmm rtcfx_exclude=0E-FF keepsyms=1 -vi2c-force-polling -btlfxallowanyaddr`
 
 - `igfxonln=1` / `igfxrpsc=1` —— 缓解 IGPU 睡眠/唤醒 panic（#967 freeze-panic）
+- `-igfxblr` —— WEG 的 KBL/CFL/ICL 背光寄存器修法。官方把下面的 `-igfxblt` 定义为它的**替代方案**（"An alternative to the Backlight Registers Fix"），语义上二选一。本机两项并存源于 10-31 的 S4 单变量实验（git `5dfca636` 加入 → `b407dc5` 删 → `b6e6ee7` 为「匹配唯一能进 S4 的配置」加回），**不是笔误**。另据 `acidanthera/bugtracker#2560`，macOS 26.7 起 CFL 上 `-igfxblt` 失效而 `-igfxblr` 有效；本机 26.7.3 同属该版本范围，但**未跑 DEBUG 日志验证是否命中，标未知(<80%)**。⇒ 两项均保留，不做单变量删除。
 - `igfxblt` —— KBL/CFL 上 macOS 13.4+ 的背光寄存器替代修法
 - `igfxhdmidivs` —— SKL/KBL/CFL 高像素时钟 HDMI 死循环规避
+- `-vi2c-force-polling` —— VoodooI2C 强制轮询；项目实测移除后触控板不跟手，保留
+- `-btlfxallowanyaddr` —— 配合 XHC `built-in` 注入，缓解 Tahoe 下 Intel 蓝牙 S0ix 唤醒后崩溃（commit `336542b` / `945966c`；**未根治**，见项目记忆 §3）
 - `revpatch=sbvmm` —— 让不受支持机型也能收到 OTA 更新
 - `keepsyms=1` —— 保留内核符号名，便于定位音频栈问题
-- `rtcfx_exclude=0E-7F,AC-FF` —— 封 RTC `0E–7F` 与 `AC–FF`，留出 `80–AB`（`IOHibernateRTCVariables`，仅 S4 使用；本机不启用休眠）
+- `rtcfx_exclude=0E-FF` —— 封 RTC `0E–FF` 全域。旧值 `0E-7F,AC-FF` 曾为 `80–AB`（`IOHibernateRTCVariables`）留口，但 S4 已放弃、`hibernatemode=0`，该保留区间不再需要
 - `-amfipassbeta` / `-lilubetaall` —— 测试版系统加载插件所需（当前保留项）
 
 ## 睡眠与节能
