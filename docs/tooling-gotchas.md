@@ -418,3 +418,20 @@ Serialisation returns 3 errors! ... Found 3 issues requiring attention.
 
 **附带工具坑**：复核 kext 符号要用 `nm`，不要用 `strings`。本机 RELEASE 版 `SMCProcessor` / `SMCSuperIO` / `SMCBatteryManager` 的 `strings` 只有 35 / 194 / 81 行且看不到 `IOTimerEventSource`、`setIdleTimerPeriod` 等，但 `nm` 分别命中 4 / 4 / 5 个 —— 项目 §7.4 的「二进制有这些符号」没错，只是取数工具不同。
 
+### `pmset -g log` / `log show` 在 AI 沙箱内返回 0 行时：改用 powerlog 表（>95%）
+
+`pmset -g log` 在本执行环境实测 **0 行**（不是「没有睡眠事件」），`log show` 亦不可用 ⇒ 凡是依赖这两条命令对齐睡眠区间的判据（如主审计 §9 第 1 步②）在 AI 侧都不可判读。替代方案是只读 `/var/db/powerlog/Library/BatteryLife/CurrentPowerlog.PLSQL`：
+
+```bash
+DB="file:/var/db/powerlog/Library/BatteryLife/CurrentPowerlog.PLSQL?mode=ro"
+OFF=$(sqlite3 "$DB" "select system from PLStorageOperator_EventForward_TimeOffset where system is not null order by ID desc limit 1;")
+```
+
+- 库内 `timestamp + OFF` = unix 秒；**别把 `EventTime` 也加 OFF**，`PLScheduledWakeAgent_EventForward_ScheduledEvent.EventTime` 本身就是绝对 unix 时间。
+- `PLSleepWakeAgent_EventForward_PowerState`：`Event=1` 入睡、`Event=0 & State=0` 唤醒、`Event=6/4` 是入睡后 ≤31 s 的过渡记账（**别误计成唤醒**，否则每个窗口都会假报 3 次事件）；`SleepTriggers` 直接给 `Software Sleep` / `Clamshell Sleep`，比 `pmset` 更细。
+- `PLBatteryAgent_EventBackward_Battery` 的采样空档与上述窗口逐秒对齐（本机实测误差 ≤14 s）⇒ 可替代 `pmset` 判定「空档确实是睡眠」，闭合 `hackintosh-sleep-power-attribution` skill §6 的那个陷阱。
+- `PLScheduledWakeAgent_EventForward_ScheduledEvent` 是**注册记录不是触发日志**，只能用来看「timer 目标是否落在睡眠窗口内」，**不能**据此断言 timer 停表/触发。
+- 归档 `Archives/*.gz` 可直接 `gzip -dc` 到 `/tmp` 只读分析；时钟跳变产出的归档（本机 `powerlog_2034-08-22…`）`TimeOffset` 为空、无法换算，须排除。
+
+实战结果见 `deepidle-power-audit-2026-11-12.md` §12：两次 ~11.9 h 长睡 0 唤醒事件、4 个计划唤醒 timer 落在睡眠窗口内未触发唤醒、并事后复算出一组 3.771 W 的拔电短睡样本（端点错位仅 ~2 s）。
+

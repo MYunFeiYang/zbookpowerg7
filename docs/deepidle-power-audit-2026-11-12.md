@@ -248,6 +248,7 @@ ioreg -l -w0 | grep ps-max-latency-us
 2. 是否跑 §7.5 路径 C 的临时轮询 A/B（牺牲一个睡眠周期的手感）；
 3. USB 睡眠供电调低（§7.2）属 C 级，需明确授权；
 4. `tools/deepidle-probe.sh` 目前被 `.gitignore` 忽略、未入库，是否要用 `git add -f` 纳入，避免文档引用不入库文件。
+5. **（14:4x 新增）当前配置缺拔电睡眠样本**：`config.plist` mtime `2026-11-11 12:54:06`，而 powerlog 电池供电采样止于 `11-11 06:01:13` ⇒ 11-11 12:54 之后**零笔拔电采样**（>95%）。若想测「最终配置」的 ≥4h 拔电 %/h，需用户做一次拔电长睡；按 §1 #2 这不是必须项（基线可复算、相对 A/B 可判读），但它是唯一还能拿到「当前配置实测功耗」的途径。
 
 ---
 
@@ -292,7 +293,7 @@ ioreg -l -w0 | grep ps-max-latency-us
 | 6 | 升 WEG + Lilu 治 #967 | 本机 10 个 acidanthera 组件均为 **master 源码构建**，无可升目标 | >90% | 结案 |
 | 7 | 蓝牙升 lshbluesky v2.5.3 | 该版只加 BlazarU (`hw_variant 0x1d`)；本机 `ioreg -p IOUSB` 实测 AX201 `8087:0026` ⇒ 零针对性改动 | >90% | **不升** |
 | 8 | `-btlfxallowanyaddr` | 官方语义已定案（patch macOS 12.4+ 蓝牙地址重复检查）；patch 在 kernel 侧，userspace 日志 0 命中不可判读 | 语义 >95% / 是否命中 <80% 未知 | **保留** |
-| 9 | §7.4 睡眠期 timer | 未把系统拉出 S0ix，但「是否停表」无 kernel 侧日志 ⇒ 未证实 | <80% 未知 | 不结案，不动 |
+| 9 | §7.4 睡眠期 timer | **14:4x powerlog 补证**：两次 ~11.9 h 长睡区间 `PowerState` 只有 3 条入睡过渡记账、**0 唤醒事件**；4 个计划唤醒 timer 的目标时刻落在睡眠窗口内也未产生唤醒 ⇒ 「未把系统拉出 S0ix」由推断升为数据库直接观测（>90%）。「timer 是否真的停表」仍是 kernel 侧机制，**未知（<80%）**，但两种机制在功耗上等价 ⇒ 无排查价值 | 观测 >90% / 机制 <80% 未知 | **观测闭环**，不动；详见 §12 |
 | 10 | ESP 重复 FAT 目录项 | 两条同 inode 44 / 同 107 B；**14:3x 用 ACPI 命名空间反查结案**：`SSDT-thunderbolt-nhi-disable.aml` 已生效 ⇒ 重复目录项**未阻止该表加载**（见 §11.5） | >90% | **结案，不动 EFI**；目录项本身仍在，仅保留形态观测 |
 | 11 | 官方 `ocvalidate` 3 条 `No schema` | 是 **OC-Mod fork 专属键**（`EnableForAll`×2 / `SkipCustomEntryCheck`），本机二进制 `strings` 认识；剥离后 `No issues found` | >95% | **禁止按报错删键** |
 | 12 | AppleRTC Kernel Patch 空 `Find` | 官方 `Configuration.tex` Kernel Patch 段：空 Find + 有 Base = `Immediate replacement at Base` | >95% | 合法，结案 |
@@ -347,6 +348,61 @@ ioreg -l -w0 | grep ps-max-latency-us
 ### 11.6 结论
 
 **当前 `config.plist` 没有值得改的项（>90%）**。8 轮取证把 C1–C6 与 11-13 新增候选全部收敛为「不动 / 结案 / 未知但无可执行路径」；§11.1 体检证明配置清单与磁盘实物 100% 对齐，§11.5 又把最后一个「需要改 EFI 才能验证」的未知项用零风险判据结案。§1 #1 继续成立，EFI 保持 sha `47d9c9bd…900a` 不变。**§11.4 的临时开日志动作不再是必需项**，剩余待办只有：是否 push 本会话的本地提交。
+
+## 12. 2026-11-13 14:4x 补证：powerlog 事后重建（睡眠期 timer 与功耗）
+
+> 全程**只读**：`/var/db/powerlog/Library/BatteryLife/CurrentPowerlog.PLSQL` 以 `mode=ro` 打开，`Archives/*.gz` 解压到 `/tmp/plarch` 分析。未 arm、未打点、未改 EFI、未改电源设置、无需重启或用户配合。
+>
+> **起因**：AI 侧 `pmset -g log` 实测返回 **0 行**（§2「工具限制」的又一条），`log show` 亦不可用 ⇒ 原 §9 第 1 步②「对照 `pmset -g log` 睡眠区间」在本沙箱不可执行。改用 powerlog 自带的 SleepWake 事件表替代，反而拿到了比 `pmset` 更细的证据。
+
+### 12.1 两张表互证：可替代 `pmset -g log` 对齐睡眠区间（>95%）
+
+库内 `timestamp` 需加 `PLStorageOperator_EventForward_TimeOffset.system`（本机 `247460964.214684`）才等于 unix 秒。`PLSleepWakeAgent_EventForward_PowerState` 中 `Event=1` = 入睡、`Event=0 & State=0` = 唤醒、`Event=6 / 4` = 入睡过渡记账（入睡后 ≤31 s 内固定 3 条）。
+
+10 个睡眠窗口与 `PLBatteryAgent_EventBackward_Battery` 的**采样空档逐秒对齐**：
+
+| 睡眠窗口（PowerState） | 电池采样空档 | 误差 |
+|---|---|---|
+| 11-10 `12:57:06` → 11-11 `00:52:40`（11.93 h） | `12:57:10` → `00:52:41` | 4 s / 1 s |
+| 11-12 `20:53:19` → 11-13 `08:49:50`（11.94 h） | `20:53:33` → `08:49:51` | 14 s / 1 s |
+
+⇒ `hackintosh-sleep-power-attribution` skill §6「采样空档 ≠ 一定在睡觉，须对 `pmset -g log`」的陷阱，在 `pmset` 不可用时可用 `PowerState` 表闭合（>95%）。归档 `Archives/` 三个库中 `powerlog_2034-08-22…` 的 `TimeOffset` 为空、无法换算（对应项目已有的 `hang-2026-09-28-clock-jump.md` 时钟跳变史），**不参与任何计算**。
+
+### 12.2 睡眠期 timer：观测闭环（>90%），机制仍未知（<80%）
+
+**观测到的**（直接 SQL 计数，>95%）：
+
+- 两次 ~11.9 h 长睡区间内，`PowerState` **只有 3 条入睡过渡记账，0 条 `Event=0`（唤醒）事件**，即 0 次 DarkWake、0 次 timer 唤醒。§3「常态 DarkWake = 0」由此得到 11-10~11-13 的独立佐证。
+- `PLScheduledWakeAgent_EventForward_ScheduledEvent` 共 11 条注册，其中 **4 个 timer 的目标时刻落在睡眠窗口内**：`calaccessd.travelEngine.periodicRefreshTimer` 的 `11-10 18:07:49`、`20:43:27`×2 落在 11.93 h 长睡内，`11-11 04:14:21` 落在 `04:04:04→04:48:05`（0.73 h）短睡内；对应窗口内均 **0 唤醒事件**。
+
+**推断与边界**：`ScheduledEvent` 记录的是**注册**（`AppName` / `EventTime` / `Type='Scheduled Wake'`），不是触发日志，timer 可能被系统重排或取消 ⇒ 只能说「powerlog 记录层未出现唤醒事件」，**不能**据此外推「VirtualSMC / `IOTimerEventSource` 在睡眠期被 disable」。结合 §7.4 已有的源码级证据（`SMCBatteryManager::sleep()` 调 `timerEventSource->disable()`），「timer 未把系统拉出 S0ix」由间接推断升级为**数据库直接观测（>90%）**；「是否真正停表」仍是 kernel 侧机制，**未知（<80%）**，且两种机制在功耗上等价 ⇒ **该未知不再有排查价值**，不结案也不再追。
+
+### 12.3 唯一拔电睡眠样本的事后复算（~85%）
+
+11-10 之后的两次长睡**两端 `ExternalConnected=1`**（ΔmAh 仅 5 / 6），按 skill §4「AC 供电时数字无物理意义」全部弃用。全库 1838 笔电池采样中仅 **20 笔 `ExternalConnected=0`**，全部集中在 `11-10 00:55:14 → 11-11 06:01:13`；其中唯一「拔电 + 睡眠」重叠区间是 **`11-11 04:56:52 → 06:00:45`（Clamshell Sleep，1.0647 h）**：
+
+| 项 | 值 |
+|---|---|
+| 起点采样（入睡后 30 s） | `04:57:22` · 5669 mAh · 12100 mV · AC=0 |
+| 终点采样（唤醒后 2 s） | `06:00:47` · 5329 mAh · 11519 mV · AC=0 |
+| ΔmAh / 平均电压 / MaxCapacity | **340 mAh** / 11.8095 V / 5736 |
+| `mAh` 口径（上界） | 319.3 mAh/h ⇒ **3.771 W**（用 PowerState 真实 sleep 时长；用采样跨度 1.0567 h 得 3.800 W） |
+| `Charge%` 口径（下界） | **5.567 %/h** |
+| §4 四组长样本基线 | 3.700 / 3.683 / 3.669 / 3.612 W，均值 **3.666 W** |
+| 偏差 | **+2.87%** |
+
+**端点质量（这是本样本最值钱的地方）**：起点比入睡晚 30 s、终点比唤醒晚 2 s，两端 `AC=0`、`IsCharging=0`、`CurrentCapacity` 在整段单调下降，中间是完整采样空档 ⇒ 净高估只有唤醒后那 ~2 s 的醒着耗电（≈2 mAh / 0.6%），**几乎无需 skill §3 的端点校正**，也没撞上「拔电后电量计虚高回落」或 1% 台阶噪声。
+
+**三条必须保留的边界**：
+1. 这是 **1.06 h 短样本**，按 skill §4 只能作上界，绝对值仍受电池遥测刻度 ±30% 限制（`SystemPower` 全 NULL、`InstantAmperage` 恒 0、`MaxCapacity` 漂）⇒ 只用于**相对比较**。
+2. `config.plist` mtime 为 `2026-11-11 12:54:06`，该样本发生在最终配置前约 8 h ⇒ **属旧配置末段，不代表当前配置**（>95%）。
+3. +2.87% 略高于四组长样本极差 2.4%，但在短样本误差内 ⇒ 结论只能写成「**与基线一致、未见功耗漂移（~85%）**」，不能写成「当前配置更省/更费」。
+
+### 12.4 由此产生的新待办与结论
+
+- **11-11 12:54 之后零笔拔电采样（>95%）** ⇒ 当前最终配置**从未被实测过睡眠功耗**；11-12→11-13 的 11.94 h 长睡虽在最终配置下，但插着电。已记入 §10 第 5 项：想要这个数需用户做一次拔电长睡（`settle` → 睡 → `done`），但按 §1 #2 并非前置条件。
+- §1 #2「基线 3.6 W、4 组可复算、无需重测」继续成立，并多了第 5 组（旧配置短睡）落在 +2.9% 的一致性佐证。
+- 方法论补强：**OC 日志读不到用 ACPI 命名空间反查（§11.5）、`pmset`/`log show` 读不到用 powerlog 的 `PLSleepWakeAgent` / `PLScheduledWakeAgent` 反查** —— 两条都是零风险、免重启、免改 EFI 的事后判据，优先级应高于任何「改配置去拿日志」的方案。
 
 ---
 
