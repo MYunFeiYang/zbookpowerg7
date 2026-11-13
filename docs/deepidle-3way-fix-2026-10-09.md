@@ -1,3 +1,7 @@
+> 本文件由过程稿整理于 2026-11-13，原文已在 git HEAD 中（可 git checkout 恢复）
+> 整理方式：本轮仅做无损排版整理（合并连续空行、去装饰线），未删任何实质内容
+> 原 363 行 → 现 342 行
+
 # DeepIdle 修复（2026-10-09 19:30）：补齐三件套 —— 由 2/3 补为 3/3（新增 `_TTS` + `SLTP`）
 
 ## 结论先行
@@ -9,8 +13,6 @@
 - `SSDT-DeepIdle.aml` 94 → **131 B**，sha256 `0206720a77acaac196c97e32671089fc055e337049a3435ab3b2d8826df181d3`
 - **已双侧落盘（工作区 == ESP），`config.plist` 一字未动（sha 仍 `d8161d998ea5af30…`）**
 - **重启后即可验证**（见 §六，一条命令）
-
----
 
 ## 一、三方独立证据（社区交叉验证）
 
@@ -73,8 +75,6 @@ IOPMSystemSleepType
 `OC-Little/01-关于AOAC/01-3-电源空闲管理` 的 `SSDT-DeepIdle` 只含 `LPS0` + `LXEN`，README 亦未提 `_TTS`。
 ⇒ 中文社区广为流传的这个版本**漏了 Pike 原文的第三段**。
 
----
-
 ## 二、本机诊断（修复前的硬证据）
 
 | 项 | 实测值 | 判读 |
@@ -87,8 +87,6 @@ IOPMSystemSleepType
 | 全部 60 张 ACPI 表里 `_TTS` / `SLTP` | **0 / 0 命中** | 无冲突 |
 
 > `IOPMDeepIdleSupported = Yes` 是**本机 DeepIdle 确实已加载生效**的铁证：DSDT 里没有 `LPS0`，命名空间里那个 `LPS0` 只可能来自 `SSDT-DeepIdle`。
-
----
 
 ## 三、本次改动
 
@@ -119,8 +117,6 @@ IOPMSystemSleepType
 
 ⚠️ 编译产生 2 个 Warning（`LPS0`/`LXEN` "not all control paths return a value"）——**原文件既有**（社区原版同样如此），非本次引入。
 
----
-
 ## 四、验证矩阵（全部实测）
 
 | 验证项 | 方法 | 结果 |
@@ -136,8 +132,6 @@ IOPMSystemSleepType
 | 引用完整 | `ACPI/Add[11]` | `Enabled=True` / `Path=SSDT-DeepIdle.aml` ✅ |
 | 备份 | — | `docs/backups/deepidle-3way-20261009-1930/`（`.aml.before` + `.dsl.before`） ✅ |
 
----
-
 ## 五、为什么这**可能**是睡死的根因（诚实边界）
 
 **支持它的推理链**：
@@ -152,8 +146,6 @@ IOPMSystemSleepType
 - 这是**根因候选**，不是已证实的根因。Pike 本人也写 *"I have yet to figure out how important this value is and if that can cause any trouble."*
 - 也可能是「从未成功睡过一次」的**结果**而非原因（Pike 提到有人是在 sleep/wake 循环后才出现该属性）。
 - **判定权在重启后的实测**——见 §六。
-
----
 
 ## 六、重启后验证（唯一判据，一条命令）
 
@@ -176,8 +168,6 @@ sudo grep -iE "SSDT-DeepIdle|LPS0|_TTS" /Volumes/ESP/EFI/OC/opencore-*.txt | tai
 /usr/bin/pmset -g log | grep -E "Entering Sleep|Wake from|DarkWake" | tail
 ```
 
----
-
 ## 七、回滚（一条命令级）
 
 ```bash
@@ -190,16 +180,12 @@ cp $B/SSDT-DeepIdle.dsl.before /Volumes/ESP/EFI/OC/ACPI/SSDT-DeepIdle.dsl
 ```
 （回滚后 `.aml` sha 应回到 `a703db8c57dc201c3139070e2b9e11b13256244ae73677b40558301c3f93d83d`，94 B）
 
----
-
 ## 八、顺带记录：本次排除项
 
 - **不是补丁写错**：原 `SSDT-DeepIdle` 与 OC-Little 版本**逐字节一致**。
 - **不是命名冲突**：60 张表全量扫描，`_TTS`/`SLTP` 零命中。
 - **不是表未加载**：`IOPMDeepIdleSupported = Yes` 已证加载。
 - 仍然**未解**：AOAC 睡眠期间 macOS 是否真正进入 S0ix（macOS 侧无 ACPI dump 能力，此为本悬案通用限制）。
-
----
 
 ## 九、重启后实测（2026-10-09 19:33 boot）
 
@@ -276,8 +262,6 @@ AppleACPIPlatformExpert::handleSystemStateTransition(unsigned int)
 | 照旧睡死、但 `IOPMSystemSleepType` **出现** | 补丁链已通，问题在别处（下一杠杆） |
 
 ⚠️ 判据只能二值化，**不再接受"感觉改善了"**。
-
----
 
 ## 十、★ 结果实测：首次成功睡眠/唤醒（2026-10-09 19:51–19:52）
 
