@@ -409,7 +409,7 @@ Serialisation returns 3 errors! ... Found 3 issues requiring attention.
 | 断言 | 原把握度 | 现判定 |
 |---|---|---|
 | `touchpad-os-gating.md` §7.4 第 3 行判据 | 当作通用 | **当前配置下假阴性**，需按下方取日志 |
-| 本会话「ESP 重复 FAT 目录项未造成 OC 加载失败」 | >90% | **降级为未知（<80%）** —— 只保留「两条同 inode 44 / 同 107 B / macOS 视图一致」这一形态观测 |
+| 本会话「ESP 重复 FAT 目录项未造成 OC 加载失败」 | >90% | 曾在 13:55 降级为未知（<80%）；**14:3x 已用零风险的 ACPI 命名空间判据结案为「否」（>90%）**，无需开 OC 日志 —— 见 `deepidle-power-audit-2026-11-12.md` §11.5：`SSDT-thunderbolt-nhi-disable.aml` 的 `_STA=0` 已生效（`RP01.PXSX` 缺席、`RP02`–`RP16` 的 `PXSX@0` 均在、原始固件转储作对照）⇒ 重复目录项未阻止该表加载 |
 | 上一章「`boot-log` 中 `OCS` / `No schema` 0 命中」 | 边界存疑 | 明确为假阴性；fork 键结论仍以二进制 `strings` 为准，**不受影响** |
 
 ### 正确取法（属 config 改动，本轮不执行）

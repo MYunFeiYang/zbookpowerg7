@@ -293,7 +293,7 @@ ioreg -l -w0 | grep ps-max-latency-us
 | 7 | 蓝牙升 lshbluesky v2.5.3 | 该版只加 BlazarU (`hw_variant 0x1d`)；本机 `ioreg -p IOUSB` 实测 AX201 `8087:0026` ⇒ 零针对性改动 | >90% | **不升** |
 | 8 | `-btlfxallowanyaddr` | 官方语义已定案（patch macOS 12.4+ 蓝牙地址重复检查）；patch 在 kernel 侧，userspace 日志 0 命中不可判读 | 语义 >95% / 是否命中 <80% 未知 | **保留** |
 | 9 | §7.4 睡眠期 timer | 未把系统拉出 S0ix，但「是否停表」无 kernel 侧日志 ⇒ 未证实 | <80% 未知 | 不结案，不动 |
-| 10 | ESP 重复 FAT 目录项 | 两条同 inode 44 / 同 107 B；`boot-log` 判据已判假阴性 ⇒ 运行时影响未知 | <80% 未知 | 修需改 `ACPI/Add[8].Path` + 手工镜像，代价 > 收益 ⇒ **不动**，每次重启监控 |
+| 10 | ESP 重复 FAT 目录项 | 两条同 inode 44 / 同 107 B；**14:3x 用 ACPI 命名空间反查结案**：`SSDT-thunderbolt-nhi-disable.aml` 已生效 ⇒ 重复目录项**未阻止该表加载**（见 §11.5） | >90% | **结案，不动 EFI**；目录项本身仍在，仅保留形态观测 |
 | 11 | 官方 `ocvalidate` 3 条 `No schema` | 是 **OC-Mod fork 专属键**（`EnableForAll`×2 / `SkipCustomEntryCheck`），本机二进制 `strings` 认识；剥离后 `No issues found` | >95% | **禁止按报错删键** |
 | 12 | AppleRTC Kernel Patch 空 `Find` | 官方 `Configuration.tex` Kernel Patch 段：空 Find + 有 Base = `Immediate replacement at Base` | >95% | 合法，结案 |
 | 13 | `boot-log` 判据 | 假阴性；「AppleDebug 挤占条目」已由源码（`OcAppleLog.c` 同一 `AddEntry`）+ 本机键名 `boot-log00000…00026` 连续无跳号**排除**；真机制仍未知 | 排除 >90% / 机制 <80% | 见 `tooling-gotchas.md`；②「关 AppleDebug 重读」不再成立 |
@@ -301,7 +301,9 @@ ioreg -l -w0 | grep ps-max-latency-us
 | 15 | `MaxKernel` 门槛（本轮 §11.2） | 当前正常，跨代阻断 | >95% | 仅记账 |
 | 16 | 恢复 OC 日志可观测性（`Target 7→71`） | 唯一能验证 #10 的诊断性改动，需写 ESP | ~85% 方案有效性 | **待用户授权**，见 §11.4 |
 
-### 11.4 唯一建议的可执行下一步（需用户授权，本轮不执行）
+### 11.4 原「唯一建议的下一步」——14:3x 后已无必要（保留备查）
+
+> **状态变更**：本节写于 14:1x，当时是为验证 §11.3 #10（ESP 重复 FAT 目录项）而设。14:3x 用零风险的 ACPI 命名空间判据直接把 #10 结案（§11.5），**因此不再需要为验证 ESP 而改 EFI**。以下三要素留作「今后若要抓完整 OC 日志」的标准模板。
 
 按 §9 与「实测前写清三件事」纪律列全：
 
@@ -312,9 +314,39 @@ ioreg -l -w0 | grep ps-max-latency-us
 - **§9 豁免说明（我的判断，~85%）**：「≥4h 拔电 %/h A/B」针对**功耗类**改动；日志位不进入电源管理路径，单变量 + 单次重启即可判读，无需 4h 对照。
 - **代价**：一次重启 + 一次手工同步 ESP + 事后清理日志。
 
-### 11.5 结论
+### 11.5 14:3x 补证：绕开 OC 日志的 ACPI 命名空间判据（#10 结案，>90%）
 
-**当前 `config.plist` 没有值得改的项（>90%）**。7 轮取证把 C1–C6 与 11-13 新增候选全部收敛为「不动 / 结案 / 未知但无可执行路径」，本轮体检进一步证明配置清单与磁盘实物 100% 对齐。§1 #1 继续成立，EFI 保持 sha `47d9c9bd…900a` 不变。若要继续推进，只有 §11.4 这一个动作有信息增益，且必须由用户点头才写 ESP。
+**问题**：#10 原卡在「`boot-log` 判据假阴性 ⇒ 不知 ESP 重复 FAT 目录项是否让 OC 加载 ACPI 表失败」，唯一验证路径要改 `Misc/Debug` 开 `0x40` 文件日志（需重启 + 写 ESP）。
+
+**改用的判据**：不看日志，直接看那张表的**运行时效果**。`Kernel/Block` 只拦驱动，**不会删 `IODeviceTree` 里的 ACPI 命名空间节点**，所以「ACPI 节点在不在」是干净判据。
+
+1. **注入表内容（硬证据）**：`EFI/OC/ACPI/SSDT-thunderbolt-nhi-disable.aml`（107 B，OEM `OCLT/noTBnh`）用本机 `iasl -d` 反编译，原文：
+
+   ```asl
+   External (_SB_.PCI0.RP01.PXSX, DeviceObj)
+   Scope (_SB.PCI0.RP01.PXSX) {
+       Method (_STA, 0, Serialized) {
+           If (_OSI ("Darwin")) { Return (Zero) }
+           Return (0x0F)
+       }
+   }
+   ```
+
+   ⇒ Darwin 下 `RP01.PXSX` 应被隐藏，其他 OS 正常。
+
+2. **对照组（排除「本来就没有」）**：`docs/SysReport/ACPI/` 是 08-05 的原始固件表转储，早于这张 10-26 才加入的 SSDT。其中 `SSDT-16.aml` / `SSDT-17.aml` 的 AML 含 `_SB_PCI0RP01PXSX`（与 RP02…RP06 并列）；反编译后 `SSDT-16.dsl:39` 为 `External (_SB_.PCI0.RP01.PXSX, DeviceObj)`、`:456` 为 `Scope (\_SB.PCI0.RP01.PXSX)`，且全表 `PXSX` **无自己的 `_STA`**（唯一 `_STA` 在 `Device (PEPD)` 下）⇒ 原始固件里该设备默认存在且启用。
+
+3. **当前实测**：`ioreg -l -w0 -p IODeviceTree` 中 `PXSX@0` 是带 `acpi-path` 的 `IORegistryEntry`（ACPI 命名空间投影，非 PCI 枚举产物），出现在 `RP02@1c0001` … `RP16@1d0007` 共 15 个端口；`RP01@1c0000` 节点本身存在、`compatible` 含 `"RP01"`，但其下 **`RP01@1c0000/PXSX` 0 命中**。
+
+⇒ 三条合起来：唯独 RP01 的 PXSX 被隐藏，与注入表语义逐字吻合 ⇒ **`SSDT-thunderbolt-nhi-disable.aml` 已被 OC 成功加载并生效（>95%）** ⇒ **ESP 上的重复 FAT 目录项没有阻止 `ACPI/Add[8]` 这张表加载（>90%）**。上一轮因 `boot-log` 假阴性降级为「未知（<80%）」的断言，在此结案为「否」。
+
+**边界**：只证明**这一张表**当前被正常加载；重复目录项本身仍留在 ESP 上，未来写入/同步是否有别的副作用**仍未知（<80%）**，不建议专门去改 `ACPI/Add[8].Path`（代价 > 收益）。另：`/dev/rdisk0s1` 在本沙箱 `Permission denied`，无法直接解析 FAT 目录项原始字节，故未做物理层验证 —— 但也不需要。
+
+**方法论价值（可复用）**：当 OC 日志不可读时，优先找 ACPI 注入表的**可观测运行时效果**（`_STA` 隐藏 / 设备缺席），拿 `docs/SysReport/ACPI/` 的注入前转储作对照；比改 `Misc/Debug` 开日志更省、零风险、无需重启。
+
+### 11.6 结论
+
+**当前 `config.plist` 没有值得改的项（>90%）**。8 轮取证把 C1–C6 与 11-13 新增候选全部收敛为「不动 / 结案 / 未知但无可执行路径」；§11.1 体检证明配置清单与磁盘实物 100% 对齐，§11.5 又把最后一个「需要改 EFI 才能验证」的未知项用零风险判据结案。§1 #1 继续成立，EFI 保持 sha `47d9c9bd…900a` 不变。**§11.4 的临时开日志动作不再是必需项**，剩余待办只有：是否 push 本会话的本地提交。
 
 ---
 
