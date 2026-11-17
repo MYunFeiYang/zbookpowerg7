@@ -611,13 +611,13 @@
                     <key>Arch</key>
                     <string>Any</string>
                     <key>BundlePath</key>
-                    <string>RTCMemoryFixup.kext</string>
+                    <string>VirtualSMC.kext</string>
                     <key>Comment</key>
-                    <string>V1.0.8</string>
+                    <string>V1.3.9 | By RapidEFI</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
-                    <string>Contents/MacOS/RTCMemoryFixup</string>
+                    <string>Contents/MacOS/VirtualSMC</string>
                     <key>MaxKernel</key>
                     <string></string>
                     <key>MinKernel</key>
@@ -629,13 +629,13 @@
                     <key>Arch</key>
                     <string>Any</string>
                     <key>BundlePath</key>
-                    <string>VirtualSMC.kext</string>
+                    <string>RTCMemoryFixup.kext</string>
                     <key>Comment</key>
-                    <string>V1.3.9 | By RapidEFI</string>
+                    <string>V1.0.8</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
-                    <string>Contents/MacOS/VirtualSMC</string>
+                    <string>Contents/MacOS/RTCMemoryFixup</string>
                     <key>MaxKernel</key>
                     <string></string>
                     <key>MinKernel</key>
@@ -849,7 +849,7 @@
                     <key>Comment</key>
                     <string>V1.2.0 | By RapidEFI</string>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>ExecutablePath</key>
                     <string>Contents/MacOS/USBToolBox</string>
                     <key>MaxKernel</key>
@@ -867,7 +867,7 @@
                     <key>Comment</key>
                     <string>V1.1</string>
                     <key>Enabled</key>
-                    <true/>
+                    <false/>
                     <key>ExecutablePath</key>
                     <string></string>
                     <key>MaxKernel</key>
@@ -901,7 +901,7 @@
                     <key>BundlePath</key>
                     <string>IntelBTPatcher.kext</string>
                     <key>Comment</key>
-                    <string>V2.5.0 | By RapidEFI</string>
+                    <string>V2.5.3 | By RapidEFI</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
@@ -919,7 +919,7 @@
                     <key>BundlePath</key>
                     <string>IntelBluetoothFirmware.kext</string>
                     <key>Comment</key>
-                    <string>V2.5.0 | By RapidEFI</string>
+                    <string>V2.5.3 | By RapidEFI</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
@@ -1136,6 +1136,24 @@
                     <string>CPUFriendDataProvider.kext</string>
                     <key>Comment</key>
                     <string>V1.0.1 | i7-10750H MBP16,2 EPP=Max Power Saving</string>
+                    <key>Enabled</key>
+                    <true/>
+                    <key>ExecutablePath</key>
+                    <string></string>
+                    <key>MaxKernel</key>
+                    <string></string>
+                    <key>MinKernel</key>
+                    <string></string>
+                    <key>PlistPath</key>
+                    <string>Contents/Info.plist</string>
+                </dict>
+                <dict>
+                    <key>Arch</key>
+                    <string>Any</string>
+                    <key>BundlePath</key>
+                    <string>USBPorts.kext</string>
+                    <key>Comment</key>
+                    <string>V1.0</string>
                     <key>Enabled</key>
                     <true/>
                     <key>ExecutablePath</key>
