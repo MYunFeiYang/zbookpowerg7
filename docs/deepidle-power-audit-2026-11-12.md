@@ -1687,3 +1687,29 @@ standby 从未生效已定位为过夜 3.6W 的直接、可解释原因（>90%�
 - ★与 §67 阴性自洽的新解释：LTR_IGNORE 在 PMC 层聚合的是**设备真实 LTR**，而 §18 已证 XCPM 深睡时把 73µs 写进 **MCHBAR+0x5D30 ILTR Override**（根 complex 侧、包级 C-state 上限硬件开关）——Override 在不同层、可能整体压制聚合结果 ⇒ LTR_IGNORE 放开也无效（与 ADL 作者全放通阴性互证）。maxbusdelay 是 Override 的**唯一来源全局变量**，§18 反汇编证实 xcpm_idle 路径**动态重读全局**写 Override ⇒ 运行时改值预期即时生效（无需重启）。
 - **实验设计（§829-③ 从未测过）**：`sudo sysctl -w machdep.xcpm.maxbusdelay=4294967295`（=健康机配置）→ 回读确认 → 睡一次 → 判决。预期：C6+ 非零=75µs 容忍度就是 PC3→PC6 门（且解释 CC7=0：容忍度钳制同时压核心侧）；仍 C3=75µs 非门或值未传播（下一步 PMCDump 扩 MCHBAR 读 0x5D30 实时验证）。
 - 回滚：`sudo sysctl -w machdep.xcpm.maxbusdelay=75000` 或重启。风险：放宽容忍度可能放大设备延迟（健康机即此配置运行）；无持久化、无 EFI/kext 改动、无不可逆项。备选 B：sysctl 只读时经 PMCDump 加 ml_set_maxbusdelay（导出 KPI）实现。
+
+## 33. 开源社区路线实测：HP 同类机有先例，但本机私有 IFR 墙坐实（11-20 13:3x-13:4x）
+- **背景**：用户问"找下万能的开源社区"。系统搜 GitHub / Win-Raid / InsanelyMac，并对本机 01.25.00 BIOS 镜像实跑开源工具链。
+- **开源路径在 HP 同类机成立**：Win-Raid 2025-01（HP Victus 15-fb0102la, AMD Ryzen 5600H, AMI Aptio V）用 `UEFITool → IFRExtractor-RS → datasone/grub-mod-setup_var (setup_var_cv)` 挖出 `S3/Modern Standby Support` 的 VarStore/VarOffset/值并读取；jjtech.dev 用同套工具在 HP Pavilion 15-cs3065cl (Insyde) 改 DVMT 成功。工具链已下载到 `docs/bios-forensics/tools/`（UEFIExtract A76 + IFRExtractor-RS v1.6.1 官方 release）。
+- **本机实测（决定性反证）**：DriverStore 中 `T75_01250000.bin`（32,315,326 B, sha `17ff8895…`）仍在，复制入 `docs/bios-forensics/`（源文件未动）。UEFIExtract 成功建固件树（但有 checksum 警告 + unaligned volume + HP 私有封装）；IFRExtractor `list` 找到 15 form packages + 1639 string packages；`DeepS3` / `DeepS3Support` / `HpModernStandbyConfigurations` 在解压层 `unc_data.bin` 偏移 0x5BA47A 附近**物理存在**。**但所有 IFR 模式（all / lang en-US / single）都无法把这些私有包导出成含 VarOffset 的可读文本**（all 超时 SIGTERM；lang/single 仅输出一行头）。⇒ §87 的"HP 私有描述符、无标准 VarOffset"结论经独立工具链复现，**setup_var 路线在本机拿不到 VarOffset**。
+- **砖机风险实证**：同帖记录 HP 15s-eq2144au 用 UMAF 开 S3 后**变砖、NVRAM 无法常规重置**；setup_var 官方亦警告错写变量可砖机。即使拿到 offset，写固件变量风险不可控。
+- **开源侧旁支（与 S3 无关）**：VoodooI2CELAN PR #19 提供 polling interval 配置，但 upstream 明确 forced polling 已受支持、PR 未合并；VoodooI2C 无 sleep-aware 开关 ⇒ 不能解决睡眠期轮询耗电。
+- **判决**：S3 路线在用户层（§93）+ 开源工具层（本节）**双双封死（>90%）**。开源社区证明"硬件 capable + 工具路径存在"，但本机私有 IFR + 砖机风险使代价远超收益。维持 DeepIdle 3.6W 终局。本轮全程只读，未写 BIOS/NVRAM、未重启。
+
+## 34. Boot Guard 只读取证（2026-11-20 13:4x）：固件级开 S3 路线亦封死
+- **用户选择**：三条路（接受地板 / 固件级尝试 / 等生态）中用户选"只读查 Boot Guard"，目标是判断"改 BIOS 镜像开 S3"这条路是否可行。全程只读。
+- **★Boot Guard 结构链完整存在（>95%，直接字节取证）**：对 `T75_01250000.bin`（32,315,326 B，sha `17ff8895…`）扫描，三件套齐全且与 `uefiextract.log` 交叉印证：
+  - **Startup ACM** @ 0xFFD98000（文件 0xD98320）：ModuleType=0002h、ModuleSubtype=0003h、ACM SVN=0002h、SeSvn=0002h、Date=05.01.2020、带 Intel 签名的 RSA 公钥+签名（指数 11h）。
+  - **Key Manifest (`__KEYM__`)** @ 0xFFD37400（文件 0xD37720）：Version 10h、KmId=01h、KM SVN=00h、KeyId=0001h、SigScheme=0014h（RSA-PSS SHA256）、RSA-2048 公钥指数 10001h + 完整 KM 签名。原始字节在文件 0x9C5720 实读 `__KEYM__` tag，后随 0x100 字节签名块。
+  - **Boot Policy Manifest (`__ACBP__`)** @ 0xFFD37800（文件 0xD37B20）：Version 10h、BPMRevision=01h、BPSVN=00h、ACMSVN=00h、含 `__IBBS__` + `__PMSG__` 元素与 BP 签名。
+  - **Computed IBB Hash (SM3)** = `C2B0F64F…538212`（UEFIExtract 计算值）。
+  - 两处 `_FIT_` 表（文件 0x9C5320 / 0xD37320，A/B 双份）含上述条目指针。
+- **判据边界（诚实标注）**：上述证明"固件出厂预置了 Boot Guard verified-boot 结构 + 完整 OEM 签名链"，是强制验证的**必要非充分条件**；真正的 **Verified Boot 开/关由 PCH fuse（Profile）决定，位于硬件 fuse 中，软件层读不到**。本机未装 chipsec（`importlib` 实测 False），Windows 侧非管理员（TPM WMI 拒绝访问）⇒ **fuse 状态不可判读（<80%）**。
+- **Windows 侧交叉检查（只读）**：OS=Win11 Pro 26300；`UEFISecureBootEnabled=0`（Secure Boot 关闭，但与 Boot Guard 是两套独立机制，不可互推）；`Intel(R) Management Engine Interface #1` + `ME WMI Provider` 均 OK ⇒ vPro/ME 商务平台，OEM 熔断 Boot Guard 的先验概率高。
+- **判决（>90%，多重独立证据）**：**"改 BIOS 镜像开 S3"固件级路线封死**，理由与 fuse 状态无关：
+  1. Boot Guard 结构 + IBB hash 链齐全 ⇒ 刷入修改镜像后若 fuse 为 Verified 模式，ACM 校验 IBB 失败直接不开机（砖），且无救砖私钥；
+  2. HP 用签名 capsule 更新 + BIOS Guard 锁 flash region，非 OEM 私钥无法产出可刷镜像；
+  3. §33/§87/§94 已证 S3 开关在 HP 私有 IFR 区、拿不到 VarOffset，连"精确改哪个字节"都不确定；
+  4. §94 同类机（HP 15s-eq2144au）UMAF 开 S3 后变砖实证；
+  5. 即便侥幸开启，本机 macOS S3 唤醒历史为花屏/panic，S0ix 才是本机现代待机正解。
+- **收敛**：三条路中 2（固件级）与用户层/开源层同判封死 ⇒ 现实选择只剩 **1（接受 3.6W 地板 + 用法调整）** 为主、**3（等 macOS 大版本 PM 改动 / 社区 CML-H 数据）** 为辅。本轮全程只读：未写 BIOS/NVRAM/EFI、未重启、未装任何工具。
