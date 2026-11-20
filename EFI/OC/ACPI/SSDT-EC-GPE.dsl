@@ -1,17 +1,23 @@
 /*
- * SSDT-EC-GPE — mimic Windows PEP "MS Enter/Exit" EC GPE noise reduction.
- * Windows: PEPD._DSM func3 -> ECNT(One) -> EC0.SLPT = 0x06 (quiet noisy GPEs)
- * macOS never calls PEPD._DSM, so SLPT is never written (ECUP=1 makes
- * DSDT _PTS's ECNT(Zero) branch dead code).
- * This SSDT hooks _PTS/_WAK (via OC ACPI/Patch rename to ZPTS/ZWAK) and writes
- * SLPT on sleep entry / restores 0 on wake. Darwin-only. No kext, no MMIO.
+ * SSDT-EC-GPE v3 — EC GPE noise reduction (Windows PEP "MS Enter" emulation).
  *
- * v2 (2026-11-20 14:3x): v1 was placed under an invalid "ACPI/Rename" config
- * key, so the renames never applied and the table failed to load with
- * AE_ALREADY_EXISTS (_PTS/_WAK duplicate). v2 is deployed via ACPI/Patch and
- * carries Debug markers so kernel log proves invocation.
+ * Windows path: PEPD._DSM func3 -> ECNT(One) -> EC0.SLPT = 0x06 (quiet noisy GPEs)
+ * macOS never calls PEPD._DSM; DSDT _PTS's ECNT(Zero) branch is dead code (ECUP=1).
+ *
+ * v3 rationale (measured 2026-11-20 14:40:12):
+ *   AppleACPIPlatform logged "ACPI SLEEP" at 14:40:12.762518 and "ACPI S0 WAKE" at
+ *   14:40:12.781448 — _PTS and _WAK are evaluated 18.9 ms apart, because the Deep
+ *   Idle target state is S0 (S3 is renamed away). v2 cleared SLPT inside _WAK, so the
+ *   write was undone before the 5m38s idle window even started (deep_idle_last_stats
+ *   = 5:38 matches exactly 14:40:12.762 -> 14:45:50.999). The v2 sample therefore
+ *   says nothing about SLPT.
+ *   v3 writes 6 unconditionally on _PTS and NEVER clears it, so the value holds for
+ *   the whole idle window. EC RAM is volatile: power cycle / reboot restores SLPT=0.
+ *
+ * Trade-off accepted for this test: SLPT stays 0x06 after wake until the next boot
+ * (EC may report battery/AC events less often while awake). Reversible by rebooting.
  */
-DefinitionBlock ("", "SSDT", 2, "ECGP", "ECGPE", 0x00002000)
+DefinitionBlock ("", "SSDT", 2, "ECGP", "ECGPE", 0x00003000)
 {
     External (ZPTS, MethodObj)    // 1 Arguments
     External (ZWAK, MethodObj)    // 1 Arguments
@@ -21,23 +27,16 @@ DefinitionBlock ("", "SSDT", 2, "ECGP", "ECGPE", 0x00002000)
     {
         If (_OSI ("Darwin"))
         {
-            Debug = Concatenate ("ECGP_PTS arg=", ToHexString (Arg0))
-            If ((Arg0 == One))
-            {
-                \_SB.PCI0.LPCB.EC0.SLPT = 0x06
-                Debug = "ECGP_SLPT_set6"
-            }
+            // unconditional: the sleep type macOS passes on the S0ix path is not
+            // documented, and the conditional write is what voided the v2 sample.
+            \_SB.PCI0.LPCB.EC0.SLPT = 0x06
         }
         ZPTS (Arg0)
     }
 
     Method (_WAK, 1, Serialized)
     {
-        If (_OSI ("Darwin"))
-        {
-            \_SB.PCI0.LPCB.EC0.SLPT = Zero
-            Debug = "ECGP_SLPT_clear"
-        }
+        // deliberately no SLPT clear: _WAK runs ~19 ms after _PTS on S0ix entry.
         Return (ZWAK (Arg0))
     }
 }

@@ -18,10 +18,8 @@
  *     Compiler ID      "INTL"
  *     Compiler Version 0x20260408 (539362312)
  */
-DefinitionBlock ("", "SSDT", 2, "OCLT", "IDLE", 0x00001001)
+DefinitionBlock ("", "SSDT", 2, "OCLT", "IDLE", 0x00000000)
 {
-    External (_SB_.PCI0.LPCB.EC0_.SLPT, FieldUnitObj)
-
     Scope (_SB)
     {
         Method (LPS0, 0, NotSerialized)
@@ -52,15 +50,6 @@ DefinitionBlock ("", "SSDT", 2, "OCLT", "IDLE", 0x00001001)
             If (_OSI ("Darwin"))
             {
                 SLTP = Arg0
-                Debug = Concatenate ("IDLE_TTS=", ToHexString (Arg0))
-                If ((Arg0 == Zero))
-                {
-                    \_SB.PCI0.LPCB.EC0.SLPT = Zero
-                }
-                Else
-                {
-                    \_SB.PCI0.LPCB.EC0.SLPT = 0x06
-                }
             }
         }
     }

@@ -95,3 +95,39 @@ Windows S0ix 进入流程（`intelpep.sys` → `PEPD._DSM` func3，`SSDT-16.dsl`
 **副产品证据**：本次为 AC 供电睡眠；`kIOMessageSystemWillPowerOn` 明确派发到 `com.apple.driver.AppleACPIPlatform`（唤醒侧 ACPI 栈参与），与"macOS Deep Idle 走 AppleACPIPlatform"自洽；睡眠窗口内仍有 130 行日志（Deep Idle 非全冻结），但 `deep_idle` 统计保持 C3 连续。
 
 **结论**：EC 降噪 GPE 路线**阴性收束**，与 §54（平台/PCH 侧）结论合并。DeepIdle 用户态 + ACPI 侧候选至此全部试尽，3.6W 地板=最终接受态（>90%）；重启条件维持：macOS 大版本 PM 改动 / 社区 CML-H 包级 C6 数据 / IGPU #967 修复。
+
+## 九、勘误（14:50 复查）：§八 的"阴性"判决作废 —— v2 样本无效，原因是 _WAK 在 _PTS 后 19ms 就把 SLPT 清零
+
+**触发**：用户要求"再看下"。复读 14:39–14:46 全窗口日志，命中两条此前漏看的 AppleACPIPlatform 自有日志：
+
+```
+14:40:12.762518  (AppleACPIPlatform) ACPI SLEEP
+14:40:12.781448  (AppleACPIPlatform) ACPI S0 WAKE
+14:40:12.782530  (AppleACPIPlatform) AppleACPIPlatformPower Wake reason: PWRB (User)
+14:39:21.736287  PMRD: kIOMessageSystemWillSleep[3] to com.apple.driver.AppleACPIPlatform
+```
+
+**推算（精确到毫秒）**：
+
+| 事件 | 时间 | 差 |
+|---|---|---|
+| powerd 决定睡眠 | 14:39:19.673 | — |
+| AppleACPIPlatform 收到 WillSleep | 14:39:21.736 | +2.06s |
+| `ACPI SLEEP`（_PTS 求值） | 14:40:12.762518 | +53.09s |
+| `ACPI S0 WAKE`（_WAK 求值） | 14:40:12.781448 | **+18.9ms** |
+| 真实唤醒 | 14:45:50.999780 | +5m38.2s |
+
+`deep_idle_last_stats = 0:05:38` 与 14:40:12.762 → 14:45:50.999 的 **5m38.2s** 完全吻合 ⇒ 被统计的整段空闲窗口，起点就在 `_WAK` 之后 19ms。
+
+**结论**：v2 的 `_PTS` 写入 `SLPT=0x06` 后，`_WAK` 在 19ms 内把它写回 0（Deep Idle 的目标态是 S0，S3 已被 rename 掉，所以 _WAK 紧跟 _PTS）。测量的 5m38s 全程 `SLPT=0` ⇒ **v2 样本对 SLPT 无任何信息量，§八 的"阴性"判决作废**。另：v2 的写入还挂在 `If (Arg0 == One)` 条件下，而 macOS 在 S0ix 路径传入的 Arg0 未文档化，是否曾写入亦不可判读。
+
+**同时撤回的推理**：§八 用「`C3:99%` ⇒ 无 GPE 噪声 ⇒ SLPT 无意义」做机制性否决，该推理**不成立**：1Hz 的 EC GPE 每次退出只耗数百微秒，C3 占空比仍可保持 99%；而 PC6/C10 进入要求足够长的连续空闲窗口，1Hz 噪声足以卡住 PC6 却不会把 C3% 拉低。两种失效模式（许可上限 / 噪声卡门）在 C3 占空比上不可区分。
+
+**v3（已部署，rev 00003000，sha `8ac3d719…`）**：
+
+1. `_PTS` **无条件**写 `SLPT = 0x06`（去掉 Arg0 条件）。
+2. `_WAK` **不写任何值**（只转调 ZWAK），使 SLPT 在整个空闲窗口保持 6。
+3. `SSDT-DeepIdle` 回退原版（`0206720a…`），移除 `_TTS` 内的写入——`_TTS(0)` 同样会在唤醒瞬间清零，属同一陷阱。
+4. 代价（明确接受）：唤醒后 SLPT 保持 6 直到重启，期间 EC 可能降低电池/AC 事件上报频率；EC RAM 易失，重启即归零。
+
+**v3 判读**：睡眠后读 `deep_idle_last_stats`。C6–C10 非零 ⇒ 噪声门成立（突破）；仍全零 ⇒ 真正阴性（此时可确定 SLPT 确实被保持，结论有效）。
