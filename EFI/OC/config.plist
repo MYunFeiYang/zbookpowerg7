@@ -139,12 +139,6 @@
 				<string>EC GPE noise reduction (SLPT 0x06 on sleep)</string>
 				<key>Enabled</key>
 				<true/>
-				<key>ForceLoad</key>
-				<false/>
-				<key>MaxKernel</key>
-				<string></string>
-				<key>MinKernel</key>
-				<string></string>
 				<key>Path</key>
 				<string>SSDT-EC-GPE.aml</string>
 			</dict>
