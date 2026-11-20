@@ -1,0 +1,37 @@
+## @file
+#  RtcRamRedirect - Apple RTC RAM protocol replacement that keeps the
+#  hibernation window (CMOS 0x80-0xAB) in a UEFI variable instead of CMOS.
+#
+#  Copyright (C) 2026. BSD-2-Clause.
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = RtcRamRedirect
+  FILE_GUID                      = 06DBE5C4-1D3F-44AE-AD21-DE338A016A63
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = RtcRamRedirectEntry
+
+[Sources]
+  RtcRamRedirect.c
+  AppleRtcRam.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+
+[LibraryClasses]
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
+  UefiRuntimeServicesTableLib
+  UefiLib
+  DebugLib
+  BaseLib
+  BaseMemoryLib
+  MemoryAllocationLib
+  IoLib
+  PrintLib
+  PcdLib
+
+[Depex]
+  TRUE
