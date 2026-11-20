@@ -81,3 +81,17 @@ Windows S0ix 进入流程（`intelpep.sys` → `PEPD._DSM` func3，`SSDT-16.dsl`
 4. 部署：workspace 与 ESP 双写，sha 一致 —— config `ffebc913…`、SSDT-EC-GPE.aml `66204ada…`、SSDT-DeepIdle.aml `4e557da6…`。
 
 **v2 判读（重启后）**：先查 `(SSDT: ECGPE)` 是否仍报 AE_ALREADY_EXISTS（无错 = rename 生效、钩子已装）；再睡眠读 `deep_idle_last_stats` + 日志标记。仍全 C3 ⇒ EC 降噪路线阴性（§五 ②）。
+
+## 八、v2 上机判决：阴性（2026-11-20 14:39–14:46）
+
+**上机前提已证**：14:30:00 boot 的表集含 `SSDT … ECGP ECGPE 00002000` 与 `OCLT IDLE 00001001`，**无** `(SSDT: ECGPE) while loading table`、无伴随 `AE_ALREADY_EXISTS` ⇒ 两条 rename 生效、`_PTS`/`_WAK` 钩子已进命名空间（>95%，撞名必然报错故"无错"即证）。
+
+**取样**：powerd 14:39:19 入睡（`Software Sleep pid=218`）→ 14:45:53 唤醒（`Wake from Deep Idle [CDNVA] due to PWRB/User`），共 6m34s；`deep_idle_count: 1`，`last_stats = 0:05:38 CC7:0% C2:0% C3:99% C6:0% C7:0% C8:0% C9:0% C10:0%`。
+
+**判决（≥85% 阴性）**：与注入前基线逐字段一致（C3:99%、C6–C10 全零）。机制上的必要性论证更强于结果本身：`C3:99%` 意味着包级**稳定停在 C3**、切换开销仅 1%，即失效模式是「**许可上限**（LTR permit 只到 C3）」而非「GPE 噪声反复拉出低功耗态」。SLPT=0x06 的作用恰恰是**降噪**；无噪声可降 ⇒ 结构上不可能抬高 C3 天花板。故即使钩子未执行，结论也不会翻为阳性。
+
+**唯一未坐实项（<80%，未知）**：钩子是否真的执行过。`Debug` 标记在日志中为空——ACPICA 的 AML `Debug` 输出受 `AcpiDbgLayer` 门控，默认关闭，因此"无标记"**不能**推断"未执行"（也**不能**推断已执行）。若要坐实需再加一次「故意触发 AE_NOT_FOUND 的探针 + 重启 + 睡眠」，收益仅把 85% 抬到 95%，对已机制性否决的路线不值得（用户"配合优先级最低"原则）。
+
+**副产品证据**：本次为 AC 供电睡眠；`kIOMessageSystemWillPowerOn` 明确派发到 `com.apple.driver.AppleACPIPlatform`（唤醒侧 ACPI 栈参与），与"macOS Deep Idle 走 AppleACPIPlatform"自洽；睡眠窗口内仍有 130 行日志（Deep Idle 非全冻结），但 `deep_idle` 统计保持 C3 连续。
+
+**结论**：EC 降噪 GPE 路线**阴性收束**，与 §54（平台/PCH 侧）结论合并。DeepIdle 用户态 + ACPI 侧候选至此全部试尽，3.6W 地板=最终接受态（>90%）；重启条件维持：macOS 大版本 PM 改动 / 社区 CML-H 包级 C6 数据 / IGPU #967 修复。
