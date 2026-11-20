@@ -131,3 +131,28 @@ Windows S0ix 进入流程（`intelpep.sys` → `PEPD._DSM` func3，`SSDT-16.dsl`
 4. 代价（明确接受）：唤醒后 SLPT 保持 6 直到重启，期间 EC 可能降低电池/AC 事件上报频率；EC RAM 易失，重启即归零。
 
 **v3 判读**：睡眠后读 `deep_idle_last_stats`。C6–C10 非零 ⇒ 噪声门成立（突破）；仍全零 ⇒ 真正阴性（此时可确定 SLPT 确实被保持，结论有效）。
+
+## 十、v3 有效样本与最终判决：阴性（15:11–15:29，电池 18m46s）
+
+**样本有效性已核**：
+
+| 事件 | 时间 | 备注 |
+|---|---|---|
+| powerd 入睡 | 15:11:05 | `Entering Sleep state due to 'Software Sleep pid=218' ... Using Batt (Charge:100%) 1126 secs` |
+| `ACPI SLEEP`（`_PTS`） | 15:11:59.749363 | 与 `_WAK` 相距 19ms，同 v2 模式（S0ix 目标态=S0） |
+| `ACPI S0 WAKE`（`_WAK`） | 15:11:59.768238 | v3 的 `_WAK` 不写 SLPT ⇒ 窗口内 SLPT 恒为 6 |
+| 真实唤醒 | 15:29:51 | `Wake from Deep Idle [CDNVA] : due to PWRB/User Using BATT`，WakeTime 2.726s |
+
+`deep_idle_last_stats = 0:17:50` 与 15:11:59.75→15:29:49.7 的 1070s 吻合，即整段被测窗口都在 `_WAK` 之后，v2 那个「19ms 自我清零」的陷阱已不存在。
+
+**结果**：
+
+```
+0:17:50  CC7:0%  C2:21%  C3:78%  C6:0% C7:0% C8:0% C9:0% C10:0%
+```
+
+**判决**：主判据（C6–C10 非零）**未达成**，实测 C6 及以上全零（>95%，直接读数）。EC 静默模式 `SLPT=0x06` 无法打开包级 C6 门 ⇒ 与 §九 提出、§十 检验的「噪声卡门」假说相反：**降噪不是缺失的那一环**。与「许可上限（LTR 只到 C3）」结论（§54/§88 主结论）一致。
+
+**副产品（把握度 ~65%，非结论）**：本样本出现 `C2:21%`，而此前三次基线全为 `C2:0% C3:98–100%`（11-16 电池 5m13s、11-20 14:39 AC 5m38s）。若这一偏移确由 `SLPT=6` 引起，则反过来是该写入**确实生效**的唯一正证（`Debug` 标记被 ACPICA 门控、无法直接观测）。但方向是**变浅**（C2 取代部分 C3），并非更深，即该写入要么无效、要么副作用为负。分歧因素仅样本长度（17:50 vs 5:13/5:38），无其它已知混杂。
+
+**处置**：实验收束，EFI 回退 known-good 基线 —— `git checkout 24e7be2 -- EFI/OC`，删除 `SSDT-EC-GPE.dsl/.aml`（workspace 与 ESP 双侧），`SSDT-DeepIdle` 恢复原版。config sha 回到 `851f0d98`，DeepIdle `0206720a`，`plutil -lint` 双绿，ESP 无 ECGPE 残留，下次重启生效。保留实验记录于 git 历史（`bd7fb47`、`5f9f5f7`、`c4e7ba3`）。
