@@ -98,7 +98,7 @@
 				<key>Comment</key>
 				<string>LPS0/S0 deep idle; primary sleep path.</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>Path</key>
 				<string>SSDT-DeepIdle.aml</string>
 			</dict>
@@ -130,7 +130,7 @@
 				<key>Comment</key>
 				<string>AOAC: restore _S3 for non-Darwin only (Darwin keeps _S3-&gt;XS3). [2026-10-09]</string>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>Path</key>
 				<string>SSDT-NameS3-disable.aml</string>
 			</dict>
@@ -406,7 +406,7 @@
 				<key>Count</key>
 				<integer>0</integer>
 				<key>Enabled</key>
-				<true/>
+				<false/>
 				<key>Find</key>
 				<data>
 				X1MzXw==
