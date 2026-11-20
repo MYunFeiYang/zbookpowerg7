@@ -316,7 +316,8 @@ osascript -e "do shell script \"chown -R $(id -un):staff '$B' && chmod -R 777 '$
 2. **UEFI Shell**（`dmpstore`）：需把 `OpenShell.efi` 挂进 `Misc/Tools`；拿到的是十六进制 blob，要**差分解码**（改一项设置前后各 dump 一次、比字节）才知道偏移与取值编码。成本高，只在需要长期读时才值。
 3. **行为验证**（最便宜）：不读设置，直接测功能——改一项，看对应硬件行为变不变。
    - ✅ 可用的例子：`USB Legacy Port Charging` 改完关 S4/S5，量关机态 USB 是否有电。
-   - ❌ **不要用 `powermetrics --samplers cpu_power` 的 `C-state residency` 去判 `Extended Idle Power States`**：本机同批样本里 `Cores Active 98.88%` / `Avg Num Cores Active 4.56`（=76%）/ `C-state 0.00%` 三者互斥，读数自相矛盾 ⇒ 该判据作废（详见 `firmware-facts-ledger.md` §10.3）。
+   - ❌ **不要用 `powermetrics --samplers cpu_power` 的 `C-state residency` 去判 `Extended Idle Power States`**：本机同批样本里 `Cores Active 98.88%` / `Avg Num Cores Active 4.56`（=76%）/ `C-state 0.00%` 三者互斥，读数自相矛盾 ⇒ **该样本**作废（详见 `firmware-facts-ledger.md` §10.3）。
+   - ✅ **改用 `sysctl machdep.xcpm.deep_idle_last_stats` 判睡眠期 C-state**（11-16 新发现，非 root、覆盖睡眠期、硬件计数器；本机实测 C3=100%、C6–C10 全 0）⇒ 推翻旧「macOS 无法取证 C-state」概括，详见 `firmware-facts-ledger.md §10.6`。注意它给机制（卡哪级 C-state）不给瓦数，功耗量化仍靠掉电率 A/B。
    - ⚠️ `IOPMDeepIdleSupported=True` 只证明**固件声明支持**，不证明**当前已启用**，不能当"设置已开"的证据。
 
 **★ 台账是快照，不是实时**：`HPBIOS-all.csv` 导出日 2026-09-20；此后用户改过 BIOS（10-19 改 `USB Legacy Port Charging` 等）⇒ **引用它时说"9-20 快照值"，不能说"当前值"**。要当前值只能走上面第 1 或第 2 条。
