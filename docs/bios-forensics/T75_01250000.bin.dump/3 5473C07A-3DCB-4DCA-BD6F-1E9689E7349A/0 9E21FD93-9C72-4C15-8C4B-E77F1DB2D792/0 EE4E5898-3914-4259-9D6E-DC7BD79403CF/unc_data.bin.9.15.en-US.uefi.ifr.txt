@@ -1,0 +1,243 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 77F2EA2F-4312-4569-85C4-583ACD8DB7E2, Title: "English", Help: "Deutsch"
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x0
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: A31ABB16-C627-475B-988E-7EE0776740F3, VarStoreId: 0x1234, Size: 0x588, Name: "UndiNVData"
+	Form FormId: 0x1, Title: "Español"
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Subtitle Prompt: "Italiano", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x750
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x751
+		Ref Prompt: "Italiano - 00000410", Help: "日本語 - 00000411", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1235
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x754
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x755
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x742
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x743
+		SuppressIf 
+			True 
+			Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+			Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+			Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+			Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1405, VarStoreId: 0x1234, VarOffset: 0x586, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1406, VarStoreId: 0x1234, VarOffset: 0x587, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x752
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x753
+		SuppressIf 
+			True 
+			Text Prompt: "Arabic (102) - 00010401", Help: "InvalidId", Text: "InvalidId"
+			Numeric Prompt: "Slovak (QWERTY) - 0001041B", Help: "Canadian Multilingual Standard - 00011009", QuestionFlags: 0x1, QuestionId: 0x2, VarStoreId: 0x1234, VarOffset: 0x2E, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			OneOf Prompt: "Gaelic - 00011809", Help: "Arabic (102) AZERTY - 00020401", QuestionFlags: 0x1, QuestionId: 0x3, VarStoreId: 0x1234, VarOffset: 0x2F, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Czech (QWERTY) - 00010405" Value: 0
+				OneOfOption Option: "Czech Programmers - 00020405" Value: 1, Default
+			End 
+			Numeric Prompt: "Greek (220) - 00010408", Help: "Greek (319) - 00020408", QuestionFlags: 0x1, QuestionId: 0x4, VarStoreId: 0x1234, VarOffset: 0x30, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+		End 
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x756
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x757
+		Numeric Prompt: "Hungarian - 0000040E", Help: "Icelandic - 0000040F", QuestionFlags: 0x4, QuestionId: 0x110A, VarStoreId: 0x1234, VarOffset: 0x34, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Subtitle Prompt: "Français", Help: "", Flags: 0x0
+		End 
+		Text Prompt: "Suomi - 0000040B", Help: "Hebrew - 0000040D", Text: "Français - 0000040C"
+		Text Prompt: "简体中文", Help: "Arabic - 00000401", Text: "繁體中文"
+		Text Prompt: "繁體中文 - 00000404", Help: "Deutsch - 00000407", Text: "Dansk - 00000406"
+		Text Prompt: "Czech - 00000405", Help: "Español - 0000040A", Text: "English - 00000409"
+		Text Prompt: "Norsk", Help: "Pусский", Text: "Suomi"
+		OneOf Prompt: "Turkish - 0001041F", Help: "Belgian (Comma) - 0001080C", QuestionFlags: 0x1, QuestionId: 0x1104, VarStoreId: 0x1234, VarOffset: 0x28, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "English - 00020409" Value: 0, Default
+			OneOfOption Option: "Deutsch - 00010407" Value: 1
+		End 
+		SuppressIf 
+			True 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1408, VarStoreId: 0x1234, VarOffset: 0x2A, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1408, Value: 0x0
+			OneOf Prompt: "Greek (220) Latin - 00030408", Help: "Greek (319) Latin - 00040408", QuestionFlags: 0x1, QuestionId: 0x110C, VarStoreId: 0x1234, VarOffset: 0x29, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x20, Step: 0x0
+				OneOfOption Option: "Slovenian - 00000424" Value: 0
+				OneOfOption Option: "Estonian - 00000425" Value: 1
+				OneOfOption Option: "Kazakh - 0000043F" Value: 2
+				OneOfOption Option: "简体中文 - 00000804" Value: 3
+				OneOfOption Option: "Deutsch - 00000807" Value: 4
+				OneOfOption Option: "English - 00000809" Value: 5
+				OneOfOption Option: "Español - 0000080A" Value: 6
+				OneOfOption Option: "Português - 00000816" Value: 7
+				OneOfOption Option: "Español - 00000C0A" Value: 8
+				OneOfOption Option: "Russian - 00010419" Value: 32, Default
+			End 
+		End 
+		Text Prompt: "日本語", Help: "Dansk", Text: "Português"
+		SuppressIf 
+			True 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1407, VarStoreId: 0x1234, VarOffset: 0x36, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1407, Value: 0x0
+			String Prompt: "Svenska", Help: "Nederlands", QuestionFlags: 0x1, QuestionId: 0x1106, VarStoreId: 0x1234, VarStoreInfo: 0x4, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+			End 
+		End 
+	End 
+	Form FormId: 0x1235, Title: "Korean - 00000412"
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x740
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x741
+		SuppressIf 
+			True 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x5, VarStoreId: 0x1234, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		OneOf Prompt: "Thai - 0000041E", Help: "Turkish - 0000041F", QuestionFlags: 0x0, QuestionId: 0x1108, VarStoreId: 0x1234, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x4, Step: 0x0
+			OneOfOption Option: "Slovenian - 00000424" Value: 0, Default
+			SuppressIf 
+				EqIdVal QuestionId: 0x5, Value: 0x0
+				OneOfOption Option: "Estonian - 00000425" Value: 1
+				OneOfOption Option: "Kazakh - 0000043F" Value: 2
+				OneOfOption Option: "简体中文 - 00000804" Value: 3
+				OneOfOption Option: "Deutsch - 00000807" Value: 4
+			End 
+		End 
+		SuppressIf 
+			True 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x6, VarStoreId: 0x1234, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x6, Value: 0x0
+			OneOf Prompt: "Français - 00000C0C", Help: "French Canadian - 00001009", QuestionFlags: 0x0, QuestionId: 0x1109, VarStoreId: 0x1234, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+				SuppressIf 
+					EqIdVal QuestionId: 0x6, Value: 0x0
+					OneOfOption Option: "Polish - 00010415" Value: 0
+					OneOfOption Option: "Español - 0001040A" Value: 1
+				End 
+				SuppressIf 
+					EqIdVal QuestionId: 0x6, Value: 0x1
+					OneOfOption Option: "Russian - 00010419" Value: 2
+				End 
+			End 
+		End 
+		SuppressIf 
+			True 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1409, VarStoreId: 0x1234, VarOffset: 0x31, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1409, Value: 0x0
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x110D, VarStoreId: 0x1234, VarOffset: 0x32, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFFF, Step: 0x0
+				Default DefaultId: 0x0 Value: 0
+			End 
+		End 
+	End 
+	Form FormId: 0x1248, Title: "English - 00010409"
+		OneOf Prompt: "Norwegian with Sami - 0000043B", Help: "United Kingdom Extended - 00000452", QuestionFlags: 0x10, QuestionId: 0x110F, VarStoreId: 0x1234, VarOffset: 0x2C, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Belgian French - 0000080C" Value: 0
+			OneOfOption Option: "Belgian (Period) - 00000813" Value: 1
+		End 
+	End 
+	Form FormId: 0x1247, Title: "InvalidId"
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Subtitle Prompt: "InvalidId", Help: "", Flags: 0x0
+		End 
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+	End 
+	Form FormId: 0x1237, Title: "InvalidId"
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x7, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1244
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x8, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1245
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x9, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1246
+	End 
+	Form FormId: 0x1244, Title: "InvalidId"
+		SuppressIf 
+			EqIdVal QuestionId: 0x1405, Value: 0x0
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1200, VarStoreId: 0x1234, VarOffset: 0x37, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Polish - 00010415" Value: 0
+				OneOfOption Option: "Español - 0001040A" Value: 1, Default
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1200, Value: 0x0
+				OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1201, VarStoreId: 0x1234, VarOffset: 0x38, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+					OneOfOption Option: "InvalidId" Value: 0
+					SuppressIf 
+						EqIdVal QuestionId: 0x1200, Value: 0x0
+						OneOfOption Option: "InvalidId" Value: 1, Default
+					End 
+				End 
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1202, VarStoreId: 0x1234, VarOffset: 0x39, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Polish - 00010415" Value: 0, Default
+				OneOfOption Option: "Español - 0001040A" Value: 1
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1202, Value: 0x0
+				OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1203, VarStoreId: 0x1234, VarOffset: 0x3A, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+					OneOfOption Option: "InvalidId" Value: 0, Default
+					SuppressIf 
+						EqIdVal QuestionId: 0x1202, Value: 0x0
+						OneOfOption Option: "InvalidId" Value: 1
+					End 
+				End 
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x1204, VarStoreId: 0x1234, VarOffset: 0x3B, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "InvalidId" Value: 0, Default
+			End 
+		End 
+	End 
+	Form FormId: 0x1245, Title: "InvalidId"
+		SuppressIf 
+			EqIdVal QuestionId: 0x1405, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1200, Value: 0x1
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1210, VarStoreId: 0x1234, VarStoreInfo: 0x3C, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				End 
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1211, VarStoreId: 0x1234, VarStoreInfo: 0x5C, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				End 
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1212, VarStoreId: 0x1234, VarStoreInfo: 0x7C, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				End 
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1213, VarStoreId: 0x1234, VarStoreInfo: 0x9C, MinSize: 0x0, MaxSize: 0xDF, Flags: 0x0
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1202, Value: 0x0
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1214, VarStoreId: 0x1234, VarStoreInfo: 0x25C, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+				End 
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1215, VarStoreId: 0x1234, VarStoreInfo: 0x35E, MinSize: 0xC, MaxSize: 0x10, Flags: 0x0
+				End 
+			End 
+		End 
+	End 
+	Form FormId: 0x1246, Title: "InvalidId"
+		SuppressIf 
+			EqIdVal QuestionId: 0x1405, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1201, Value: 0x1
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1220, VarStoreId: 0x1234, VarStoreInfo: 0x380, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				End 
+				Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1221, VarStoreId: 0x1234, VarOffset: 0x3A0, Flags: 0x11, Size: 16, Min: 0x400, Max: 0xFFFF, Step: 0x0
+					Default DefaultId: 0x0 Value: 3260
+				End 
+				Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1222, VarStoreId: 0x1234, VarOffset: 0x3A2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+					Default DefaultId: 0x0 Value: 1
+				End 
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1223, VarStoreId: 0x1234, VarStoreInfo: 0x3A3, MinSize: 0x0, MaxSize: 0xDF, Flags: 0x0
+				End 
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1203, Value: 0x0
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1224, VarStoreId: 0x1234, VarStoreInfo: 0x563, MinSize: 0xC, MaxSize: 0x10, Flags: 0x0
+				End 
+			End 
+		End 
+	End 
+End 

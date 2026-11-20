@@ -1,0 +1,56 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 02EEA107-98DB-400E-9830-460A1542D799, Title: "Broadcom NetXtreme Gigabit Ethernet", Help: "Broadcom NetXtreme Gigabit Ethernet"
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 02EEA107-98DB-400E-9830-460A1542D799, VarStoreId: 0x1, Size: 0x638, Name: "IP6_CONFIG_IFR_NVDATA"
+	Form FormId: 0x3, Title: "Configure Device Parameters."
+		Ref Prompt: "Configure virtual LAN mode.", Help: "VLAN ID (1..4094)", QuestionFlags: 0x4, QuestionId: 0x108, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x1, Title: "Configure Device Parameters."
+		Text Prompt: "MAC Address", Help: "Permanent MAC Address", Text: ""
+		Text Prompt: "Virtual MAC Address", Help: "Virtual MAC Address", Text: ""
+		Text Prompt: "Chip Type", Help: "", Text: "Chip Type/Revision."
+		Text Prompt: "Bus:Device:Function", Help: "PCI Address", Text: "Virtual LAN Mode"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3840
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "", Help: "PCI Bus:Device:Function number of this device.", Text: "Virtual LAN Mode"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3E80
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Link Status", Help: "Link Status", Text: "Virtual LAN Mode"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x44C0
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Connected", Help: "Disconnected", Text: "Virtual LAN Mode"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x4B00
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		String Prompt: "Blink LEDs", Help: "Blink LEDs for a duration up to 15 seconds.", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x1, VarStoreInfo: 0xC, MinSize: 0x1, MaxSize: 0x17, Flags: 0x0
+		End 
+		Numeric Prompt: "Legacy Boot Protocol", Help: "Legacy Boot Protocol", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x8, Flags: 0x12, Size: 32, Min: 0x0, Max: 0xA, Step: 0x0
+		End 
+		OneOf Prompt: "Select non-UEFI Boot Protocol: Preboot Execution Environment (PXE)/iSCSI.", Help: "PXE", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x1, VarOffset: 0x4, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "iSCSI" Value: 0, Default
+			OneOfOption Option: "NONE" Value: 1
+		End 
+		Subtitle Prompt: "Virtual LAN Mode", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2, Value: 0x0
+			Ref Prompt: "None", Help: "Boot Strap Type", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+			Subtitle Prompt: "Virtual LAN Mode", Help: "", Flags: 0x0
+			End 
+		End 
+		Action Prompt: "Configure Pre-boot Wake on LAN (WOL).", Help: "Wake On LAN", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x2, Title: "None"
+		String Prompt: "Boot Strap Type", Help: "Select boot strap type.", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x1, VarStoreInfo: 0x3E, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "Link Speed", Help: "Link Speed", QuestionFlags: 0x4, QuestionId: 0x103, VarStoreId: 0x1, VarStoreInfo: 0x23C, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "Configure link speed.", Help: "Pre-boot Wake On LAN", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x1, VarStoreInfo: 0x43A, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		Action Prompt: "Configure Wake on LAN (WOL).", Help: "Configure Wake on LAN (WOL).", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "VLAN Mode", Help: "VLAN Mode", QuestionFlags: 0x4, QuestionId: 0x107, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

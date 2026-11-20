@@ -1,0 +1,29 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: FE561596-E6BF-41A6-8376-C72B719874D0, Title: "CPU Replacement Was Detected.", Help: "[CAUTION]"
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	Form FormId: 0x1000, Title: "CPU Replacement Was Detected."
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x640
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+	End 
+	Form FormId: 0x2000, Title: "Press Y to Continue (System Will Go Through Reset to Complete CPU Change)"
+		String Prompt: "Press 1 to enter ME configuration screens", Help: "Press 2 to initiate a remote connection", QuestionFlags: 0x4, QuestionId: 0x2001, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, MinSize: 0x2, MaxSize: 0x14, Flags: 0x0
+		End 
+		Subtitle Prompt: "[CAUTION]", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "Found unconfigure of Intel(R) ME", Help: "Found unconfigure of Intel(R) ME", QuestionFlags: 0x4, QuestionId: 0x2002, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "Continue with unconfiguration(Y/N)?", Help: "Continue with unconfiguration(Y/N)?", QuestionFlags: 0x4, QuestionId: 0x2003, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x3000, Title: "Otherwise Shutdown the Platform and Replace Original CPU."
+		String Prompt: " ", Help: "MEBx", QuestionFlags: 0x4, QuestionId: 0x3001, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, MinSize: 0x2, MaxSize: 0x14, Flags: 0x0
+		End 
+		Subtitle Prompt: "[CAUTION]", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "This Formset contains forms for configuring MEBx", Help: "This Formset contains forms for configuring MEBx", QuestionFlags: 0x4, QuestionId: 0x3002, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "-", Help: "-", QuestionFlags: 0x4, QuestionId: 0x3003, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

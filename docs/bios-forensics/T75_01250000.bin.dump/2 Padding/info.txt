@@ -1,0 +1,8 @@
+Type: Padding
+Subtype: Non-empty
+Base: 4C320h
+Address: FF04C000h
+Offset: 4C320h
+Full size: 1000h (4096)
+Body size: 1000h (4096)
+

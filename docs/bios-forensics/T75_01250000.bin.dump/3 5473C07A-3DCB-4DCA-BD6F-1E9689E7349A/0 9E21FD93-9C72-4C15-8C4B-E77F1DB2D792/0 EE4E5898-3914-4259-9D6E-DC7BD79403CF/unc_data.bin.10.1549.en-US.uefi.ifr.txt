@@ -1,0 +1,35 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 9B942747-154E-4D29-A436-BF7100C8B53B, Title: "Intel (R) Management Engine Firmware", Help: "Intel (R) Integrated Sensor Hub Firmware"
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x3
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 9B942747-154E-4D29-A436-BF7100C8B53B, VarStoreId: 0x1, Size: 0x260, Name: "IP4_CONFIG2_IFR_NVDATA"
+	Form FormId: 0x1, Title: "Intel Management Engine Firmware Update failed:"
+		CheckBox Prompt: "OK", Help: "Full Recovery of the Intel Management Engine Firmware failed, because", QuestionFlags: 0x4, QuestionId: 0x100, VarStoreId: 0x1, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x100, Value: 0x0
+			CheckBox Prompt: "the system was unable to find a valid firmware image file.", Help: "the system was unable to find a valid firmware image file.", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x1, VarOffset: 0x1, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x101, Value: 0x1
+				EqIdVal QuestionId: 0x100, Value: 0x0
+				Or 
+			End 
+			String Prompt: "Intel Management Engine related functionality will be unavailable.  Please install", Help: "the latest version of Intel Management Engine firmware to complete full recovery.", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x1, VarStoreInfo: 0x2, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+			End 
+			String Prompt: "Update of the Intel Management Engine Firmware failed, because the", Help: "target Intel Management Engine firmware update was found to be invalid.", QuestionFlags: 0x4, QuestionId: 0x103, VarStoreId: 0x1, VarStoreInfo: 0x22, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+			End 
+			String Prompt: "HP Sure Start detected corruption in the Intel ® Management Engine firmware.", Help: "The full recovery process of the Intel Management Engine firmware cannot complete because", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x1, VarStoreInfo: 0x42, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+			End 
+			String Prompt: "the Intel Management Engine is disabled in BIOS setup.  Please enable the Intel", Help: "Management Engine in BIOS setup to complete full recovery of the Intel Management", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x1, VarStoreInfo: 0x62, MinSize: 0x7, MaxSize: 0xFF, Flags: 0x0
+			End 
+		End 
+		Subtitle Prompt: "Please select Continue to boot to the operating system.", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "Engine firmware.", Help: "Engine firmware.", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

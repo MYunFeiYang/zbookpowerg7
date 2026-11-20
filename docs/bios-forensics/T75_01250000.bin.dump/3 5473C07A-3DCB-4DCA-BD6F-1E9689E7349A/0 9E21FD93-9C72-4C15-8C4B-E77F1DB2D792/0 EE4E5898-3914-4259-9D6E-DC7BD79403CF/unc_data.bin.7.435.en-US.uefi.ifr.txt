@@ -1,0 +1,726 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 61FA5536-FE13-4B37-B1D0-0E7CDBD517F2, Title: "SMC Command Status", Help: ""
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x0
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 61FA5536-FE13-4B37-B1D0-0E7CDBD517F2, VarStoreId: 0x1234, Size: 0x2458, Name: "MyIfrNVData"
+	Form FormId: 0x1, Title: "InvalidId"
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x1
+			Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x8
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x0
+			Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xB
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3085, VarStoreId: 0x1234, VarOffset: 0x1773, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3085, Value: 0x1
+			SuppressIf 
+				EqIdVal QuestionId: 0x3095, Value: 0x1
+				Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x6
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x3095, Value: 0x0
+				Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x4, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xC
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x3003, Value: 0x0
+				SuppressIf 
+					EqIdVal QuestionId: 0x3095, Value: 0x1
+					Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x5, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x7
+				End 
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x3003, Value: 0x0
+				SuppressIf 
+					EqIdVal QuestionId: 0x3095, Value: 0x0
+					Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x6, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xD
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3085, Value: 0x0
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3123, VarStoreId: 0x1234, VarOffset: 0x2450, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "InvalidId" Value: 1
+				OneOfOption Option: "InvalidId" Value: 0, Default
+			End 
+		End 
+		Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x601, VarStoreId: 0x1234, VarOffset: 0x2451, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3085, Value: 0x0
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3088, VarStoreId: 0x1234, VarOffset: 0xA42, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "InvalidId" Value: 0, Default
+				OneOfOption Option: "InvalidId" Value: 1
+			End 
+		End 
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x1
+			Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x0
+			Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3083, VarStoreId: 0x1234, VarOffset: 0xA4D, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x1
+			String Prompt: "Please press the Enter key to continue immediately.", Help: "Command:  0x%02x.", QuestionFlags: 0x1, QuestionId: 0x3001, VarStoreId: 0x1234, VarStoreInfo: 0x150C, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x0
+			String Prompt: "SMC command handled successfully.", Help: "Command:  0x%02x.", QuestionFlags: 0x1, QuestionId: 0x3119, VarStoreId: 0x1234, VarStoreInfo: 0x150C, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+			End 
+		End 
+		String Prompt: "Please enter the command password.", Help: "Enter Command Password", QuestionFlags: 0x1, QuestionId: 0x3002, VarStoreId: 0x1234, VarStoreInfo: 0x1578, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3003, VarStoreId: 0x1234, VarOffset: 0x4B, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3004, VarStoreId: 0x1234, VarOffset: 0x1779, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3005, VarStoreId: 0x1234, VarOffset: 0x177A, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3006, VarStoreId: 0x1234, VarStoreInfo: 0x13EA, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3007, VarStoreId: 0x1234, VarStoreInfo: 0x1402, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3008, VarStoreId: 0x1234, VarStoreInfo: 0x13BA, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3009, VarStoreId: 0x1234, VarStoreInfo: 0x13D2, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3010, VarStoreId: 0x1234, VarStoreInfo: 0x13A2, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3011, VarStoreId: 0x1234, VarStoreInfo: 0x1432, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3012, VarStoreId: 0x1234, VarStoreInfo: 0x141A, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3013, VarStoreId: 0x1234, VarStoreInfo: 0x144A, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3014, VarStoreId: 0x1234, VarStoreInfo: 0x1462, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3016, VarStoreId: 0x1234, VarOffset: 0xA45, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3017, VarStoreId: 0x1234, VarOffset: 0xA49, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3018, VarStoreId: 0x1234, VarOffset: 0x754, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3019, VarStoreId: 0x1234, VarOffset: 0xA4B, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3020, VarStoreId: 0x1234, VarOffset: 0x755, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3082, VarStoreId: 0x1234, VarOffset: 0x177D, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3084, VarStoreId: 0x1234, VarOffset: 0x1773, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3087, VarStoreId: 0x1234, VarOffset: 0x178B, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3089, VarStoreId: 0x1234, VarOffset: 0x1774, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+	End 
+	Form FormId: 0x2, Title: "InvalidId"
+		Subtitle Prompt: "SMC command failure.", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3021, VarStoreId: 0x1234, VarOffset: 0x755, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3021, Value: 0x1
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3022, VarStoreId: 0x1234, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "InvalidId" Value: 0
+				OneOfOption Option: "InvalidId" Value: 1, Default
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x1
+			GrayOutIf 
+				EqIdVal QuestionId: 0x3021, Value: 0x0
+				OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3023, VarStoreId: 0x1234, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+					OneOfOption Option: "InvalidId" Value: 0
+					OneOfOption Option: "InvalidId" Value: 1, Default
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x3021, Value: 0x0
+				OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3120, VarStoreId: 0x1234, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+					OneOfOption Option: "InvalidId" Value: 0
+					OneOfOption Option: "InvalidId" Value: 1, Default
+				End 
+			End 
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3024, VarStoreId: 0x1234, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0
+			OneOfOption Option: "InvalidId" Value: 1, Default
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3025, VarStoreId: 0x1234, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x1
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3026, VarStoreId: 0x1234, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+				OneOfOption Option: "InvalidId" Value: 0
+				OneOfOption Option: "InvalidId" Value: 1, Default
+				OneOfOption Option: "InvalidId" Value: 2
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x0
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3121, VarStoreId: 0x1234, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+				OneOfOption Option: "InvalidId" Value: 0
+				OneOfOption Option: "InvalidId" Value: 1, Default
+				OneOfOption Option: "InvalidId" Value: 2
+			End 
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3027, VarStoreId: 0x1234, VarStoreInfo: 0x4, MinSize: 0x0, MaxSize: 0x20, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3028, VarStoreId: 0x1234, VarOffset: 0x46, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x1
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3029, VarStoreId: 0x1234, VarOffset: 0x47, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "InvalidId" Value: 0, Default
+				OneOfOption Option: "InvalidId" Value: 1
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x0
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3122, VarStoreId: 0x1234, VarOffset: 0x47, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "InvalidId" Value: 0, Default
+				OneOfOption Option: "InvalidId" Value: 1
+			End 
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3030, VarStoreId: 0x1234, VarOffset: 0x48, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3031, VarStoreId: 0x1234, VarOffset: 0x49, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x3C, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x3032, VarStoreId: 0x1234, VarOffset: 0x755, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			SuppressIf 
+				EqIdVal QuestionId: 0x3082, Value: 0x0
+					EqIdVal QuestionId: 0x3082, Value: 0x6
+					Or 
+				End 
+				OneOfOption Option: "InvalidId" Value: 0, Default
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x3082, Value: 0x0
+					EqIdVal QuestionId: 0x3082, Value: 0x4
+					Or 
+				End 
+				OneOfOption Option: "InvalidId" Value: 1
+			End 
+		End 
+	End 
+	Form FormId: 0x3, Title: "InvalidId"
+		Subtitle Prompt: "SMC command failure.", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3033, VarStoreId: 0x1234, VarOffset: 0x755, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x201, VarStoreId: 0x1234, VarStoreInfo: 0x4C, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3033, Value: 0x1
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x202, VarStoreId: 0x1234, VarStoreInfo: 0x9C, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3033, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x209, VarStoreId: 0x1234, VarStoreInfo: 0xEC, MinSize: 0x1, MaxSize: 0x3, Flags: 0x0
+			End 
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x203, VarStoreId: 0x1234, VarStoreInfo: 0x13C, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x204, VarStoreId: 0x1234, VarStoreInfo: 0x18C, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x205, VarStoreId: 0x1234, VarStoreInfo: 0x1DC, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x206, VarStoreId: 0x1234, VarStoreInfo: 0x22C, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x1
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x20A, VarStoreId: 0x1234, VarStoreInfo: 0x32E, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x2
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x207, VarStoreId: 0x1234, VarStoreInfo: 0x430, MinSize: 0x0, MaxSize: 0x20, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3093, VarStoreId: 0x1234, VarOffset: 0x1774, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3093, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x208, VarStoreId: 0x1234, VarStoreInfo: 0x472, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3093, Value: 0x1
+			Password Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x20B, VarStoreId: 0x1234, VarStoreInfo: 0x472, MinSize: 0x0, MaxSize: 0x10
+			End 
+		End 
+	End 
+	Form FormId: 0x4, Title: "InvalidId"
+		Subtitle Prompt: "SMC command failure.", Help: "", Flags: 0x0
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3044, VarStoreId: 0x1234, VarOffset: 0x494, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x302, VarStoreId: 0x1234, VarStoreInfo: 0x498, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3046, VarStoreId: 0x1234, VarOffset: 0x4E8, Flags: 0x11, Size: 16, Min: 0x1, Max: 0xFFFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 3260
+			InconsistentIf Error: "InvalidId"
+				EqIdVal QuestionId: 0x3046, Value: 0x0
+			End 
+		End 
+		Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3047, VarStoreId: 0x1234, VarOffset: 0x4EA, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x305, VarStoreId: 0x1234, VarStoreInfo: 0x4EC, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x1
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x308, VarStoreId: 0x1234, VarStoreInfo: 0x5EE, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x2
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x306, VarStoreId: 0x1234, VarStoreInfo: 0x6F0, MinSize: 0x0, MaxSize: 0x20, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3094, VarStoreId: 0x1234, VarOffset: 0x1774, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3094, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x307, VarStoreId: 0x1234, VarStoreInfo: 0x732, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3094, Value: 0x1
+			Password Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x309, VarStoreId: 0x1234, VarStoreInfo: 0x732, MinSize: 0x0, MaxSize: 0x10
+			End 
+		End 
+	End 
+	Form FormId: 0x5, Title: "InvalidId"
+		Subtitle Prompt: "SMC command failure.", Help: "", Flags: 0x0
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3052, VarStoreId: 0x1234, VarOffset: 0x756, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x402, VarStoreId: 0x1234, VarStoreInfo: 0x75A, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3054, VarStoreId: 0x1234, VarOffset: 0x7AA, Flags: 0x11, Size: 16, Min: 0x1, Max: 0xFFFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 3260
+			InconsistentIf Error: "InvalidId"
+				EqIdVal QuestionId: 0x3054, Value: 0x0
+			End 
+		End 
+		Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3055, VarStoreId: 0x1234, VarOffset: 0x7AC, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x405, VarStoreId: 0x1234, VarStoreInfo: 0x7AE, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x1
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x408, VarStoreId: 0x1234, VarStoreInfo: 0x8B0, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x2
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x406, VarStoreId: 0x1234, VarStoreInfo: 0x9B2, MinSize: 0x0, MaxSize: 0x20, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3095, VarStoreId: 0x1234, VarOffset: 0x1774, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x407, VarStoreId: 0x1234, VarStoreInfo: 0x9F4, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x1
+			Password Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x409, VarStoreId: 0x1234, VarStoreInfo: 0x9F4, MinSize: 0x0, MaxSize: 0x10
+			End 
+		End 
+	End 
+	Form FormId: 0x6, Title: "InvalidId"
+		Subtitle Prompt: "SMC command failure.", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3060, VarStoreId: 0x1234, VarOffset: 0xA50, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "InvalidId" Value: 0
+				OneOfOption Option: "InvalidId" Value: 1
+			End 
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3061, VarStoreId: 0x1234, VarOffset: 0xA40, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x7, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0
+			SuppressIf 
+				EqIdVal QuestionId: 0x3003, Value: 0x0
+				OneOfOption Option: "InvalidId" Value: 3
+			End 
+			OneOfOption Option: "InvalidId" Value: 7, Default
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3062, VarStoreId: 0x1234, VarOffset: 0xA53, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x3, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+			OneOfOption Option: "InvalidId" Value: 2
+			OneOfOption Option: "InvalidId" Value: 3
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3063, VarStoreId: 0x1234, VarOffset: 0xA51, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3064, VarStoreId: 0x1234, VarOffset: 0xA54, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3065, VarStoreId: 0x1234, VarOffset: 0xA52, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF, Step: 0x0
+			Default DefaultId: 0x0 Value: 5
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3066, VarStoreId: 0x1234, VarOffset: 0xA41, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x4, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+			OneOfOption Option: "InvalidId" Value: 2
+			OneOfOption Option: "InvalidId" Value: 3
+			OneOfOption Option: "InvalidId" Value: 4
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3067, VarStoreId: 0x1234, VarOffset: 0xA42, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3068, VarStoreId: 0x1234, VarOffset: 0xA43, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3068, Value: 0x0
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3069, VarStoreId: 0x1234, VarOffset: 0xA3C, Flags: 0x12, Size: 32, Min: 0x1, Max: 0xFFE, Step: 0x0
+				Default DefaultId: 0x0 Value: 1
+				InconsistentIf Error: "InvalidId"
+					EqIdVal QuestionId: 0x3069, Value: 0x0
+				End 
+			End 
+		End 
+	End 
+	Form FormId: 0x7, Title: "InvalidId"
+		Subtitle Prompt: "SMC command failure.", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x7, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x8, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x3
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x9, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x4
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0xA, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x5
+		SuppressIf 
+			EqIdVal QuestionId: 0x3018, Value: 0x0
+			Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0xB, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x9
+		End 
+	End 
+	Form FormId: 0x8, Title: "InvalidId"
+		Subtitle Prompt: "SMC command failure.", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3017, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3070, VarStoreId: 0x1234, VarStoreInfo: 0x127E, MinSize: 0x0, MaxSize: 0x14, Flags: 0x0
+			End 
+		End 
+		Subtitle Prompt: "InvalidId", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3084, Value: 0x0
+			Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3071, VarStoreId: 0x1234, VarStoreInfo: 0x12A6, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x6
+				Or 
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3072, VarStoreId: 0x1234, VarStoreInfo: 0x12B8, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x5
+				Or 
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3073, VarStoreId: 0x1234, VarStoreInfo: 0x12CA, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x3
+				Or 
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3074, VarStoreId: 0x1234, VarStoreInfo: 0x12DC, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3075, VarStoreId: 0x1234, VarStoreInfo: 0x12EE, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3005, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3076, VarStoreId: 0x1234, VarStoreInfo: 0x1324, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3004, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3077, VarStoreId: 0x1234, VarStoreInfo: 0x1336, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3078, VarStoreId: 0x1234, VarStoreInfo: 0x1300, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3087, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3086, VarStoreId: 0x1234, VarStoreInfo: 0x1390, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0xC, VarStoreId: 0x1234, VarStoreInfo: 0x137E, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3084, Value: 0x1
+			Text Prompt: "InvalidId", Help: "InvalidId", Text: ""
+			Text Prompt: "InvalidId", Help: "InvalidId", Text: ""
+		End 
+	End 
+	Form FormId: 0x9, Title: "InvalidId"
+		Subtitle Prompt: "SMC command failure.", Help: "", Flags: 0x0
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x501, VarStoreId: 0x1234, VarStoreInfo: 0xA18, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3080, VarStoreId: 0x1234, VarOffset: 0xA16, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3081, VarStoreId: 0x1234, VarOffset: 0xA17, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+	End 
+	Form FormId: 0xA, Title: "InvalidId"
+		Subtitle Prompt: "SMC command failure.", Help: "", Flags: 0x0
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x502, VarStoreId: 0x1234, VarStoreInfo: 0xA18, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3097, VarStoreId: 0x1234, VarOffset: 0xA16, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3098, VarStoreId: 0x1234, VarOffset: 0xA17, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+	End 
+	Form FormId: 0xB, Title: "InvalidId"
+		Subtitle Prompt: "SMC command failure.", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3017, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3099, VarStoreId: 0x1234, VarStoreInfo: 0x127E, MinSize: 0x0, MaxSize: 0x14, Flags: 0x0
+			End 
+		End 
+		Subtitle Prompt: "InvalidId", Help: "", Flags: 0x0
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3100, VarStoreId: 0x1234, VarStoreInfo: 0x12A6, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x6
+				Or 
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3101, VarStoreId: 0x1234, VarStoreInfo: 0x12B8, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x5
+				Or 
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3102, VarStoreId: 0x1234, VarStoreInfo: 0x12CA, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x3
+				Or 
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3103, VarStoreId: 0x1234, VarStoreInfo: 0x12DC, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3104, VarStoreId: 0x1234, VarStoreInfo: 0x12EE, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3005, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3105, VarStoreId: 0x1234, VarStoreInfo: 0x1324, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3004, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3106, VarStoreId: 0x1234, VarStoreInfo: 0x1336, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3107, VarStoreId: 0x1234, VarStoreInfo: 0x1300, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3087, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3108, VarStoreId: 0x1234, VarStoreInfo: 0x1390, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0xD, VarStoreId: 0x1234, VarStoreInfo: 0x137E, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+	End 
+	Form FormId: 0xC, Title: "InvalidId"
+		Subtitle Prompt: "SMC command failure.", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3109, VarStoreId: 0x1234, VarOffset: 0xA50, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "InvalidId" Value: 0
+				OneOfOption Option: "InvalidId" Value: 1
+			End 
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3110, VarStoreId: 0x1234, VarOffset: 0xA40, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x7, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0
+			SuppressIf 
+				EqIdVal QuestionId: 0x3003, Value: 0x0
+				OneOfOption Option: "InvalidId" Value: 3
+			End 
+			OneOfOption Option: "InvalidId" Value: 7, Default
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3111, VarStoreId: 0x1234, VarOffset: 0xA53, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x3, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+			OneOfOption Option: "InvalidId" Value: 2
+			OneOfOption Option: "InvalidId" Value: 3
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3112, VarStoreId: 0x1234, VarOffset: 0xA51, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3113, VarStoreId: 0x1234, VarOffset: 0xA54, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3114, VarStoreId: 0x1234, VarOffset: 0xA52, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF, Step: 0x0
+			Default DefaultId: 0x0 Value: 5
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3115, VarStoreId: 0x1234, VarOffset: 0xA41, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x4, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+			OneOfOption Option: "InvalidId" Value: 2
+			OneOfOption Option: "InvalidId" Value: 3
+			OneOfOption Option: "InvalidId" Value: 4
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3116, VarStoreId: 0x1234, VarOffset: 0xA42, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3117, VarStoreId: 0x1234, VarOffset: 0xA43, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3117, Value: 0x0
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3118, VarStoreId: 0x1234, VarOffset: 0xA3C, Flags: 0x12, Size: 32, Min: 0x1, Max: 0xFFE, Step: 0x0
+				Default DefaultId: 0x0 Value: 1
+				InconsistentIf Error: "InvalidId"
+					EqIdVal QuestionId: 0x3118, Value: 0x0
+				End 
+			End 
+		End 
+	End 
+	Form FormId: 0xD, Title: "InvalidId"
+		Subtitle Prompt: "SMC command failure.", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0xE, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0xF, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x3
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x10, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x4
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x11, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x5
+		SuppressIf 
+			EqIdVal QuestionId: 0x3018, Value: 0x0
+			Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x12, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xA
+		End 
+	End 
+End 

@@ -1,0 +1,35 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 9B942747-154E-4D29-A436-BF7100C8B53B, Title: "System Security Issue has been detected.", Help: "The BIOS has lost communication with the HP Sure Run software indicating"
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x3
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 9B942747-154E-4D29-A436-BF7100C8B53B, VarStoreId: 0x1, Size: 0x260, Name: "IP4_CONFIG2_IFR_NVDATA"
+	Form FormId: 0x1, Title: "that the system may have been tampered with. After the operating system boots/resumes, please save"
+		CheckBox Prompt: "For more information, please visit: www.hp.com/go/techcenter/startup", Help: "Please press any key to continue", QuestionFlags: 0x4, QuestionId: 0x100, VarStoreId: 0x1, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x100, Value: 0x0
+			CheckBox Prompt: "HP Sure Run has failed to restore the platform", Help: "HP Sure Run has failed to restore the platform", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x1, VarOffset: 0x1, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x101, Value: 0x1
+				EqIdVal QuestionId: 0x100, Value: 0x0
+				Or 
+			End 
+			String Prompt: "software to a good working state.  Please select an option below or", Help: "press ESC to ignore this warning and continue to boot normally.", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x1, VarStoreInfo: 0x2, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+			End 
+			String Prompt: "Reinstall OS", Help: "Deactivate HP Sure Run", QuestionFlags: 0x4, QuestionId: 0x103, VarStoreId: 0x1, VarStoreInfo: 0x22, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+			End 
+			String Prompt: "Suspend HP Sure Run until reboot", Help: "ESC - Continue to boot normally", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x1, VarStoreInfo: 0x42, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+			End 
+			String Prompt: "Options to Reinstall OS, Deactivate or Suspend HP Sure Run are not currently", Help: "available because the selected security policy for HP Sure Run requires a", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x1, VarStoreInfo: 0x62, MinSize: 0x7, MaxSize: 0xFF, Flags: 0x0
+			End 
+		End 
+		Subtitle Prompt: "OK", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "password that is not set on this system.", Help: "password that is not set on this system.", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

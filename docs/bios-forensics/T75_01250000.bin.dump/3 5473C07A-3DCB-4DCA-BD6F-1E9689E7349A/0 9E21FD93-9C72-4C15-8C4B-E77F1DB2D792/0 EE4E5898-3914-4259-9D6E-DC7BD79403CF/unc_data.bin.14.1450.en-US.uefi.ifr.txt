@@ -1,0 +1,31 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: FE561596-E6BF-41A6-8376-C72B719874D0, Title: "disable", Help: "enable"
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	Form FormId: 0x1000, Title: "disable"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x640
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+	End 
+	Form FormId: 0x2000, Title: "NOTE: This action will turn off the TPM
+
+"
+		String Prompt: "A configuration change was requested to %s ", Help: "this computer's TPM (Trusted Platform Module)", QuestionFlags: 0x4, QuestionId: 0x2001, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, MinSize: 0x2, MaxSize: 0x14, Flags: 0x0
+		End 
+		Subtitle Prompt: "enable", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "A configuration change was requested to allow the Operating System to %s the", Help: "A configuration change was requested to allow the Operating System to %s the", QuestionFlags: 0x4, QuestionId: 0x2002, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "computer's TPM (Trusted Platform Module) without asking for user confirmation in the future.", Help: "computer's TPM (Trusted Platform Module) without asking for user confirmation in the future.", QuestionFlags: 0x4, QuestionId: 0x2003, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x3000, Title: "Tpm Ppi"
+		String Prompt: "WARNING: Clearing erases information stored on the TPM.", Help: "You will lose all created keys and access to data encrypted by these keys. ", QuestionFlags: 0x4, QuestionId: 0x3001, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, MinSize: 0x2, MaxSize: 0x14, Flags: 0x0
+		End 
+		Subtitle Prompt: "enable", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "NOTE: This action does not clear the TPM, but by approving this configuration change,", Help: "NOTE: This action does not clear the TPM, but by approving this configuration change,", QuestionFlags: 0x4, QuestionId: 0x3002, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "future actions to clear the TPM will not require user confirmation.", Help: "future actions to clear the TPM will not require user confirmation.", QuestionFlags: 0x4, QuestionId: 0x3003, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

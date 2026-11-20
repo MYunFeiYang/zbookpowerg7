@@ -1,0 +1,56 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 02EEA107-98DB-400E-9830-460A1542D799, Title: "!", Help: "Browser met some error, return!"
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 02EEA107-98DB-400E-9830-460A1542D799, VarStoreId: 0x1, Size: 0x638, Name: "IP6_CONFIG_IFR_NVDATA"
+	Form FormId: 0x3, Title: "Form not found, return!"
+		Ref Prompt: "?", Help: "Reconnect the controller failed!", QuestionFlags: 0x4, QuestionId: 0x108, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x1, Title: "Form not found, return!"
+		Text Prompt: "F9=Reset to Defaults", Help: "F10=Save", Text: "Failed to Save"
+		Text Prompt: "NO_SUBMIT_IF check fail.", Help: "More (D/d)", Text: "More (U/u)"
+		Text Prompt: "Please type in your password", Help: "Please type in your new password", Text: "Please confirm your new password"
+		Text Prompt: "Passwords are not the same", Help: "Incorrect password", Text: " and "
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3840
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Press ENTER to continue", Help: "Please type in your data", Text: " and "
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3E80
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "", Help: "Please enter enough characters", Text: " and "
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x44C0
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Question value mismatch with Option value!", Help: "Form is suppressed. Nothing is displayed.", Text: " and "
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x4B00
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		String Prompt: "Convert string to device path fail. Can't goto the destination.", Help: "Press D(d) to discard changes for this form, Press G(g) to go to this form", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x1, VarStoreInfo: 0xC, MinSize: 0x1, MaxSize: 0x17, Flags: 0x0
+		End 
+		Numeric Prompt: "D (d)", Help: "G (g)", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x8, Flags: 0x12, Size: 32, Min: 0x0, Max: 0xA, Step: 0x0
+		End 
+		OneOf Prompt: "Press D(d) to discard changes for this form, Press C(c) to check the error", Help: "C (c)", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x1, VarOffset: 0x4, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Discard configuration changes" Value: 0, Default
+			OneOfOption Option: "Load default configuration" Value: 1
+		End 
+		Subtitle Prompt: " and ", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2, Value: 0x0
+			Ref Prompt: "load default configuration", Help: "Save configuration changes", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+			Subtitle Prompt: " and ", Help: "", Flags: 0x0
+			End 
+		End 
+		Action Prompt: "Y (y)", Help: "N (n)", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x2, Title: "load default configuration"
+		String Prompt: "save configuration changes", Help: "Reset", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x1, VarStoreInfo: 0x3E, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "reset", Help: "Exit", QuestionFlags: 0x4, QuestionId: 0x103, VarStoreId: 0x1, VarStoreInfo: 0x23C, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "exit", Help: "Press 'Y' to confirm, 'N'/'ESC' to ignore.", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x1, VarStoreInfo: 0x43A, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		Action Prompt: "O (o)", Help: "O (o)", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "C (c)", Help: "C (c)", QuestionFlags: 0x4, QuestionId: 0x107, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

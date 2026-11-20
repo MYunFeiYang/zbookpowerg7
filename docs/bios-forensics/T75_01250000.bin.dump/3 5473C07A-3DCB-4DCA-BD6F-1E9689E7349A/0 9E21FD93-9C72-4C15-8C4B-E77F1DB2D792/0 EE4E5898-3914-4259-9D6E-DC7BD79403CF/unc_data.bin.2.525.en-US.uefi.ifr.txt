@@ -1,0 +1,1341 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: D6E5D4DD-1537-4680-B804-676FB7E36DB5, Title: "Security", Help: ""
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0xC2
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x0
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x4, Size: 0x10, Name: "HP_SecurityOptions"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0xF, Size: 0x4, Name: "TpmOptions"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0xA, Size: 0x27, Name: "PlatformSupport"
+	VarStore Guid: 20AB3EB1-3C8F-4A4C-B87E-372426066D97, VarStoreId: 0xB, Size: 0x1A, Name: "FactoryConfigFlags"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0xE, Size: 0x6, Name: "SetupMiscMemFlags"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0xC, Size: 0x144, Name: "HP_TAGS"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x18, Size: 0xB, Name: "SecurityMemFlags"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x1A, Size: 0x6, Name: "SetupMemFlags"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x24, Size: 0x1, Name: "TpmPolicy"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x3E, Size: 0x1, Name: "AdminAtPowerOnAuthPolicy"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x2D, Size: 0x2, Name: "PwDisplay"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x5, Size: 0x5, Name: "HP_DeviceOptions"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x45, Size: 0x2, Name: "EA43BE5C"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x49, Size: 0x1, Name: "FbAndroid"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x19, Size: 0xC, Name: "HP_DriveLock"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x16, Size: 0x1, Name: "TheftRecoveryState"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x17, Size: 0x2, Name: "TheftRecoveryUserDisable"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x8600, Size: 0x1E, Name: "IntelTechnologiesOptions"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x8604, Size: 0x8, Name: "SoftwareGuardTech"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x1B, Size: 0x2, Name: "HP_MbrSaveRestore"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x29, Size: 0x2, Name: "HP_GptSaveRestore"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x38, Size: 0x1, Name: "HP_MbrGptRecoveryPolicy"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x1C, Size: 0x6, Name: "HP_SureStartSetup"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x23, Size: 0x1, Name: "SureStartGbeConfig"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x26, Size: 0x2, Name: "IntrusionDetectionConfiguration"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x28, Size: 0x1, Name: "BiosDataLock"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x39, Size: 0x1, Name: "B72460CE"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x3B, Size: 0x1, Name: "A8F1FED6"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x3A, Size: 0x1, Name: "P21Configuration"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x36, Size: 0x1, Name: "HepConfiguration"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x3F, Size: 0x2, Name: "BeamConfiguration"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x40, Size: 0x3, Name: "SecurePlatformManagementDisplay"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x3C, Size: 0x1, Name: "A3521D6A"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x1F, Size: 0x1, Name: "FingerPrintReset"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x31, Size: 0x2, Name: "BlockSidAuthSetup"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x22, Size: 0x1, Name: "UefiCAState"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x2A, Size: 0x1, Name: "DeviceGuardState"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x32, Size: 0x1, Name: "UefiCaAllowDisable"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x64, Size: 0x3, Name: "D21361C0"
+	Form FormId: 0x1, Title: "Password Settings"
+		Subtitle Prompt: "Administrator Tools", Help: "", Flags: 0x0
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x33, Value: 0x0
+				EqIdVal QuestionId: 0x5E, Value: 0x1
+				Or 
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x34, Value: 0x1
+				Action Prompt: "Create BIOS Administrator Password", Help: "The Administrator password controls access to the following features:
+  - Setup Menu (F10)
+  - 3rd Party Option ROM Management (F3)
+  - Update System ROM
+  - WMI Commands that change system settings
+  - BIOS Configuration Utility (BCU)
+  - Alternative Power-On Password", QuestionFlags: 0x4, QuestionId: 0x2027, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+				End 
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x33, Value: 0x0
+				EqIdVal QuestionId: 0x5E, Value: 0x1
+				Or 
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x34, Value: 0x0
+				Action Prompt: "Change BIOS Administrator Password", Help: "", QuestionFlags: 0x4, QuestionId: 0x2015, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+				End 
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x5D, Value: 0x1
+			SuppressIf 
+				EqIdVal QuestionId: 0x5C, Value: 0x1
+				Action Prompt: "Create POST Power-On Password", Help: "", QuestionFlags: 0x4, QuestionId: 0x2028, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+				End 
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x5D, Value: 0x1
+			SuppressIf 
+				EqIdVal QuestionId: 0x5C, Value: 0x0
+				Action Prompt: "Change POST Power-On Password", Help: "", QuestionFlags: 0x4, QuestionId: 0x2014, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+				End 
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x5C, Value: 0x0
+				EqIdVal QuestionId: 0x34, Value: 0x0
+				And 
+			End 
+			Ref Prompt: "Password Policies", Help: "", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x34, Value: 0x0
+				EqIdVal QuestionId: 0x35, Value: 0x0
+				And 
+			End 
+			Ref Prompt: "Administrator Authentication Policies", Help: "", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xF
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x5B, Value: 0x0
+			CheckBox Prompt: "Fingerprint Reset on Reboot", Help: "", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x1F, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Security Configuration", Help: "", Flags: 0x0
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x33, Value: 0x0
+			SuppressIf 
+				EqIdVal QuestionId: 0x5A, Value: 0x0
+					EqIdVal QuestionId: 0x58, Value: 0x1
+					Or 
+				End 
+				Ref Prompt: "TPM Embedded Security", Help: "", QuestionFlags: 0x0, QuestionId: 0x4, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x3
+			End 
+		End 
+		Ref Prompt: "BIOS Sure Start", Help: "", QuestionFlags: 0x0, QuestionId: 0x5, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xB
+		SuppressIf 
+			EqIdVal QuestionId: 0x3B, Value: 0x1
+			Ref Prompt: "Secure Boot Configuration", Help: "", QuestionFlags: 0x0, QuestionId: 0x6, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x10
+		End 
+		Ref Prompt: "Secure Platform Management (SPM)", Help: "", QuestionFlags: 0x0, QuestionId: 0x7, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xD
+		GrayOutIf 
+			EqIdVal QuestionId: 0x33, Value: 0x0
+			CheckBox Prompt: "Physical Presence Interface", Help: "When this feature is set to "Enable", then the user is notified on system power up
+when changes are made to system security policy, and the user must manually
+agree to those changes before the change is confirmed", QuestionFlags: 0x0, QuestionId: 0x8, VarStoreId: 0x3C, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x33, Value: 0x0
+			SuppressIf 
+				EqIdVal QuestionId: 0x59, Value: 0x0
+					EqIdVal QuestionId: 0x58, Value: 0x1
+					Or 
+				End 
+				GrayOutIf 
+					EqIdVal QuestionId: 0x2016, Value: 0x0
+						EqIdVal QuestionId: 0x2017, Value: 0x0
+						Or 
+						EqIdVal QuestionId: 0x57, Value: 0x0
+						Or 
+						EqIdVal QuestionId: 0x56, Value: 0x0
+						Or 
+					End 
+					CheckBox Prompt: "Trusted Execution Technology (TXT)", Help: "", QuestionFlags: 0x4, QuestionId: 0x3011, VarStoreId: 0x8600, VarOffset: 0x2, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+					End 
+				End 
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x33, Value: 0x0
+					EqIdVal QuestionId: 0x59, Value: 0x0
+					Or 
+					EqIdVal QuestionId: 0x58, Value: 0x1
+					Or 
+					EqIdVal QuestionId: 0x57, Value: 0x1
+					EqIdVal QuestionId: 0x56, Value: 0x1
+					And 
+					EqIdVal QuestionId: 0x2016, Value: 0x1
+					And 
+					EqIdVal QuestionId: 0x2017, Value: 0x1
+					And 
+					Or 
+				End 
+				GrayOutIf 
+					EqIdVal QuestionId: 0x2016, Value: 0x0
+						EqIdVal QuestionId: 0x2017, Value: 0x0
+						Or 
+						EqIdVal QuestionId: 0x57, Value: 0x0
+						Or 
+						EqIdVal QuestionId: 0x56, Value: 0x0
+						Or 
+					End 
+					Text Prompt: "    TXT cannot be enabled unless VTx, VTd and TPM are enabled first.", Help: "", Text: ""
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x55, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x33, Value: 0x0
+				OneOf Prompt: "Intel Software Guard Extensions (SGX)", Help: "Enable/Disable Software Guard Extensions (SGX)", QuestionFlags: 0x14, QuestionId: 0x3012, VarStoreId: 0x8604, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+					OneOfOption Option: "Disable" Value: 0
+					OneOfOption Option: "Enable" Value: 1
+					OneOfOption Option: "Software control" Value: 2
+				End 
+			End 
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Utilities", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "Hard Drive Utilities", Help: "", QuestionFlags: 0x0, QuestionId: 0x9, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xC
+		Text Prompt: "   Absolute® Persistence Module Current State", Help: "", Text: ""
+		SuppressIf 
+			EqIdVal QuestionId: 0x54, Value: 0x0
+			Text Prompt: "      Activation Status : Active", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x54, Value: 0x1
+			Text Prompt: "      Activation Status : Inactive", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x53, Value: 0x0
+				EqIdVal QuestionId: 0x52, Value: 0x0
+				And 
+			End 
+			Text Prompt: "      Absolute® Persistence Module Permanent Disable : Yes", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x53, Value: 0x1
+				EqIdVal QuestionId: 0x52, Value: 0x1
+				Or 
+			End 
+			Text Prompt: "      Absolute® Persistence Module Permanent Disable : No", Help: "", Text: ""
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x33, Value: 0x0
+			CheckBox Prompt: "System Management Command", Help: "", QuestionFlags: 0x0, QuestionId: 0xA, VarStoreId: 0x4, VarOffset: 0xA, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x34, Value: 0x1
+				EqIdVal QuestionId: 0x35, Value: 0x1
+				Or 
+			End 
+			Ref Prompt: "Restore Security Settings to Factory Defaults", Help: "", QuestionFlags: 0x0, QuestionId: 0xB, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x7
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x34, Value: 0x0
+				EqIdVal QuestionId: 0x35, Value: 0x0
+				And 
+			End 
+			Action Prompt: "Restore Security Settings to Factory Defaults", Help: "", QuestionFlags: 0x4, QuestionId: 0x201C, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+	End 
+	Form FormId: 0x2, Title: "Password Policies"
+		Subtitle Prompt: "Password Policies", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Numeric Prompt: "Password Minimum Length ", Help: "", QuestionFlags: 0x0, QuestionId: 0xC, VarStoreId: 0x4, VarOffset: 0x0, Flags: 0x11, Size: 16, Min: 0x4, Max: 0x20, Step: 0x1
+			Default DefaultId: 0x0 Value: 8
+		End 
+		CheckBox Prompt: "At least one symbol is required in Administrator and User passwords", Help: "", QuestionFlags: 0x0, QuestionId: 0xD, VarStoreId: 0x4, VarOffset: 0x2, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		CheckBox Prompt: "At least one number is required in Administrator and User passwords", Help: "", QuestionFlags: 0x0, QuestionId: 0xE, VarStoreId: 0x4, VarOffset: 0x3, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		CheckBox Prompt: "At least one upper case character is required in Administrator and User passwords", Help: "", QuestionFlags: 0x0, QuestionId: 0xF, VarStoreId: 0x4, VarOffset: 0x4, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		CheckBox Prompt: "At least one lower case character is required in Administrator and User passwords", Help: "", QuestionFlags: 0x0, QuestionId: 0x10, VarStoreId: 0x4, VarOffset: 0x5, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		CheckBox Prompt: "Are spaces allowed in Administrator and User passwords?", Help: "", QuestionFlags: 0x0, QuestionId: 0x11, VarStoreId: 0x4, VarOffset: 0x6, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		OneOf Prompt: "Allow User to Modify Power-on Password", Help: "", QuestionFlags: 0x0, QuestionId: 0x12, VarStoreId: 0x45, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+			OneOfOption Option: "No" Value: 0
+			OneOfOption Option: "Change Only" Value: 1
+			OneOfOption Option: "Change or Delete" Value: 2
+		End 
+		OneOf Prompt: "Wake on LAN Power-on Password Policy", Help: "", QuestionFlags: 0x0, QuestionId: 0x13, VarStoreId: 0x45, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Require Password" Value: 1
+			OneOfOption Option: "Bypass Password" Value: 0
+		End 
+	End 
+	Form FormId: 0xF, Title: "Administrator Authentication Policies"
+		Subtitle Prompt: "Administrator Authentication Policies", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		CheckBox Prompt: "Prompt for Admin authentication on F9 (Boot Menu)", Help: "", QuestionFlags: 0x4, QuestionId: 0x14, VarStoreId: 0x4, VarOffset: 0xC, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		CheckBox Prompt: "Prompt for Admin authentication on F11 (System Recovery)", Help: "", QuestionFlags: 0x4, QuestionId: 0x15, VarStoreId: 0x4, VarOffset: 0xD, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		CheckBox Prompt: "Prompt for Admin authentication on F12 (Network Boot)", Help: "", QuestionFlags: 0x4, QuestionId: 0x16, VarStoreId: 0x4, VarOffset: 0xE, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		CheckBox Prompt: "Prompt for Admin authentication on Capsule Update", Help: "", QuestionFlags: 0x4, QuestionId: 0x17, VarStoreId: 0x4, VarOffset: 0xF, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		CheckBox Prompt: "BIOS Administrator visible at Power-on Authentication", Help: "", QuestionFlags: 0x4, QuestionId: 0x18, VarStoreId: 0x3E, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+	End 
+	Form FormId: 0x3, Title: "TPM Embedded Security"
+		Subtitle Prompt: "TPM Embedded Security", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Text Prompt: "TPM Specification Version", Help: "", Text: ""
+		GrayOutIf 
+			EqIdVal QuestionId: 0x33, Value: 0x0
+				EqIdVal QuestionId: 0x36, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x51, Value: 0x0
+				EqIdVal QuestionId: 0x2016, Value: 0x1
+				And 
+				Or 
+			End 
+			OneOf Prompt: "TPM Device", Help: "Exposes the integrated Trusted Platform Module (TPM) for use.", QuestionFlags: 0x4, QuestionId: 0x2016, VarStoreId: 0xF, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Available" Value: 1, Default
+				OneOfOption Option: "Hidden" Value: 0
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x50, Value: 0x0
+				EqIdVal QuestionId: 0x36, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x33, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x51, Value: 0x0
+				EqIdVal QuestionId: 0x2017, Value: 0x1
+				And 
+				Or 
+			End 
+			CheckBox Prompt: "TPM State", Help: "Enables the integrated Trusted Platform Module (TPM).              ", QuestionFlags: 0x4, QuestionId: 0x2017, VarStoreId: 0xF, VarOffset: 0x1, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x50, Value: 0x0
+				EqIdVal QuestionId: 0x33, Value: 0x0
+				Or 
+			End 
+			OneOf Prompt: "Clear TPM", Help: "", QuestionFlags: 0x4, QuestionId: 0x2018, VarStoreId: 0xF, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "No" Value: 0
+				OneOfOption Option: "On next boot" Value: 1
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x33, Value: 0x0
+			OneOf Prompt: "TPM Activation Policy", Help: "", QuestionFlags: 0x0, QuestionId: 0x19, VarStoreId: 0x24, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+				OneOfOption Option: "F1 to Boot" Value: 0
+				OneOfOption Option: "Allow user to reject" Value: 1
+				OneOfOption Option: "No prompts" Value: 2
+			End 
+		End 
+	End 
+	Form FormId: 0xC, Title: "Hard Drive Utilities"
+		Subtitle Prompt: "Hard Drive Utilities", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x4F, Value: 0x0
+				EqIdVal QuestionId: 0x3B, Value: 0x0
+				Or 
+			End 
+			CheckBox Prompt: "Save/Restore MBR of System Hard Drive", Help: "Enabling this feature will save the Master Boot Record (MBR) 
+ of the system Hard Drive. If the MBR gets changed, 
+ user will get prompt to authorize to restore MBR.", QuestionFlags: 0x0, QuestionId: 0x1A, VarStoreId: 0x1B, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x4F, Value: 0x0
+			SuppressIf 
+				EqIdVal QuestionId: 0x4F, Value: 0x1
+					EqIdVal QuestionId: 0x3B, Value: 0x0
+					Or 
+				End 
+				Subtitle Prompt: "Save/Restore MBR of the system hard drive is only available with drives that have a Master Boot Record.", Help: "", Flags: 0x0
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x4E, Value: 0x0
+			CheckBox Prompt: "Save/Restore GPT of System Hard Drive", Help: "Enabling this feature will save the GUID Partition table (GPT) 
+ of the system Hard Drive. If the GPT is subsequently changed, 
+ the user will be prompted to choose whether to restore GPT.", QuestionFlags: 0x0, QuestionId: 0x1B, VarStoreId: 0x29, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x4E, Value: 0x0
+			SuppressIf 
+				EqIdVal QuestionId: 0x4E, Value: 0x1
+				Subtitle Prompt: "Save/Restore GPT of the system hard drive is only available with drives that have a GUID Partition Table.", Help: "", Flags: 0x0
+				End 
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x1B, Value: 0x0
+				EqIdVal QuestionId: 0x1A, Value: 0x0
+				And 
+			End 
+			OneOf Prompt: "Boot Sector (MBR/GPT) Recovery Policy", Help: "", QuestionFlags: 0x0, QuestionId: 0x1C, VarStoreId: 0x38, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Local user control" Value: 0, Default
+				OneOfOption Option: "Recover in event of corruption" Value: 1
+			End 
+		End 
+		Ref Prompt: "DriveLock/Automatic DriveLock", Help: "", QuestionFlags: 0x0, QuestionId: 0x1D, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x8
+		Ref Prompt: "Secure Erase", Help: "", QuestionFlags: 0x0, QuestionId: 0x1E, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xA
+		CheckBox Prompt: "Allow OPAL Hard Drive SID Authentication", Help: "", QuestionFlags: 0x0, QuestionId: 0x1F, VarStoreId: 0x31, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		GrayOutIf 
+			True 
+				True 
+				Equal 
+			End 
+			Text Prompt: "Disable DriveLock on NVMe drives before using applications for hardware-based encryption.", Help: "", Text: ""
+		End 
+	End 
+	Form FormId: 0x7, Title: "Restore Security Settings to Factory Defaults"
+		Subtitle Prompt: "Are you sure you want to restore security settings to default?", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "Yes", Help: "", QuestionFlags: 0x4, QuestionId: 0x201D, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Ref Prompt: "No", Help: "", QuestionFlags: 0x0, QuestionId: 0x20, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x8, Title: "Select a Drive"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Select a Drive", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0xA
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+	End 
+	Form FormId: 0x9, Title: "DriveLock Security Options"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "DriveLock Security Options", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x34, Value: 0x0
+				EqIdVal QuestionId: 0x49, Value: 0x0
+				Or 
+			End 
+			Text Prompt: "Automatic DriveLock was enabled on this drive while it was attached to another system.", Help: "", Text: ""
+			Text Prompt: "Do you want to enable Automatic DriveLock on this system instead?", Help: "", Text: ""
+			Text Prompt: "Note that this process will force the Master Password to match this system's BIOS Administrator Password.", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x34, Value: 0x0
+				EqIdVal QuestionId: 0x49, Value: 0x0
+				Or 
+			End 
+			Ref Prompt: "Continue", Help: "", QuestionFlags: 0x4, QuestionId: 0x301B, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x9
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x34, Value: 0x0
+				EqIdVal QuestionId: 0x49, Value: 0x0
+				Or 
+			End 
+			Ref Prompt: "Cancel", Help: "", QuestionFlags: 0x0, QuestionId: 0x21, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x8
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x34, Value: 0x1
+				EqIdVal QuestionId: 0x49, Value: 0x0
+				Or 
+			End 
+			Text Prompt: "Automatic DriveLock was enabled on this drive while it was attached to another system.", Help: "", Text: ""
+			Text Prompt: "A BIOS Administrator Password must be defined before you can enable Automatic DriveLock on this drive.", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x49, Value: 0x1
+				EqIdVal QuestionId: 0x48, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x47, Value: 0x0
+				EqIdVal QuestionId: 0x4B, Value: 0x0
+				And 
+				Or 
+			End 
+			Text Prompt: "The hard drive's security state cannot be changed.", Help: "", Text: ""
+			Text Prompt: "Cycle power to manage DriveLock on this drive.", Help: "", Text: ""
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x34, Value: 0x0
+				EqIdVal QuestionId: 0x2030, Value: 0x0
+				EqIdVal QuestionId: 0x4C, Value: 0x1
+				And 
+				Or 
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x49, Value: 0x1
+					EqIdVal QuestionId: 0x48, Value: 0x0
+					Or 
+					EqIdVal QuestionId: 0x47, Value: 0x1
+					Or 
+					EqIdVal QuestionId: 0x4B, Value: 0x1
+					Or 
+				End 
+				CheckBox Prompt: "Automatic DriveLock", Help: "In Automatic Drivelock, your BIOS Administrator password is the DriveLock Master password, and the BIOS generates the DriveLock User Password.  If you enable Automatic DriveLock on a drive, you will need to use your BIOS Administrator password to unlock the drive if it is placed in another system.", QuestionFlags: 0x4, QuestionId: 0x2026, VarStoreId: 0x19, VarOffset: 0x9, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x34, Value: 0x1
+				EqIdVal QuestionId: 0x49, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x48, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x47, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x4C, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x2026, Value: 0x1
+				Or 
+			End 
+			Text Prompt: "     A BIOS Administrator Password must be defined before you can enable Automatic DriveLock.", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x48, Value: 0x0
+				EqIdVal QuestionId: 0x49, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x47, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x2026, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x4B, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x4C, Value: 0x0
+				Or 
+			End 
+			Text Prompt: "     Automatic DriveLock cannot be enabled while regular DriveLock is enabled.", Help: "", Text: ""
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x4A, Value: 0x1
+				EqIdVal QuestionId: 0x2026, Value: 0x1
+				Or 
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x49, Value: 0x1
+					EqIdVal QuestionId: 0x4C, Value: 0x1
+					EqIdVal QuestionId: 0x2026, Value: 0x0
+					And 
+					Or 
+					EqIdVal QuestionId: 0x48, Value: 0x0
+					Or 
+					EqIdVal QuestionId: 0x47, Value: 0x1
+					Or 
+					EqIdVal QuestionId: 0x4B, Value: 0x1
+					Or 
+				End 
+				Action Prompt: "Set DriveLock Master Password", Help: "Sets the drive's Master password, but it does not enable DriveLock.", QuestionFlags: 0x4, QuestionId: 0x2022, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+				End 
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x4A, Value: 0x1
+				EqIdVal QuestionId: 0x2026, Value: 0x1
+				Or 
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x4C, Value: 0x0
+					EqIdVal QuestionId: 0x49, Value: 0x1
+					Or 
+					EqIdVal QuestionId: 0x2026, Value: 0x1
+					Or 
+					EqIdVal QuestionId: 0x48, Value: 0x0
+					Or 
+					EqIdVal QuestionId: 0x47, Value: 0x1
+					Or 
+					EqIdVal QuestionId: 0x4B, Value: 0x1
+					Or 
+					EqIdVal QuestionId: 0x4D, Value: 0x0
+					Or 
+				End 
+				Action Prompt: "Change DriveLock Master Password", Help: "Changes the drive’s Master password.  DriveLock remains enabled.", QuestionFlags: 0x4, QuestionId: 0x2020, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+				End 
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x4A, Value: 0x1
+				EqIdVal QuestionId: 0x2026, Value: 0x1
+				Or 
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x49, Value: 0x1
+					EqIdVal QuestionId: 0x4C, Value: 0x1
+					EqIdVal QuestionId: 0x2026, Value: 0x0
+					And 
+					Or 
+					EqIdVal QuestionId: 0x48, Value: 0x0
+					Or 
+					EqIdVal QuestionId: 0x47, Value: 0x1
+					Or 
+					EqIdVal QuestionId: 0x4B, Value: 0x1
+					Or 
+				End 
+				Action Prompt: "Enable DriveLock", Help: "Sets the drive's User password and enables DriveLock.", QuestionFlags: 0x4, QuestionId: 0x2021, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+				End 
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x4A, Value: 0x1
+				EqIdVal QuestionId: 0x2026, Value: 0x1
+				Or 
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x4C, Value: 0x0
+					EqIdVal QuestionId: 0x49, Value: 0x1
+					Or 
+					EqIdVal QuestionId: 0x2026, Value: 0x1
+					Or 
+					EqIdVal QuestionId: 0x48, Value: 0x0
+					Or 
+					EqIdVal QuestionId: 0x47, Value: 0x1
+					Or 
+					EqIdVal QuestionId: 0x4B, Value: 0x1
+					Or 
+				End 
+				Action Prompt: "Change DriveLock User Password", Help: "Changes the drive’s User password.  DriveLock remains enabled.", QuestionFlags: 0x4, QuestionId: 0x201E, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+				End 
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x2026, Value: 0x1
+			SuppressIf 
+				EqIdVal QuestionId: 0x4C, Value: 0x0
+					EqIdVal QuestionId: 0x49, Value: 0x1
+					Or 
+					EqIdVal QuestionId: 0x2026, Value: 0x1
+					Or 
+					EqIdVal QuestionId: 0x48, Value: 0x0
+					Or 
+					EqIdVal QuestionId: 0x47, Value: 0x1
+					Or 
+					EqIdVal QuestionId: 0x4B, Value: 0x1
+					Or 
+				End 
+				Action Prompt: "Disable DriveLock", Help: "Prompts for an existing password, and then disables DriveLock.", QuestionFlags: 0x4, QuestionId: 0x201F, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x4A, Value: 0x0
+				EqIdVal QuestionId: 0x2026, Value: 0x0
+				And 
+				EqIdVal QuestionId: 0x49, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x48, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x47, Value: 0x1
+				Or 
+			End 
+			Text Prompt: "The DriveLock Master and User passwords cannot be changed if you enable Automatic DriveLock or it was already enabled.", Help: "", Text: ""
+			Text Prompt: "", Help: "", Text: ""
+		End 
+	End 
+	Form FormId: 0xE, Title: "DriveLock Security Options"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "DriveLock Security Options", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x47, Value: 0x0
+				EqIdVal QuestionId: 0x2026, Value: 0x1
+				Or 
+			End 
+			Text Prompt: "The hard drive's security state cannot be changed.", Help: "", Text: ""
+			Text Prompt: "Cycle power to manage DriveLock on this drive.", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x34, Value: 0x0
+				EqIdVal QuestionId: 0x49, Value: 0x0
+				Or 
+			End 
+			Text Prompt: "Automatic DriveLock was enabled on this drive while it was attached to another system.", Help: "", Text: ""
+			Text Prompt: "Do you want to enable Automatic DriveLock on this system instead?", Help: "", Text: ""
+			Text Prompt: "Note that this process will force the Master Password to match this system's BIOS Administrator Password.", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x34, Value: 0x0
+				EqIdVal QuestionId: 0x49, Value: 0x0
+				Or 
+			End 
+			Ref Prompt: "Continue", Help: "", QuestionFlags: 0x4, QuestionId: 0x302C, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xE
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x34, Value: 0x0
+				EqIdVal QuestionId: 0x49, Value: 0x0
+				Or 
+			End 
+			Ref Prompt: "Cancel", Help: "", QuestionFlags: 0x0, QuestionId: 0x22, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x8
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x34, Value: 0x1
+				EqIdVal QuestionId: 0x49, Value: 0x0
+				Or 
+			End 
+			Text Prompt: "Automatic DriveLock was enabled on this drive while it was attached to another system.", Help: "", Text: ""
+			Text Prompt: "A BIOS Administrator Password must be defined before you can enable Automatic DriveLock on this drive.", Help: "", Text: ""
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x34, Value: 0x0
+				EqIdVal QuestionId: 0x2026, Value: 0x0
+				EqIdVal QuestionId: 0x4C, Value: 0x1
+				And 
+				Or 
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x49, Value: 0x1
+					EqIdVal QuestionId: 0x48, Value: 0x0
+					Or 
+					EqIdVal QuestionId: 0x47, Value: 0x1
+					Or 
+					EqIdVal QuestionId: 0x4B, Value: 0x1
+					Or 
+				End 
+				CheckBox Prompt: "Automatic DriveLock", Help: "In Automatic Drivelock, your BIOS Administrator password is the DriveLock Master password, and the BIOS generates the DriveLock User Password.  If you enable Automatic DriveLock on a drive, you will need to use your BIOS Administrator password to unlock the drive if it is placed in another system.", QuestionFlags: 0x4, QuestionId: 0x2030, VarStoreId: 0x19, VarOffset: 0x9, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+				End 
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x4A, Value: 0x1
+				EqIdVal QuestionId: 0x2030, Value: 0x1
+				Or 
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x49, Value: 0x1
+					EqIdVal QuestionId: 0x4C, Value: 0x1
+					EqIdVal QuestionId: 0x2030, Value: 0x0
+					And 
+					Or 
+					EqIdVal QuestionId: 0x48, Value: 0x0
+					Or 
+					EqIdVal QuestionId: 0x47, Value: 0x1
+					Or 
+					EqIdVal QuestionId: 0x4B, Value: 0x1
+					Or 
+				End 
+				Action Prompt: "Enable DriveLock", Help: "Sets the drive's Administrator password and enables DriveLock.", QuestionFlags: 0x4, QuestionId: 0x3028, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x4C, Value: 0x0
+				EqIdVal QuestionId: 0x4B, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x47, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x49, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x2030, Value: 0x1
+				Or 
+			End 
+			Action Prompt: "Change DriveLock Administrator Password", Help: "Changes the drive’s Administrator password.  DriveLock remains enabled.", QuestionFlags: 0x4, QuestionId: 0x3029, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x4C, Value: 0x0
+				EqIdVal QuestionId: 0x4B, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x47, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x49, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x2030, Value: 0x1
+				Or 
+			End 
+			Action Prompt: "Change DriveLock User Password", Help: "Changes the drive’s User password.  DriveLock remains enabled.", QuestionFlags: 0x4, QuestionId: 0x302B, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x4C, Value: 0x0
+				EqIdVal QuestionId: 0x4B, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x47, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x49, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x2030, Value: 0x1
+				Or 
+			End 
+			Action Prompt: "Disable DriveLock", Help: "Prompts for an existing Administrator password, and then disables DriveLock.", QuestionFlags: 0x4, QuestionId: 0x302A, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x4A, Value: 0x0
+				EqIdVal QuestionId: 0x2030, Value: 0x0
+				And 
+				EqIdVal QuestionId: 0x49, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x48, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x47, Value: 0x1
+				Or 
+			End 
+			Text Prompt: "The DriveLock Master and User passwords cannot be changed if you enable Automatic DriveLock or it was already enabled.", Help: "", Text: ""
+			Text Prompt: "", Help: "", Text: ""
+		End 
+	End 
+	Form FormId: 0xA, Title: "Select a Drive"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Select a Drive", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x1
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x2
+	End 
+	Form FormId: 0xB, Title: "BIOS Sure Start"
+		Subtitle Prompt: "BIOS Sure Start", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x36, Value: 0x1
+			CheckBox Prompt: "Verify Boot Block on every boot", Help: "", QuestionFlags: 0x0, QuestionId: 0x23, VarStoreId: 0x1C, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3B, Value: 0x0
+			OneOf Prompt: "BIOS Data Recovery Policy", Help: "", QuestionFlags: 0x4, QuestionId: 0x2023, VarStoreId: 0x1C, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Manual" Value: 1
+				OneOfOption Option: "Automatic" Value: 0, Default
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x32, Value: 0x1
+				EqIdVal QuestionId: 0x45, Value: 0x0
+				Or 
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x46, Value: 0x0
+				Action Prompt: "Network Controller Configuration Restore", Help: "This option restores System Network Controller configuration parameters to factory defaults.  This process can take up to 30 seconds. You only need to restore this when the Network Controller Configuration mismatch warning is set.", QuestionFlags: 0x4, QuestionId: 0x2024, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x32, Value: 0x1
+				EqIdVal QuestionId: 0x45, Value: 0x0
+				Or 
+			End 
+			CheckBox Prompt: "Prompt on Network Controller Configuration Change", Help: "", QuestionFlags: 0x0, QuestionId: 0x24, VarStoreId: 0x23, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		CheckBox Prompt: "Dynamic Runtime Scanning of Boot Block", Help: "", QuestionFlags: 0x0, QuestionId: 0x25, VarStoreId: 0x1C, VarOffset: 0x5, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3F, Value: 0x0
+				EqIdVal QuestionId: 0x35, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x34, Value: 0x0
+				EqIdVal QuestionId: 0x33, Value: 0x0
+				Or 
+				And 
+			End 
+			CheckBox Prompt: "Sure Start BIOS Settings Protection", Help: "When enabled, HP Sure Start will lock all  critical BIOS settings
+    and provide enhanced protection for these settings via the HP
+    Sure Start non-volatile (flash) memory
+  - The BIOS administrator credentials must be set to enable this setting
+  - See HP Sure Start documentation for details on which BIOS
+    settings are protected", QuestionFlags: 0x4, QuestionId: 0x2025, VarStoreId: 0x28, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x34, Value: 0x1
+				EqIdVal QuestionId: 0x3F, Value: 0x1
+				EqIdVal QuestionId: 0x35, Value: 0x1
+				And 
+				Or 
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x34, Value: 0x0
+					EqIdVal QuestionId: 0x33, Value: 0x0
+					Or 
+				End 
+				Text Prompt: "    Requires BIOS Administrator credentials to be set", Help: "", Text: ""
+			End 
+		End 
+		CheckBox Prompt: "Sure Start Secure Boot Keys Protection", Help: "", QuestionFlags: 0x0, QuestionId: 0x26, VarStoreId: 0x3B, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x44, Value: 0x0
+			CheckBox Prompt: "Enhanced HP Firmware Runtime Intrusion Prevention and Detection", Help: "  - Enables monitoring of HP system firmware executing out of main memory while the user Operating System is running.
+  - Any anomalies detected in HP System firmware that is active while the user operating system is running will result in a Sure Start Security Event being generated.", QuestionFlags: 0x0, QuestionId: 0x27, VarStoreId: 0x26, VarOffset: 0x1, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x43, Value: 0x0
+			CheckBox Prompt: "HP Firmware Runtime Intrusion Detection", Help: "  - Enables monitoring of HP system firmware executing out of main memory while the user Operating System is running.
+  - Any anomalies detected in HP System firmware that is active while the user operating system is running will result in a Sure Start Security Event being generated.", QuestionFlags: 0x0, QuestionId: 0x28, VarStoreId: 0x26, VarOffset: 0x1, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x44, Value: 0x0
+				EqIdVal QuestionId: 0x43, Value: 0x0
+				And 
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x28, Value: 0x0
+				OneOf Prompt: "Sure Start Security Event Policy", Help: "This setting controls HP Sure Start behavior upon identifying a critical
+security event (any modification to HP firmware) during OS runtime.
+
+  - Log event only – HP Sure Start will log all critical security events in the HP
+    Sure Start Audit Log within the HP Sure Start non-volatile (flash) memory.
+
+  - Log Event and notify user:  In addition to logging all critical security events,
+    HP Sure Start will notify the user within the operating system that a critical
+    event has occurred
+
+  - Log Event and power off system:   In addition to logging all critical events,
+    HP Sure Start will power off the system upon detecting a HP Sure Start
+    Security Event.  Due to the potential for data loss, use of this setting is
+    only recommended in situations where security integrity of the system is a
+    higher priority than the risk of potential data loss", QuestionFlags: 0x0, QuestionId: 0x29, VarStoreId: 0x26, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+					OneOfOption Option: "Log Event Only" Value: 0
+					OneOfOption Option: "Log Event and notify user" Value: 1
+					OneOfOption Option: "Log Event and power off system" Value: 2
+				End 
+			End 
+		End 
+		OneOf Prompt: "Sure Start Security Event Boot Notification", Help: "", QuestionFlags: 0x0, QuestionId: 0x2A, VarStoreId: 0x39, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Time out after 15 seconds" Value: 0
+			OneOfOption Option: "Require Acknowledgment" Value: 1
+		End 
+	End 
+	Form FormId: 0xD, Title: "Secure Platform Management (SPM)"
+		Subtitle Prompt: "Secure Platform Management (SPM)", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3D, Value: 0x0
+			Subtitle Prompt: "NOTE:  Some actions may not be selectable due to a pending password change.", Help: "", Flags: 0x0
+			End 
+		End 
+		Subtitle Prompt: "SPM", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x42, Value: 0x1
+				EqIdVal QuestionId: 0x42, Value: 0x2
+				Or 
+			End 
+			Text Prompt: "   SPM Current State: Not provisioned", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x42, Value: 0x0
+				EqIdVal QuestionId: 0x42, Value: 0x2
+				Or 
+			End 
+			Text Prompt: "   SPM Current State: Provisioned", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x42, Value: 0x0
+				EqIdVal QuestionId: 0x42, Value: 0x1
+				Or 
+			End 
+			Text Prompt: "   SPM Current State: Provisioning in progress", Help: "", Text: ""
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x42, Value: 0x0
+				EqIdVal QuestionId: 0x3D, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x41, Value: 0x1
+				EqIdVal QuestionId: 0x3F, Value: 0x1
+				And 
+				Or 
+			End 
+			Action Prompt: "Unprovision SPM", Help: "", QuestionFlags: 0x4, QuestionId: 0x202A, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "HP Sure Run", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x40, Value: 0x1
+				EqIdVal QuestionId: 0x40, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x40, Value: 0x3
+				Or 
+			End 
+			Text Prompt: "   HP Sure Run Current State: Inactive", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x40, Value: 0x0
+				EqIdVal QuestionId: 0x40, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x40, Value: 0x3
+				Or 
+			End 
+			Text Prompt: "   HP Sure Run Current State: Active", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x40, Value: 0x0
+				EqIdVal QuestionId: 0x40, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x40, Value: 0x3
+				Or 
+			End 
+			Text Prompt: "   HP Sure Run Current State: Permanently Disabled", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x40, Value: 0x0
+				EqIdVal QuestionId: 0x40, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x40, Value: 0x2
+				Or 
+			End 
+			Text Prompt: "   HP Sure Run Current State: Suspended", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x40, Value: 0x2
+			GrayOutIf 
+				EqIdVal QuestionId: 0x40, Value: 0x0
+					EqIdVal QuestionId: 0x3D, Value: 0x1
+					Or 
+				End 
+				Action Prompt: "Deactivate HP Sure Run", Help: "", QuestionFlags: 0x4, QuestionId: 0x2029, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+				End 
+			End 
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "HP Sure Admin", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "  Enhanced BIOS Authentication Mode (EBAM)", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3F, Value: 0x1
+			Text Prompt: "    EBAM Current State: Disabled", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3F, Value: 0x0
+			Text Prompt: "    EBAM Current State: Enabled", Help: "", Text: ""
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3F, Value: 0x0
+				EqIdVal QuestionId: 0x3E, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3D, Value: 0x1
+				Or 
+			End 
+			Action Prompt: "Disable EBAM", Help: "", QuestionFlags: 0x4, QuestionId: 0x310A, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x35, Value: 0x1
+			Text Prompt: "    Local Access Key: Not Present", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x35, Value: 0x0
+			Text Prompt: "    Local Access Key: Present", Help: "", Text: ""
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x35, Value: 0x0
+				EqIdVal QuestionId: 0x3D, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3C, Value: 0x1
+				Or 
+			End 
+			Action Prompt: "Clear EBAM Local Access Key(s) and Reboot", Help: "Selecting this will remove any Local Access Keys. Admin authentication
+in the system firmware will revert to the BIOS Admin Password (if present).", QuestionFlags: 0x4, QuestionId: 0x310B, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+	End 
+	Form FormId: 0x10, Title: "Secure Boot Configuration"
+		Subtitle Prompt: "Secure Boot Configuration", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3B, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x33, Value: 0x0
+				OneOf Prompt: "Configure Legacy Support and Secure Boot", Help: "", QuestionFlags: 0x0, QuestionId: 0x2019, VarStoreId: 0x18, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+					OneOfOption Option: "Legacy Support Enable and Secure Boot Disable" Value: 0
+					OneOfOption Option: "Legacy Support Disable and Secure Boot Enable" Value: 1
+					OneOfOption Option: "Legacy Support Disable and Secure Boot Disable" Value: 2
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3B, Value: 0x1
+			GrayOutIf 
+				EqIdVal QuestionId: 0x33, Value: 0x0
+					EqIdVal QuestionId: 0x36, Value: 0x1
+					Or 
+				End 
+				CheckBox Prompt: "Secure Boot", Help: "", QuestionFlags: 0x4, QuestionId: 0x202B, VarStoreId: 0x18, VarOffset: 0xA, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+				End 
+			End 
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Text Prompt: "Secure Boot Key Management", Help: "", Text: ""
+		GrayOutIf 
+			EqIdVal QuestionId: 0x33, Value: 0x0
+				EqIdVal QuestionId: 0x36, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x201A, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x201B, Value: 0x1
+				Or 
+			End 
+			CheckBox Prompt: "Import Custom Secure Boot keys", Help: "", QuestionFlags: 0x4, QuestionId: 0x3019, VarStoreId: 0x18, VarOffset: 0x4, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x33, Value: 0x0
+				EqIdVal QuestionId: 0x36, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x201B, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x3A, Value: 0x1
+				Or 
+			End 
+			CheckBox Prompt: "Clear Secure Boot keys", Help: "", QuestionFlags: 0x4, QuestionId: 0x201A, VarStoreId: 0x18, VarOffset: 0x3, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x33, Value: 0x0
+				EqIdVal QuestionId: 0x36, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x201A, Value: 0x1
+				Or 
+			End 
+			CheckBox Prompt: "Reset Secure Boot keys to factory defaults", Help: "", QuestionFlags: 0x4, QuestionId: 0x201B, VarStoreId: 0x18, VarOffset: 0x5, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3A, Value: 0x1
+				EqIdVal QuestionId: 0x36, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x201A, Value: 0x0
+				And 
+				Or 
+			End 
+			Text Prompt: "    This selection will disable secure boot", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x39, Value: 0x1
+			GrayOutIf 
+				EqIdVal QuestionId: 0x39, Value: 0x0
+				Subtitle Prompt: "   Access to the above settings requires Sure Start Secure Boot Keys Protection to be disabled", Help: "", Flags: 0x0
+				End 
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x38, Value: 0x1
+			CheckBox Prompt: "Windows UEFI CA 2023", Help: "Check to allow Windows boot loaders signed by the Windows UEFI CA 2023 certificate.", QuestionFlags: 0x0, QuestionId: 0x2B, VarStoreId: 0x64, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x38, Value: 0x1
+			CheckBox Prompt: "Microsoft Option ROM UEFI CA 2023", Help: "Check to allow add-in card Option ROMs signed by the Microsoft Option ROM UEFI CA 2023 certificate", QuestionFlags: 0x0, QuestionId: 0x2C, VarStoreId: 0x64, VarOffset: 0x1, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x38, Value: 0x1
+			CheckBox Prompt: "Microsoft UEFI CA 2023", Help: "Check to allow non-Windows boot loaders or UEFI applications signed by the Microsoft UEFI CA 2023 certificate.", QuestionFlags: 0x0, QuestionId: 0x2D, VarStoreId: 0x64, VarOffset: 0x2, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x38, Value: 0x1
+				EqIdVal QuestionId: 0x36, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x0
+				Or 
+			End 
+			CheckBox Prompt: "Enable MS UEFI CA key", Help: "", QuestionFlags: 0x0, QuestionId: 0x2E, VarStoreId: 0x22, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x37, Value: 0x1
+			Text Prompt: "Not ready to disable MS UEFI CA Key.", Help: "", Text: ""
+			Text Prompt: "Check video configuration to determine if your graphics device is meant to use Device Guard.", Help: "", Text: ""
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x35, Value: 0x1
+				EqIdVal QuestionId: 0x34, Value: 0x1
+				Or 
+				Not 
+				EqIdVal QuestionId: 0x33, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x36, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x32, Value: 0x0
+				And 
+				EqIdVal QuestionId: 0x31, Value: 0x0
+				Or 
+			End 
+			OneOf Prompt: "Ready BIOS for Device Guard Use", Help: "When set to "Configure on Next Boot", the BIOS will change the features listed below to their suggested Device Guard states, on the boot after saving changes and exit.
+ Virtualization features will be enabled.
+ Removable and network boot devices will be disabled (for example, USB boot, CD-ROM boot, Thunderbolt boot, etc.).
+ MS UEFI CA Key will be disabled.
+
+When set to "Clear Configuration on Next Boot", the BIOS will set the listed features to their Custom Default state if custom defaults have been saved.  If custom defaults have not been saved, the BIOS will restore the listed features to their factory default states.", QuestionFlags: 0x0, QuestionId: 0x301A, VarStoreId: 0x2A, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+				OneOfOption Option: "Do Nothing" Value: 0
+				OneOfOption Option: "Configure on Next Boot" Value: 1
+				OneOfOption Option: "Clear Configuration on Next Boot" Value: 2
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x35, Value: 0x1
+				EqIdVal QuestionId: 0x34, Value: 0x1
+				Or 
+				Not 
+				EqIdVal QuestionId: 0x33, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x32, Value: 0x0
+				And 
+				EqIdVal QuestionId: 0x31, Value: 0x0
+				Or 
+				Not 
+			End 
+			Text Prompt: "    Requires BIOS Administrator credentials to be configured and Secure Boot to be enabled.", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x30, Value: 0x0
+				EqIdVal QuestionId: 0x30, Value: 0x1
+				Or 
+			End 
+			Subtitle Prompt: "", Help: "", Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2F, Value: 0x0
+				EqIdVal QuestionId: 0x2F, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x2F, Value: 0x2
+				Or 
+			End 
+			Subtitle Prompt: "", Help: "", Flags: 0x0
+			End 
+		End 
+		DisableIf 
+			True 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x2F, VarStoreId: 0x5, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x30, VarStoreId: 0x4, VarOffset: 0x8, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x31, VarStoreId: 0x18, VarOffset: 0x8, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x32, VarStoreId: 0x18, VarOffset: 0x7, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x33, VarStoreId: 0xE, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x34, VarStoreId: 0xE, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x35, VarStoreId: 0x3F, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x36, VarStoreId: 0x49, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x37, VarStoreId: 0x32, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x38, VarStoreId: 0x4, VarOffset: 0x9, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x39, VarStoreId: 0x18, VarOffset: 0x9, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3A, VarStoreId: 0x18, VarOffset: 0x6, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3B, VarStoreId: 0xA, VarOffset: 0x26, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3C, VarStoreId: 0x40, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3D, VarStoreId: 0xE, VarOffset: 0x5, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3E, VarStoreId: 0x40, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3F, VarStoreId: 0x3F, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x40, VarStoreId: 0x36, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x41, VarStoreId: 0x40, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x42, VarStoreId: 0x3A, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x43, VarStoreId: 0xA, VarOffset: 0x21, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x44, VarStoreId: 0xA, VarOffset: 0x20, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x45, VarStoreId: 0x1C, VarOffset: 0x4, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x46, VarStoreId: 0x1C, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x47, VarStoreId: 0x19, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x48, VarStoreId: 0x19, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x49, VarStoreId: 0x19, VarOffset: 0xA, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x4A, VarStoreId: 0x19, VarOffset: 0xB, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x4B, VarStoreId: 0x19, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x4C, VarStoreId: 0x19, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x4D, VarStoreId: 0x19, VarOffset: 0x8, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x4E, VarStoreId: 0x29, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x4F, VarStoreId: 0x1B, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x50, VarStoreId: 0x18, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x51, VarStoreId: 0xA, VarOffset: 0x19, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x52, VarStoreId: 0x17, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x53, VarStoreId: 0xB, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x54, VarStoreId: 0x16, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x55, VarStoreId: 0x8604, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x56, VarStoreId: 0x8600, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x57, VarStoreId: 0x8600, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x58, VarStoreId: 0xB, VarOffset: 0x4, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x59, VarStoreId: 0x8600, VarOffset: 0x5, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x5A, VarStoreId: 0xA, VarOffset: 0x18, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x5B, VarStoreId: 0xE, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x5C, VarStoreId: 0xE, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x5D, VarStoreId: 0x2D, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x5E, VarStoreId: 0x2D, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+		End 
+	End 
+End 

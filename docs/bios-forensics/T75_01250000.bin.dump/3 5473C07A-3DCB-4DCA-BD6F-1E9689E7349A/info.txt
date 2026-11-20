@@ -1,0 +1,19 @@
+Type: Volume
+Subtype: FFSv3
+Base: 4D320h
+Header address: FF04D000h
+Data address: FF04D048h
+Offset: 4D320h
+Full size: 87D000h (8900608)
+Header size: 48h (72)
+Body size: 87CFB8h (8900536)
+ZeroVector:
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+FileSystem GUID: 5473C07A-3DCB-4DCA-BD6F-1E9689E7349A
+Revision: 2
+Attributes: 0004FEFFh
+Erase polarity: 1
+Checksum: 5EE2h, valid
+NumBlocks: 87Dh (2173), valid
+Length: 1000h (4096), valid

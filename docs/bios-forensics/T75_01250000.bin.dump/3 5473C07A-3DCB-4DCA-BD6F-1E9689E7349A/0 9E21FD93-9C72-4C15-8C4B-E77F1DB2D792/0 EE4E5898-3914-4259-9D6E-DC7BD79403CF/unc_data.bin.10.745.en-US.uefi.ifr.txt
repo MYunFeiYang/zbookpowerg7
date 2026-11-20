@@ -1,0 +1,35 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 9B942747-154E-4D29-A436-BF7100C8B53B, Title: "Authenticate to Save/Restore GPT", Help: "HDD GPT is valid and it is different than backup GPT."
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x3
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 9B942747-154E-4D29-A436-BF7100C8B53B, VarStoreId: 0x1, Size: 0x260, Name: "IP4_CONFIG2_IFR_NVDATA"
+	Form FormId: 0x1, Title: "Please select one of the following options:"
+		CheckBox Prompt: "Do you want to overwrite HDD GPT with backup GPT?", Help: "", QuestionFlags: 0x4, QuestionId: 0x100, VarStoreId: 0x1, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x100, Value: 0x0
+			CheckBox Prompt: " -  Enter 1 to overwrite backup GPT with HDD GPT", Help: " -  Enter 1 to overwrite backup GPT with HDD GPT", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x1, VarOffset: 0x1, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x101, Value: 0x1
+				EqIdVal QuestionId: 0x100, Value: 0x0
+				Or 
+			End 
+			String Prompt: " -  Enter 2 to overwrite HDD GPT with backup GPT", Help: " -  Enter 3 for no action", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x1, VarStoreInfo: 0x2, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+			End 
+			String Prompt: "Backup GPT is available but HDD has changed.", Help: " -  Enter 1 to backup new HDD GPT", QuestionFlags: 0x4, QuestionId: 0x103, VarStoreId: 0x1, VarStoreInfo: 0x22, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+			End 
+			String Prompt: " -  Enter 2 to disable the feature and remove backup", Help: "Yes", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x1, VarStoreInfo: 0x42, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+			End 
+			String Prompt: "No", Help: "ENTER", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x1, VarStoreInfo: 0x62, MinSize: 0x7, MaxSize: 0xFF, Flags: 0x0
+			End 
+		End 
+		Subtitle Prompt: "HDD GPT was found corrupted and has been recovered automatically. No further action is required. ", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "GPT Recovery", Help: "GPT Recovery", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

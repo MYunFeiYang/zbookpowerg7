@@ -1,0 +1,245 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 77F2EA2F-4312-4569-85C4-583ACD8DB7E2, Title: "HP Sure Recover", Help: "No operating system was found on this system.  Do you want to reinstall the operating system?"
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x0
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: A31ABB16-C627-475B-988E-7EE0776740F3, VarStoreId: 0x1234, Size: 0x588, Name: "UndiNVData"
+	Form FormId: 0x1, Title: "No UEFI operating system was found on this system.  If you were attempting to boot"
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Subtitle Prompt: "from a legacy operating system, press the ESC key.", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x750
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x751
+		Ref Prompt: "Your administrator started the HP Sure Recover process on this system, but it failed for the following reason:", Help: "Unknown error", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1235
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x754
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x755
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x742
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x743
+		SuppressIf 
+			True 
+			Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+			Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+			Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+			Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1405, VarStoreId: 0x1234, VarOffset: 0x586, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1406, VarStoreId: 0x1234, VarOffset: 0x587, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x752
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x753
+		SuppressIf 
+			True 
+			Text Prompt: "Local recovery failed to launch.", Help: "InvalidId", Text: "InvalidId"
+			Numeric Prompt: "No recovery source was found.", Help: "Multiple attempts to download files from the network have failed.
+
+The system must restart before attempting the recovery again.", QuestionFlags: 0x1, QuestionId: 0x2, VarStoreId: 0x1234, VarOffset: 0x2E, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3, VarStoreId: 0x1234, VarOffset: 0x2F, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "InvalidId" Value: 0
+				OneOfOption Option: "InvalidId" Value: 1, Default
+			End 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x4, VarStoreId: 0x1234, VarOffset: 0x30, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+		End 
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x756
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x757
+		Numeric Prompt: "Cancel", Help: "HP Sure Recover Failed", QuestionFlags: 0x4, QuestionId: 0x110A, VarStoreId: 0x1234, VarOffset: 0x34, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Subtitle Prompt: "WARNING: This operation will destroy the existing content on the drive.", Help: "", Flags: 0x0
+		End 
+		Text Prompt: "Please make a selection:", Help: "Restore from local drive", Text: "Restore from network"
+		Text Prompt: "Continue", Help: "Could not successfully finish the operating system recovery process", Text: "ShutDown"
+		Text Prompt: "", Help: "Be sure that a UEFI boot drive is properly installed and enabled in the UEFI boot order.", Text: "Recover after Boot Failure is enabled but no hard drive boot option is enabled in the UEFI boot order."
+		Text Prompt: "Select Continue to search for a legacy boot source.", Help: "You have asked to restore your operating system.", Text: "HP Sure Recover"
+		Text Prompt: "User-requested operating system recovery failed.", Help: "The operating system recovery failed.", Text: "Boot-failure-initiated operating system recovery failed."
+		OneOf Prompt: "A file hash was found to be bad.", Help: "There was an error saving a file to disk.", QuestionFlags: 0x1, QuestionId: 0x1104, VarStoreId: 0x1234, VarOffset: 0x28, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "There was an error reading a file from disk." Value: 0, Default
+			OneOfOption Option: "There was an error downloading a file." Value: 1
+		End 
+		SuppressIf 
+			True 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1408, VarStoreId: 0x1234, VarOffset: 0x2A, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1408, Value: 0x0
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x110C, VarStoreId: 0x1234, VarOffset: 0x29, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x20, Step: 0x0
+				OneOfOption Option: "Downloading" Value: 0
+				OneOfOption Option: "Success" Value: 1
+				OneOfOption Option: "It is only supported to execute a Network Bootstrap Application(NBP)" Value: 2
+				OneOfOption Option: "The operation was canceled by the user." Value: 3
+				OneOfOption Option: "Execution Status: %s" Value: 4
+				OneOfOption Option: "HP Internal Error - %08lx" Value: 5
+				OneOfOption Option: "Unknown Error - %08lx" Value: 6
+				OneOfOption Option: "Download URL is not configured" Value: 7
+				OneOfOption Option: "Configuration URL is not configured" Value: 8
+				OneOfOption Option: "The manifest signature is bad." Value: 32, Default
+			End 
+		End 
+		Text Prompt: "WARNING: Reinstalling the operating system will destroy the existing content on the drive.", Help: "To reinstall the operating system, enter the 4-digit code shown below.  Press the ESC key to cancel.", Text: " "
+		SuppressIf 
+			True 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1407, VarStoreId: 0x1234, VarOffset: 0x36, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1407, Value: 0x0
+			String Prompt: "Application-requested operating system recovery failed.", Help: "HP Sure Run-requested operating system recovery failed.", QuestionFlags: 0x1, QuestionId: 0x1106, VarStoreId: 0x1234, VarStoreInfo: 0x4, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+			End 
+		End 
+	End 
+	Form FormId: 0x1235, Title: ""
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x740
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x741
+		SuppressIf 
+			True 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x5, VarStoreId: 0x1234, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		OneOf Prompt: "Downloading Recovery Software from Network", Help: "This may take a few minutes", QuestionFlags: 0x0, QuestionId: 0x1108, VarStoreId: 0x1234, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x4, Step: 0x0
+			OneOfOption Option: "Downloading" Value: 0, Default
+			SuppressIf 
+				EqIdVal QuestionId: 0x5, Value: 0x0
+				OneOfOption Option: "Success" Value: 1
+				OneOfOption Option: "It is only supported to execute a Network Bootstrap Application(NBP)" Value: 2
+				OneOfOption Option: "The operation was canceled by the user." Value: 3
+				OneOfOption Option: "Execution Status: %s" Value: 4
+			End 
+		End 
+		SuppressIf 
+			True 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x6, VarStoreId: 0x1234, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x6, Value: 0x0
+			OneOf Prompt: "Could not create the RAM disk.", Help: "Could not download the Windows install files.", QuestionFlags: 0x0, QuestionId: 0x1109, VarStoreId: 0x1234, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+				SuppressIf 
+					EqIdVal QuestionId: 0x6, Value: 0x0
+					OneOfOption Option: "Invalid download URL." Value: 0
+					OneOfOption Option: "Could not boot the system." Value: 1
+				End 
+				SuppressIf 
+					EqIdVal QuestionId: 0x6, Value: 0x1
+					OneOfOption Option: "The manifest signature is bad." Value: 2
+				End 
+			End 
+		End 
+		SuppressIf 
+			True 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1409, VarStoreId: 0x1234, VarOffset: 0x31, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1409, Value: 0x0
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x110D, VarStoreId: 0x1234, VarOffset: 0x32, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFFF, Step: 0x0
+				Default DefaultId: 0x0 Value: 0
+			End 
+		End 
+	End 
+	Form FormId: 0x1248, Title: "Bad file size."
+		OneOf Prompt: "Timeout during network data transfer.", Help: "Loading Recovery Software from Embedded OS Recovery Device", QuestionFlags: 0x10, QuestionId: 0x110F, VarStoreId: 0x1234, VarOffset: 0x2C, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Loading Recovery Software from Local Hard Drive" Value: 0
+			OneOfOption Option: "Copying" Value: 1
+		End 
+	End 
+	Form FormId: 0x1247, Title: "InvalidId"
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Subtitle Prompt: "InvalidId", Help: "", Flags: 0x0
+		End 
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+	End 
+	Form FormId: 0x1237, Title: "InvalidId"
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x7, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1244
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x8, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1245
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x9, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1246
+	End 
+	Form FormId: 0x1244, Title: "InvalidId"
+		SuppressIf 
+			EqIdVal QuestionId: 0x1405, Value: 0x0
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1200, VarStoreId: 0x1234, VarOffset: 0x37, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Invalid download URL." Value: 0
+				OneOfOption Option: "Could not boot the system." Value: 1, Default
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1200, Value: 0x0
+				OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1201, VarStoreId: 0x1234, VarOffset: 0x38, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+					OneOfOption Option: "InvalidId" Value: 0
+					SuppressIf 
+						EqIdVal QuestionId: 0x1200, Value: 0x0
+						OneOfOption Option: "InvalidId" Value: 1, Default
+					End 
+				End 
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1202, VarStoreId: 0x1234, VarOffset: 0x39, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Invalid download URL." Value: 0, Default
+				OneOfOption Option: "Could not boot the system." Value: 1
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1202, Value: 0x0
+				OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1203, VarStoreId: 0x1234, VarOffset: 0x3A, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+					OneOfOption Option: "InvalidId" Value: 0, Default
+					SuppressIf 
+						EqIdVal QuestionId: 0x1202, Value: 0x0
+						OneOfOption Option: "InvalidId" Value: 1
+					End 
+				End 
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x1204, VarStoreId: 0x1234, VarOffset: 0x3B, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "InvalidId" Value: 0, Default
+			End 
+		End 
+	End 
+	Form FormId: 0x1245, Title: "InvalidId"
+		SuppressIf 
+			EqIdVal QuestionId: 0x1405, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1200, Value: 0x1
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1210, VarStoreId: 0x1234, VarStoreInfo: 0x3C, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				End 
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1211, VarStoreId: 0x1234, VarStoreInfo: 0x5C, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				End 
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1212, VarStoreId: 0x1234, VarStoreInfo: 0x7C, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				End 
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1213, VarStoreId: 0x1234, VarStoreInfo: 0x9C, MinSize: 0x0, MaxSize: 0xDF, Flags: 0x0
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1202, Value: 0x0
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1214, VarStoreId: 0x1234, VarStoreInfo: 0x25C, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+				End 
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1215, VarStoreId: 0x1234, VarStoreInfo: 0x35E, MinSize: 0xC, MaxSize: 0x10, Flags: 0x0
+				End 
+			End 
+		End 
+	End 
+	Form FormId: 0x1246, Title: "InvalidId"
+		SuppressIf 
+			EqIdVal QuestionId: 0x1405, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1201, Value: 0x1
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1220, VarStoreId: 0x1234, VarStoreInfo: 0x380, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				End 
+				Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1221, VarStoreId: 0x1234, VarOffset: 0x3A0, Flags: 0x11, Size: 16, Min: 0x400, Max: 0xFFFF, Step: 0x0
+					Default DefaultId: 0x0 Value: 3260
+				End 
+				Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1222, VarStoreId: 0x1234, VarOffset: 0x3A2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+					Default DefaultId: 0x0 Value: 1
+				End 
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1223, VarStoreId: 0x1234, VarStoreInfo: 0x3A3, MinSize: 0x0, MaxSize: 0xDF, Flags: 0x0
+				End 
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1203, Value: 0x0
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1224, VarStoreId: 0x1234, VarStoreInfo: 0x563, MinSize: 0xC, MaxSize: 0x10, Flags: 0x0
+				End 
+			End 
+		End 
+	End 
+End 

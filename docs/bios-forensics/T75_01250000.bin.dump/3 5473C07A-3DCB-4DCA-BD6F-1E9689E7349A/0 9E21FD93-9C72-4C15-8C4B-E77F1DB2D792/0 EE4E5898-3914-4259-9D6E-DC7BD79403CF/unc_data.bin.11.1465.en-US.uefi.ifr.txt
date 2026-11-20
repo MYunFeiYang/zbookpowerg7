@@ -1,0 +1,56 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 02EEA107-98DB-400E-9830-460A1542D799, Title: "IPv6 Network Configuration", Help: "Configure IPv6 network parameters."
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 02EEA107-98DB-400E-9830-460A1542D799, VarStoreId: 0x1, Size: 0x638, Name: "IP6_CONFIG_IFR_NVDATA"
+	Form FormId: 0x3, Title: "IPv6 Current Setting"
+		Ref Prompt: "Enter Configuration Menu", Help: "Press ENTER to enter configuration menu for IPv6 configuration.", QuestionFlags: 0x4, QuestionId: 0x108, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x1, Title: "IPv6 Current Setting"
+		Text Prompt: "Interface Name    :", Help: "The name of the interface.", Text: ""
+		Text Prompt: "Interface Type    :", Help: "The interface type of the network interface, defined in RFC1700.", Text: ""
+		Text Prompt: "MAC address       :", Help: "The hardware address of the network interface.", Text: ""
+		Text Prompt: "Host addresses    :", Help: "The address list which contain the local IPv6 addresses and the corresponding prefix length information.", Text: ""
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3840
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Route Table       :", Help: "The route table of the IPv6 network stack runs on this interface.", Text: ""
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3E80
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Gateway addresses :", Help: "Current gateway IPv6 addresses.", Text: ""
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x44C0
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "DNS addresses     :", Help: "Current DNS server list.", Text: ""
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x4B00
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		String Prompt: "Interface ID", Help: "The 64 bit alternative interface ID for the device. The string is colon separated. e.g. ff:dd:88:66:cc:1:2:3", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x1, VarStoreInfo: 0xC, MinSize: 0x1, MaxSize: 0x17, Flags: 0x0
+		End 
+		Numeric Prompt: "DAD Transmit Count", Help: "The number of consecutive Neighbor Solicitation messages sent while performing Duplicate Address Detection on a tentative address. A value of zero indicates that Duplicate Address Detection is not performed.", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x8, Flags: 0x12, Size: 32, Min: 0x0, Max: 0xA, Step: 0x0
+		End 
+		OneOf Prompt: "Policy", Help: "automatic or manual", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x1, VarOffset: 0x4, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "automatic" Value: 0, Default
+			OneOfOption Option: "manual" Value: 1
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2, Value: 0x0
+			Ref Prompt: "Advanced Configuration", Help: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured.", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+			Subtitle Prompt: "", Help: "", Flags: 0x0
+			End 
+		End 
+		Action Prompt: "Save Changes and Exit", Help: "Save Changes for interface ID, DAD transmit count, policy, and data in advanced configuration.", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x2, Title: "Advanced Configuration"
+		String Prompt: "New IPv6 address", Help: "Manual IP address can only be configured under manual policy. Separate the IP address with blank space to configure more than one address. e.g. 2002::1/64 2002::2/64", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x1, VarStoreInfo: 0x3E, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "New Gateway addresses", Help: "Gateway IP address can only be configured under manual policy. e.g. 2002::3. Separate the IP address with blank space to configure more than one address.", QuestionFlags: 0x4, QuestionId: 0x103, VarStoreId: 0x1, VarStoreInfo: 0x23C, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "New DNS addresses", Help: "DNS addresses can only be configured under manual policy. e.g. 2002::4. Separate the IP address with blank space to configure more than one address.", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x1, VarStoreInfo: 0x43A, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		Action Prompt: "Commit Changes and Exit", Help: "Commit Changes and Exit", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "Discard Changes and Exit", Help: "Discard Changes and Exit", QuestionFlags: 0x4, QuestionId: 0x107, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

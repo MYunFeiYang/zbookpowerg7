@@ -1,0 +1,16 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 23D6D0FE-1F6F-4260-8AE2-5E97BF09B0C9, Title: "Disques UEFI", Help: ""
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0xC9
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x0
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	Form FormId: 0x1, Title: "Disques UEFI"
+		Subtitle Prompt: "Ceci redémarrera le système et lancera l'application de gestion tierce de la ROM optionnelle.", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Vous pouvez accéder directement à cette application en appuyant sur F3 pendant le démarrage.", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "Gestion tierce de la ROM optionnelle", Help: "", QuestionFlags: 0x4, QuestionId: 0xF001, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+End 

@@ -1,0 +1,29 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: FE561596-E6BF-41A6-8376-C72B719874D0, Title: "Users need to register again to use fingerprint authentication. ", Help: "Reset Fingerprint Sensor"
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	Form FormId: 0x1000, Title: "Users need to register again to use fingerprint authentication. "
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x640
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+	End 
+	Form FormId: 0x2000, Title: "Press <F1> to confirm this Reset request"
+		String Prompt: " ", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x2001, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, MinSize: 0x2, MaxSize: 0x14, Flags: 0x0
+		End 
+		Subtitle Prompt: "Reset Fingerprint Sensor", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x2002, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x2003, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x3000, Title: "Press <F2> to reject this Reset request and continue"
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x3001, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, MinSize: 0x2, MaxSize: 0x14, Flags: 0x0
+		End 
+		Subtitle Prompt: "Reset Fingerprint Sensor", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x3002, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x3003, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

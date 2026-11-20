@@ -1,0 +1,35 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 9B942747-154E-4D29-A436-BF7100C8B53B, Title: "Secure Boot Custom Keys Import", Help: "OK"
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x3
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 9B942747-154E-4D29-A436-BF7100C8B53B, VarStoreId: 0x1, Size: 0x260, Name: "IP4_CONFIG2_IFR_NVDATA"
+	Form FormId: 0x1, Title: "Successfully imported Secure Boot custom PK from \EFI\HP\PK.bin."
+		CheckBox Prompt: "Successfully imported Secure Boot custom DB from \EFI\HP\DB.bin.", Help: "Successfully imported Secure Boot custom DBX from \EFI\HP\DBX.bin.", QuestionFlags: 0x4, QuestionId: 0x100, VarStoreId: 0x1, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x100, Value: 0x0
+			CheckBox Prompt: "Successfully enabled Secure Boot Audit Mode.", Help: "Successfully enabled Secure Boot Audit Mode.", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x1, VarOffset: 0x1, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x101, Value: 0x1
+				EqIdVal QuestionId: 0x100, Value: 0x0
+				Or 
+			End 
+			String Prompt: "Failed to import Secure Boot custom PK from \EFI\HP\PK.bin, or the file was not found.", Help: "Failed to import Secure Boot custom KEK from \EFI\HP\KEK.bin, or the file was not found.", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x1, VarStoreInfo: 0x2, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+			End 
+			String Prompt: "Failed to import Secure Boot custom DB from \EFI\HP\DB.bin, or the file was not found.", Help: "Failed to import Secure Boot custom DBX from \EFI\HP\DBX.bin, or the file was not found.", QuestionFlags: 0x4, QuestionId: 0x103, VarStoreId: 0x1, VarStoreInfo: 0x22, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+			End 
+			String Prompt: "Failed to enable Secure Boot Audit Mode.", Help: "Enter Setup", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x1, VarStoreInfo: 0x42, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+			End 
+			String Prompt: "Shut Down", Help: "A device added is signed with the Microsoft UEFI CA and can’t be used.", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x1, VarStoreInfo: 0x62, MinSize: 0x7, MaxSize: 0xFF, Flags: 0x0
+			End 
+		End 
+		Subtitle Prompt: "Secure Boot", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "System administrator must re-enable Microsoft UEFI CA key to boot with this device.", Help: "System administrator must re-enable Microsoft UEFI CA key to boot with this device.", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

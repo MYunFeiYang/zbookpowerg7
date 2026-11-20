@@ -1,0 +1,34 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: FE561596-E6BF-41A6-8376-C72B719874D0, Title: "Configure network parameters.", Help: "IPv4 Network Configuration"
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	Form FormId: 0x1000, Title: "Configure network parameters."
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x640
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+	End 
+	Form FormId: 0x2000, Title: "Configured"
+		String Prompt: "Enable DHCP", Help: "Local IP Address", QuestionFlags: 0x4, QuestionId: 0x2001, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, MinSize: 0x2, MaxSize: 0x14, Flags: 0x0
+		End 
+		Subtitle Prompt: "IPv4 Network Configuration", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "Enter IP address in dotted-decimal notation. Example: 192.168.10.12
+", Help: "Enter IP address in dotted-decimal notation. Example: 192.168.10.12
+", QuestionFlags: 0x4, QuestionId: 0x2002, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "Local NetMask", Help: "Local NetMask", QuestionFlags: 0x4, QuestionId: 0x2003, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x3000, Title: "Indicate whether network address configured successfully or not."
+		String Prompt: "Enter Gateway in dotted-decimal notation. Example: 192.168.10.1
+", Help: "Local DNS Servers", QuestionFlags: 0x4, QuestionId: 0x3001, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, MinSize: 0x2, MaxSize: 0x14, Flags: 0x0
+		End 
+		Subtitle Prompt: "IPv4 Network Configuration", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "Enter DNS Servers in dotted-decimal notation. Example: 192.168.10.8 192.168.10.9
+", Help: "Enter DNS Servers in dotted-decimal notation. Example: 192.168.10.8 192.168.10.9
+", QuestionFlags: 0x4, QuestionId: 0x3002, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "Save Changes and Exit", Help: "Save Changes and Exit", QuestionFlags: 0x4, QuestionId: 0x3003, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

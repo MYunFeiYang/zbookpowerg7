@@ -1,0 +1,56 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 02EEA107-98DB-400E-9830-460A1542D799, Title: "Hp Network Error.", Help: ""
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 02EEA107-98DB-400E-9830-460A1542D799, VarStoreId: 0x1, Size: 0x638, Name: "IP6_CONFIG_IFR_NVDATA"
+	Form FormId: 0x3, Title: "Internal error."
+		Ref Prompt: "Failed to validate certificate integrity.", Help: "Secure connection failed (SSL error).", QuestionFlags: 0x4, QuestionId: 0x108, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x1, Title: "Internal error."
+		Text Prompt: "Autoproxy script from Autoproxy URL is not valid.", Help: "Could not determine proxy setting after running Autoproxy script.", Text: "Could not resolve proxy setting. Failure while running Autoproxy script."
+		Text Prompt: "Could not resolve proxy setting. Failure while running Autoproxy script (review .pac script file).", Help: "Failed to download Autoproxy script file from Autoproxy URL.", Text: "Could not resolve host."
+		Text Prompt: "Could not resolve proxy.", Help: "Failed to connect to host or proxy.", Text: "Failed to reach host (exceeded maximum HTTP redirects)."
+		Text Prompt: "Failed to reach host (HTTP redirect disabled).", Help: "Internal error (failed to look up host for new connection)", Text: "Failed to validate certificate (certificate is not yet valid)."
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3840
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Could not communicate with network card.", Help: "Could not detect network link or network cable is unplugged.", Text: "Failed to validate certificate (certificate is not yet valid)."
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3E80
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Failed to configure DNS during network setup.", Help: "Failed to setup network.", Text: "Failed to validate certificate (certificate is not yet valid)."
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x44C0
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "No network card was detected in the system.", Help: "Failure while reading file data to be transferred.", Text: "Failed to validate certificate (certificate is not yet valid)."
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x4B00
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		String Prompt: "Failure while reading file data to be transferred (protocol not supported).", Help: "Failure while writing data transferred to file.", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x1, VarStoreInfo: 0xC, MinSize: 0x1, MaxSize: 0x17, Flags: 0x0
+		End 
+		Numeric Prompt: "Failure during data transfer (could not start the upload).", Help: "Failure during data transfer (internal error).", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x8, Flags: 0x12, Size: 32, Min: 0x0, Max: 0xA, Step: 0x0
+		End 
+		OneOf Prompt: "Failure during data transfer (maximum downloaded content size exceeded).", Help: "Failure during data transfer (transferred content size shorter than expected).", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x1, VarOffset: 0x4, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Failure during data transfer (unexpected content)." Value: 0, Default
+			OneOfOption Option: "Failure during data transfer." Value: 1
+		End 
+		Subtitle Prompt: "Failed to validate certificate (certificate is not yet valid).", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2, Value: 0x0
+			Ref Prompt: "Timeout during network data transfer.", Help: "Error communicating with the server (Internal error).", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+			Subtitle Prompt: "Failed to validate certificate (certificate is not yet valid).", Help: "", Flags: 0x0
+			End 
+		End 
+		Action Prompt: "Failed during data transfer (the server does not support the requested operation).", Help: "Invalid URL format.", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x2, Title: "Timeout during network data transfer."
+		String Prompt: "Error communicating with the server (unable to determine file list).", Help: "Failed connecting to host (the server denied access to the requested resource).", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x1, VarStoreInfo: 0x3E, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "Failed connecting to host (the server denied the login).", Help: "Failed during data transfer (file already exists and cannot be overwritten).", QuestionFlags: 0x4, QuestionId: 0x103, VarStoreId: 0x1, VarStoreInfo: 0x23C, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "Failed during data transfer (out of disk space on the server).", Help: "Failed during data transfer (the resource referenced in the URL does not exist).", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x1, VarStoreInfo: 0x43A, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		Action Prompt: "The protocol defined in the URL is not supported.", Help: "The protocol defined in the URL is not supported.", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "Failed to validate certificate (certificate has expired).", Help: "Failed to validate certificate (certificate has expired).", QuestionFlags: 0x4, QuestionId: 0x107, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

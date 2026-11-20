@@ -1,0 +1,56 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 02EEA107-98DB-400E-9830-460A1542D799, Title: "Devices List", Help: "Disk Devices"
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 02EEA107-98DB-400E-9830-460A1542D799, VarStoreId: 0x1, Size: 0x638, Name: "IP6_CONFIG_IFR_NVDATA"
+	Form FormId: 0x3, Title: "Video Devices"
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x108, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x1, Title: "Video Devices"
+		Text Prompt: "Input Devices", Help: "Motherboard Devices", Text: "Other Devices"
+		Text Prompt: "", Help: "Check whether all the controllers in the platform are healthy", Text: "  The platform is healthy"
+		Text Prompt: "  Some drivers are not healthy", Help: "Driver Health", Text: "Driver Health"
+		Text Prompt: "All Driver Health Status List", Help: "Repair All", Text: "InvalidId"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3840
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Repair the whole platform", Help: "Repair the whole platform until all modules reach terminal status", Text: "InvalidId"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3E80
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Repair single driver with specify controller", Help: "Press ESC to exit.", Text: "InvalidId"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x44C0
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "  Repair Required.", Help: "  Configuration Required.", Text: "InvalidId"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x4B00
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		String Prompt: "  Operation Failed.", Help: "  Reconnect Required.", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x1, VarStoreInfo: 0xC, MinSize: 0x1, MaxSize: 0x17, Flags: 0x0
+		End 
+		Numeric Prompt: "  Reboot Required.", Help: "  Healthy.", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x8, Flags: 0x12, Size: 32, Min: 0x0, Max: 0xA, Step: 0x0
+		End 
+		OneOf Prompt: "Network Device", Help: "Network Device", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x1, VarOffset: 0x4, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Select the network device according the MAC address" Value: 0, Default
+			OneOfOption Option: "Network Device List" Value: 1
+		End 
+		Subtitle Prompt: "InvalidId", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2, Value: 0x0
+			Ref Prompt: "Network Device List", Help: "Network Device", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+			Subtitle Prompt: "InvalidId", Help: "", Flags: 0x0
+			End 
+		End 
+		Action Prompt: "No", Help: "Missing String", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x2, Title: "Network Device List"
+		String Prompt: "", Help: "Use the <↑> and <↓> keys to choose a boot option, the <Enter> key to select a boot option, and the <Esc> key to exit the Boot Manager Menu.", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x1, VarStoreInfo: 0x3E, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "Drivers", Help: "Exit", QuestionFlags: 0x4, QuestionId: 0x103, VarStoreId: 0x1, VarStoreInfo: 0x23C, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "Are you sure you want to exit?", Help: "Yes", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x1, VarStoreInfo: 0x43A, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		Action Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x107, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

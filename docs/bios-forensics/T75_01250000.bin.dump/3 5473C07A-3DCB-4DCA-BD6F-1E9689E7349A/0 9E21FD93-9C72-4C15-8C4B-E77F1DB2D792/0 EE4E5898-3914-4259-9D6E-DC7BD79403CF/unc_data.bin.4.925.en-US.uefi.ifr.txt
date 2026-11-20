@@ -1,0 +1,52 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 5D208ABD-7BB7-4D55-B3B8-A91FAE0C6247, Title: "BIOS Update will be postponed until next reboot in a few seconds", Help: "Postpone Update until the next reboot"
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x0
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x3
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	Form FormId: 0x1000, Title: "BIOS Update will be postponed until next reboot in a few seconds"
+		Subtitle Prompt: "Normal", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x1
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x2
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x4
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x8
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x10
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x6A4
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Subtitle Prompt: "Postpone Update until the next reboot", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x40
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Subtitle Prompt: "Postpone Update until the next reboot", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "BIOS Update will begin in a few seconds", Help: "Postpone Update until the next reboot", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x8000
+	End 
+	Form FormId: 0x1001, Title: "Update version: "
+		Subtitle Prompt: "Rollback version: ", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x6A5
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Subtitle Prompt: "Postpone Update until the next reboot", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Flashing BIOS image...", Help: "", Flags: 0x0
+		End 
+	End 
+	Form FormId: 0x1002, Title: ""
+		Subtitle Prompt: "New BIOS Update is available and is about to be downloaded and installed on this PC.", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x6A6
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Subtitle Prompt: "Postpone Update until the next reboot", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Flashing BIOS image...", Help: "", Flags: 0x0
+		End 
+	End 
+	Form FormId: 0x8000, Title: "BIOS Update will begin in a few seconds"
+		Subtitle Prompt: "Press ESC to POSTPONE this BIOS Update", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "Press F2 to skip this BIOS Update. You will be not asked again to update to this version.", Help: "Postpone Update until the next reboot", QuestionFlags: 0x4, QuestionId: 0x8100, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Ref Prompt: "MS Windows BitLocker Drive Encryption (BDE) may be enabled on your system.", Help: "Postpone Update until the next reboot", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1000
+	End 
+End 

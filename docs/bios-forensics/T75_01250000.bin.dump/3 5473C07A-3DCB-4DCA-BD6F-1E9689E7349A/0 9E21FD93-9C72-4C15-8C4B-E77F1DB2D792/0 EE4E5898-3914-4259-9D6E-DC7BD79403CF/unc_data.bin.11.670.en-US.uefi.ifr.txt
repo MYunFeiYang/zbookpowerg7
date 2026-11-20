@@ -1,0 +1,72 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 02EEA107-98DB-400E-9830-460A1542D799, Title: "POST Error", Help: ""
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 02EEA107-98DB-400E-9830-460A1542D799, VarStoreId: 0x1, Size: 0x638, Name: "IP6_CONFIG_IFR_NVDATA"
+	Form FormId: 0x3, Title: "Unknown error code"
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x108, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x1, Title: "Unknown error code"
+		Text Prompt: "Real-Time Clock Power Loss (005)", Help: "
+ENTER-Reboot the System 
+
+For more information, please visit:  www.hp.com\go\techcenter\startup", Text: "SMART Hard Disk Error 
+
+The SMART hard disk check has detected an imminent failure.  To ensure no data loss, 
+please backup the content immediately and run the Hard Disk Test in System Diagnostics.
+"
+		Text Prompt: "Hard Disk 1 (301)", Help: "Hard Disk 2 (302)", Text: "Hard Disk 3 (309)"
+		Text Prompt: "Hard Disk 4 (30A)", Help: "Hard Disk 5 (30B)", Text: "Hard Disk 6 (30C)"
+		Text Prompt: "Hard Disk 7 (30D)", Help: "Hard Disk 8 (30E)", Text: "InvalidId"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3840
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Hard Disk 9 (30F)", Help: "Hard Disk 10 (310)", Text: "InvalidId"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3E80
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Hard Disk 11 (311)", Help: "Hard Disk 12 (312)", Text: "InvalidId"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x44C0
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "NVMe SSD (313)", Help: "
+F2 System Diagnostics 
+ENTER - Continue Startup 
+
+For more information, please visit:  www.hp.com\go\techcenter\startup", Text: "InvalidId"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x4B00
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		String Prompt: "
+F2 System Diagnostics 
+ENTER - Continue Startup 
+
+For more information, please visit:  www.hp.com\go\300harddiskerror", Help: "This is a TEST Error
+", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x1, VarStoreInfo: 0xC, MinSize: 0x1, MaxSize: 0x17, Flags: 0x0
+		End 
+		Numeric Prompt: "This is a TEST Timeout message", Help: "This is a TEST Prompt message", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x8, Flags: 0x12, Size: 32, Min: 0x0, Max: 0xA, Step: 0x0
+		End 
+		OneOf Prompt: "This is a TEST Halt message", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x1, VarOffset: 0x4, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		Subtitle Prompt: "InvalidId", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2, Value: 0x0
+			Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+			Subtitle Prompt: "InvalidId", Help: "", Flags: 0x0
+			End 
+		End 
+		Action Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x2, Title: "InvalidId"
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x1, VarStoreInfo: 0x3E, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x103, VarStoreId: 0x1, VarStoreInfo: 0x23C, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x1, VarStoreInfo: 0x43A, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		Action Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x107, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

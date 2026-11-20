@@ -1,0 +1,35 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 9B942747-154E-4D29-A436-BF7100C8B53B, Title: "TPM Firmware Update Request", Help: "A request to update TPM Firmware is pending. Please press the appropriate key to accept or reject the request"
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x3
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 9B942747-154E-4D29-A436-BF7100C8B53B, VarStoreId: 0x1, Size: 0x260, Name: "IP4_CONFIG2_IFR_NVDATA"
+	Form FormId: 0x1, Title: "Press F1 = Accept"
+		CheckBox Prompt: "TPM Firmware", Help: "OK", QuestionFlags: 0x4, QuestionId: 0x100, VarStoreId: 0x1, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x100, Value: 0x0
+			CheckBox Prompt: "", Help: "", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x1, VarOffset: 0x1, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x101, Value: 0x1
+				EqIdVal QuestionId: 0x100, Value: 0x0
+				Or 
+			End 
+			String Prompt: "TPM Firmware Update protocols not found. Press enter to restart", Help: "TPM Firmware image is missing. Press enter to restart", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x1, VarStoreInfo: 0x2, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+			End 
+			String Prompt: "TPM Firmware Update commands could not send. Press enter to restart", Help: "TPM Firmware update session failure. Press enter to restart", QuestionFlags: 0x4, QuestionId: 0x103, VarStoreId: 0x1, VarStoreInfo: 0x22, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+			End 
+			String Prompt: "TPM Firmware update preparation failure. Press enter to restart", Help: "TPM Firmware Update last chance reached. Press enter to continue", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x1, VarStoreInfo: 0x42, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+			End 
+			String Prompt: "TPM Firmware multiple updates available. Press enter to continue", Help: "TPM Firmware image update limit has been reached. Press enter to restart.", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x1, VarStoreInfo: 0x62, MinSize: 0x7, MaxSize: 0xFF, Flags: 0x0
+			End 
+		End 
+		Subtitle Prompt: "TPM Firmware image update has failed. Press enter to restart.", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "TPM Firmware image is invalid. Press enter to restart", Help: "TPM Firmware image is invalid. Press enter to restart", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

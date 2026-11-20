@@ -1,0 +1,64 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 02EEA107-98DB-400E-9830-460A1542D799, Title: "A configuration change was requested to %s to the TPM's (Trusted Platform Module) firmware.
+
+", Help: "enable"
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 02EEA107-98DB-400E-9830-460A1542D799, VarStoreId: 0x1, Size: 0x638, Name: "IP6_CONFIG_IFR_NVDATA"
+	Form FormId: 0x3, Title: "disable"
+		Ref Prompt: "担全部责任，与惠普无涉。", Help: "确认启用TPM, 按 “+”。 ", QuestionFlags: 0x4, QuestionId: 0x108, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x1, Title: "disable"
+		Text Prompt: "deactivate", Help: "clear", Text: "enable and activate"
+		Text Prompt: "deactivate and disable", Help: "allow a user to take ownership of", Text: "disallow a user to take ownership of"
+		Text Prompt: "enable, activate, and allow a user to take ownership of", Help: "deactivate, disable, and disallow a user to take ownership of", Text: "clear, enable, and activate"
+		Text Prompt: "enable, activate and clear", Help: "enable, activate, clear, enable, and activate", Text: "操作/使用许可而发生的合规问题，皆由您自行承"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3840
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "allow field upgrade", Help: "provision", Text: "操作/使用许可而发生的合规问题，皆由您自行承"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3E80
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "maintain", Help: "Take ownership as soon as possible after this step.
+
+", Text: "操作/使用许可而发生的合规问题，皆由您自行承"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x44C0
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "NOTE: This action will turn off the TPM
+
+", Help: "NOTE: This action will turn on the TPM
+
+", Text: "操作/使用许可而发生的合规问题，皆由您自行承"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x4B00
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		String Prompt: "A configuration change was requested to %s ", Help: "this computer's TPM (Trusted Platform Module)", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x1, VarStoreInfo: 0xC, MinSize: 0x1, MaxSize: 0x17, Flags: 0x0
+		End 
+		Numeric Prompt: "A configuration change was requested to allow the Operating System to %s the", Help: "computer's TPM (Trusted Platform Module) without asking for user confirmation in the future.", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x8, Flags: 0x12, Size: 32, Min: 0x0, Max: 0xA, Step: 0x0
+		End 
+		OneOf Prompt: "WARNING: Allowing changes to the TPM’s firmware may affect the operation of the TPM", Help: "and may erase information stored on the TPM.", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x1, VarOffset: 0x4, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "You may lose all created keys and access to data encrypted by these keys." Value: 0, Default
+			OneOfOption Option: "WARNING: Doing so might prevent security applications" Value: 1
+		End 
+		Subtitle Prompt: "操作/使用许可而发生的合规问题，皆由您自行承", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2, Value: 0x0
+			Ref Prompt: "that rely on the TPM from functioning as expected", Help: "WARNING: Clearing erases information stored on the TPM.", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+			Subtitle Prompt: "操作/使用许可而发生的合规问题，皆由您自行承", Help: "", Flags: 0x0
+			End 
+		End 
+		Action Prompt: "惠普特别提醒：在您在系统中启用TPM功能前，", Help: "请您务必确认，您将要对TPM的使用遵守相关的", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x2, Title: "that rely on the TPM from functioning as expected"
+		String Prompt: "You will lose all created keys and access to data encrypted by these keys. ", Help: "NOTE: This action does not clear the TPM, but by approving this configuration change,", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x1, VarStoreInfo: 0x3E, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "future actions to clear the TPM will not require user confirmation.", Help: "Press F1 = Accept", QuestionFlags: 0x4, QuestionId: 0x103, VarStoreId: 0x1, VarStoreInfo: 0x23C, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "Press F2 = Reject", Help: " ", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x1, VarStoreInfo: 0x43A, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		Action Prompt: "当地法律、法规及政策，并已获得所需的一切事", Help: "当地法律、法规及政策，并已获得所需的一切事", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "先批准及许可（如适用）。若因您未获得相应的", Help: "先批准及许可（如适用）。若因您未获得相应的", QuestionFlags: 0x4, QuestionId: 0x107, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

@@ -1,0 +1,739 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 61FA5536-FE13-4B37-B1D0-0E7CDBD517F2, Title: "Broadcom NetXtreme Gigabit Ethernet", Help: "Configure Device Parameters."
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x0
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 61FA5536-FE13-4B37-B1D0-0E7CDBD517F2, VarStoreId: 0x1234, Size: 0x2458, Name: "MyIfrNVData"
+	Form FormId: 0x1, Title: "Main Configuration Page"
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x1
+			Ref Prompt: "Firmware Image Menu", Help: "Firmware image information.", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x8
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x0
+			Ref Prompt: "Firmware Image Properties", Help: "Firmware image information.", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xB
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3085, VarStoreId: 0x1234, VarOffset: 0x1773, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3085, Value: 0x1
+			SuppressIf 
+				EqIdVal QuestionId: 0x3095, Value: 0x1
+				Ref Prompt: "MBA Configuration Menu", Help: "Configure Multiple Boot Agent (MBA) parameters.", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x6
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x3095, Value: 0x0
+				Ref Prompt: "NIC Configuration", Help: "Configure Multiple Boot Agent (MBA) parameters.", QuestionFlags: 0x0, QuestionId: 0x4, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xC
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x3003, Value: 0x0
+				SuppressIf 
+					EqIdVal QuestionId: 0x3095, Value: 0x1
+					Ref Prompt: "iSCSI Boot Configuration Menu", Help: "Configure iSCSI boot parameters.", QuestionFlags: 0x0, QuestionId: 0x5, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x7
+				End 
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x3003, Value: 0x0
+				SuppressIf 
+					EqIdVal QuestionId: 0x3095, Value: 0x0
+					Ref Prompt: "iSCSI Configuration", Help: "Configure iSCSI boot parameters.", QuestionFlags: 0x0, QuestionId: 0x6, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xD
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3085, Value: 0x0
+			OneOf Prompt: "Disable HP Shared Memory features", Help: "Disable usage of reserved memory regions to allow direct assignment of device to guest virtual machines.", QuestionFlags: 0x0, QuestionId: 0x3123, VarStoreId: 0x1234, VarOffset: 0x2450, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Disabled" Value: 1
+				OneOfOption Option: "Enabled" Value: 0, Default
+			End 
+		End 
+		Numeric Prompt: "Blink LEDs", Help: "Blink LEDs for a duration up to 15 seconds.", QuestionFlags: 0x4, QuestionId: 0x601, VarStoreId: 0x1234, VarOffset: 0x2451, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3085, Value: 0x0
+			OneOf Prompt: "Pre-boot Wake On LAN", Help: "Configure Pre-boot Wake on LAN (WOL).", QuestionFlags: 0x0, QuestionId: 0x3088, VarStoreId: 0x1234, VarOffset: 0xA42, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Disabled" Value: 0, Default
+				OneOfOption Option: "Enabled" Value: 1
+			End 
+		End 
+		Text Prompt: "Chip Type", Help: "Chip Type/Revision.", Text: ""
+		Text Prompt: "PCI Device ID", Help: "PCI Device ID", Text: ""
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x1
+			Text Prompt: "Bus:Device:Function", Help: "PCI Bus:Device:Function number of this device.", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x0
+			Text Prompt: "PCI Address", Help: "PCI Bus:Device:Function number of this device.", Text: ""
+		End 
+		OneOf Prompt: "Link Status", Help: "Link Status", QuestionFlags: 0x1, QuestionId: 0x3083, VarStoreId: 0x1234, VarOffset: 0xA4D, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Disconnected" Value: 0
+			OneOfOption Option: "Connected" Value: 1
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x1
+			String Prompt: "Permanent MAC Address", Help: "Permanent MAC Address", QuestionFlags: 0x1, QuestionId: 0x3001, VarStoreId: 0x1234, VarStoreInfo: 0x150C, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x0
+			String Prompt: "MAC Address", Help: "Permanent MAC Address", QuestionFlags: 0x1, QuestionId: 0x3119, VarStoreId: 0x1234, VarStoreInfo: 0x150C, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+			End 
+		End 
+		String Prompt: "Virtual MAC Address", Help: "Virtual MAC Address", QuestionFlags: 0x1, QuestionId: 0x3002, VarStoreId: 0x1234, VarStoreInfo: 0x1578, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3003, VarStoreId: 0x1234, VarOffset: 0x4B, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3004, VarStoreId: 0x1234, VarOffset: 0x1779, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3005, VarStoreId: 0x1234, VarOffset: 0x177A, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			String Prompt: "FCoE Offload Support", Help: "", QuestionFlags: 0x1, QuestionId: 0x3006, VarStoreId: 0x1234, VarStoreInfo: 0x13EA, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "iSCSI Offload Support", Help: "", QuestionFlags: 0x1, QuestionId: 0x3007, VarStoreId: 0x1234, VarStoreInfo: 0x1402, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "iSCSI Boot Support", Help: "", QuestionFlags: 0x1, QuestionId: 0x3008, VarStoreId: 0x1234, VarStoreInfo: 0x13BA, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "PXE Boot Support", Help: "", QuestionFlags: 0x1, QuestionId: 0x3009, VarStoreId: 0x1234, VarStoreInfo: 0x13D2, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "FCoE Boot Support", Help: "", QuestionFlags: 0x1, QuestionId: 0x3010, VarStoreId: 0x1234, VarStoreInfo: 0x13A2, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "NIC Partitioning Support", Help: "", QuestionFlags: 0x1, QuestionId: 0x3011, VarStoreId: 0x1234, VarStoreInfo: 0x1432, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "FlexAddressing", Help: "", QuestionFlags: 0x1, QuestionId: 0x3012, VarStoreId: 0x1234, VarStoreInfo: 0x141A, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "TX Bandwidth Control Maximum", Help: "", QuestionFlags: 0x1, QuestionId: 0x3013, VarStoreId: 0x1234, VarStoreInfo: 0x144A, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "TX Bandwidth Control Minimum", Help: "", QuestionFlags: 0x1, QuestionId: 0x3014, VarStoreId: 0x1234, VarStoreInfo: 0x1462, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			OneOf Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3016, VarStoreId: 0x1234, VarOffset: 0xA45, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3017, VarStoreId: 0x1234, VarOffset: 0xA49, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3018, VarStoreId: 0x1234, VarOffset: 0x754, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3019, VarStoreId: 0x1234, VarOffset: 0xA4B, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3020, VarStoreId: 0x1234, VarOffset: 0x755, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3082, VarStoreId: 0x1234, VarOffset: 0x177D, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3084, VarStoreId: 0x1234, VarOffset: 0x1773, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3087, VarStoreId: 0x1234, VarOffset: 0x178B, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3089, VarStoreId: 0x1234, VarOffset: 0x1774, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+	End 
+	Form FormId: 0x2, Title: "iSCSI General Parameters"
+		Subtitle Prompt: "Broadcom NetXtreme Gigabit Ethernet", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "", Help: "", QuestionFlags: 0x1, QuestionId: 0x3021, VarStoreId: 0x1234, VarOffset: 0x755, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3021, Value: 0x1
+			OneOf Prompt: "TCP/IP Parameters via DHCP", Help: "Acquire TCP/IP configuration via DHCP.", QuestionFlags: 0x0, QuestionId: 0x3022, VarStoreId: 0x1234, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Disabled" Value: 0
+				OneOfOption Option: "Enabled" Value: 1, Default
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x1
+			GrayOutIf 
+				EqIdVal QuestionId: 0x3021, Value: 0x0
+				OneOf Prompt: "IP Autoconfiguration", Help: "Acquire TCP/IP configuration via Stateful or Stateless Autoconfiguration.", QuestionFlags: 0x0, QuestionId: 0x3023, VarStoreId: 0x1234, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+					OneOfOption Option: "Disabled" Value: 0
+					OneOfOption Option: "Enabled" Value: 1, Default
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x3021, Value: 0x0
+				OneOf Prompt: "IP Auto-Configuration", Help: "Acquire TCP/IP configuration via Stateful or Stateless Autoconfiguration.", QuestionFlags: 0x0, QuestionId: 0x3120, VarStoreId: 0x1234, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+					OneOfOption Option: "Disabled" Value: 0
+					OneOfOption Option: "Enabled" Value: 1, Default
+				End 
+			End 
+		End 
+		OneOf Prompt: "iSCSI Parameters via DHCP", Help: "Acquire iSCSI parameters via DHCP.", QuestionFlags: 0x0, QuestionId: 0x3024, VarStoreId: 0x1234, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Disabled" Value: 0
+			OneOfOption Option: "Enabled" Value: 1, Default
+		End 
+		OneOf Prompt: "CHAP Authentication", Help: "Enable/Disable CHAP authentication.", QuestionFlags: 0x0, QuestionId: 0x3025, VarStoreId: 0x1234, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Disabled" Value: 0, Default
+			OneOfOption Option: "Enabled" Value: 1
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x1
+			OneOf Prompt: "Boot to iSCSI Target", Help: "Enable/Disable booting to iSCSI target after logon.", QuestionFlags: 0x0, QuestionId: 0x3026, VarStoreId: 0x1234, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+				OneOfOption Option: "Disabled" Value: 0
+				OneOfOption Option: "Enabled" Value: 1, Default
+				OneOfOption Option: "One Time Disabled" Value: 2
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x0
+			OneOf Prompt: "Boot to Target", Help: "Enable/Disable booting to iSCSI target after logon.", QuestionFlags: 0x0, QuestionId: 0x3121, VarStoreId: 0x1234, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+				OneOfOption Option: "Disabled" Value: 0
+				OneOfOption Option: "Enabled" Value: 1, Default
+				OneOfOption Option: "One Time Disabled" Value: 2
+			End 
+		End 
+		String Prompt: "DHCP Vendor ID", Help: "Configure DHCP vendor ID (up to 32 bytes long).", QuestionFlags: 0x0, QuestionId: 0x3027, VarStoreId: 0x1234, VarStoreInfo: 0x4, MinSize: 0x0, MaxSize: 0x20, Flags: 0x0
+			Default DefaultId: 0x0 String: "BRCM ISAN"
+		End 
+		Numeric Prompt: "Link Up Delay Time", Help: "Configure link up delay time in seconds (0..255).", QuestionFlags: 0x0, QuestionId: 0x3028, VarStoreId: 0x1234, VarOffset: 0x46, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x1
+			OneOf Prompt: "Use TCP Timestamp", Help: "Enable/Disable TCP timestamp.", QuestionFlags: 0x0, QuestionId: 0x3029, VarStoreId: 0x1234, VarOffset: 0x47, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Disabled" Value: 0, Default
+				OneOfOption Option: "Enabled" Value: 1
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x0
+			OneOf Prompt: "TCP Timestamp", Help: "Enable/Disable TCP timestamp.", QuestionFlags: 0x0, QuestionId: 0x3122, VarStoreId: 0x1234, VarOffset: 0x47, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Disabled" Value: 0, Default
+				OneOfOption Option: "Enabled" Value: 1
+			End 
+		End 
+		OneOf Prompt: "Target as First HDD", Help: "Enable/Disable target appears as first hard disk drive (HDD) in the system.", QuestionFlags: 0x0, QuestionId: 0x3030, VarStoreId: 0x1234, VarOffset: 0x48, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Disabled" Value: 0, Default
+			OneOfOption Option: "Enabled" Value: 1
+		End 
+		Numeric Prompt: "LUN Busy Retry Count", Help: "Configure number of retries in 2 second intervals when LUN is busy (0..60).", QuestionFlags: 0x0, QuestionId: 0x3031, VarStoreId: 0x1234, VarOffset: 0x49, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x3C, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		OneOf Prompt: "IP Version", Help: "IP version support.  Modifying this parameter will reset all IP-related fields.", QuestionFlags: 0x4, QuestionId: 0x3032, VarStoreId: 0x1234, VarOffset: 0x755, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			SuppressIf 
+				EqIdVal QuestionId: 0x3082, Value: 0x0
+					EqIdVal QuestionId: 0x3082, Value: 0x6
+					Or 
+				End 
+				OneOfOption Option: "IPv4" Value: 0, Default
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x3082, Value: 0x0
+					EqIdVal QuestionId: 0x3082, Value: 0x4
+					Or 
+				End 
+				OneOfOption Option: "IPv6" Value: 1
+			End 
+		End 
+	End 
+	Form FormId: 0x3, Title: "iSCSI Initiator Parameters"
+		Subtitle Prompt: "Broadcom NetXtreme Gigabit Ethernet", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3033, VarStoreId: 0x1234, VarOffset: 0x755, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		String Prompt: "IP Address", Help: "Configure initiator IP address.", QuestionFlags: 0x4, QuestionId: 0x201, VarStoreId: 0x1234, VarStoreInfo: 0x4C, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "0.0.0.0"
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3033, Value: 0x1
+			String Prompt: "Subnet Mask", Help: "Configure IP subnet mask.", QuestionFlags: 0x4, QuestionId: 0x202, VarStoreId: 0x1234, VarStoreInfo: 0x9C, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				Default DefaultId: 0x0 String: "0.0.0.0"
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3033, Value: 0x0
+			String Prompt: "Subnet Mask Prefix", Help: "Configure IP subnet mask prefix length.", QuestionFlags: 0x4, QuestionId: 0x209, VarStoreId: 0x1234, VarStoreInfo: 0xEC, MinSize: 0x1, MaxSize: 0x3, Flags: 0x0
+			End 
+		End 
+		String Prompt: "Default Gateway", Help: "Configure default gateway IP address.", QuestionFlags: 0x4, QuestionId: 0x203, VarStoreId: 0x1234, VarStoreInfo: 0x13C, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "0.0.0.0"
+		End 
+		String Prompt: "Primary DNS", Help: "Configure primary DNS IP address.", QuestionFlags: 0x4, QuestionId: 0x204, VarStoreId: 0x1234, VarStoreInfo: 0x18C, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "0.0.0.0"
+		End 
+		String Prompt: "Secondary DNS", Help: "Configure secondary DNS IP address.", QuestionFlags: 0x4, QuestionId: 0x205, VarStoreId: 0x1234, VarStoreInfo: 0x1DC, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "0.0.0.0"
+		End 
+		String Prompt: "iSCSI Name", Help: "Configure iSCSI name.", QuestionFlags: 0x4, QuestionId: 0x206, VarStoreId: 0x1234, VarStoreInfo: 0x22C, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+			Default DefaultId: 0x0 String: "iqn.1995-05.com.broadcom.iscsiboot"
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x1
+			String Prompt: "CHAP ID", Help: "Configure CHAP ID (up to 128 characters in length).", QuestionFlags: 0x4, QuestionId: 0x20A, VarStoreId: 0x1234, VarStoreInfo: 0x32E, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+				Default DefaultId: 0x0 String: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x2
+			String Prompt: "CHAP ID", Help: "Configure CHAP ID (up to 32 characters in length).", QuestionFlags: 0x4, QuestionId: 0x207, VarStoreId: 0x1234, VarStoreInfo: 0x430, MinSize: 0x0, MaxSize: 0x20, Flags: 0x0
+				Default DefaultId: 0x0 String: ""
+			End 
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3093, VarStoreId: 0x1234, VarOffset: 0x1774, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3093, Value: 0x0
+			String Prompt: "CHAP Secret", Help: "Configure CHAP Secret (12 to 16 characters in length).", QuestionFlags: 0x4, QuestionId: 0x208, VarStoreId: 0x1234, VarStoreInfo: 0x472, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+				Default DefaultId: 0x0 String: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3093, Value: 0x1
+			Password Prompt: "CHAP Secret", Help: "Configure CHAP Secret (12 to 16 characters in length).", QuestionFlags: 0x4, QuestionId: 0x20B, VarStoreId: 0x1234, VarStoreInfo: 0x472, MinSize: 0x0, MaxSize: 0x10
+			End 
+		End 
+	End 
+	Form FormId: 0x4, Title: "iSCSI First Target Parameters"
+		Subtitle Prompt: "Broadcom NetXtreme Gigabit Ethernet", Help: "", Flags: 0x0
+		End 
+		OneOf Prompt: "Connect", Help: "Enable/Disable target establishment.", QuestionFlags: 0x0, QuestionId: 0x3044, VarStoreId: 0x1234, VarOffset: 0x494, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Disabled" Value: 0, Default
+			OneOfOption Option: "Enabled" Value: 1
+		End 
+		String Prompt: "IP Address", Help: "Configure target IP address.", QuestionFlags: 0x4, QuestionId: 0x302, VarStoreId: 0x1234, VarStoreInfo: 0x498, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "0.0.0.0"
+		End 
+		Numeric Prompt: "TCP Port", Help: "Configure target TCP port number (1..65535).", QuestionFlags: 0x0, QuestionId: 0x3046, VarStoreId: 0x1234, VarOffset: 0x4E8, Flags: 0x11, Size: 16, Min: 0x1, Max: 0xFFFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 3260
+			InconsistentIf Error: "Invalid TCP Port"
+				EqIdVal QuestionId: 0x3046, Value: 0x0
+			End 
+		End 
+		Numeric Prompt: "Boot LUN", Help: "Configure target boot LUN number (0..255).", QuestionFlags: 0x0, QuestionId: 0x3047, VarStoreId: 0x1234, VarOffset: 0x4EA, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		String Prompt: "iSCSI Name", Help: "Configure iSCSI name.", QuestionFlags: 0x4, QuestionId: 0x305, VarStoreId: 0x1234, VarStoreInfo: 0x4EC, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+			Default DefaultId: 0x0 String: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x1
+			String Prompt: "CHAP ID", Help: "Configure CHAP ID (up to 128 characters in length).", QuestionFlags: 0x4, QuestionId: 0x308, VarStoreId: 0x1234, VarStoreInfo: 0x5EE, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+				Default DefaultId: 0x0 String: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x2
+			String Prompt: "CHAP ID", Help: "Configure CHAP ID (up to 32 characters in length).", QuestionFlags: 0x4, QuestionId: 0x306, VarStoreId: 0x1234, VarStoreInfo: 0x6F0, MinSize: 0x0, MaxSize: 0x20, Flags: 0x0
+				Default DefaultId: 0x0 String: ""
+			End 
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3094, VarStoreId: 0x1234, VarOffset: 0x1774, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3094, Value: 0x0
+			String Prompt: "CHAP Secret", Help: "Configure CHAP Secret (12 to 16 characters in length).", QuestionFlags: 0x4, QuestionId: 0x307, VarStoreId: 0x1234, VarStoreInfo: 0x732, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+				Default DefaultId: 0x0 String: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3094, Value: 0x1
+			Password Prompt: "CHAP Secret", Help: "Configure CHAP Secret (12 to 16 characters in length).", QuestionFlags: 0x4, QuestionId: 0x309, VarStoreId: 0x1234, VarStoreInfo: 0x732, MinSize: 0x0, MaxSize: 0x10
+			End 
+		End 
+	End 
+	Form FormId: 0x5, Title: "iSCSI Second Target Parameters"
+		Subtitle Prompt: "Broadcom NetXtreme Gigabit Ethernet", Help: "", Flags: 0x0
+		End 
+		OneOf Prompt: "Connect", Help: "Enable/Disable target establishment.", QuestionFlags: 0x0, QuestionId: 0x3052, VarStoreId: 0x1234, VarOffset: 0x756, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Disabled" Value: 0, Default
+			OneOfOption Option: "Enabled" Value: 1
+		End 
+		String Prompt: "IP Address", Help: "Configure target IP address.", QuestionFlags: 0x4, QuestionId: 0x402, VarStoreId: 0x1234, VarStoreInfo: 0x75A, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "0.0.0.0"
+		End 
+		Numeric Prompt: "TCP Port", Help: "Configure target TCP port number (1..65535).", QuestionFlags: 0x0, QuestionId: 0x3054, VarStoreId: 0x1234, VarOffset: 0x7AA, Flags: 0x11, Size: 16, Min: 0x1, Max: 0xFFFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 3260
+			InconsistentIf Error: "Invalid TCP Port"
+				EqIdVal QuestionId: 0x3054, Value: 0x0
+			End 
+		End 
+		Numeric Prompt: "Boot LUN", Help: "Configure target boot LUN number (0..255).", QuestionFlags: 0x0, QuestionId: 0x3055, VarStoreId: 0x1234, VarOffset: 0x7AC, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		String Prompt: "iSCSI Name", Help: "Configure iSCSI name.", QuestionFlags: 0x4, QuestionId: 0x405, VarStoreId: 0x1234, VarStoreInfo: 0x7AE, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+			Default DefaultId: 0x0 String: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x1
+			String Prompt: "CHAP ID", Help: "Configure CHAP ID (up to 128 characters in length).", QuestionFlags: 0x4, QuestionId: 0x408, VarStoreId: 0x1234, VarStoreInfo: 0x8B0, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+				Default DefaultId: 0x0 String: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x2
+			String Prompt: "CHAP ID", Help: "Configure CHAP ID (up to 32 characters in length).", QuestionFlags: 0x4, QuestionId: 0x406, VarStoreId: 0x1234, VarStoreInfo: 0x9B2, MinSize: 0x0, MaxSize: 0x20, Flags: 0x0
+				Default DefaultId: 0x0 String: ""
+			End 
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3095, VarStoreId: 0x1234, VarOffset: 0x1774, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x0
+			String Prompt: "CHAP Secret", Help: "Configure CHAP Secret (12 to 16 characters in length).", QuestionFlags: 0x4, QuestionId: 0x407, VarStoreId: 0x1234, VarStoreInfo: 0x9F4, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+				Default DefaultId: 0x0 String: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x1
+			Password Prompt: "CHAP Secret", Help: "Configure CHAP Secret (12 to 16 characters in length).", QuestionFlags: 0x4, QuestionId: 0x409, VarStoreId: 0x1234, VarStoreInfo: 0x9F4, MinSize: 0x0, MaxSize: 0x10
+			End 
+		End 
+	End 
+	Form FormId: 0x6, Title: "MBA Configuration Menu"
+		Subtitle Prompt: "Broadcom NetXtreme Gigabit Ethernet", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "Option ROM", Help: "Enable/Disable Boot Option ROM", QuestionFlags: 0x0, QuestionId: 0x3060, VarStoreId: 0x1234, VarOffset: 0xA50, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Disabled" Value: 0
+				OneOfOption Option: "Enabled" Value: 1
+			End 
+		End 
+		OneOf Prompt: "Legacy Boot Protocol", Help: "Select non-UEFI Boot Protocol: Preboot Execution Environment (PXE)/iSCSI.", QuestionFlags: 0x0, QuestionId: 0x3061, VarStoreId: 0x1234, VarOffset: 0xA40, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x7, Step: 0x0
+			OneOfOption Option: "PXE" Value: 0
+			SuppressIf 
+				EqIdVal QuestionId: 0x3003, Value: 0x0
+				OneOfOption Option: "iSCSI" Value: 3
+			End 
+			OneOfOption Option: "NONE" Value: 7, Default
+		End 
+		OneOf Prompt: "Boot Strap Type", Help: "Select boot strap type.", QuestionFlags: 0x0, QuestionId: 0x3062, VarStoreId: 0x1234, VarOffset: 0xA53, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x3, Step: 0x0
+			OneOfOption Option: "Auto Detect" Value: 0, Default
+			OneOfOption Option: "BBS" Value: 1
+			OneOfOption Option: "Int 18h" Value: 2
+			OneOfOption Option: "Int 19h" Value: 3
+		End 
+		OneOf Prompt: "Hide Setup Prompt", Help: "Configure whether Setup Prompt is displayed during ROM initialization.", QuestionFlags: 0x0, QuestionId: 0x3063, VarStoreId: 0x1234, VarOffset: 0xA51, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Disabled" Value: 0, Default
+			OneOfOption Option: "Enabled" Value: 1
+		End 
+		OneOf Prompt: "Setup Key Stroke", Help: "Configure key strokes to invoke configuration menu.", QuestionFlags: 0x0, QuestionId: 0x3064, VarStoreId: 0x1234, VarOffset: 0xA54, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Ctrl-S" Value: 0, Default
+			OneOfOption Option: "Ctrl-B" Value: 1
+		End 
+		Numeric Prompt: "Banner Message Timeout", Help: "Select timeout value. (0 defaults to 4 seconds, 15 is no delay, 1-14 is timeout value in seconds)", QuestionFlags: 0x0, QuestionId: 0x3065, VarStoreId: 0x1234, VarOffset: 0xA52, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF, Step: 0x0
+			Default DefaultId: 0x0 Value: 5
+		End 
+		OneOf Prompt: "Link Speed", Help: "Configure link speed.", QuestionFlags: 0x0, QuestionId: 0x3066, VarStoreId: 0x1234, VarOffset: 0xA41, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x4, Step: 0x0
+			OneOfOption Option: "AutoNeg" Value: 0, Default
+			OneOfOption Option: "10Mbps Half" Value: 1
+			OneOfOption Option: "10Mbps Full" Value: 2
+			OneOfOption Option: "100Mbps Half" Value: 3
+			OneOfOption Option: "100Mbps Full" Value: 4
+		End 
+		OneOf Prompt: "Pre-boot Wake On LAN", Help: "Configure Pre-boot Wake on LAN (WOL).", QuestionFlags: 0x0, QuestionId: 0x3067, VarStoreId: 0x1234, VarOffset: 0xA42, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Disabled" Value: 0, Default
+			OneOfOption Option: "Enabled" Value: 1
+		End 
+		OneOf Prompt: "VLAN Mode", Help: "Configure virtual LAN mode.", QuestionFlags: 0x0, QuestionId: 0x3068, VarStoreId: 0x1234, VarOffset: 0xA43, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Disabled" Value: 0, Default
+			OneOfOption Option: "Enabled" Value: 1
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3068, Value: 0x0
+			Numeric Prompt: "VLAN ID (1..4094)", Help: "Configure virtual LAN ID (1..4094).", QuestionFlags: 0x0, QuestionId: 0x3069, VarStoreId: 0x1234, VarOffset: 0xA3C, Flags: 0x12, Size: 32, Min: 0x1, Max: 0xFFE, Step: 0x0
+				Default DefaultId: 0x0 Value: 1
+				InconsistentIf Error: "Invalid VLAN ID"
+					EqIdVal QuestionId: 0x3069, Value: 0x0
+				End 
+			End 
+		End 
+	End 
+	Form FormId: 0x7, Title: "iSCSI Boot Configuration Menu"
+		Subtitle Prompt: "Broadcom NetXtreme Gigabit Ethernet", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "iSCSI General Parameters", Help: "Configure iSCSI general boot parameters.", QuestionFlags: 0x0, QuestionId: 0x7, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+		Ref Prompt: "iSCSI Initiator Parameters", Help: "Configure iSCSI initiator parameters.", QuestionFlags: 0x0, QuestionId: 0x8, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x3
+		Ref Prompt: "iSCSI First Target Parameters", Help: "Configure iSCSI first target parameters.", QuestionFlags: 0x0, QuestionId: 0x9, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x4
+		Ref Prompt: "iSCSI Second Target Parameters", Help: "Configure iSCSI second target parameters.", QuestionFlags: 0x0, QuestionId: 0xA, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x5
+		SuppressIf 
+			EqIdVal QuestionId: 0x3018, Value: 0x0
+			Ref Prompt: "Secondary Device", Help: "Configure Secondary device parameters.", QuestionFlags: 0x0, QuestionId: 0xB, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x9
+		End 
+	End 
+	Form FormId: 0x8, Title: "Firmware Image Menu"
+		Subtitle Prompt: "Broadcom NetXtreme Gigabit Ethernet", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3017, Value: 0x0
+			String Prompt: "Family Firmware Version", Help: "", QuestionFlags: 0x1, QuestionId: 0x3070, VarStoreId: 0x1234, VarStoreInfo: 0x127E, MinSize: 0x0, MaxSize: 0x14, Flags: 0x0
+			End 
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3084, Value: 0x0
+			Text Prompt: "Image:", Help: "Listing of firmware image components (and their corresponding versions) currently programmed on the NVRAM.  N/A indicates the image is not present.
+Boot code - Boot code
+MBA - Multiple Boot Agent
+EFI - UEFI Option ROM
+Fcode - Fcode Option ROM
+iSCSI Boot - iSCSI Boot
+NC-SI - Management FW
+CCM - Comprehensive Configuration Manager", Text: "Version:"
+		End 
+		String Prompt: "Bootcode", Help: "Bootcode", QuestionFlags: 0x1, QuestionId: 0x3071, VarStoreId: 0x1234, VarStoreInfo: 0x12A6, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x6
+				Or 
+			End 
+			String Prompt: "MBA", Help: "Multiple Boot Agent", QuestionFlags: 0x1, QuestionId: 0x3072, VarStoreId: 0x1234, VarStoreInfo: 0x12B8, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x5
+				Or 
+			End 
+			String Prompt: "EFI", Help: "UEFI Option ROM", QuestionFlags: 0x1, QuestionId: 0x3073, VarStoreId: 0x1234, VarStoreInfo: 0x12CA, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x3
+				Or 
+			End 
+			String Prompt: "Fcode", Help: "Fcode Option ROM", QuestionFlags: 0x1, QuestionId: 0x3074, VarStoreId: 0x1234, VarStoreInfo: 0x12DC, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "iSCSI Boot", Help: "iSCSI Boot", QuestionFlags: 0x1, QuestionId: 0x3075, VarStoreId: 0x1234, VarStoreInfo: 0x12EE, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3005, Value: 0x0
+			String Prompt: "ASF", Help: "Management FW", QuestionFlags: 0x1, QuestionId: 0x3076, VarStoreId: 0x1234, VarStoreInfo: 0x1324, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3004, Value: 0x0
+			String Prompt: "UMP", Help: "Management FW", QuestionFlags: 0x1, QuestionId: 0x3077, VarStoreId: 0x1234, VarStoreInfo: 0x1336, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "NC-SI", Help: "Management FW", QuestionFlags: 0x1, QuestionId: 0x3078, VarStoreId: 0x1234, VarStoreInfo: 0x1300, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3087, Value: 0x0
+			String Prompt: "SMASH", Help: "Management FW", QuestionFlags: 0x1, QuestionId: 0x3086, VarStoreId: 0x1234, VarStoreInfo: 0x1390, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "CCM", Help: "Configuration ROM", QuestionFlags: 0x1, QuestionId: 0xC, VarStoreId: 0x1234, VarStoreInfo: 0x137E, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3084, Value: 0x1
+			Text Prompt: "", Help: "Listing of firmware image components (and their corresponding versions) currently programmed on the NVRAM.  N/A indicates the image is not present.", Text: ""
+			Text Prompt: "", Help: "Boot code - Boot code
+MBA - Multiple Boot Agent
+EFI - UEFI Option ROM
+Fcode - Fcode Option ROM
+iSCSI Boot - iSCSI Boot
+NC-SI - Management FW
+CCM - Configuration ROM", Text: ""
+		End 
+	End 
+	Form FormId: 0x9, Title: "Secondary Device"
+		Subtitle Prompt: "Broadcom NetXtreme Gigabit Ethernet", Help: "", Flags: 0x0
+		End 
+		String Prompt: "Secondary Device", Help: "Input secondary device MAC address. Use XX:XX:XX:XX:XX:XX format.", QuestionFlags: 0x4, QuestionId: 0x501, VarStoreId: 0x1234, VarStoreInfo: 0xA18, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+			Default DefaultId: 0x0 String: "00:00:00:00:00:00"
+		End 
+		OneOf Prompt: "Use Independent Target Portal", Help: "Use independent target portal when multipath I/O is enabled.", QuestionFlags: 0x0, QuestionId: 0x3080, VarStoreId: 0x1234, VarOffset: 0xA16, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Disabled" Value: 0, Default
+			OneOfOption Option: "Enabled" Value: 1
+		End 
+		OneOf Prompt: "Use Independent Target Name", Help: "Use independent target name when multipath I/O is enabled.", QuestionFlags: 0x0, QuestionId: 0x3081, VarStoreId: 0x1234, VarOffset: 0xA17, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Disabled" Value: 0, Default
+			OneOfOption Option: "Enabled" Value: 1
+		End 
+	End 
+	Form FormId: 0xA, Title: "iSCSI Secondary Device Parameters"
+		Subtitle Prompt: "Broadcom NetXtreme Gigabit Ethernet", Help: "", Flags: 0x0
+		End 
+		String Prompt: "Secondary Device MAC Address", Help: "Input secondary device MAC address. Use XX:XX:XX:XX:XX:XX format.", QuestionFlags: 0x4, QuestionId: 0x502, VarStoreId: 0x1234, VarStoreInfo: 0xA18, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+		End 
+		OneOf Prompt: "Use Independent Target Portal", Help: "Use independent target portal when multipath I/O is enabled.", QuestionFlags: 0x0, QuestionId: 0x3097, VarStoreId: 0x1234, VarOffset: 0xA16, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Disabled" Value: 0, Default
+			OneOfOption Option: "Enabled" Value: 1
+		End 
+		OneOf Prompt: "Use Independent Target Name", Help: "Use independent target name when multipath I/O is enabled.", QuestionFlags: 0x0, QuestionId: 0x3098, VarStoreId: 0x1234, VarOffset: 0xA17, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Disabled" Value: 0, Default
+			OneOfOption Option: "Enabled" Value: 1
+		End 
+	End 
+	Form FormId: 0xB, Title: "Firmware Image Properties"
+		Subtitle Prompt: "Broadcom NetXtreme Gigabit Ethernet", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3017, Value: 0x0
+			String Prompt: "Family Firmware Version", Help: "", QuestionFlags: 0x1, QuestionId: 0x3099, VarStoreId: 0x1234, VarStoreInfo: 0x127E, MinSize: 0x0, MaxSize: 0x14, Flags: 0x0
+			End 
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		String Prompt: "Controller BIOS Version", Help: "Bootcode", QuestionFlags: 0x1, QuestionId: 0x3100, VarStoreId: 0x1234, VarStoreInfo: 0x12A6, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x6
+				Or 
+			End 
+			String Prompt: "MBA", Help: "Multiple Boot Agent", QuestionFlags: 0x1, QuestionId: 0x3101, VarStoreId: 0x1234, VarStoreInfo: 0x12B8, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x5
+				Or 
+			End 
+			String Prompt: "EFI Version", Help: "UEFI Option ROM", QuestionFlags: 0x1, QuestionId: 0x3102, VarStoreId: 0x1234, VarStoreInfo: 0x12CA, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x3
+				Or 
+			End 
+			String Prompt: "Fcode", Help: "Fcode Option ROM", QuestionFlags: 0x1, QuestionId: 0x3103, VarStoreId: 0x1234, VarStoreInfo: 0x12DC, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "iSCSI Boot", Help: "iSCSI Boot", QuestionFlags: 0x1, QuestionId: 0x3104, VarStoreId: 0x1234, VarStoreInfo: 0x12EE, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3005, Value: 0x0
+			String Prompt: "ASF", Help: "Management FW", QuestionFlags: 0x1, QuestionId: 0x3105, VarStoreId: 0x1234, VarStoreInfo: 0x1324, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3004, Value: 0x0
+			String Prompt: "UMP", Help: "Management FW", QuestionFlags: 0x1, QuestionId: 0x3106, VarStoreId: 0x1234, VarStoreInfo: 0x1336, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "NC-SI", Help: "Management FW", QuestionFlags: 0x1, QuestionId: 0x3107, VarStoreId: 0x1234, VarStoreInfo: 0x1300, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3087, Value: 0x0
+			String Prompt: "SMASH", Help: "Management FW", QuestionFlags: 0x1, QuestionId: 0x3108, VarStoreId: 0x1234, VarStoreInfo: 0x1390, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "CCM", Help: "Configuration ROM", QuestionFlags: 0x1, QuestionId: 0xD, VarStoreId: 0x1234, VarStoreInfo: 0x137E, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+	End 
+	Form FormId: 0xC, Title: "NIC Configuration"
+		Subtitle Prompt: "Broadcom NetXtreme Gigabit Ethernet", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "Option ROM", Help: "Enable/Disable Boot Option ROM", QuestionFlags: 0x0, QuestionId: 0x3109, VarStoreId: 0x1234, VarOffset: 0xA50, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Disabled" Value: 0
+				OneOfOption Option: "Enabled" Value: 1
+			End 
+		End 
+		OneOf Prompt: "Legacy Boot Protocol", Help: "Select non-UEFI Boot Protocol: Preboot Execution Environment (PXE)/iSCSI.", QuestionFlags: 0x0, QuestionId: 0x3110, VarStoreId: 0x1234, VarOffset: 0xA40, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x7, Step: 0x0
+			OneOfOption Option: "PXE" Value: 0
+			SuppressIf 
+				EqIdVal QuestionId: 0x3003, Value: 0x0
+				OneOfOption Option: "iSCSI" Value: 3
+			End 
+			OneOfOption Option: "None" Value: 7, Default
+		End 
+		OneOf Prompt: "Boot Strap Type", Help: "Select boot strap type.", QuestionFlags: 0x0, QuestionId: 0x3111, VarStoreId: 0x1234, VarOffset: 0xA53, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x3, Step: 0x0
+			OneOfOption Option: "Auto Detect" Value: 0, Default
+			OneOfOption Option: "BBS" Value: 1
+			OneOfOption Option: "Int 18h" Value: 2
+			OneOfOption Option: "Int 19h" Value: 3
+		End 
+		OneOf Prompt: "Hide Setup Prompt", Help: "Configure whether Setup Prompt is displayed during ROM initialization.", QuestionFlags: 0x0, QuestionId: 0x3112, VarStoreId: 0x1234, VarOffset: 0xA51, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Disabled" Value: 0, Default
+			OneOfOption Option: "Enabled" Value: 1
+		End 
+		OneOf Prompt: "Setup Key Stroke", Help: "Configure key strokes to invoke configuration menu.", QuestionFlags: 0x0, QuestionId: 0x3113, VarStoreId: 0x1234, VarOffset: 0xA54, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Ctrl-S" Value: 0, Default
+			OneOfOption Option: "Ctrl-B" Value: 1
+		End 
+		Numeric Prompt: "Banner Message Timeout", Help: "Select timeout value. (0 defaults to 4 seconds, 15 is no delay, 1-14 is timeout value in seconds)", QuestionFlags: 0x0, QuestionId: 0x3114, VarStoreId: 0x1234, VarOffset: 0xA52, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF, Step: 0x0
+			Default DefaultId: 0x0 Value: 5
+		End 
+		OneOf Prompt: "Link Speed", Help: "Configure link speed.", QuestionFlags: 0x0, QuestionId: 0x3115, VarStoreId: 0x1234, VarOffset: 0xA41, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x4, Step: 0x0
+			OneOfOption Option: "Auto Negotiated" Value: 0, Default
+			OneOfOption Option: "10 Mbps Half" Value: 1
+			OneOfOption Option: "10 Mbps Full" Value: 2
+			OneOfOption Option: "100 Mbps Half" Value: 3
+			OneOfOption Option: "100 Mbps Full" Value: 4
+		End 
+		OneOf Prompt: "Wake On LAN", Help: "Configure Wake on LAN (WOL).", QuestionFlags: 0x0, QuestionId: 0x3116, VarStoreId: 0x1234, VarOffset: 0xA42, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Disabled" Value: 0, Default
+			OneOfOption Option: "Enabled" Value: 1
+		End 
+		OneOf Prompt: "Virtual LAN Mode", Help: "Configure virtual LAN mode.", QuestionFlags: 0x0, QuestionId: 0x3117, VarStoreId: 0x1234, VarOffset: 0xA43, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Disabled" Value: 0, Default
+			OneOfOption Option: "Enabled" Value: 1
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3117, Value: 0x0
+			Numeric Prompt: "Virtual LAN ID", Help: "Configure virtual LAN ID (1..4094).", QuestionFlags: 0x0, QuestionId: 0x3118, VarStoreId: 0x1234, VarOffset: 0xA3C, Flags: 0x12, Size: 32, Min: 0x1, Max: 0xFFE, Step: 0x0
+				Default DefaultId: 0x0 Value: 1
+				InconsistentIf Error: "Invalid VLAN ID"
+					EqIdVal QuestionId: 0x3118, Value: 0x0
+				End 
+			End 
+		End 
+	End 
+	Form FormId: 0xD, Title: "iSCSI Configuration"
+		Subtitle Prompt: "Broadcom NetXtreme Gigabit Ethernet", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "iSCSI General Parameters", Help: "Configure iSCSI general boot parameters.", QuestionFlags: 0x0, QuestionId: 0xE, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+		Ref Prompt: "iSCSI Initiator Parameters", Help: "Configure iSCSI initiator parameters.", QuestionFlags: 0x0, QuestionId: 0xF, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x3
+		Ref Prompt: "iSCSI First Target Parameters", Help: "Configure iSCSI first target parameters.", QuestionFlags: 0x0, QuestionId: 0x10, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x4
+		Ref Prompt: "iSCSI Second Target Parameters", Help: "Configure iSCSI second target parameters.", QuestionFlags: 0x0, QuestionId: 0x11, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x5
+		SuppressIf 
+			EqIdVal QuestionId: 0x3018, Value: 0x0
+			Ref Prompt: "iSCSI Secondary Device Parameters", Help: "Configure Secondary device parameters.", QuestionFlags: 0x0, QuestionId: 0x12, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xA
+		End 
+	End 
+End 

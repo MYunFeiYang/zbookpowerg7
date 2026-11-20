@@ -1,0 +1,58 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 5D208ABD-7BB7-4D55-B3B8-A91FAE0C6247, Title: "The BIOS Admin did not authenticate correctly, and the BIOS Update has failed.", Help: "For more information, please visit: www.hp.com/go/techcenter/startup"
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x0
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x3
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	Form FormId: 0x1000, Title: "The BIOS Admin did not authenticate correctly, and the BIOS Update has failed."
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x1
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x2
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x4
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x8
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x10
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x6A4
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Subtitle Prompt: "For more information, please visit: www.hp.com/go/techcenter/startup", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x40
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Subtitle Prompt: "For more information, please visit: www.hp.com/go/techcenter/startup", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "Please perform the BIOS Update again with the correct BIOS Admin password.", Help: "For more information, please visit: www.hp.com/go/techcenter/startup", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x8000
+	End 
+	Form FormId: 0x1001, Title: "BIOS Recovery"
+		Subtitle Prompt: "Final step of BIOS recovery is in progress.", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x6A5
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Subtitle Prompt: "For more information, please visit: www.hp.com/go/techcenter/startup", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "or to EFI\HP\BIOS\New. It may also be placed under the "HP\BIOS\Previous" folder", Help: "", Flags: 0x0
+		End 
+	End 
+	Form FormId: 0x1002, Title: "and various LED lights may flash. Please do not attempt to"
+		Subtitle Prompt: "interrupt or power down during this time", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x6A6
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Subtitle Prompt: "For more information, please visit: www.hp.com/go/techcenter/startup", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "or to EFI\HP\BIOS\New. It may also be placed under the "HP\BIOS\Previous" folder", Help: "", Flags: 0x0
+		End 
+	End 
+	Form FormId: 0x8000, Title: "Please perform the BIOS Update again with the correct BIOS Admin password."
+		Subtitle Prompt: "BIOS Admin Failed Authentication", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "The system could not find one of the BIOS Update binary files. Be sure that
+the correct binaries are present on the USB drive in "HP\DEVFW" folder.
+The binaries may also be placed on the system hard drive in "EFI\HP\DEVFW" folder.", Help: "For more information, please visit: www.hp.com/go/techcenter/startup", QuestionFlags: 0x4, QuestionId: 0x8100, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Ref Prompt: "The system could not find one of the BIOS Update binary files. Be sure that
+the correct binaries are present on the USB drive in
+"HP\BIOS\New", "HP\DEVFW", or "HP\BIOS\Previous" folder.
+The binaries may also be placed on the system hard drive in
+"EFI\HP\DEVFW", "EFI\HP\BIOS\New", or "EFI\HP\BIOS\Previous" folder.", Help: "For more information, please visit: www.hp.com/go/techcenter/startup", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1000
+	End 
+End 

@@ -1,0 +1,70 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 77F2EA2F-4312-4569-85C4-583ACD8DB7E2, Title: "Front USB Ports", Help: "Rear USB Ports"
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x0
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: A31ABB16-C627-475B-988E-7EE0776740F3, VarStoreId: 0x1, Size: 0x2E, Name: "UndiNVData"
+	Form FormId: 0x1, Title: "Left USB Ports"
+		Text Prompt: "Left USB Port 4", Help: "Left USB Port 4", Text: "Left USB Port 4"
+		Text Prompt: "Left USB Port 4", Help: "Left USB Port 4", Text: "Left USB Port 4"
+		Text Prompt: "Front USB Port 4", Help: "Front USB Port 6", Text: "Front USB Port 5"
+		Text Prompt: "Left USB Port 2", Help: "Left USB Port 1", Text: "Left USB Port 3"
+		Text Prompt: "Left USB Port 4", Help: "Left USB Port 4", Text: "Left USB Port 4"
+		GrayOutIf 
+			True 
+			OneOf Prompt: "Rear USB Port 7", Help: "Rear USB Port 8", QuestionFlags: 0x0, QuestionId: 0x1104, VarStoreId: 0x1, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Rear USB Port 9" Value: 0
+				OneOfOption Option: "Rear USB Port 10" Value: 1
+			End 
+		End 
+		Text Prompt: "Left USB Port 4", Help: "Left USB Port 4", Text: "Left USB Port 4"
+		Text Prompt: "Right USB Ports", Help: "Bottom USB Ports", Text: "Top USB Ports"
+		SuppressIf 
+			True 
+			Numeric Prompt: "Left USB Port 4", Help: "Left USB Port 4", QuestionFlags: 0x1, QuestionId: 0x1407, VarStoreId: 0x1, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1407, Value: 0x0
+			GrayOutIf 
+				True 
+			End 
+		End 
+	End 
+	Form FormId: 0x1235, Title: "Front USB Port 9"
+		Text Prompt: "Left USB Port 4", Help: "Left USB Port 4", Text: "Left USB Port 4"
+		SuppressIf 
+			True 
+			Numeric Prompt: "Left USB Port 4", Help: "Left USB Port 4", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x1, Value: 0x0
+			OneOf Prompt: "Front USB Port 10", Help: "Rear USB Port 1", QuestionFlags: 0x0, QuestionId: 0x1108, VarStoreId: 0x1, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x4, Step: 0x0
+				OneOfOption Option: "Rear USB Port 2" Value: 0, Default
+				SuppressIf 
+					EqIdVal QuestionId: 0x1, Value: 0x0
+					OneOfOption Option: "Rear USB Port 3" Value: 1
+					OneOfOption Option: "Rear USB Port 4" Value: 2
+					OneOfOption Option: "Rear USB Port 5" Value: 3
+					OneOfOption Option: "Rear USB Port 6" Value: 4
+				End 
+			End 
+		End 
+		SuppressIf 
+			True 
+		End 
+		SuppressIf 
+			True 
+			Numeric Prompt: "Left USB Port 4", Help: "Left USB Port 4", QuestionFlags: 0x1, QuestionId: 0x1409, VarStoreId: 0x1, VarOffset: 0x28, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1409, Value: 0x0
+			Numeric Prompt: "Left USB Port 5", Help: "Left USB Port 6", QuestionFlags: 0x4, QuestionId: 0x110D, VarStoreId: 0x1, VarOffset: 0x2A, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFFE, Step: 0x0
+				Default DefaultId: 0x0 Value: 0
+			End 
+		End 
+	End 
+End 

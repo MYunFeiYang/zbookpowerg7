@@ -1,0 +1,83 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: FE561596-E6BF-41A6-8376-C72B719874D0, Title: "BIOS has detected that the capacity of the internal battery has been reduced. 
+This may be caused by environmental factors such as low ambient operating temperature, 
+or it could be due to aging of the battery pack. 
+Operating your system in a warmer location or operating your unit for a while might resolve this condition. 
+If the condition persists or if you have an older system, please contact HP service. 
+Primary(Internal) Battery(601)
+
+Enter - Continue Startup
+", Help: "HP Battery Alert
+"
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	Form FormId: 0x1000, Title: "BIOS has detected that the capacity of the internal battery has been reduced. 
+This may be caused by environmental factors such as low ambient operating temperature, 
+or it could be due to aging of the battery pack. 
+Operating your system in a warmer location or operating your unit for a while might resolve this condition. 
+If the condition persists or if you have an older system, please contact HP service. 
+Primary(Internal) Battery(601)
+
+Enter - Continue Startup
+"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x640
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+	End 
+	Form FormId: 0x2000, Title: "For more information, please visit:  www.hp.com\go\60xbatteryerror"
+		String Prompt: "
+System Fan (90B)
+
+", Help: "For more information, please visit: www.hp.com\go\90Xfanerror", QuestionFlags: 0x4, QuestionId: 0x2001, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, MinSize: 0x2, MaxSize: 0x14, Flags: 0x0
+		End 
+		Subtitle Prompt: "HP Battery Alert
+", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "The system has detected that a cooling fan may not be working properly.  Before continued operation it is recommended to:
+-Press enter to clear the message and allow the system to arrive at Windows Desktop
+-Perform a Windows shutdown
+-Clean the exterior of the vents to remove dust buildup while the computer is off
+-Check for BIOS update", Help: "The system has detected that a cooling fan may not be working properly.  Before continued operation it is recommended to:
+-Press enter to clear the message and allow the system to arrive at Windows Desktop
+-Perform a Windows shutdown
+-Clean the exterior of the vents to remove dust buildup while the computer is off
+-Check for BIOS update", QuestionFlags: 0x4, QuestionId: 0x2002, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "
+Fan Speed Failure (90F)
+
+", Help: "
+Fan Speed Failure (90F)
+
+", QuestionFlags: 0x4, QuestionId: 0x2003, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x3000, Title: "The system has detected that a cooling fan is not operating correctly.
+Continued operation is not recommended and may cause unpredictable behavior that could result in random shutdown, 
+data loss or possible system damage.The system will shut down in 15 seconds.
+To prevent shutdown and continue operation, press the enter key now.
+"
+		String Prompt: "
+System Temperature (90D)
+
+", Help: "ENTER – Continue Startup
+
+
+For more information, please visit: www.hp.com\go\90Xfanerror", QuestionFlags: 0x4, QuestionId: 0x3001, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, MinSize: 0x2, MaxSize: 0x14, Flags: 0x0
+		End 
+		Subtitle Prompt: "HP Battery Alert
+", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "Dimm Check Error", Help: "Dimm Check Error", QuestionFlags: 0x4, QuestionId: 0x3002, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "Warning - installing memory in DIMM3 and DIMM4 slots first will cause system memory performance to be reduced.
+To achieve optimum memory performance, please install memory in DIMM1 and DIMM2 slots first.
+
+Press Power Button - shut down
+", Help: "Warning - installing memory in DIMM3 and DIMM4 slots first will cause system memory performance to be reduced.
+To achieve optimum memory performance, please install memory in DIMM1 and DIMM2 slots first.
+
+Press Power Button - shut down
+", QuestionFlags: 0x4, QuestionId: 0x3003, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

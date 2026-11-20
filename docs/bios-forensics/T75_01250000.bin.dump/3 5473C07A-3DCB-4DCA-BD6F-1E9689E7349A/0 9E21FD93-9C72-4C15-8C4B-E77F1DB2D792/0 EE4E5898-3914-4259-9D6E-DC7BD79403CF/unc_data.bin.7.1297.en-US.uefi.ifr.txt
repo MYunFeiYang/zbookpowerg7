@@ -1,0 +1,726 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 61FA5536-FE13-4B37-B1D0-0E7CDBD517F2, Title: "Intel PRO/1000 Network Connection", Help: "Main Configuration Page"
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x0
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 61FA5536-FE13-4B37-B1D0-0E7CDBD517F2, VarStoreId: 0x1234, Size: 0x2458, Name: "MyIfrNVData"
+	Form FormId: 0x1, Title: "InvalidId"
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x1
+			Ref Prompt: "Device", Help: "Virtual Function Allocation Multiple", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x8
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x0
+			Ref Prompt: "Firmware Image Properties", Help: "Virtual Function Allocation Multiple", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xB
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3085, VarStoreId: 0x1234, VarOffset: 0x1773, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3085, Value: 0x1
+			SuppressIf 
+				EqIdVal QuestionId: 0x3095, Value: 0x1
+				Ref Prompt: "Specifies the virtualization mode setting of the controller.", Help: "SR-IOV", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x6
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x3095, Value: 0x0
+				Ref Prompt: "PCI Virtual Functions Advertised", Help: "SR-IOV", QuestionFlags: 0x0, QuestionId: 0x4, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xC
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x3003, Value: 0x0
+				SuppressIf 
+					EqIdVal QuestionId: 0x3095, Value: 0x1
+					Ref Prompt: "SR-IOV Support", Help: "Number of virtual functions supported on this port.", QuestionFlags: 0x0, QuestionId: 0x5, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x7
+				End 
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x3003, Value: 0x0
+				SuppressIf 
+					EqIdVal QuestionId: 0x3095, Value: 0x0
+					Ref Prompt: "Virtual Function Allocation Basis", Help: "Number of virtual functions supported on this port.", QuestionFlags: 0x0, QuestionId: 0x6, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xD
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3085, Value: 0x0
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3123, VarStoreId: 0x1234, VarOffset: 0x2450, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Link Status" Value: 1
+				OneOfOption Option: "Disconnected" Value: 0, Default
+			End 
+		End 
+		Numeric Prompt: "%04x", Help: "PCI Device ID of this device", QuestionFlags: 0x4, QuestionId: 0x601, VarStoreId: 0x1234, VarOffset: 0x2451, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3085, Value: 0x0
+			OneOf Prompt: "FCoE", Help: "None", QuestionFlags: 0x0, QuestionId: 0x3088, VarStoreId: 0x1234, VarOffset: 0xA42, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Link Status" Value: 0, Default
+				OneOfOption Option: "Disconnected" Value: 1
+			End 
+		End 
+		Text Prompt: "PCI Address", Help: "PCI device location.", Text: "%02x:%02x:%02x"
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x1
+			Text Prompt: "Adapter PBA:", Help: "Chip Type", Text: "A Printed Board Assembly (PBA) number is a unique code used to identify a printed board assembly."
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x0
+			Text Prompt: "%s", Help: "Chip Type", Text: "A Printed Board Assembly (PBA) number is a unique code used to identify a printed board assembly."
+		End 
+		OneOf Prompt: "Unknown Controller", Help: "Network controller part number.", QuestionFlags: 0x1, QuestionId: 0x3083, VarStoreId: 0x1234, VarOffset: 0xA4D, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "%04x/%04x/%04x/%04x" Value: 0
+			OneOfOption Option: "PCI Device ID" Value: 1
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x1
+			String Prompt: "PORT CONFIGURATION MENU", Help: "MAC Address", QuestionFlags: 0x1, QuestionId: 0x3001, VarStoreId: 0x1234, VarStoreInfo: 0x150C, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x0
+			String Prompt: "PORT CONFIGURATION INFORMATION", Help: "MAC Address", QuestionFlags: 0x1, QuestionId: 0x3119, VarStoreId: 0x1234, VarStoreInfo: 0x150C, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+			End 
+		End 
+		String Prompt: "Factory default MAC address of Ethernet port.", Help: "Virtual MAC Address", QuestionFlags: 0x1, QuestionId: 0x3002, VarStoreId: 0x1234, VarStoreInfo: 0x1578, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3003, VarStoreId: 0x1234, VarOffset: 0x4B, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3004, VarStoreId: 0x1234, VarOffset: 0x1779, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3005, VarStoreId: 0x1234, VarOffset: 0x177A, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3006, VarStoreId: 0x1234, VarStoreInfo: 0x13EA, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3007, VarStoreId: 0x1234, VarStoreInfo: 0x1402, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3008, VarStoreId: 0x1234, VarStoreInfo: 0x13BA, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3009, VarStoreId: 0x1234, VarStoreInfo: 0x13D2, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3010, VarStoreId: 0x1234, VarStoreInfo: 0x13A2, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3011, VarStoreId: 0x1234, VarStoreInfo: 0x1432, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3012, VarStoreId: 0x1234, VarStoreInfo: 0x141A, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3013, VarStoreId: 0x1234, VarStoreInfo: 0x144A, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3014, VarStoreId: 0x1234, VarStoreInfo: 0x1462, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3016, VarStoreId: 0x1234, VarOffset: 0xA45, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3017, VarStoreId: 0x1234, VarOffset: 0xA49, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3018, VarStoreId: 0x1234, VarOffset: 0x754, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3019, VarStoreId: 0x1234, VarOffset: 0xA4B, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3020, VarStoreId: 0x1234, VarOffset: 0x755, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3082, VarStoreId: 0x1234, VarOffset: 0x177D, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3084, VarStoreId: 0x1234, VarOffset: 0x1773, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3087, VarStoreId: 0x1234, VarOffset: 0x178B, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3089, VarStoreId: 0x1234, VarOffset: 0x1774, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+	End 
+	Form FormId: 0x2, Title: "InvalidId"
+		Subtitle Prompt: "Configure Gigabit Ethernet device parameters", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3021, VarStoreId: 0x1234, VarOffset: 0x755, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3021, Value: 0x1
+			OneOf Prompt: "FIRMWARE IMAGE PROPERTIES", Help: "Family Firmware Version", QuestionFlags: 0x0, QuestionId: 0x3022, VarStoreId: 0x1234, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Link Status" Value: 0
+				OneOfOption Option: "Disconnected" Value: 1, Default
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x1
+			GrayOutIf 
+				EqIdVal QuestionId: 0x3021, Value: 0x0
+				OneOf Prompt: "        ", Help: "iSCSI Configuration", QuestionFlags: 0x0, QuestionId: 0x3023, VarStoreId: 0x1234, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+					OneOfOption Option: "Link Status" Value: 0
+					OneOfOption Option: "Disconnected" Value: 1, Default
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x3021, Value: 0x0
+				OneOf Prompt: "Installed device firmware family version information.", Help: "iSCSI Configuration", QuestionFlags: 0x0, QuestionId: 0x3120, VarStoreId: 0x1234, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+					OneOfOption Option: "Link Status" Value: 0
+					OneOfOption Option: "Disconnected" Value: 1, Default
+				End 
+			End 
+		End 
+		OneOf Prompt: "Configure general, initiator and target parameters for iSCSI boot.", Help: "iSCSI Configuration", QuestionFlags: 0x0, QuestionId: 0x3024, VarStoreId: 0x1234, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Link Status" Value: 0
+			OneOfOption Option: "Disconnected" Value: 1, Default
+		End 
+		OneOf Prompt: "iSCSI General Parameters", Help: "Configure general iSCSI parameters.", QuestionFlags: 0x0, QuestionId: 0x3025, VarStoreId: 0x1234, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Link Status" Value: 0, Default
+			OneOfOption Option: "Disconnected" Value: 1
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x1
+			OneOf Prompt: "iSCSI General Parameters", Help: "Configures iSCSI initiator parameters (e.g., IP Address, Subnet Mask).", QuestionFlags: 0x0, QuestionId: 0x3026, VarStoreId: 0x1234, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+				OneOfOption Option: "Link Status" Value: 0
+				OneOfOption Option: "Disconnected" Value: 1, Default
+				OneOfOption Option: "Connected" Value: 2
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x0
+			OneOf Prompt: "iSCSI Initiator Parameters", Help: "Configures iSCSI initiator parameters (e.g., IP Address, Subnet Mask).", QuestionFlags: 0x0, QuestionId: 0x3121, VarStoreId: 0x1234, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+				OneOfOption Option: "Link Status" Value: 0
+				OneOfOption Option: "Disconnected" Value: 1, Default
+				OneOfOption Option: "Connected" Value: 2
+			End 
+		End 
+		String Prompt: "iSCSI Initiator Parameters", Help: "iSCSI First Target Parameters", QuestionFlags: 0x0, QuestionId: 0x3027, VarStoreId: 0x1234, VarStoreInfo: 0x4, MinSize: 0x0, MaxSize: 0x20, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		Numeric Prompt: "Enable connection and configure communication parameters for the iSCSI target.", Help: "iSCSI First Target Parameters", QuestionFlags: 0x0, QuestionId: 0x3028, VarStoreId: 0x1234, VarOffset: 0x46, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x1
+			OneOf Prompt: "TCP/IP Parameters via DHCP", Help: "iSCSI Parameters via DHCP", QuestionFlags: 0x0, QuestionId: 0x3029, VarStoreId: 0x1234, VarOffset: 0x47, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Link Status" Value: 0, Default
+				OneOfOption Option: "Disconnected" Value: 1
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x0
+			OneOf Prompt: "This option is specific to IPv4. Controls the source of the initiator IP address, DHCP or static assignment.", Help: "iSCSI Parameters via DHCP", QuestionFlags: 0x0, QuestionId: 0x3122, VarStoreId: 0x1234, VarOffset: 0x47, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Link Status" Value: 0, Default
+				OneOfOption Option: "Disconnected" Value: 1
+			End 
+		End 
+		OneOf Prompt: "Enables the acquisition of iSCSI target parameters from DHCP.", Help: "Disabled", QuestionFlags: 0x0, QuestionId: 0x3030, VarStoreId: 0x1234, VarOffset: 0x48, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Link Status" Value: 0, Default
+			OneOfOption Option: "Disconnected" Value: 1
+		End 
+		Numeric Prompt: "Enabled", Help: "CHAP Authentication", QuestionFlags: 0x0, QuestionId: 0x3031, VarStoreId: 0x1234, VarOffset: 0x49, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x3C, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		OneOf Prompt: "Enable the ability of the initiator to use CHAP authentication when connecting to the iSCSI target.", Help: "CHAP Mutual Authentication", QuestionFlags: 0x4, QuestionId: 0x3032, VarStoreId: 0x1234, VarOffset: 0x755, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			SuppressIf 
+				EqIdVal QuestionId: 0x3082, Value: 0x0
+					EqIdVal QuestionId: 0x3082, Value: 0x6
+					Or 
+				End 
+				OneOfOption Option: "Device Level Configuration" Value: 0, Default
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x3082, Value: 0x0
+					EqIdVal QuestionId: 0x3082, Value: 0x4
+					Or 
+				End 
+				OneOfOption Option: "Virtualization Mode" Value: 1
+			End 
+		End 
+	End 
+	Form FormId: 0x3, Title: "InvalidId"
+		Subtitle Prompt: "Configure Gigabit Ethernet device parameters", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3033, VarStoreId: 0x1234, VarOffset: 0x755, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		String Prompt: "To use mutual CHAP authentication, specify an initiator secret on the Initiator Parameters page and configure that secret on the target.", Help: "Disabled", QuestionFlags: 0x4, QuestionId: 0x201, VarStoreId: 0x1234, VarStoreInfo: 0x4C, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3033, Value: 0x1
+			String Prompt: "IP Address", Help: "Specifies the IP address of the iSCSI initiator.", QuestionFlags: 0x4, QuestionId: 0x202, VarStoreId: 0x1234, VarStoreInfo: 0x9C, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3033, Value: 0x0
+			String Prompt: "Subnet Mask", Help: "Specifies the IPv4 Subnet Mask of the iSCSI initiator.", QuestionFlags: 0x4, QuestionId: 0x209, VarStoreId: 0x1234, VarStoreInfo: 0xEC, MinSize: 0x1, MaxSize: 0x3, Flags: 0x0
+			End 
+		End 
+		String Prompt: "Default Gateway", Help: "Specifies the Default Gateway of the iSCSI initiator.", QuestionFlags: 0x4, QuestionId: 0x203, VarStoreId: 0x1234, VarStoreInfo: 0x13C, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		String Prompt: "iSCSI Name", Help: "Specifies the initiator iSCSI Qualified Name (IQN).", QuestionFlags: 0x4, QuestionId: 0x204, VarStoreId: 0x1234, VarStoreInfo: 0x18C, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		String Prompt: "CHAP ID", Help: "iSCSI initiator Challenge-Handshake Authentication Protocol (CHAP) ID.", QuestionFlags: 0x4, QuestionId: 0x205, VarStoreId: 0x1234, VarStoreInfo: 0x1DC, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		String Prompt: "CHAP Secret", Help: "iSCSI initiator Challenge-Handshake Authentication Protocol (CHAP) secret (password).", QuestionFlags: 0x4, QuestionId: 0x206, VarStoreId: 0x1234, VarStoreInfo: 0x22C, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x1
+			String Prompt: "Specifies the iSCSI storage target boot Logical Unit Number (LUN).", Help: "Specifies the iSCSI Qualified Name (IQN) of the iSCSI storage target.", QuestionFlags: 0x4, QuestionId: 0x20A, VarStoreId: 0x1234, VarStoreInfo: 0x32E, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x2
+			String Prompt: "Boot LUN", Help: "iSCSI Name", QuestionFlags: 0x4, QuestionId: 0x207, VarStoreId: 0x1234, VarStoreInfo: 0x430, MinSize: 0x0, MaxSize: 0x20, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3093, VarStoreId: 0x1234, VarOffset: 0x1774, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3093, Value: 0x0
+			String Prompt: "NIC Partitioning Support", Help: "Unavailable", QuestionFlags: 0x4, QuestionId: 0x208, VarStoreId: 0x1234, VarStoreInfo: 0x472, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3093, Value: 0x1
+			Password Prompt: "                   ", Help: "Unavailable", QuestionFlags: 0x4, QuestionId: 0x20B, VarStoreId: 0x1234, VarStoreInfo: 0x472, MinSize: 0x0, MaxSize: 0x10
+			End 
+		End 
+	End 
+	Form FormId: 0x4, Title: "InvalidId"
+		Subtitle Prompt: "Configure Gigabit Ethernet device parameters", Help: "", Flags: 0x0
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3044, VarStoreId: 0x1234, VarOffset: 0x494, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Link Status" Value: 0, Default
+			OneOfOption Option: "Disconnected" Value: 1
+		End 
+		String Prompt: "Enabled", Help: "IP Version", QuestionFlags: 0x4, QuestionId: 0x302, VarStoreId: 0x1234, VarStoreInfo: 0x498, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3046, VarStoreId: 0x1234, VarOffset: 0x4E8, Flags: 0x11, Size: 16, Min: 0x1, Max: 0xFFFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 3260
+			InconsistentIf Error: "InvalidId"
+				EqIdVal QuestionId: 0x3046, Value: 0x0
+			End 
+		End 
+		Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3047, VarStoreId: 0x1234, VarOffset: 0x4EA, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		String Prompt: "IP Address", Help: "Specifies the IP address of the iSCSI target.", QuestionFlags: 0x4, QuestionId: 0x305, VarStoreId: 0x1234, VarStoreInfo: 0x4EC, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x1
+			String Prompt: "Specifies the iSCSI storage target Challenge-Handshake Authentication Protocol (CHAP) secret (target CHAP password).", Help: "                   ", QuestionFlags: 0x4, QuestionId: 0x308, VarStoreId: 0x1234, VarStoreInfo: 0x5EE, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x2
+			String Prompt: "CHAP Secret", Help: "iSCSI Boot Support", QuestionFlags: 0x4, QuestionId: 0x306, VarStoreId: 0x1234, VarStoreInfo: 0x6F0, MinSize: 0x0, MaxSize: 0x20, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3094, VarStoreId: 0x1234, VarOffset: 0x1774, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3094, Value: 0x0
+			String Prompt: "Available", Help: "x-UEFI Termination String", QuestionFlags: 0x4, QuestionId: 0x307, VarStoreId: 0x1234, VarStoreInfo: 0x732, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3094, Value: 0x1
+			Password Prompt: "", Help: "x-UEFI Termination String", QuestionFlags: 0x4, QuestionId: 0x309, VarStoreId: 0x1234, VarStoreInfo: 0x732, MinSize: 0x0, MaxSize: 0x10
+			End 
+		End 
+	End 
+	Form FormId: 0x5, Title: "InvalidId"
+		Subtitle Prompt: "Configure Gigabit Ethernet device parameters", Help: "", Flags: 0x0
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3052, VarStoreId: 0x1234, VarOffset: 0x756, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Link Status" Value: 0, Default
+			OneOfOption Option: "Disconnected" Value: 1
+		End 
+		String Prompt: "Controls whether IPv4 or IPv6 network addressing will be used for iSCSI initiator and targets. Currently only IPv4 is supported.", Help: "IPv4", QuestionFlags: 0x4, QuestionId: 0x402, VarStoreId: 0x1234, VarStoreInfo: 0x75A, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3054, VarStoreId: 0x1234, VarOffset: 0x7AA, Flags: 0x11, Size: 16, Min: 0x1, Max: 0xFFFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 3260
+			InconsistentIf Error: "InvalidId"
+				EqIdVal QuestionId: 0x3054, Value: 0x0
+			End 
+		End 
+		Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3055, VarStoreId: 0x1234, VarOffset: 0x7AC, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		String Prompt: "TCP Port", Help: "Specifies the TCP Port number of the iSCSI target.", QuestionFlags: 0x4, QuestionId: 0x405, VarStoreId: 0x1234, VarStoreInfo: 0x7AE, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x1
+			String Prompt: "                   ", Help: "                   ", QuestionFlags: 0x4, QuestionId: 0x408, VarStoreId: 0x1234, VarStoreInfo: 0x8B0, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x2
+			String Prompt: "FCoE Boot Support", Help: "PXE Boot Support", QuestionFlags: 0x4, QuestionId: 0x406, VarStoreId: 0x1234, VarStoreInfo: 0x9B2, MinSize: 0x0, MaxSize: 0x20, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3095, VarStoreId: 0x1234, VarOffset: 0x1774, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x0
+			String Prompt: "Virtual LAN ID", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x407, VarStoreId: 0x1234, VarStoreInfo: 0x9F4, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+				Default DefaultId: 0x0 String: "InvalidId"
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x1
+			Password Prompt: "Specifies the ID (tag) to be used for PXE VLAN Mode. The VLAN ID must be in the range from 0 to 4095. PXE VLAN is disabled if value is set to 0.", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x409, VarStoreId: 0x1234, VarStoreInfo: 0x9F4, MinSize: 0x0, MaxSize: 0x10
+			End 
+		End 
+	End 
+	Form FormId: 0x6, Title: "None"
+		Subtitle Prompt: "Configure Gigabit Ethernet device parameters", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3060, VarStoreId: 0x1234, VarOffset: 0xA50, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Link Status" Value: 0
+				OneOfOption Option: "Disconnected" Value: 1
+			End 
+		End 
+		OneOf Prompt: "UEFI Driver:", Help: "UEFI driver name and version number", QuestionFlags: 0x0, QuestionId: 0x3061, VarStoreId: 0x1234, VarOffset: 0xA40, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x7, Step: 0x0
+			OneOfOption Option: "Blink LEDs" Value: 0
+			SuppressIf 
+				EqIdVal QuestionId: 0x3003, Value: 0x0
+				OneOfOption Option: "Identify the physical network port by blinking the associated LED." Value: 3
+			End 
+			OneOfOption Option: "NIC Configuration" Value: 7, Default
+		End 
+		OneOf Prompt: "NIC Configuration", Help: "Legacy Boot Protocol", QuestionFlags: 0x0, QuestionId: 0x3062, VarStoreId: 0x1234, VarOffset: 0xA53, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x3, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+			OneOfOption Option: "InvalidId" Value: 2
+			OneOfOption Option: "InvalidId" Value: 3
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3063, VarStoreId: 0x1234, VarOffset: 0xA51, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Link Status" Value: 0, Default
+			OneOfOption Option: "Disconnected" Value: 1
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3064, VarStoreId: 0x1234, VarOffset: 0xA54, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3065, VarStoreId: 0x1234, VarOffset: 0xA52, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF, Step: 0x0
+			Default DefaultId: 0x0 Value: 5
+		End 
+		OneOf Prompt: "PXE", Help: "iSCSI Secondary", QuestionFlags: 0x0, QuestionId: 0x3066, VarStoreId: 0x1234, VarOffset: 0xA41, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x4, Step: 0x0
+			OneOfOption Option: "1000 Mbps Half" Value: 0, Default
+			OneOfOption Option: "1000 Mbps Full" Value: 1
+			OneOfOption Option: "10 Gbps Half" Value: 2
+			OneOfOption Option: "10 Gbps Full" Value: 3
+			OneOfOption Option: "Wake On LAN" Value: 4
+		End 
+		OneOf Prompt: "FCoE", Help: "None", QuestionFlags: 0x0, QuestionId: 0x3067, VarStoreId: 0x1234, VarOffset: 0xA42, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Link Status" Value: 0, Default
+			OneOfOption Option: "Disconnected" Value: 1
+		End 
+		OneOf Prompt: "Specifies the port speed used for the selected boot protocol.", Help: "10 Mbps Half", QuestionFlags: 0x0, QuestionId: 0x3068, VarStoreId: 0x1234, VarOffset: 0xA43, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Link Status" Value: 0, Default
+			OneOfOption Option: "Disconnected" Value: 1
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3068, Value: 0x0
+			Numeric Prompt: "10 Mbps Full", Help: "100 Mbps Full", QuestionFlags: 0x0, QuestionId: 0x3069, VarStoreId: 0x1234, VarOffset: 0xA3C, Flags: 0x12, Size: 32, Min: 0x1, Max: 0xFFE, Step: 0x0
+				Default DefaultId: 0x0 Value: 1
+				InconsistentIf Error: "InvalidId"
+					EqIdVal QuestionId: 0x3069, Value: 0x0
+				End 
+			End 
+		End 
+	End 
+	Form FormId: 0x7, Title: "Number of Virtual Functions Supported"
+		Subtitle Prompt: "Configure Gigabit Ethernet device parameters", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x7, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x8, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x3
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x9, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x4
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0xA, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x5
+		SuppressIf 
+			EqIdVal QuestionId: 0x3018, Value: 0x0
+			Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0xB, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x9
+		End 
+	End 
+	Form FormId: 0x8, Title: "Port"
+		Subtitle Prompt: "Configure Gigabit Ethernet device parameters", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3017, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3070, VarStoreId: 0x1234, VarStoreInfo: 0x127E, MinSize: 0x0, MaxSize: 0x14, Flags: 0x0
+			End 
+		End 
+		Subtitle Prompt: "InvalidId", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3084, Value: 0x0
+			Text Prompt: "InvalidId", Help: "Link Speed Status", Text: "InvalidId"
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3071, VarStoreId: 0x1234, VarStoreInfo: 0x12A6, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x6
+				Or 
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3072, VarStoreId: 0x1234, VarStoreInfo: 0x12B8, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x5
+				Or 
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3073, VarStoreId: 0x1234, VarStoreInfo: 0x12CA, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x3
+				Or 
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3074, VarStoreId: 0x1234, VarStoreInfo: 0x12DC, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3075, VarStoreId: 0x1234, VarStoreInfo: 0x12EE, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3005, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3076, VarStoreId: 0x1234, VarStoreInfo: 0x1324, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3004, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3077, VarStoreId: 0x1234, VarStoreInfo: 0x1336, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3078, VarStoreId: 0x1234, VarStoreInfo: 0x1300, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3087, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3086, VarStoreId: 0x1234, VarStoreInfo: 0x1390, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0xC, VarStoreId: 0x1234, VarStoreInfo: 0x137E, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3084, Value: 0x1
+			Text Prompt: "InvalidId", Help: "Virtual Functions must be allocated to a port in multiples of this number.", Text: ""
+			Text Prompt: "InvalidId", Help: "Link Speed Status", Text: ""
+		End 
+	End 
+	Form FormId: 0x9, Title: "InvalidId"
+		Subtitle Prompt: "Configure Gigabit Ethernet device parameters", Help: "", Flags: 0x0
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x501, VarStoreId: 0x1234, VarStoreInfo: 0xA18, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+			Default DefaultId: 0x0 String: "InvalidId"
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3080, VarStoreId: 0x1234, VarOffset: 0xA16, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Link Status" Value: 0, Default
+			OneOfOption Option: "Disconnected" Value: 1
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3081, VarStoreId: 0x1234, VarOffset: 0xA17, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Link Status" Value: 0, Default
+			OneOfOption Option: "Disconnected" Value: 1
+		End 
+	End 
+	Form FormId: 0xA, Title: "InvalidId"
+		Subtitle Prompt: "Configure Gigabit Ethernet device parameters", Help: "", Flags: 0x0
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x502, VarStoreId: 0x1234, VarStoreInfo: 0xA18, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3097, VarStoreId: 0x1234, VarOffset: 0xA16, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Link Status" Value: 0, Default
+			OneOfOption Option: "Disconnected" Value: 1
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3098, VarStoreId: 0x1234, VarOffset: 0xA17, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Link Status" Value: 0, Default
+			OneOfOption Option: "Disconnected" Value: 1
+		End 
+	End 
+	Form FormId: 0xB, Title: "Firmware Image Properties"
+		Subtitle Prompt: "Configure Gigabit Ethernet device parameters", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3017, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3099, VarStoreId: 0x1234, VarStoreInfo: 0x127E, MinSize: 0x0, MaxSize: 0x14, Flags: 0x0
+			End 
+		End 
+		Subtitle Prompt: "InvalidId", Help: "", Flags: 0x0
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3100, VarStoreId: 0x1234, VarStoreInfo: 0x12A6, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x6
+				Or 
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3101, VarStoreId: 0x1234, VarStoreInfo: 0x12B8, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x5
+				Or 
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3102, VarStoreId: 0x1234, VarStoreInfo: 0x12CA, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x3
+				Or 
+			End 
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3103, VarStoreId: 0x1234, VarStoreInfo: 0x12DC, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3104, VarStoreId: 0x1234, VarStoreInfo: 0x12EE, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3005, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3105, VarStoreId: 0x1234, VarStoreInfo: 0x1324, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3004, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3106, VarStoreId: 0x1234, VarStoreInfo: 0x1336, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3107, VarStoreId: 0x1234, VarStoreInfo: 0x1300, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3087, Value: 0x0
+			String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x3108, VarStoreId: 0x1234, VarStoreInfo: 0x1390, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0xD, VarStoreId: 0x1234, VarStoreInfo: 0x137E, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+	End 
+	Form FormId: 0xC, Title: "The number of PCI Virtual Functions Advertised on the port when virtualization is enabled."
+		Subtitle Prompt: "Configure Gigabit Ethernet device parameters", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3109, VarStoreId: 0x1234, VarOffset: 0xA50, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Link Status" Value: 0
+				OneOfOption Option: "Disconnected" Value: 1
+			End 
+		End 
+		OneOf Prompt: "%s", Help: "UEFI driver name and version number", QuestionFlags: 0x0, QuestionId: 0x3110, VarStoreId: 0x1234, VarOffset: 0xA40, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x7, Step: 0x0
+			OneOfOption Option: "Blink LEDs" Value: 0
+			SuppressIf 
+				EqIdVal QuestionId: 0x3003, Value: 0x0
+				OneOfOption Option: "Identify the physical network port by blinking the associated LED." Value: 3
+			End 
+			OneOfOption Option: "Click to configure the network device port." Value: 7, Default
+		End 
+		OneOf Prompt: "Configure Boot Protocol, Wake on LAN, Link Speed, and VLAN.", Help: "Legacy Boot Protocol", QuestionFlags: 0x0, QuestionId: 0x3111, VarStoreId: 0x1234, VarOffset: 0xA53, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x3, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+			OneOfOption Option: "InvalidId" Value: 2
+			OneOfOption Option: "InvalidId" Value: 3
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3112, VarStoreId: 0x1234, VarOffset: 0xA51, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Link Status" Value: 0, Default
+			OneOfOption Option: "Disconnected" Value: 1
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3113, VarStoreId: 0x1234, VarOffset: 0xA54, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3114, VarStoreId: 0x1234, VarOffset: 0xA52, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF, Step: 0x0
+			Default DefaultId: 0x0 Value: 5
+		End 
+		OneOf Prompt: "iSCSI Primary", Help: "iSCSI Secondary", QuestionFlags: 0x0, QuestionId: 0x3115, VarStoreId: 0x1234, VarOffset: 0xA41, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x4, Step: 0x0
+			OneOfOption Option: "Enables the server to be powered on using an in-band magic packet." Value: 0, Default
+			OneOfOption Option: "Enabled" Value: 1
+			OneOfOption Option: "Disabled" Value: 2
+			OneOfOption Option: "N/A" Value: 3
+			OneOfOption Option: "Link Status" Value: 4
+		End 
+		OneOf Prompt: "%d:%d:%d–%s", Help: "Link Speed", QuestionFlags: 0x0, QuestionId: 0x3116, VarStoreId: 0x1234, VarOffset: 0xA42, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Link Status" Value: 0, Default
+			OneOfOption Option: "Disconnected" Value: 1
+		End 
+		OneOf Prompt: "Auto Negotiated", Help: "10 Mbps Half", QuestionFlags: 0x0, QuestionId: 0x3117, VarStoreId: 0x1234, VarOffset: 0xA43, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Link Status" Value: 0, Default
+			OneOfOption Option: "Disconnected" Value: 1
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3117, Value: 0x0
+			Numeric Prompt: "100 Mbps Half", Help: "100 Mbps Full", QuestionFlags: 0x0, QuestionId: 0x3118, VarStoreId: 0x1234, VarOffset: 0xA3C, Flags: 0x12, Size: 32, Min: 0x1, Max: 0xFFE, Step: 0x0
+				Default DefaultId: 0x0 Value: 1
+				InconsistentIf Error: "InvalidId"
+					EqIdVal QuestionId: 0x3118, Value: 0x0
+				End 
+			End 
+		End 
+	End 
+	Form FormId: 0xD, Title: "Indicates whether the Number of Virtual Functions Supported attribute refers to the number of VFs supported by this port, or by the device as a whole."
+		Subtitle Prompt: "Configure Gigabit Ethernet device parameters", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0xE, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0xF, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x3
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x10, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x4
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x11, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x5
+		SuppressIf 
+			EqIdVal QuestionId: 0x3018, Value: 0x0
+			Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x12, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xA
+		End 
+	End 
+End 

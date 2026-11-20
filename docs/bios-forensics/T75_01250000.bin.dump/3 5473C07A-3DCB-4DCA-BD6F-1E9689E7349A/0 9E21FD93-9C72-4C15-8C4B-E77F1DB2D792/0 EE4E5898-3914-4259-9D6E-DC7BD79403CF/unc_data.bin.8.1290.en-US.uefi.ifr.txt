@@ -1,0 +1,766 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: A04A27E4-DF00-4D42-B552-39511302113E, Title: "Bus:Device:Function", Help: "PCI Address"
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x163
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x0
+	DefaultStore DefaultId: 0x0, Name: ""
+	VarStore Guid: A04A27E4-DF00-4D42-B552-39511302113E, VarStoreId: 0x9999, Size: 0x70A, Name: "MebxConfig"
+	Form FormId: 0x1, Title: "PCI Bus:Device:Function number of this device."
+		SuppressIf 
+			True 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x9999, VarOffset: 0x6E3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x9999, VarOffset: 0x6E4, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x9999, VarOffset: 0x8, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x4, VarStoreId: 0x9999, VarOffset: 0x6DD, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x5, VarStoreId: 0x9999, VarOffset: 0x6E5, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x6, VarStoreId: 0x9999, VarOffset: 0x6DF, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x7, VarStoreId: 0x9999, VarOffset: 0x6DE, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x8, VarStoreId: 0x9999, VarOffset: 0x6E6, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x9, VarStoreId: 0x9999, VarOffset: 0x6E0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0xA, VarStoreId: 0x9999, VarOffset: 0x6E1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0xB, VarStoreId: 0x9999, VarOffset: 0x6E2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0xC, VarStoreId: 0x9999, VarOffset: 0xE, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0xD, VarStoreId: 0x9999, VarOffset: 0x13, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0xE, VarStoreId: 0x9999, VarOffset: 0xC, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0xF, VarStoreId: 0x9999, VarOffset: 0x15, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x10, VarStoreId: 0x9999, VarOffset: 0x6DC, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x11, VarStoreId: 0x9999, VarOffset: 0x6E7, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x12, VarStoreId: 0x9999, VarOffset: 0x6E8, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x13, VarStoreId: 0x9999, VarOffset: 0x6E9, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x14, VarStoreId: 0x9999, VarOffset: 0x6EA, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x15, VarStoreId: 0x9999, VarOffset: 0x6EB, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x16, VarStoreId: 0x9999, VarOffset: 0x6EC, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x17, VarStoreId: 0x9999, VarOffset: 0x6ED, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x18, VarStoreId: 0x9999, VarOffset: 0x6EE, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x19, VarStoreId: 0x9999, VarOffset: 0x6EF, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x1A, VarStoreId: 0x9999, VarOffset: 0x6F0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x1B, VarStoreId: 0x9999, VarOffset: 0x6F1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x1C, VarStoreId: 0x9999, VarOffset: 0x6F2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x1D, VarStoreId: 0x9999, VarOffset: 0x6F3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x1E, VarStoreId: 0x9999, VarOffset: 0x6F4, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x1F, VarStoreId: 0x9999, VarOffset: 0x6F5, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x20, VarStoreId: 0x9999, VarOffset: 0x6F6, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x21, VarStoreId: 0x9999, VarOffset: 0x6F7, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x22, VarStoreId: 0x9999, VarOffset: 0x6F8, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x23, VarStoreId: 0x9999, VarOffset: 0x6F9, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x24, VarStoreId: 0x9999, VarOffset: 0x6FA, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x25, VarStoreId: 0x9999, VarOffset: 0x6FB, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x26, VarStoreId: 0x9999, VarOffset: 0x6FC, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x27, VarStoreId: 0x9999, VarOffset: 0x6FD, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x28, VarStoreId: 0x9999, VarOffset: 0x6FE, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x29, VarStoreId: 0x9999, VarOffset: 0x6FF, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x2A, VarStoreId: 0x9999, VarOffset: 0x700, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x2B, VarStoreId: 0x9999, VarOffset: 0x701, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x2C, VarStoreId: 0x9999, VarOffset: 0x702, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x2D, VarStoreId: 0x9999, VarOffset: 0x703, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x2E, VarStoreId: 0x9999, VarOffset: 0x704, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x2F, VarStoreId: 0x9999, VarOffset: 0x705, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x30, VarStoreId: 0x9999, VarOffset: 0x706, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x31, VarStoreId: 0x9999, VarOffset: 0x707, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x32, VarStoreId: 0x9999, VarOffset: 0x708, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1, Value: 0x1
+				EqIdVal QuestionId: 0x2, Value: 0x1
+				Or 
+			End 
+			Action Prompt: "100Mbps Full", Help: "iSCSI Name", QuestionFlags: 0x4, QuestionId: 0x900, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x1, Value: 0x0
+			Ref Prompt: "Link Speed", Help: "Configure iSCSI name.", QuestionFlags: 0x4, QuestionId: 0x1000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x4, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1, Value: 0x0
+					EqIdVal QuestionId: 0x3, Value: 0x0
+					Or 
+				End 
+				OneOf Prompt: "10 Mbps Full", Help: "CHAP ID", QuestionFlags: 0x4, QuestionId: 0x902, VarStoreId: 0x9999, VarOffset: 0x7, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+					OneOfOption Option: "Fcode" Value: 0
+					OneOfOption Option: "EFI" Value: 1, Default, MfgDefault
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x4, Value: 0x0
+				EqIdVal QuestionId: 0x902, Value: 0x0
+				Or 
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1, Value: 0x0
+					EqIdVal QuestionId: 0x6, Value: 0x0
+					Or 
+				End 
+				Ref Prompt: "Configure link speed.", Help: "CHAP ID", QuestionFlags: 0x4, QuestionId: 0x2000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x4
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x7, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1, Value: 0x0
+				Ref Prompt: "Configure Pre-boot Wake on LAN (WOL).", Help: "Configure CHAP ID (up to 32 characters in length).", QuestionFlags: 0x4, QuestionId: 0x9000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x12
+			End 
+		End 
+		Action Prompt: "Auto Negotiated", Help: "Configure CHAP ID (up to 128 characters in length).", QuestionFlags: 0x4, QuestionId: 0x901, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x2, Title: "Link Status"
+		SuppressIf 
+			EqIdVal QuestionId: 0x2, Value: 0x1
+			Action Prompt: "10 Mbps Half", Help: "Configure iSCSI name.", QuestionFlags: 0x4, QuestionId: 0x1101, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+	End 
+	Form FormId: 0x4, Title: "Link Status"
+		GrayOutIf 
+			EqIdVal QuestionId: 0x6, Value: 0x0
+			OneOf Prompt: "Enabled", Help: "Configure CHAP ID (up to 128 characters in length).", QuestionFlags: 0x4, QuestionId: 0x2200, VarStoreId: 0x9999, VarOffset: 0x4, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Fcode" Value: 0, Default, MfgDefault
+				OneOfOption Option: "EFI" Value: 1
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2200, Value: 0x0
+			Ref Prompt: "Configure Wake on LAN (WOL).", Help: "CHAP ID", QuestionFlags: 0x4, QuestionId: 0x2800, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x5
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2200, Value: 0x0
+				EqIdVal QuestionId: 0xF, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0xC, Value: 0x0
+				EqIdVal QuestionId: 0xD, Value: 0x0
+				And 
+				Or 
+			End 
+			Ref Prompt: "Virtual LAN Mode", Help: "CHAP ID", QuestionFlags: 0x4, QuestionId: 0x3000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x6
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2200, Value: 0x0
+			OneOf Prompt: "One Time Disabled", Help: "Configure CHAP ID (up to 32 characters in length).", QuestionFlags: 0x4, QuestionId: 0x2301, VarStoreId: 0x9999, VarOffset: 0x5, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "ASF" Value: 0, Default, MfgDefault
+				OneOfOption Option: "NC-SI" Value: 1
+				OneOfOption Option: "SMASH" Value: 2
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2200, Value: 0x0
+			Ref Prompt: "Configure virtual LAN mode.", Help: "Configure CHAP ID (up to 128 characters in length).", QuestionFlags: 0x4, QuestionId: 0x3800, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x7
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2200, Value: 0x0
+				EqIdVal QuestionId: 0xA, Value: 0x2
+				Or 
+			End 
+			Action Prompt: "IPv4", Help: "CHAP Secret", QuestionFlags: 0x4, QuestionId: 0x2502, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2200, Value: 0x0
+				EqIdVal QuestionId: 0xA, Value: 0x0
+				Or 
+			End 
+			OneOf Prompt: "IPv6", Help: "CHAP Secret", QuestionFlags: 0x4, QuestionId: 0x2303, VarStoreId: 0x9999, VarOffset: 0x6, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "CCM" Value: 1, Default, MfgDefault
+				OneOfOption Option: "UMP" Value: 0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2200, Value: 0x0
+				EqIdVal QuestionId: 0xA, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0xA, Value: 0x2
+				Or 
+			End 
+			OneOf Prompt: "IPv6", Help: "CHAP Secret", QuestionFlags: 0x4, QuestionId: 0x2304, VarStoreId: 0x9999, VarOffset: 0x6, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "CCM" Value: 1, Default, MfgDefault
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2200, Value: 0x0
+			Ref Prompt: "VLAN ID (1..4094)", Help: "Configure CHAP Secret (12 to 16 characters in length).", QuestionFlags: 0x4, QuestionId: 0x6800, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xD
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2200, Value: 0x0
+			Ref Prompt: "Wake On LAN", Help: "CHAP ID", QuestionFlags: 0x4, QuestionId: 0x1800, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x3
+		End 
+	End 
+	Form FormId: 0x5, Title: "Blink LEDs for a duration up to 15 seconds."
+		OneOf Prompt: "MBA Configuration Menu", Help: "CHAP Secret", QuestionFlags: 0x4, QuestionId: 0x2A01, VarStoreId: 0x9999, VarOffset: 0xA, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			OneOfOption Option: "Fcode" Value: 0, Default, MfgDefault
+			OneOfOption Option: "EFI" Value: 1
+		End 
+		OneOf Prompt: "MBA Configuration Menu", Help: "CHAP Secret", QuestionFlags: 0x4, QuestionId: 0x2A02, VarStoreId: 0x9999, VarOffset: 0xB, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			OneOfOption Option: "Fcode" Value: 0, Default, MfgDefault
+			OneOfOption Option: "EFI" Value: 1
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0xE, Value: 0x0
+			OneOf Prompt: "Configure Multiple Boot Agent (MBA) parameters.", Help: "Configure CHAP Secret (12 to 16 characters in length).", QuestionFlags: 0x4, QuestionId: 0x2A03, VarStoreId: 0x9999, VarOffset: 0xD, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Fcode" Value: 0, Default, MfgDefault
+				OneOfOption Option: "EFI" Value: 1
+			End 
+		End 
+	End 
+	Form FormId: 0x6, Title: "Legacy Boot Protocol"
+		SuppressIf 
+			EqIdVal QuestionId: 0xC, Value: 0x7
+				Not 
+			End 
+			OneOf Prompt: "NIC Configuration", Help: "CHAP Secret", QuestionFlags: 0x0, QuestionId: 0x33, VarStoreId: 0x9999, VarOffset: 0xF, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "EFI Version" Value: 0, Default, MfgDefault
+				OneOfOption Option: "Fcode" Value: 1
+				OneOfOption Option: "Firmware Package" Value: 4294967295
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0xC, Value: 0x6
+				Not 
+			End 
+			OneOf Prompt: "NIC Configuration", Help: "CHAP Secret", QuestionFlags: 0x0, QuestionId: 0x34, VarStoreId: 0x9999, VarOffset: 0xF, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Fcode" Value: 1
+				OneOfOption Option: "Firmware Package" Value: 4294967295
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0xC, Value: 0x5
+				Not 
+			End 
+			OneOf Prompt: "NIC Configuration", Help: "CHAP Secret", QuestionFlags: 0x0, QuestionId: 0x35, VarStoreId: 0x9999, VarOffset: 0xF, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "EFI Version" Value: 0, Default, MfgDefault
+				OneOfOption Option: "Firmware Package" Value: 4294967295
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0xC, Value: 0x3
+				Not 
+			End 
+			OneOf Prompt: "NIC Configuration", Help: "CHAP Secret", QuestionFlags: 0x0, QuestionId: 0x36, VarStoreId: 0x9999, VarOffset: 0xF, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "EFI Version" Value: 0, Default, MfgDefault
+				OneOfOption Option: "Fcode" Value: 1
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0xD, Value: 0x0
+			OneOf Prompt: "NIC Configuration", Help: "CHAP Secret", QuestionFlags: 0x0, QuestionId: 0x37, VarStoreId: 0x9999, VarOffset: 0x14, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Fcode" Value: 0, Default, MfgDefault
+				OneOfOption Option: "EFI" Value: 1
+			End 
+		End 
+	End 
+	Form FormId: 0x7, Title: "Select non-UEFI Boot Protocol: Preboot Execution Environment (PXE)/iSCSI."
+		Ref Prompt: "Virtual LAN ID", Help: "Configure CHAP Secret (12 to 16 characters in length).", QuestionFlags: 0x4, QuestionId: 0x4000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x8
+		SuppressIf 
+			EqIdVal QuestionId: 0x5, Value: 0x1
+			Ref Prompt: "Configure virtual LAN ID (1..4094).", Help: "Connect", QuestionFlags: 0x4, QuestionId: 0x4800, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x9
+		End 
+	End 
+	Form FormId: 0x8, Title: "iSCSI"
+		String Prompt: "iSCSI Boot Configuration Menu", Help: "Enable/Disable target establishment.", QuestionFlags: 0x4, QuestionId: 0x4100, VarStoreId: 0x9999, VarStoreInfo: 0x16, MinSize: 0x0, MaxSize: 0x40, Flags: 0x0
+		End 
+		String Prompt: "iSCSI Boot Configuration Menu", Help: "Connect", QuestionFlags: 0x4, QuestionId: 0x4101, VarStoreId: 0x9999, VarStoreInfo: 0x96, MinSize: 0x0, MaxSize: 0xC0, Flags: 0x0
+		End 
+		OneOf Prompt: "Configure iSCSI boot parameters.", Help: "Enable/Disable target establishment.", QuestionFlags: 0x4, QuestionId: 0x4302, VarStoreId: 0x9999, VarOffset: 0x216, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			OneOfOption Option: "Bootcode" Value: 0, Default, MfgDefault
+			OneOfOption Option: "Multiple Boot Agent" Value: 1
+		End 
+		OneOf Prompt: "iSCSI Configuration", Help: "TCP Port", QuestionFlags: 0x4, QuestionId: 0x4203, VarStoreId: 0x9999, VarOffset: 0x217, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			OneOfOption Option: "Fcode" Value: 0, Default, MfgDefault
+			OneOfOption Option: "EFI" Value: 1
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x4203, Value: 0x0
+			Numeric Prompt: "iSCSI Configuration", Help: "Configure target TCP port number (1..65535).", QuestionFlags: 0x4, QuestionId: 0x4104, VarStoreId: 0x9999, VarOffset: 0x218, Flags: 0x12, Size: 32, Min: 0x0, Max: 0xFFFFFFFF, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x4203, Value: 0x0
+			Numeric Prompt: "Firmware Image Menu", Help: "TCP Port", QuestionFlags: 0x4, QuestionId: 0x4105, VarStoreId: 0x9999, VarOffset: 0x21C, Flags: 0x12, Size: 32, Min: 0x1, Max: 0xFFFFFFFF, Step: 0x0
+			End 
+		End 
+	End 
+	Form FormId: 0x9, Title: "NONE"
+		Ref Prompt: "AutoNeg", Help: "Configure target TCP port number (1..65535).", QuestionFlags: 0x4, QuestionId: 0x5000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xA
+	End 
+	Form FormId: 0xA, Title: "None"
+		OneOf Prompt: "Firmware Image Menu", Help: "Boot LUN", QuestionFlags: 0x4, QuestionId: 0x5200, VarStoreId: 0x9999, VarOffset: 0x220, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			OneOfOption Option: "Fcode" Value: 1, Default, MfgDefault
+			OneOfOption Option: "EFI" Value: 2
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x5200, Value: 0x2
+			String Prompt: "Firmware image information.", Help: "Configure target boot LUN number (0..255).", QuestionFlags: 0x4, QuestionId: 0x5101, VarStoreId: 0x9999, VarStoreInfo: 0x221, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+			End 
+			String Prompt: "Listing of firmware image components (and their corresponding versions) currently programmed on the NVRAM.  N/A indicates the image is not present.", Help: "Boot LUN", QuestionFlags: 0x4, QuestionId: 0x5102, VarStoreId: 0x9999, VarStoreInfo: 0x241, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+			End 
+			String Prompt: "Boot code - Boot code
+MBA - Multiple Boot Agent
+EFI - UEFI Option ROM
+Fcode - Fcode Option ROM
+iSCSI Boot - iSCSI Boot
+NC-SI - Management FW
+CCM - Configuration ROM", Help: "Configure target boot LUN number (0..255).", QuestionFlags: 0x4, QuestionId: 0x5103, VarStoreId: 0x9999, VarStoreInfo: 0x261, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+			End 
+			String Prompt: "Listing of firmware image components (and their corresponding versions) currently programmed on the NVRAM.  N/A indicates the image is not present.
+Boot code - Boot code
+MBA - Multiple Boot Agent
+EFI - UEFI Option ROM
+Fcode - Fcode Option ROM
+iSCSI Boot - iSCSI Boot
+NC-SI - Management FW
+CCM - Comprehensive Configuration Manager", Help: "Secondary Device", QuestionFlags: 0x4, QuestionId: 0x5104, VarStoreId: 0x9999, VarStoreInfo: 0x281, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+			End 
+			String Prompt: "Firmware Image Properties", Help: "Input secondary device MAC address. Use XX:XX:XX:XX:XX:XX format.", QuestionFlags: 0x4, QuestionId: 0x5105, VarStoreId: 0x9999, VarStoreInfo: 0x2A1, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+			End 
+		End 
+	End 
+	Form FormId: 0xD, Title: "PXE"
+		Action Prompt: "Firmware Image Properties", Help: "Secondary Device MAC Address", QuestionFlags: 0x4, QuestionId: 0x6D00, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x5, Value: 0x1
+			Action Prompt: "TCP/IP Parameters via DHCP", Help: "Use Independent Target Portal", QuestionFlags: 0x4, QuestionId: 0x6D01, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0xA, Value: 0x2
+				EqIdVal QuestionId: 0x5, Value: 0x1
+				Or 
+			End 
+			String Prompt: "Acquire TCP/IP configuration via DHCP.", Help: "Use Independent Target Portal", QuestionFlags: 0x4, QuestionId: 0x6902, VarStoreId: 0x9999, VarStoreInfo: 0x2C1, MinSize: 0x0, MaxSize: 0x2E, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0xA, Value: 0x2
+			String Prompt: "IP Autoconfiguration", Help: "Use Independent Target Name", QuestionFlags: 0x4, QuestionId: 0x6903, VarStoreId: 0x9999, VarStoreInfo: 0x31D, MinSize: 0x0, MaxSize: 0xFF, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0xA, Value: 0x2
+				EqIdVal QuestionId: 0x5, Value: 0x1
+				Or 
+			End 
+			Ref Prompt: "10Mbps Half", Help: "Use Independent Target Name", QuestionFlags: 0x4, QuestionId: 0x7000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xE
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x10, Value: 0x3
+			SuppressIf 
+				EqIdVal QuestionId: 0xA, Value: 0x2
+				Ref Prompt: "10Mbps Full", Help: "Use independent target name when multipath I/O is enabled.", QuestionFlags: 0x4, QuestionId: 0x8000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x10
+			End 
+		End 
+	End 
+	Form FormId: 0xE, Title: "Boot Strap Type"
+		SuppressIf 
+			EqIdVal QuestionId: 0xA, Value: 0x1
+			Action Prompt: "IP Auto-Configuration", Help: "Family Firmware Version", QuestionFlags: 0x4, QuestionId: 0x7500, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0xA, Value: 0x0
+			Action Prompt: "Acquire TCP/IP configuration via Stateful or Stateless Autoconfiguration.", Help: "Family Firmware Version", QuestionFlags: 0x4, QuestionId: 0x7501, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+	End 
+	Form FormId: 0x10, Title: "Boot Strap Type"
+		OneOf Prompt: "iSCSI Parameters via DHCP", Help: "Bootcode", QuestionFlags: 0x4, QuestionId: 0x8200, VarStoreId: 0x9999, VarOffset: 0x51B, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			OneOfOption Option: "Fcode" Value: 0, Default, MfgDefault
+			OneOfOption Option: "EFI" Value: 1
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x8200, Value: 0x0
+			String Prompt: "Acquire iSCSI parameters via DHCP.", Help: "MBA", QuestionFlags: 0x4, QuestionId: 0x8101, VarStoreId: 0x9999, VarStoreInfo: 0x51C, MinSize: 0x0, MaxSize: 0xDF, Flags: 0x0
+			End 
+			Ref Prompt: "100Mbps Half", Help: "iSCSI Boot", QuestionFlags: 0x4, QuestionId: 0x8800, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x11
+		End 
+	End 
+	Form FormId: 0x11, Title: "Select boot strap type."
+		Subtitle Prompt: "Link Speed", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x0
+			Action Prompt: "CHAP Authentication", Help: "ASF", QuestionFlags: 0x4, QuestionId: 0x8D00, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x12, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Enable/Disable CHAP authentication.", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D01, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x13, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Boot to iSCSI Target", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D02, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x14, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Boot to Target", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D03, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x15, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Enable/Disable booting to iSCSI target after logon.", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D04, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x16, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "DHCP Vendor ID", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D05, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x17, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Configure DHCP vendor ID (up to 32 bytes long).", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D06, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x18, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Link Up Delay Time", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D07, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x19, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Configure link up delay time in seconds (0..255).", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D08, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x1A, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Use TCP Timestamp", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D09, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x1B, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "TCP Timestamp", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D0A, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x1C, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Enable/Disable TCP timestamp.", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D0B, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x1D, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Target as First HDD", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D0C, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x1E, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Enable/Disable target appears as first hard disk drive (HDD) in the system.", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D0D, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x1F, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "LUN Busy Retry Count", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D0E, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x20, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Configure number of retries in 2 second intervals when LUN is busy (0..60).", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D0F, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x21, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "IP Version", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D10, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x22, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "IP version support.  Modifying this parameter will reset all IP-related fields.", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D11, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x23, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "IP Address", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D12, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x24, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Configure initiator IP address.", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D13, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x25, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "IP Address", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D14, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x26, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Configure target IP address.", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D15, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x27, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "IP Address", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D16, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x28, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Configure target IP address.", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D17, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x29, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Subnet Mask", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D18, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x2A, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Configure IP subnet mask.", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D19, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x2B, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Subnet Mask Prefix", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D1A, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x2C, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Configure IP subnet mask prefix length.", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D1B, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x2D, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Default Gateway", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D1C, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x2E, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Configure default gateway IP address.", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D1D, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x2F, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Primary DNS", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D1E, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x30, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Configure primary DNS IP address.", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D1F, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x31, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Secondary DNS", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D20, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x32, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Configure secondary DNS IP address.", Help: "NC-SI", QuestionFlags: 0x4, QuestionId: 0x8D21, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+	End 
+	Form FormId: 0x3, Title: "Blink LEDs"
+		SuppressIf 
+			EqIdVal QuestionId: 0x8, Value: 0x0
+				EqIdVal QuestionId: 0xA, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0xA, Value: 0x2
+				Or 
+			End 
+			Subtitle Prompt: "Chip Type/Revision.", Help: "", Flags: 0x0
+			End 
+			Subtitle Prompt: "UMP", Help: "", Flags: 0x0
+			End 
+			Subtitle Prompt: "Chip Type/Revision.", Help: "", Flags: 0x0
+			End 
+			Subtitle Prompt: "Chip Type/Revision.", Help: "", Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x8, Value: 0x1
+				Not 
+			End 
+			OneOf Prompt: "100 Mbps Full", Help: "CHAP ID", QuestionFlags: 0x4, QuestionId: 0x1B00, VarStoreId: 0x9999, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Controller BIOS Version" Value: 0, Default, MfgDefault
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x8, Value: 0x2
+				Not 
+			End 
+			OneOf Prompt: "100 Mbps Full", Help: "CHAP ID", QuestionFlags: 0x4, QuestionId: 0x1B01, VarStoreId: 0x9999, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Controller BIOS Version" Value: 0, Default, MfgDefault
+				OneOfOption Option: "MBA" Value: 1
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x8, Value: 0x3
+				Not 
+			End 
+			OneOf Prompt: "100 Mbps Full", Help: "CHAP ID", QuestionFlags: 0x4, QuestionId: 0x1B02, VarStoreId: 0x9999, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Controller BIOS Version" Value: 0, Default, MfgDefault
+				OneOfOption Option: "MBA" Value: 1
+				OneOfOption Option: "iSCSI Boot" Value: 2
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x9, Value: 0x0
+			Numeric Prompt: "Disabled", Help: "Configure CHAP ID (up to 32 characters in length).", QuestionFlags: 0x4, QuestionId: 0x1901, VarStoreId: 0x9999, VarOffset: 0x2, Flags: 0x11, Size: 16, Min: 0x1, Max: 0xFFFF, Step: 0x0
+			End 
+		End 
+	End 
+	Form FormId: 0x12, Title: "Disconnected"
+		OneOf Prompt: "iSCSI Name", Help: "SMASH", QuestionFlags: 0x4, QuestionId: 0x9200, VarStoreId: 0x9999, VarOffset: 0x6DA, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			OneOfOption Option: "Fcode" Value: 0, Default, MfgDefault
+			OneOfOption Option: "EFI" Value: 1
+		End 
+		OneOf Prompt: "Configure iSCSI name.", Help: "CCM", QuestionFlags: 0x4, QuestionId: 0x9201, VarStoreId: 0x9999, VarOffset: 0x6DB, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			OneOfOption Option: "Fcode" Value: 0, Default, MfgDefault
+			OneOfOption Option: "EFI" Value: 1
+		End 
+		SuppressIf 
+			True 
+			Numeric Prompt: "Chip Type/Revision.", Help: "Chip Type/Revision.", QuestionFlags: 0x0, QuestionId: 0x38, VarStoreId: 0x9999, VarOffset: 0x709, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+		End 
+	End 
+End 

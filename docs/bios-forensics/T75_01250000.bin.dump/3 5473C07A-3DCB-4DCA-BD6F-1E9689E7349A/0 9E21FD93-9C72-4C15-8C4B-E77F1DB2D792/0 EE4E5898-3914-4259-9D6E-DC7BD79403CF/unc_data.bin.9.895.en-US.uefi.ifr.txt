@@ -1,0 +1,243 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 77F2EA2F-4312-4569-85C4-583ACD8DB7E2, Title: "Hp Network Error.", Help: ""
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x0
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: A31ABB16-C627-475B-988E-7EE0776740F3, VarStoreId: 0x1234, Size: 0x588, Name: "UndiNVData"
+	Form FormId: 0x1, Title: "Internal error."
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Subtitle Prompt: "Autoproxy resolution is not supported.", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x750
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x751
+		Ref Prompt: "Failure during data transfer.", Help: "Timeout during network data transfer.", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1235
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x754
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x755
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x742
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x743
+		SuppressIf 
+			True 
+			Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+			Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+			Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+			Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1405, VarStoreId: 0x1234, VarOffset: 0x586, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1406, VarStoreId: 0x1234, VarOffset: 0x587, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x752
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x753
+		SuppressIf 
+			True 
+			Text Prompt: "Press ESC to CANCEL", Help: "InvalidId", Text: "InvalidId"
+			Numeric Prompt: "Type the IPv4 ADDRESS and press ENTER to SAVE", Help: "Configure IPv4 Subnet Mask", QuestionFlags: 0x1, QuestionId: 0x2, VarStoreId: 0x1234, VarOffset: 0x2E, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			OneOf Prompt: "There is no IPv4 Subnet Mask address configured.", Help: "", QuestionFlags: 0x1, QuestionId: 0x3, VarStoreId: 0x1234, VarOffset: 0x2F, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Provide the IPv4 Subnet Mask address if your system needs manual network configuration." Value: 0
+				OneOfOption Option: "" Value: 1, Default
+			End 
+			Numeric Prompt: "Examples:", Help: " 255.255.255.224", QuestionFlags: 0x1, QuestionId: 0x4, VarStoreId: 0x1234, VarOffset: 0x30, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+		End 
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x756
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x757
+		Numeric Prompt: "Failure during data transfer (transferred content size shorter than expected).", Help: "Failure during data transfer (unexpected content).", QuestionFlags: 0x4, QuestionId: 0x110A, VarStoreId: 0x1234, VarOffset: 0x34, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Subtitle Prompt: "Autoproxy script from Autoproxy URL is not valid.", Help: "", Flags: 0x0
+		End 
+		Text Prompt: "Failure during data transfer (could not start the upload).", Help: "Failure during data transfer (maximum downloaded content size exceeded).", Text: "Failure during data transfer (internal error)."
+		Text Prompt: "Failed to reach host (HTTP redirect disabled).", Help: "Could not communicate with network card.", Text: "Internal error (failed to look up host for new connection)"
+		Text Prompt: "Could not detect network link or network cable is unplugged.", Help: "Failed to setup network.", Text: "Failed to configure DNS during network setup."
+		Text Prompt: "No network card was detected in the system.", Help: "Failure while writing data transferred to file.", Text: "Failure while reading file data to be transferred (protocol not supported)."
+		Text Prompt: "Could not resolve proxy.", Help: "Failed to reach host (exceeded maximum HTTP redirects).", Text: "Failed to connect to host or proxy."
+		OneOf Prompt: "There is no static IPv4 Address configured.", Help: "", QuestionFlags: 0x1, QuestionId: 0x1104, VarStoreId: 0x1234, VarOffset: 0x28, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Provide the static IPv4 Address if your system needs manual network configuration." Value: 0, Default
+			OneOfOption Option: "" Value: 1
+		End 
+		SuppressIf 
+			True 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1408, VarStoreId: 0x1234, VarOffset: 0x2A, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1408, Value: 0x0
+			OneOf Prompt: " 255.255.255.240", Help: " 255.255.255.0", QuestionFlags: 0x1, QuestionId: 0x110C, VarStoreId: 0x1234, VarOffset: 0x29, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x20, Step: 0x0
+				OneOfOption Option: "Failed to validate certificate (certificate is not yet valid)." Value: 0
+				OneOfOption Option: "Failed to validate certificate integrity." Value: 1
+				OneOfOption Option: "Secure connection failed (SSL error)." Value: 2
+				OneOfOption Option: "Internal error (ssh)." Value: 3
+				OneOfOption Option: "Failure during data transfer (operation canceled)." Value: 4
+				OneOfOption Option: "ATTENTION: an invalid value was typed for IPv4 address. Please try again." Value: 5
+				OneOfOption Option: "ATTENTION: an invalid DNS server list was typed. Please try again." Value: 6
+				OneOfOption Option: "Your manual IPv4 configuration is incomplete. Be sure that IPv4 Address, IPv4 Subnet Mask and IPv4 Gateway are not blank." Value: 7
+				OneOfOption Option: "Your manual IPv4 configuration is invalid. Be sure that IPv4 Address, IPv4 Subnet Mask and IPv4 Gateway have proper values." Value: 8
+				OneOfOption Option: "Configure IPv4 Address" Value: 32, Default
+			End 
+		End 
+		Text Prompt: "Could not determine proxy setting after running Autoproxy script.", Help: "Could not resolve proxy setting. Failure while running Autoproxy script (review .pac script file).", Text: "Could not resolve proxy setting. Failure while running Autoproxy script."
+		SuppressIf 
+			True 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1407, VarStoreId: 0x1234, VarOffset: 0x36, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1407, Value: 0x0
+			String Prompt: "Failed to download Autoproxy script file from Autoproxy URL.", Help: "Could not resolve host.", QuestionFlags: 0x1, QuestionId: 0x1106, VarStoreId: 0x1234, VarStoreInfo: 0x4, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+			End 
+		End 
+	End 
+	Form FormId: 0x1235, Title: "Error communicating with the server (Internal error)."
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x740
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x741
+		SuppressIf 
+			True 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x5, VarStoreId: 0x1234, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		OneOf Prompt: "The protocol defined in the URL is not supported.", Help: "Failed to validate certificate (certificate has expired).", QuestionFlags: 0x0, QuestionId: 0x1108, VarStoreId: 0x1234, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x4, Step: 0x0
+			OneOfOption Option: "Failed to validate certificate (certificate is not yet valid)." Value: 0, Default
+			SuppressIf 
+				EqIdVal QuestionId: 0x5, Value: 0x0
+				OneOfOption Option: "Failed to validate certificate integrity." Value: 1
+				OneOfOption Option: "Secure connection failed (SSL error)." Value: 2
+				OneOfOption Option: "Internal error (ssh)." Value: 3
+				OneOfOption Option: "Failure during data transfer (operation canceled)." Value: 4
+			End 
+		End 
+		SuppressIf 
+			True 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x6, VarStoreId: 0x1234, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x6, Value: 0x0
+			OneOf Prompt: "Your manual IPv4 Address has an invalid value. Be sure that IPv4 Address has a correct value.", Help: "Your manual IPv4 Subnet Mask has an invalid value. Be sure that IPv4 Subnet Mask has a correct value.", QuestionFlags: 0x0, QuestionId: 0x1109, VarStoreId: 0x1234, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+				SuppressIf 
+					EqIdVal QuestionId: 0x6, Value: 0x0
+					OneOfOption Option: "Current value: " Value: 0
+					OneOfOption Option: "Your manual IPv4 Gateway has an invalid value. Be sure that IPv4 Gateway has a correct value" Value: 1
+				End 
+				SuppressIf 
+					EqIdVal QuestionId: 0x6, Value: 0x1
+					OneOfOption Option: "Configure IPv4 Address" Value: 2
+				End 
+			End 
+		End 
+		SuppressIf 
+			True 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1409, VarStoreId: 0x1234, VarOffset: 0x31, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1409, Value: 0x0
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x110D, VarStoreId: 0x1234, VarOffset: 0x32, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFFF, Step: 0x0
+				Default DefaultId: 0x0 Value: 0
+			End 
+		End 
+	End 
+	Form FormId: 0x1248, Title: "Examples:"
+		OneOf Prompt: " 192.202.145.23", Help: " 192.168.0.48", QuestionFlags: 0x10, QuestionId: 0x110F, VarStoreId: 0x1234, VarOffset: 0x2C, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: " 192.3.78.200" Value: 0
+			OneOfOption Option: "" Value: 1
+		End 
+	End 
+	Form FormId: 0x1247, Title: "Do not forget to configure the other items of IPv4 Configuration: IPv4 Address and IPv4 Gateway."
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Text Prompt: "Press ESC to CANCEL", Help: "Configure IPv4 Gateway", Text: "Type the IPv4 SUBNET MASK address and press ENTER to SAVE"
+	End 
+	Form FormId: 0x1237, Title: "Provide the IPv4 Gateway address if your system needs manual network configuration."
+		Ref Prompt: "", Help: "Examples:", QuestionFlags: 0x0, QuestionId: 0x7, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1244
+		Ref Prompt: " 192.168.0.247", Help: " 192.3.78.230", QuestionFlags: 0x0, QuestionId: 0x8, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1245
+		Ref Prompt: "Do not forget to configure the other items of IPv4 Configuration: IPv4 Address and IPv4 Subnet Mask.", Help: "", QuestionFlags: 0x0, QuestionId: 0x9, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1246
+	End 
+	Form FormId: 0x1244, Title: " 192.202.145.250"
+		SuppressIf 
+			EqIdVal QuestionId: 0x1405, Value: 0x0
+			OneOf Prompt: "Type the IPv4 GATEWAY address and press ENTER to SAVE", Help: "Configure DNS Addresses", QuestionFlags: 0x0, QuestionId: 0x1200, VarStoreId: 0x1234, VarOffset: 0x37, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Current value: " Value: 0
+				OneOfOption Option: "Your manual IPv4 Gateway has an invalid value. Be sure that IPv4 Gateway has a correct value" Value: 1, Default
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1200, Value: 0x0
+				OneOf Prompt: "There is no DNS address configured.", Help: "", QuestionFlags: 0x0, QuestionId: 0x1201, VarStoreId: 0x1234, VarOffset: 0x38, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+					OneOfOption Option: "Provide one or more DNS addresses if your system is on a network that requires a DNS server." Value: 0
+					SuppressIf 
+						EqIdVal QuestionId: 0x1200, Value: 0x0
+						OneOfOption Option: "" Value: 1, Default
+					End 
+				End 
+			End 
+			OneOf Prompt: "Examples:", Help: " 192.168.0.245", QuestionFlags: 0x0, QuestionId: 0x1202, VarStoreId: 0x1234, VarOffset: 0x39, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Current value: " Value: 0, Default
+				OneOfOption Option: "Your manual IPv4 Gateway has an invalid value. Be sure that IPv4 Gateway has a correct value" Value: 1
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1202, Value: 0x0
+				OneOf Prompt: " 192.5.43.250", Help: " 192.67.9.220, 192.145.32.222, 192.8.39.247", QuestionFlags: 0x0, QuestionId: 0x1203, VarStoreId: 0x1234, VarOffset: 0x3A, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+					OneOfOption Option: "" Value: 0, Default
+					SuppressIf 
+						EqIdVal QuestionId: 0x1202, Value: 0x0
+						OneOfOption Option: "Press ESC to CANCEL" Value: 1
+					End 
+				End 
+			End 
+			OneOf Prompt: "Type the DNS SERVER ADDRESSES between commas and press ENTER to SAVE", Help: "Configure Proxy Address", QuestionFlags: 0x1, QuestionId: 0x1204, VarStoreId: 0x1234, VarOffset: 0x3B, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "There is no Proxy URL configured." Value: 0, Default
+			End 
+		End 
+	End 
+	Form FormId: 0x1245, Title: ""
+		SuppressIf 
+			EqIdVal QuestionId: 0x1405, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1200, Value: 0x1
+				String Prompt: "", Help: "Provide the Proxy URL and (optional) Port Number if your system is on a network that requires proxy access.", QuestionFlags: 0x4, QuestionId: 0x1210, VarStoreId: 0x1234, VarStoreInfo: 0x3C, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				End 
+				String Prompt: "", Help: "Examples:", QuestionFlags: 0x4, QuestionId: 0x1211, VarStoreId: 0x1234, VarStoreInfo: 0x5C, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				End 
+				String Prompt: " proxy.host.com:8088", Help: " proxy.host.com", QuestionFlags: 0x4, QuestionId: 0x1212, VarStoreId: 0x1234, VarStoreInfo: 0x7C, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				End 
+			End 
+			String Prompt: " 192.168.0.1:8088", Help: "", QuestionFlags: 0x4, QuestionId: 0x1213, VarStoreId: 0x1234, VarStoreInfo: 0x9C, MinSize: 0x0, MaxSize: 0xDF, Flags: 0x0
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1202, Value: 0x0
+				String Prompt: "Press ESC to CANCEL", Help: "Type the PROXY URL with optional Port Number and press ENTER to SAVE", QuestionFlags: 0x4, QuestionId: 0x1214, VarStoreId: 0x1234, VarStoreInfo: 0x25C, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+				End 
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1215, VarStoreId: 0x1234, VarStoreInfo: 0x35E, MinSize: 0xC, MaxSize: 0x10, Flags: 0x0
+				End 
+			End 
+		End 
+	End 
+	Form FormId: 0x1246, Title: "Press ESC to CANCEL"
+		SuppressIf 
+			EqIdVal QuestionId: 0x1405, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1201, Value: 0x1
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1220, VarStoreId: 0x1234, VarStoreInfo: 0x380, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				End 
+				Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1221, VarStoreId: 0x1234, VarOffset: 0x3A0, Flags: 0x11, Size: 16, Min: 0x400, Max: 0xFFFF, Step: 0x0
+					Default DefaultId: 0x0 Value: 3260
+				End 
+				Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1222, VarStoreId: 0x1234, VarOffset: 0x3A2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+					Default DefaultId: 0x0 Value: 1
+				End 
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1223, VarStoreId: 0x1234, VarStoreInfo: 0x3A3, MinSize: 0x0, MaxSize: 0xDF, Flags: 0x0
+				End 
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1203, Value: 0x0
+				String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1224, VarStoreId: 0x1234, VarStoreInfo: 0x563, MinSize: 0xC, MaxSize: 0x10, Flags: 0x0
+				End 
+			End 
+		End 
+	End 
+End 

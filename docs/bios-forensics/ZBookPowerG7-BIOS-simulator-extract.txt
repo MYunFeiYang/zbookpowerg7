@@ -1,0 +1,93 @@
+Interactive BIOS simulator
+Welcome to the interactive BIOS simulator for the
+HP ZBook Power G7 Mobile Workstation
+Here’s how to use it…
+BIOS Utility Menus: (Click the link to navigate to the individual menus) 
+On this page you will find thumbnail images of each of the product’s BIOS utility menus. To view a specific menu in greater detail, simply click that 
+thumbnail. Just as in the live BIOS, on each menu, you can select the tab of each of the other utility menus to navigate directly to that menu.
+Menu options:
+While the menu options cannot be toggled, many of them offer item specific information about that option. To view this information, use the cursor 
+to rollover the option and the information will present in a pane on the right of the BIOS screen.
+That’s it! 
+On every page there is a link that brings you back to either this Welcome page or the BIOS Utility Menus page enabling you to navigate to 
+whatever BIOS option you wish to review.
+HP ZBook Power G7 Mobile Workstation
+BIOS Utility Menus
+Back to Welcome Page
+Main Security Advanced UEFI Drivers
+
+Main Menu
+Back to BIOS Utility Menus
+Back to Welcome Page
+Item Specific Help
+Main Security Advanced UEFI Drivers
+HP computer setup
+Bookmark2
+Security Menu
+Back to BIOS Utility Menus
+Back to Welcome Page
+Item Specific Help
+Main Security Advanced UEFI Drivers
+HP computer setup
+Administrator Tools
+Security Configuration
+Utilities
+Activation Status: Inactive
+Absolute ® Persistance Module Permanent Disable: No
+Advanced Menu
+Back to BIOS Utility Menus
+Back to Welcome Page
+Item Specific Help
+Main Security Advanced UEFI Drivers
+HP computer setup
+Remote HP PC Hardware Diagnostics
+UEFI Drivers
+Back to BIOS Utility Menus
+Back to Welcome Page
+Item Specific Help
+Main Security Advanced UEFI Drivers
+HP computer setup
+This will restart the system into the 3rd Party Option
+ROM Management application.
+You can get to this application directly by pressing F3 during startup.
+System Information
+Back to BIOS Utility Menus
+Back to Welcome Page
+BASIC SYSTEM INFORMATION
+Product Name
+Processor 1
+Memory Size
+System BIOS
+SERVICE -------------------------------------------------------------------------------
+Born On Date
+Serial Number
+SKU Number
+Universally Unique Identifier (UUID)
+UUID (standard format)
+Asset Tracking Number
+HP ZBook Power G7 Mobile Workstation
+Intel(R) Xeon(R) w-10855M CPU @ 2.80GHz
+16384 MB
+T75 Ver. 00.14.00 06/04/2020
+06/29/2020
+5CD0284LKL
+XW5SKU4#ABA
+E3587503F5557F42BF4B0EB36AB9BC24
+037558E3-55-F5-427F-BF4B-0EB36AB9BC24
+Item Specific Help
+Main Security Advanced UEFI Drivers
+HP computer setup
+Bookmark 1
+System Diagnostics
+Back to BIOS Utility Menus
+Back to Welcome Page
+Version 7.7.1.0
+HP PC Hardware Diagnostics UEFI
+For more information, please visit: www.hp.com/go/techcenter/PCDiags
+System Information
+System Tests
+Component Tests
+Test Logs
+Language
+Item Specific Help
+Bookmark 1

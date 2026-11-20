@@ -1,0 +1,56 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 02EEA107-98DB-400E-9830-460A1542D799, Title: "Normal", Help: "Important"
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 02EEA107-98DB-400E-9830-460A1542D799, VarStoreId: 0x1, Size: 0x638, Name: "IP6_CONFIG_IFR_NVDATA"
+	Form FormId: 0x3, Title: "Unknown"
+		Ref Prompt: "Press ESC to CANCEL", Help: "", QuestionFlags: 0x4, QuestionId: 0x108, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x1, Title: "Unknown"
+		Text Prompt: "Please wait. This operation might take several seconds.", Help: "Network BIOS Update", Text: "Update BIOS now"
+		Text Prompt: "Postpone Update until the next reboot", Help: "Skip this BIOS update", Text: "Update to "
+		Text Prompt: "Rollback to ", Help: "Cancel", Text: "Network BIOS update has completed successfully!"
+		Text Prompt: "A network BIOS update checking was performed. There are no updates for this PC.", Help: "Starting Network BIOS update...", Text: "Current URL: "
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3840
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Configuring network...", Help: "Downloading file...", Text: "Current URL: "
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3E80
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Downloading BIOS image", Help: "Flashing BIOS image...", Text: "Current URL: "
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x44C0
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Internal error.", Help: "A network error has occurred.", Text: "Current URL: "
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x4B00
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		String Prompt: "Failed to determine if new BIOS version is available.", Help: "Failure while flashing BIOS image (failed image signature verification or image is incompatible).", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x1, VarStoreInfo: 0xC, MinSize: 0x1, MaxSize: 0x17, Flags: 0x0
+		End 
+		Numeric Prompt: "Operation cancelled.", Help: "Hp Network BIOS Update Error.", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x8, Flags: 0x12, Size: 32, Min: 0x0, Max: 0xA, Step: 0x0
+		End 
+		OneOf Prompt: "", Help: "New BIOS Update is available and is about to be downloaded and installed on this PC.", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x1, VarOffset: 0x4, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Current BIOS version: " Value: 0, Default
+			OneOfOption Option: "Update version: " Value: 1
+		End 
+		Subtitle Prompt: "Current URL: ", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2, Value: 0x0
+			Ref Prompt: "Rollback version: ", Help: "Update type: ", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+			Subtitle Prompt: "Current URL: ", Help: "", Flags: 0x0
+			End 
+		End 
+		Action Prompt: "MS Windows BitLocker Drive Encryption (BDE) may be enabled on your system.", Help: "HP requires that BDE be suspended temporarily before the BIOS is flashed and", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x2, Title: "Rollback version: "
+		String Prompt: "(Visit HP.com to learn about specific enhancements and fixes included in this update)", Help: "Would you like to install it now?", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x1, VarStoreInfo: 0x3E, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "BIOS Update will be postponed until next reboot in a few seconds", Help: "BIOS Update will begin in a few seconds", QuestionFlags: 0x4, QuestionId: 0x103, VarStoreId: 0x1, VarStoreInfo: 0x23C, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "Press ESC to POSTPONE this BIOS Update", Help: "Press F2 to skip this BIOS Update. You will be not asked again to update to this version.", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x1, VarStoreInfo: 0x43A, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		Action Prompt: "that you obtain your BDE recovery password or recovery PIN before suspending BDE.", Help: "that you obtain your BDE recovery password or recovery PIN before suspending BDE.", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "After the BIOS is updated, BDE can be resumed.", Help: "After the BIOS is updated, BDE can be resumed.", QuestionFlags: 0x4, QuestionId: 0x107, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

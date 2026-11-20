@@ -1,0 +1,105 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 02EEA107-98DB-400E-9830-460A1542D799, Title: "HP Battery Alert
+", Help: "BIOS has detected that the capacity of the internal battery has been reduced. 
+This may be caused by environmental factors such as low ambient operating temperature, 
+or it could be due to aging of the battery pack. 
+Operating your system in a warmer location or operating your unit for a while might resolve this condition. 
+If the condition persists or if you have an older system, please contact HP service. 
+Primary(Internal) Battery(601)
+
+Enter - Continue Startup
+"
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 02EEA107-98DB-400E-9830-460A1542D799, VarStoreId: 0x1, Size: 0x638, Name: "IP6_CONFIG_IFR_NVDATA"
+	Form FormId: 0x3, Title: "The system has detected the storage capacity of the battery stated below to be very low.
+For optimal performance,this battery may need to be replaced.
+Secondary(External)Battery (602)
+
+Enter - Continue Startup
+"
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x108, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x1, Title: "The system has detected the storage capacity of the battery stated below to be very low.
+For optimal performance,this battery may need to be replaced.
+Secondary(External)Battery (602)
+
+Enter - Continue Startup
+"
+		Text Prompt: "For more information, please visit:  www.hp.com\go\60xbatteryerror", Help: "The system has detected that a cooling fan is not operating correctly.
+Continued operation is not recommended and may cause unpredictable behavior that could result in random shutdown, 
+data loss or possible system damage.The system will shut down in 15 seconds.
+To prevent shutdown and continue operation, press the enter key now.
+", Text: "
+System Fan (90B)
+
+"
+		Text Prompt: "For more information, please visit: www.hp.com\go\90Xfanerror", Help: "The system has detected that a cooling fan may not be working properly.  Before continued operation it is recommended to:
+-Press enter to clear the message and allow the system to arrive at Windows Desktop
+-Perform a Windows shutdown
+-Clean the exterior of the vents to remove dust buildup while the computer is off
+-Check for BIOS update", Text: "
+Fan Speed Failure (90F)
+
+"
+		Text Prompt: "For more information, please visit: www.hp.com\go\90Xfanerror", Help: "The System BIOS has detected your machine was previously shut down to avoid overheating.
+Overheating may occur if the cooling vents are blocked or the operating temperature exceeds the system specifications. 
+The machine should return to normal operation once the situation is resolved.
+", Text: "
+System Temperature (90D)
+
+"
+		Text Prompt: "ENTER – Continue Startup
+
+
+For more information, please visit: www.hp.com\go\90Xfanerror", Help: "Dimm Check Error", Text: "InvalidId"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3840
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Warning - installing memory in DIMM3 and DIMM4 slots first will cause system memory performance to be reduced.
+To achieve optimum memory performance, please install memory in DIMM1 and DIMM2 slots first.
+
+Press Power Button - shut down
+", Help: "For more information, please visit:  www.hp.com\go\techcenter\startup", Text: "InvalidId"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3E80
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Wireless Module not supported
+", Help: "The system has detected a Wireless module installed in the system is not supported and has been disabled.
+ WWAN Module ID (703)", Text: "InvalidId"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x44C0
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "POWER BUTTON – Power off
+ENTER – Continue", Help: "InvalidId", Text: "InvalidId"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x4B00
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x1, VarStoreInfo: 0xC, MinSize: 0x1, MaxSize: 0x17, Flags: 0x0
+		End 
+		Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x8, Flags: 0x12, Size: 32, Min: 0x0, Max: 0xA, Step: 0x0
+		End 
+		OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x1, VarOffset: 0x4, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "InvalidId" Value: 0, Default
+			OneOfOption Option: "InvalidId" Value: 1
+		End 
+		Subtitle Prompt: "InvalidId", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2, Value: 0x0
+			Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+			Subtitle Prompt: "InvalidId", Help: "", Flags: 0x0
+			End 
+		End 
+		Action Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x2, Title: "InvalidId"
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x1, VarStoreInfo: 0x3E, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x103, VarStoreId: 0x1, VarStoreInfo: 0x23C, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x1, VarStoreInfo: 0x43A, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		Action Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x107, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

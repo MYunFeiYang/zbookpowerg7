@@ -1,0 +1,275 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 9F94D327-0B18-4245-8FF2-832E300D2CEF, Title: "Normal", Help: "Important"
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x3
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 9F94D327-0B18-4245-8FF2-832E300D2CEF, VarStoreId: 0x802, Size: 0x132E, Name: "WIFI_MANAGER_IFR_NVDATA"
+	Form FormId: 0x1, Title: "Unknown"
+		SuppressIf 
+			True 
+			Action Prompt: "Contacting server...", Help: "Update to ", QuestionFlags: 0x4, QuestionId: 0x100, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x640
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+	End 
+	Form FormId: 0x2, Title: "Rollback to "
+		Text Prompt: "Please wait. This operation might take several seconds.", Help: "Update BIOS now", Text: "Network BIOS Update"
+		Text Prompt: "Postpone Update until the next reboot", Help: "Update to ", Text: "Skip this BIOS update"
+		Subtitle Prompt: "Update to ", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "Cancel", Help: "Network BIOS update has completed successfully!", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x3
+		Ref Prompt: "A network BIOS update checking was performed. There are no updates for this PC.", Help: "Starting Network BIOS update...", QuestionFlags: 0x4, QuestionId: 0x114, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x5
+		Ref Prompt: "Configuring network...", Help: "Downloading file...", QuestionFlags: 0x4, QuestionId: 0x128, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x6
+		Action Prompt: "Update to ", Help: "Update to ", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: "Update to "
+			RefreshId Guid: DE609972-CBCC-4E82-8B3E-6AC5CF56738D
+		End 
+	End 
+	Form FormId: 0x3, Title: "Cancel"
+		Numeric Prompt: "Examples:", Help: " http://www.host.com/path", QuestionFlags: 0x5, QuestionId: 0x103, VarStoreId: 0x802, VarOffset: 0x0, Flags: 0x12, Size: 32, Min: 0x0, Max: 0xFFFFFFFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+			RefreshId Guid: C5F3C7F9-FB9D-49F1-BE67-8BAD20A7C6AC
+		End 
+		Subtitle Prompt: "Update to ", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0xC80
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+	End 
+	Form FormId: 0x4, Title: "Failed to determine if new BIOS version is available."
+		Subtitle Prompt: "Update to ", Help: "", Flags: 0x0
+		End 
+		Text Prompt: "There is no custom URL configured.", Help: "", Text: "BIOS Update source can be changed to a CUSTOM URL instead of HP.com."
+		Subtitle Prompt: "Update to ", Help: "", Flags: 0x0
+		End 
+		Text Prompt: "Failure while flashing BIOS image (failed image signature verification or image is incompatible).", Help: "Hp Network BIOS Update Error.", Text: "Operation cancelled."
+		Text Prompt: "", Help: "Current BIOS version: ", Text: "New BIOS Update is available and is about to be downloaded and installed on this PC."
+		SuppressIf 
+			EqIdVal QuestionId: 0x116, Value: 0x4
+				Not 
+			End 
+			Password Prompt: "", Help: "Configure Update Source", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x802, VarStoreInfo: 0x46, MinSize: 0x8, MaxSize: 0x3F
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x116, Value: 0x2
+				Not 
+			End 
+			OneOf Prompt: "Update version: ", Help: "Rollback version: ", QuestionFlags: 0x4, QuestionId: 0x107, VarStoreId: 0x802, VarOffset: 0x122D, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+				OneOfOption Option: "Press F2 to skip this BIOS Update. You will be not asked again to update to this version." Value: 0, Default
+				OneOfOption Option: "MS Windows BitLocker Drive Encryption (BDE) may be enabled on your system." Value: 1
+				OneOfOption Option: "Press ESC to POSTPONE this BIOS Update" Value: 2
+			End 
+			SuppressIf 
+				EqIdValList QuestionId: 0x107, Values: [2, 0, 1]
+					Not 
+				End 
+				Ref Prompt: "Internal error.", Help: "An error has occurred with your network connection. Please see the error message below.", QuestionFlags: 0x4, QuestionId: 0x109, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x9
+				SuppressIf 
+					EqIdVal QuestionId: 0x107, Value: 0x2
+						Not 
+					End 
+					Ref Prompt: "IPv4 Configuration: ", Help: "IPv4 Address: ", QuestionFlags: 0x4, QuestionId: 0x110, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x9
+					Ref Prompt: "IPv4 Subnet Mask: ", Help: "IPv4 Gateway: ", QuestionFlags: 0x4, QuestionId: 0x111, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xB
+				End 
+				SuppressIf 
+					EqIdValList QuestionId: 0x107, Values: [0, 1]
+						Not 
+					End 
+					OneOf Prompt: "Update type: ", Help: "(Visit HP.com to learn about specific enhancements and fixes included in this update)", QuestionFlags: 0x4, QuestionId: 0x108, VarStoreId: 0x802, VarOffset: 0x122E, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+						OneOfOption Option: "HP requires that BDE be suspended temporarily before the BIOS is flashed and" Value: 0, Default
+					End 
+				End 
+				String Prompt: " http://192.168.0.1/path", Help: "", QuestionFlags: 0x4, QuestionId: 0x112, VarStoreId: 0x802, VarStoreInfo: 0x1180, MinSize: 0x6, MaxSize: 0x14, Flags: 0x0
+				End 
+				SuppressIf 
+					EqIdValList QuestionId: 0x107, Values: [0, 1]
+						Not 
+					End 
+					Password Prompt: "Press ESC to CANCEL", Help: "Type the CUSTOM URL for BIOS update checks via network and press ENTER to SAVE", QuestionFlags: 0x4, QuestionId: 0x113, VarStoreId: 0x802, VarStoreInfo: 0x11AA, MinSize: 0x0, MaxSize: 0x3F
+					End 
+				End 
+			End 
+		End 
+		Subtitle Prompt: "Update to ", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "This is only recommended for systems in a managed IT environment.", Help: "", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "Update to ", Help: "Update to ", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: "Update to "
+			RefreshId Guid: E5FAF2B2-5ECC-44AC-9175-FB78B28A596C
+		End 
+	End 
+	Form FormId: 0x7, Title: "Failed to determine if new BIOS version is available."
+		String Prompt: "Failure while flashing BIOS image (failed image signature verification or image is incompatible).", Help: "Hp Network BIOS Update Error.", QuestionFlags: 0x4, QuestionId: 0x129, VarStoreId: 0x802, VarStoreInfo: 0x4, MinSize: 0x1, MaxSize: 0x20, Flags: 0x0
+		End 
+		OneOf Prompt: "", Help: "Current BIOS version: ", QuestionFlags: 0x4, QuestionId: 0x130, VarStoreId: 0x802, VarOffset: 0x122C, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x4, Step: 0x0
+			OneOfOption Option: "Would you like to install it now?" Value: 0, Default
+			OneOfOption Option: "BIOS Update will be postponed until next reboot in a few seconds" Value: 4
+			OneOfOption Option: "BIOS Update will begin in a few seconds" Value: 2
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x130, Value: 0x4
+				Not 
+			End 
+			Password Prompt: "", Help: "Configure Update Source", QuestionFlags: 0x4, QuestionId: 0x133, VarStoreId: 0x802, VarStoreInfo: 0x46, MinSize: 0x8, MaxSize: 0x3F
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x130, Value: 0x2
+				Not 
+			End 
+			OneOf Prompt: "Update version: ", Help: "Rollback version: ", QuestionFlags: 0x4, QuestionId: 0x131, VarStoreId: 0x802, VarOffset: 0x122D, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+				OneOfOption Option: "Press F2 to skip this BIOS Update. You will be not asked again to update to this version." Value: 0, Default
+				OneOfOption Option: "MS Windows BitLocker Drive Encryption (BDE) may be enabled on your system." Value: 1
+				OneOfOption Option: "Press ESC to POSTPONE this BIOS Update" Value: 2
+			End 
+			SuppressIf 
+				EqIdValList QuestionId: 0x131, Values: [2, 0, 1]
+					Not 
+				End 
+				Ref Prompt: "Internal error.", Help: "An error has occurred with your network connection. Please see the error message below.", QuestionFlags: 0x4, QuestionId: 0x136, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x9
+				SuppressIf 
+					EqIdVal QuestionId: 0x131, Value: 0x2
+						Not 
+					End 
+					Ref Prompt: "IPv4 Configuration: ", Help: "IPv4 Address: ", QuestionFlags: 0x4, QuestionId: 0x137, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x9
+					Ref Prompt: "IPv4 Subnet Mask: ", Help: "IPv4 Gateway: ", QuestionFlags: 0x4, QuestionId: 0x138, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xB
+				End 
+				SuppressIf 
+					EqIdValList QuestionId: 0x131, Values: [0, 1]
+						Not 
+					End 
+					OneOf Prompt: "Update type: ", Help: "(Visit HP.com to learn about specific enhancements and fixes included in this update)", QuestionFlags: 0x4, QuestionId: 0x132, VarStoreId: 0x802, VarOffset: 0x122E, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+						OneOfOption Option: "HP requires that BDE be suspended temporarily before the BIOS is flashed and" Value: 0, Default
+					End 
+				End 
+				String Prompt: " http://192.168.0.1/path", Help: "", QuestionFlags: 0x4, QuestionId: 0x139, VarStoreId: 0x802, VarStoreInfo: 0x1180, MinSize: 0x6, MaxSize: 0x14, Flags: 0x0
+				End 
+				Password Prompt: "Press ESC to CANCEL", Help: "Type the CUSTOM URL for BIOS update checks via network and press ENTER to SAVE", QuestionFlags: 0x4, QuestionId: 0x140, VarStoreId: 0x802, VarStoreInfo: 0x11AA, MinSize: 0x0, MaxSize: 0x3F
+				End 
+			End 
+		End 
+		Subtitle Prompt: "Update to ", Help: "", Flags: 0x0
+		End 
+		CheckBox Prompt: "that you obtain your BDE recovery password or recovery PIN before suspending BDE.", Help: "After the BIOS is updated, BDE can be resumed.", QuestionFlags: 0x4, QuestionId: 0x134, VarStoreId: 0x802, VarOffset: 0x122A, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		CheckBox Prompt: "Current URL: ", Help: "Press ESC to CANCEL", QuestionFlags: 0x4, QuestionId: 0x135, VarStoreId: 0x802, VarOffset: 0x122B, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		Subtitle Prompt: "Update to ", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "", Help: "Test Network Connection", QuestionFlags: 0x4, QuestionId: 0x141, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "Internal error.", Help: "A network error has occurred.", QuestionFlags: 0x4, QuestionId: 0x142, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x6, Title: "Configuring network..."
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x12C0
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Subtitle Prompt: "Update to ", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "Downloading BIOS image", Help: "Flashing BIOS image...", QuestionFlags: 0x4, QuestionId: 0x143, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x8
+	End 
+	Form FormId: 0x8, Title: "Downloading BIOS image"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x1900
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Subtitle Prompt: "Update to ", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "", Help: "Test Network Connection", QuestionFlags: 0x4, QuestionId: 0x144, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x5, Title: "A network BIOS update checking was performed. There are no updates for this PC."
+		String Prompt: "Failure while flashing BIOS image (failed image signature verification or image is incompatible).", Help: "Hp Network BIOS Update Error.", QuestionFlags: 0x4, QuestionId: 0x115, VarStoreId: 0x802, VarStoreInfo: 0x4, MinSize: 0x1, MaxSize: 0x20, Flags: 0x0
+		End 
+		OneOf Prompt: "", Help: "Current BIOS version: ", QuestionFlags: 0x4, QuestionId: 0x116, VarStoreId: 0x802, VarOffset: 0x122C, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x4, Step: 0x0
+			OneOfOption Option: "Would you like to install it now?" Value: 0, Default
+			OneOfOption Option: "BIOS Update will be postponed until next reboot in a few seconds" Value: 4
+			OneOfOption Option: "BIOS Update will begin in a few seconds" Value: 2
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x116, Value: 0x4
+				Not 
+			End 
+			Password Prompt: "", Help: "Configure Update Source", QuestionFlags: 0x4, QuestionId: 0x117, VarStoreId: 0x802, VarStoreInfo: 0x46, MinSize: 0x8, MaxSize: 0x3F
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x116, Value: 0x2
+				Not 
+			End 
+			OneOf Prompt: "Update version: ", Help: "Rollback version: ", QuestionFlags: 0x4, QuestionId: 0x121, VarStoreId: 0x802, VarOffset: 0x122D, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+				OneOfOption Option: "Press F2 to skip this BIOS Update. You will be not asked again to update to this version." Value: 0, Default
+				OneOfOption Option: "MS Windows BitLocker Drive Encryption (BDE) may be enabled on your system." Value: 1
+				OneOfOption Option: "Press ESC to POSTPONE this BIOS Update" Value: 2
+			End 
+			SuppressIf 
+				EqIdValList QuestionId: 0x121, Values: [2, 0, 1]
+					Not 
+				End 
+				Ref Prompt: "Internal error.", Help: "An error has occurred with your network connection. Please see the error message below.", QuestionFlags: 0x4, QuestionId: 0x123, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x9
+				SuppressIf 
+					EqIdVal QuestionId: 0x121, Value: 0x2
+						Not 
+					End 
+					Ref Prompt: "IPv4 Configuration: ", Help: "IPv4 Address: ", QuestionFlags: 0x4, QuestionId: 0x124, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x9
+					Ref Prompt: "IPv4 Subnet Mask: ", Help: "IPv4 Gateway: ", QuestionFlags: 0x4, QuestionId: 0x125, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xB
+				End 
+				SuppressIf 
+					EqIdValList QuestionId: 0x121, Values: [0, 1]
+						Not 
+					End 
+					OneOf Prompt: "Update type: ", Help: "(Visit HP.com to learn about specific enhancements and fixes included in this update)", QuestionFlags: 0x4, QuestionId: 0x122, VarStoreId: 0x802, VarOffset: 0x122E, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+						OneOfOption Option: "HP requires that BDE be suspended temporarily before the BIOS is flashed and" Value: 0, Default
+					End 
+				End 
+				String Prompt: " http://192.168.0.1/path", Help: "", QuestionFlags: 0x4, QuestionId: 0x126, VarStoreId: 0x802, VarStoreInfo: 0x1180, MinSize: 0x6, MaxSize: 0x14, Flags: 0x0
+				End 
+				Password Prompt: "Press ESC to CANCEL", Help: "Type the CUSTOM URL for BIOS update checks via network and press ENTER to SAVE", QuestionFlags: 0x4, QuestionId: 0x127, VarStoreId: 0x802, VarStoreInfo: 0x11AA, MinSize: 0x0, MaxSize: 0x3F
+				End 
+			End 
+		End 
+		Subtitle Prompt: "Update to ", Help: "", Flags: 0x0
+		End 
+		CheckBox Prompt: "that you obtain your BDE recovery password or recovery PIN before suspending BDE.", Help: "After the BIOS is updated, BDE can be resumed.", QuestionFlags: 0x4, QuestionId: 0x118, VarStoreId: 0x802, VarOffset: 0x122A, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		CheckBox Prompt: "Current URL: ", Help: "Press ESC to CANCEL", QuestionFlags: 0x4, QuestionId: 0x119, VarStoreId: 0x802, VarOffset: 0x122B, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		Subtitle Prompt: "Update to ", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "", Help: "Test Network Connection", QuestionFlags: 0x4, QuestionId: 0x120, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x9, Title: "Your network server connection is working."
+		Ref Prompt: "DNS Configuration: ", Help: "Primary DNS: ", QuestionFlags: 0x4, QuestionId: 0x145, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x9
+		Action Prompt: "Manual", Help: "Update to ", QuestionFlags: 0x4, QuestionId: 0x153, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Subtitle Prompt: "Update to ", Help: "", Flags: 0x0
+		End 
+		String Prompt: "Current Proxy: ", Help: "Current Custom Source URL: ", QuestionFlags: 0x4, QuestionId: 0x151, VarStoreId: 0x802, VarStoreInfo: 0x10B6, MinSize: 0x0, MaxSize: 0x24, Flags: 0x0
+		End 
+		Subtitle Prompt: "Update to ", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Update to ", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "", Help: "Test Network Connection", QuestionFlags: 0x4, QuestionId: 0x147, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "Test Network Connection Failed", Help: "Starting network test...", QuestionFlags: 0x4, QuestionId: 0x148, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0xB, Title: "IPv4 Subnet Mask: "
+		Ref Prompt: "Secondary DNS: ", Help: "MAC Address: ", QuestionFlags: 0x4, QuestionId: 0x146, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xB
+		Action Prompt: "Automatic", Help: "Update to ", QuestionFlags: 0x4, QuestionId: 0x154, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Subtitle Prompt: "Update to ", Help: "", Flags: 0x0
+		End 
+		Password Prompt: "Error: ", Help: "Update to ", QuestionFlags: 0x4, QuestionId: 0x152, VarStoreId: 0x802, VarStoreInfo: 0x1100, MinSize: 0x0, MaxSize: 0x3F
+		End 
+		Subtitle Prompt: "Update to ", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Update to ", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "", Help: "Test Network Connection", QuestionFlags: 0x4, QuestionId: 0x149, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "Test Network Connection Failed", Help: "Starting network test...", QuestionFlags: 0x4, QuestionId: 0x150, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

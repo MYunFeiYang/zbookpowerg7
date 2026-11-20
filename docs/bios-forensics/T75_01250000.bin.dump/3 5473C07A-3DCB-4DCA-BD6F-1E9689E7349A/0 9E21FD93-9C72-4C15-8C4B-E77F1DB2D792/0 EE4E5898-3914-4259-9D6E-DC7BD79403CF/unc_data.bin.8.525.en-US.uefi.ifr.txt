@@ -1,0 +1,759 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: A04A27E4-DF00-4D42-B552-39511302113E, Title: "Thunderbolt Type-C Ports", Help: "Require BIOS PW to change Thunderbolt Security Level"
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x163
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x0
+	DefaultStore DefaultId: 0x0, Name: ""
+	VarStore Guid: A04A27E4-DF00-4D42-B552-39511302113E, VarStoreId: 0x9999, Size: 0x70A, Name: "MebxConfig"
+	Form FormId: 0x1, Title: "When Thunderbolt Mode is disabled, only DisplayPort and USB Type C devices will function on the Thunderbolt Port"
+		SuppressIf 
+			True 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x9999, VarOffset: 0x6E3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x9999, VarOffset: 0x6E4, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x9999, VarOffset: 0x8, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x4, VarStoreId: 0x9999, VarOffset: 0x6DD, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x5, VarStoreId: 0x9999, VarOffset: 0x6E5, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x6, VarStoreId: 0x9999, VarOffset: 0x6DF, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x7, VarStoreId: 0x9999, VarOffset: 0x6DE, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x8, VarStoreId: 0x9999, VarOffset: 0x6E6, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x9, VarStoreId: 0x9999, VarOffset: 0x6E0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0xA, VarStoreId: 0x9999, VarOffset: 0x6E1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0xB, VarStoreId: 0x9999, VarOffset: 0x6E2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0xC, VarStoreId: 0x9999, VarOffset: 0xE, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0xD, VarStoreId: 0x9999, VarOffset: 0x13, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0xE, VarStoreId: 0x9999, VarOffset: 0xC, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0xF, VarStoreId: 0x9999, VarOffset: 0x15, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x10, VarStoreId: 0x9999, VarOffset: 0x6DC, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x11, VarStoreId: 0x9999, VarOffset: 0x6E7, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x12, VarStoreId: 0x9999, VarOffset: 0x6E8, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x13, VarStoreId: 0x9999, VarOffset: 0x6E9, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x14, VarStoreId: 0x9999, VarOffset: 0x6EA, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x15, VarStoreId: 0x9999, VarOffset: 0x6EB, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x16, VarStoreId: 0x9999, VarOffset: 0x6EC, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x17, VarStoreId: 0x9999, VarOffset: 0x6ED, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x18, VarStoreId: 0x9999, VarOffset: 0x6EE, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x19, VarStoreId: 0x9999, VarOffset: 0x6EF, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x1A, VarStoreId: 0x9999, VarOffset: 0x6F0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x1B, VarStoreId: 0x9999, VarOffset: 0x6F1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x1C, VarStoreId: 0x9999, VarOffset: 0x6F2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x1D, VarStoreId: 0x9999, VarOffset: 0x6F3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x1E, VarStoreId: 0x9999, VarOffset: 0x6F4, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x1F, VarStoreId: 0x9999, VarOffset: 0x6F5, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x20, VarStoreId: 0x9999, VarOffset: 0x6F6, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x21, VarStoreId: 0x9999, VarOffset: 0x6F7, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x22, VarStoreId: 0x9999, VarOffset: 0x6F8, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x23, VarStoreId: 0x9999, VarOffset: 0x6F9, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x24, VarStoreId: 0x9999, VarOffset: 0x6FA, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x25, VarStoreId: 0x9999, VarOffset: 0x6FB, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x26, VarStoreId: 0x9999, VarOffset: 0x6FC, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x27, VarStoreId: 0x9999, VarOffset: 0x6FD, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x28, VarStoreId: 0x9999, VarOffset: 0x6FE, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x29, VarStoreId: 0x9999, VarOffset: 0x6FF, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x2A, VarStoreId: 0x9999, VarOffset: 0x700, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x2B, VarStoreId: 0x9999, VarOffset: 0x701, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x2C, VarStoreId: 0x9999, VarOffset: 0x702, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x2D, VarStoreId: 0x9999, VarOffset: 0x703, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x2E, VarStoreId: 0x9999, VarOffset: 0x704, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x2F, VarStoreId: 0x9999, VarOffset: 0x705, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x30, VarStoreId: 0x9999, VarOffset: 0x706, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x31, VarStoreId: 0x9999, VarOffset: 0x707, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x32, VarStoreId: 0x9999, VarOffset: 0x708, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1, Value: 0x1
+				EqIdVal QuestionId: 0x2, Value: 0x1
+				Or 
+			End 
+			Action Prompt: "Enable", Help: "This setting disables those features designed to manage the long-term health of the battery and allows the battery to charge to its available full charge capacity. Disablement of these features will allow the battery to enter a high state-of-charge, which can increase the rate of the battery's natural degradation. As with all rechargeable batteries, the available full charge capacity of the battery will naturally decrease with time and usage.", QuestionFlags: 0x4, QuestionId: 0x900, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x1, Value: 0x0
+			Ref Prompt: "1024 MB", Help: "    Optane is gray out due to Legacy Support Enable", QuestionFlags: 0x4, QuestionId: 0x1000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x4, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1, Value: 0x0
+					EqIdVal QuestionId: 0x3, Value: 0x0
+					Or 
+				End 
+				OneOf Prompt: "Headphone Output", Help: "Turbo-boost", QuestionFlags: 0x4, QuestionId: 0x902, VarStoreId: 0x9999, VarOffset: 0x7, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+					OneOfOption Option: "Hides the bottom USB ports from the OS" Value: 0
+					OneOfOption Option: "Bottom USB Ports" Value: 1, Default, MfgDefault
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x4, Value: 0x0
+				EqIdVal QuestionId: 0x902, Value: 0x0
+				Or 
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1, Value: 0x0
+					EqIdVal QuestionId: 0x6, Value: 0x0
+					Or 
+				End 
+				Ref Prompt: "Graphics", Help: "Hyperthreading", QuestionFlags: 0x4, QuestionId: 0x2000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x4
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x7, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1, Value: 0x0
+				Ref Prompt: "Provide UMA Graphics and Hybrid Graphics 2 selections.", Help: "Permits the user to control the processor capability", QuestionFlags: 0x4, QuestionId: 0x9000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x12
+			End 
+		End 
+		Action Prompt: "Disable", Help: "Virtualization Technology (VTx)", QuestionFlags: 0x4, QuestionId: 0x901, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x2, Title: "Legacy Mode"
+		SuppressIf 
+			EqIdVal QuestionId: 0x2, Value: 0x1
+			Action Prompt: "Disable and Lock", Help: "For more information, please see HP.COM/SUPPORT/BATTERY", QuestionFlags: 0x4, QuestionId: 0x1101, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+	End 
+	Form FormId: 0x4, Title: "Native Mode"
+		GrayOutIf 
+			EqIdVal QuestionId: 0x6, Value: 0x0
+			OneOf Prompt: "Wireless Network Device (WLAN)", Help: "DMA Protection", QuestionFlags: 0x4, QuestionId: 0x2200, VarStoreId: 0x9999, VarOffset: 0x4, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Hides the bottom USB ports from the OS" Value: 0, Default, MfgDefault
+				OneOfOption Option: "Bottom USB Ports" Value: 1
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2200, Value: 0x0
+			Ref Prompt: "Provide Hybrid Graphics and Discrete Graphics 2 selections.", Help: "Pre-boot DMA protection", QuestionFlags: 0x4, QuestionId: 0x2800, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x5
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2200, Value: 0x0
+				EqIdVal QuestionId: 0xF, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0xC, Value: 0x0
+				EqIdVal QuestionId: 0xD, Value: 0x0
+				And 
+				Or 
+			End 
+			Ref Prompt: "UMA Graphics", Help: "Thunderbolt Only", QuestionFlags: 0x4, QuestionId: 0x3000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x6
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2200, Value: 0x0
+			OneOf Prompt: "Embedded WiGig Device", Help: "All PCIe devices with approved exceptions", QuestionFlags: 0x4, QuestionId: 0x2301, VarStoreId: 0x9999, VarOffset: 0x5, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Enables all USB ports on the expansion dock" Value: 0, Default, MfgDefault
+				OneOfOption Option: "USB Legacy Port Charging" Value: 1
+				OneOfOption Option: "Enable USB Charging port for charging capability when system Hibernate/Shutdown" Value: 2
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2200, Value: 0x0
+			Ref Prompt: "Discrete Graphics", Help: "All PCIe devices", QuestionFlags: 0x4, QuestionId: 0x3800, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x7
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2200, Value: 0x0
+				EqIdVal QuestionId: 0xA, Value: 0x2
+				Or 
+			End 
+			Action Prompt: "Bluetooth", Help: "Selecting The Device Scope For Pre-Boot DMA Protection", QuestionFlags: 0x4, QuestionId: 0x2502, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2200, Value: 0x0
+				EqIdVal QuestionId: 0xA, Value: 0x0
+				Or 
+			End 
+			OneOf Prompt: "Lock Wireless Button", Help: "Enhanced Hello Sign-in", QuestionFlags: 0x4, QuestionId: 0x2303, VarStoreId: 0x9999, VarOffset: 0x6, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Disable Charging Port" Value: 1, Default, MfgDefault
+				OneOfOption Option: "in sleep/off if battery below (%):" Value: 0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2200, Value: 0x0
+				EqIdVal QuestionId: 0xA, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0xA, Value: 0x2
+				Or 
+			End 
+			OneOf Prompt: "Lock Wireless Button", Help: "Enhanced Hello Sign-in", QuestionFlags: 0x4, QuestionId: 0x2304, VarStoreId: 0x9999, VarOffset: 0x6, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Disable Charging Port" Value: 1, Default, MfgDefault
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2200, Value: 0x0
+			Ref Prompt: "Hybrid Graphics", Help: "Enables enhanced Hello sign-in for supported versions of Windows by adding Secure Devices (SDEV) ACPI table.", QuestionFlags: 0x4, QuestionId: 0x6800, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xD
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2200, Value: 0x0
+			Ref Prompt: "Provide Hybrid Graphics, Discrete Graphics and Auto 3 selections. Auto option will base on OS to enable or disable Hybrid Graphics.", Help: "Virtualization Technology for Directed I/O (VTd)", QuestionFlags: 0x4, QuestionId: 0x1800, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x3
+		End 
+	End 
+	Form FormId: 0x5, Title: "Power On When AC Detected"
+		OneOf Prompt: "WWAN Quick Connect", Help: "POST Prompt for RAID Configuration", QuestionFlags: 0x4, QuestionId: 0x2A01, VarStoreId: 0x9999, VarOffset: 0xA, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			OneOfOption Option: "Hides the bottom USB ports from the OS" Value: 0, Default, MfgDefault
+			OneOfOption Option: "Bottom USB Ports" Value: 1
+		End 
+		OneOf Prompt: "HP LAN-Wireless Protection", Help: "Secondary Battery Fast Charge", QuestionFlags: 0x4, QuestionId: 0x2A02, VarStoreId: 0x9999, VarOffset: 0xB, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			OneOfOption Option: "Hides the bottom USB ports from the OS" Value: 0, Default, MfgDefault
+			OneOfOption Option: "Bottom USB Ports" Value: 1
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0xE, Value: 0x0
+			OneOf Prompt: "  LAN / WLAN Auto Switching", Help: "Fast Charge", QuestionFlags: 0x4, QuestionId: 0x2A03, VarStoreId: 0x9999, VarOffset: 0xD, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Hides the bottom USB ports from the OS" Value: 0, Default, MfgDefault
+				OneOfOption Option: "Bottom USB Ports" Value: 1
+			End 
+		End 
+	End 
+	Form FormId: 0x6, Title: "Prompt on Battery Errors"
+		SuppressIf 
+			EqIdVal QuestionId: 0xC, Value: 0x7
+				Not 
+			End 
+			OneOf Prompt: "  LAN / WWAN Auto Switching", Help: "On Battery Only", QuestionFlags: 0x0, QuestionId: 0x33, VarStoreId: 0x9999, VarOffset: 0xF, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Front USB Type-C Downstream Charging" Value: 0, Default, MfgDefault
+				OneOfOption Option: "Rear USB Type-C Downstream Charging" Value: 1
+				OneOfOption Option: "Left USB Type-C Downstream Charging" Value: 4294967295
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0xC, Value: 0x6
+				Not 
+			End 
+			OneOf Prompt: "  LAN / WWAN Auto Switching", Help: "On Battery Only", QuestionFlags: 0x0, QuestionId: 0x34, VarStoreId: 0x9999, VarOffset: 0xF, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Rear USB Type-C Downstream Charging" Value: 1
+				OneOfOption Option: "Left USB Type-C Downstream Charging" Value: 4294967295
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0xC, Value: 0x5
+				Not 
+			End 
+			OneOf Prompt: "  LAN / WWAN Auto Switching", Help: "On Battery Only", QuestionFlags: 0x0, QuestionId: 0x35, VarStoreId: 0x9999, VarOffset: 0xF, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Front USB Type-C Downstream Charging" Value: 0, Default, MfgDefault
+				OneOfOption Option: "Left USB Type-C Downstream Charging" Value: 4294967295
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0xC, Value: 0x3
+				Not 
+			End 
+			OneOf Prompt: "  LAN / WWAN Auto Switching", Help: "On Battery Only", QuestionFlags: 0x0, QuestionId: 0x36, VarStoreId: 0x9999, VarOffset: 0xF, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Front USB Type-C Downstream Charging" Value: 0, Default, MfgDefault
+				OneOfOption Option: "Rear USB Type-C Downstream Charging" Value: 1
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0xD, Value: 0x0
+			OneOf Prompt: "Mobile Network Device (WWAN) and GPS Combo Device", Help: "Power Button Protection", QuestionFlags: 0x0, QuestionId: 0x37, VarStoreId: 0x9999, VarOffset: 0x14, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Hides the bottom USB ports from the OS" Value: 0, Default, MfgDefault
+				OneOfOption Option: "Bottom USB Ports" Value: 1
+			End 
+		End 
+	End 
+	Form FormId: 0x7, Title: "Prompt on Memory Size Change"
+		Ref Prompt: "Auto", Help: "Never", QuestionFlags: 0x4, QuestionId: 0x4000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x8
+		SuppressIf 
+			EqIdVal QuestionId: 0x5, Value: 0x1
+			Ref Prompt: "Disabled", Help: "Always", QuestionFlags: 0x4, QuestionId: 0x4800, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x9
+		End 
+	End 
+	Form FormId: 0x8, Title: "Video memory size"
+		String Prompt: "Wake on WLAN", Help: "This feature ensures that unintentional activation of the power button while it is being transported in a bag does not cause the system to wake up.
+On Battery Only: Power button is only disabled when the lid is closed, the system is in a low power state, and no power external power source is present.
+Always: Power button is always disabled when the lid is closed.
+Never: Power button is enabled always when this lid is closed.", QuestionFlags: 0x4, QuestionId: 0x4100, VarStoreId: 0x9999, VarStoreInfo: 0x16, MinSize: 0x0, MaxSize: 0x40, Flags: 0x0
+		End 
+		String Prompt: "Wake on WiGig", Help: "USB Type-C Connector System Software Interface (UCSI)", QuestionFlags: 0x4, QuestionId: 0x4101, VarStoreId: 0x9999, VarStoreInfo: 0x96, MinSize: 0x0, MaxSize: 0xC0, Flags: 0x0
+		End 
+		OneOf Prompt: "BT Wake from S3", Help: "The UCSI option should be disabled if booting a Microsoft Windows 10 version before 1709 to avoid system stability issues.", QuestionFlags: 0x4, QuestionId: 0x4302, VarStoreId: 0x9999, VarOffset: 0x216, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			OneOfOption Option: "Right USB Type-C Downstream Charging" Value: 0, Default, MfgDefault
+			OneOfOption Option: "Top USB Type-C Downstream Charging" Value: 1
+		End 
+		OneOf Prompt: "Tile Deactivate", Help: "Enable High Resolution mode when connected to a USB-C DP alt mode dock ", QuestionFlags: 0x4, QuestionId: 0x4203, VarStoreId: 0x9999, VarOffset: 0x217, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			OneOfOption Option: "Hides the bottom USB ports from the OS" Value: 0, Default, MfgDefault
+			OneOfOption Option: "Bottom USB Ports" Value: 1
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x4203, Value: 0x0
+			Numeric Prompt: "This option deactivates the laptop tile, but does not remove the laptop icon from the user’s Tile account. When the deactivation completes successfully the laptop tile will play a song.", Help: "Special Keys mapped to Fn + keypress", QuestionFlags: 0x4, QuestionId: 0x4104, VarStoreId: 0x9999, VarOffset: 0x218, Flags: 0x12, Size: 32, Min: 0x0, Max: 0xFFFFFFFF, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x4203, Value: 0x0
+			Numeric Prompt: "Fan Always on while on AC Power", Help: "When enabled on systems without legacy special keys, Fn+R, Fn+S, and Fn+C will function as Break, Sys Rq, and Scroll Lock respectively.
+When enabled on systems with special keys for telecommunication features, Fn+W and Fn+E will function as Pause and Insert.", QuestionFlags: 0x4, QuestionId: 0x4105, VarStoreId: 0x9999, VarOffset: 0x21C, Flags: 0x12, Size: 32, Min: 0x1, Max: 0xFFFFFFFF, Step: 0x0
+			End 
+		End 
+	End 
+	Form FormId: 0x9, Title: "Auto"
+		Ref Prompt: "Audio Device", Help: "Swap Arrow Up/Down and Page Up/Down Function", QuestionFlags: 0x4, QuestionId: 0x5000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xA
+	End 
+	Form FormId: 0xA, Title: "32 MB"
+		OneOf Prompt: "Backlit keyboard timeout", Help: "Power button delay to avoid accidental activation for system sleep or power down", QuestionFlags: 0x4, QuestionId: 0x5200, VarStoreId: 0x9999, VarOffset: 0x220, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			OneOfOption Option: "Hides the bottom USB ports from the OS" Value: 1, Default, MfgDefault
+			OneOfOption Option: "Bottom USB Ports" Value: 2
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x5200, Value: 0x2
+			String Prompt: "5 secs.", Help: "Launch Hotkeys without Fn Keypress", QuestionFlags: 0x4, QuestionId: 0x5101, VarStoreId: 0x9999, VarStoreInfo: 0x221, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+			End 
+			String Prompt: "15 secs.", Help: "Swap Fn and Ctrl (Keys)", QuestionFlags: 0x4, QuestionId: 0x5102, VarStoreId: 0x9999, VarStoreInfo: 0x241, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+			End 
+			String Prompt: "30 secs.", Help: "Enable", QuestionFlags: 0x4, QuestionId: 0x5103, VarStoreId: 0x9999, VarStoreInfo: 0x261, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+			End 
+			String Prompt: "1 min.", Help: "Disable", QuestionFlags: 0x4, QuestionId: 0x5104, VarStoreId: 0x9999, VarStoreInfo: 0x281, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+			End 
+			String Prompt: "5 mins.", Help: "Auto", QuestionFlags: 0x4, QuestionId: 0x5105, VarStoreId: 0x9999, VarStoreInfo: 0x2A1, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+			End 
+		End 
+	End 
+	Form FormId: 0xD, Title: "Prompt on Fixed Storage Change"
+		Action Prompt: "Never", Help: "Intel Dynamic Tuning", QuestionFlags: 0x4, QuestionId: 0x6D00, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x5, Value: 0x1
+			Action Prompt: "Boost Converter", Help: "Previously called "Dynamic Platform and Thermal Framework (DPTF)"", QuestionFlags: 0x4, QuestionId: 0x6D01, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0xA, Value: 0x2
+				EqIdVal QuestionId: 0x5, Value: 0x1
+				Or 
+			End 
+			String Prompt: "Wake on LAN in Battery Mode", Help: "High Performance", QuestionFlags: 0x4, QuestionId: 0x6902, VarStoreId: 0x9999, VarStoreInfo: 0x2C1, MinSize: 0x0, MaxSize: 0x2E, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0xA, Value: 0x2
+			String Prompt: "Force enable HP Sure View", Help: "HP Application Driver", QuestionFlags: 0x4, QuestionId: 0x6903, VarStoreId: 0x9999, VarStoreInfo: 0x31D, MinSize: 0x0, MaxSize: 0xFF, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0xA, Value: 0x2
+				EqIdVal QuestionId: 0x5, Value: 0x1
+				Or 
+			End 
+			Ref Prompt: "Hides the Audio device from OS", Help: "Media Card Reader", QuestionFlags: 0x4, QuestionId: 0x7000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xE
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x10, Value: 0x3
+			SuppressIf 
+				EqIdVal QuestionId: 0xA, Value: 0x2
+				Ref Prompt: "Internal Speakers", Help: "USB Ports", QuestionFlags: 0x4, QuestionId: 0x8000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x10
+			End 
+		End 
+	End 
+	Form FormId: 0xE, Title: "64 MB"
+		SuppressIf 
+			EqIdVal QuestionId: 0xA, Value: 0x1
+			Action Prompt: "Automatic Keyboard Backlit", Help: "Front USB Ports", QuestionFlags: 0x4, QuestionId: 0x7500, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0xA, Value: 0x0
+			Action Prompt: "Integrated Camera", Help: "Hides the front USB ports from the OS", QuestionFlags: 0x4, QuestionId: 0x7501, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+	End 
+	Form FormId: 0x10, Title: "128 MB"
+		OneOf Prompt: "HP Sure Shutter", Help: "Rear USB Ports", QuestionFlags: 0x4, QuestionId: 0x8200, VarStoreId: 0x9999, VarOffset: 0x51B, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			OneOfOption Option: "Hides the bottom USB ports from the OS" Value: 0, Default, MfgDefault
+			OneOfOption Option: "Bottom USB Ports" Value: 1
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x8200, Value: 0x0
+			String Prompt: "This setting helps to keep “HP Sure Shutter” status as “close on every power up or resume” or “stays in last known state”.", Help: "Hides the rear USB ports from the OS", QuestionFlags: 0x4, QuestionId: 0x8101, VarStoreId: 0x9999, VarStoreInfo: 0x51C, MinSize: 0x0, MaxSize: 0xDF, Flags: 0x0
+			End 
+			Ref Prompt: "Microphone", Help: "Left USB Ports", QuestionFlags: 0x4, QuestionId: 0x8800, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x11
+		End 
+	End 
+	Form FormId: 0x11, Title: "256 MB"
+		Subtitle Prompt: "512 MB", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x0
+			Action Prompt: "Camera Shutter stays in last known state", Help: "Hides the left USB ports from the OS", QuestionFlags: 0x4, QuestionId: 0x8D00, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x12, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Camera Shutter closes on boot or resume", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D01, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x13, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Integrated Front Camera", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D02, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x14, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Integrated Rear Camera", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D03, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x15, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Fingerprint Device", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D04, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x16, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Touch Device", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D05, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x17, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "NFC", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D06, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x18, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Disable battery on next shut down", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D07, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x19, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Next shut down", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D08, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x1A, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Do not disable", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D09, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x1B, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Set this item to ‘Next shut down’ to disconnect the battery.
+This is to maintain battery life in situations where the system will not be used for long periods of time.
+Once in this state, AC power must be disconnected and reconnected to turn the system back on.", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D0A, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x1C, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Runtime Power Management", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D0B, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x1D, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Enables Runtime Power Management.", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D0C, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x1E, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Extended Idle Power States", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D0D, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x1F, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Increases the OS's Idle Power Savings.", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D0E, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x20, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Deep sleep", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D0F, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x21, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Wake when Lid is Opened", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D10, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x22, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Wake When AC is Detected", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D11, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x23, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Wake on USB", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D12, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x24, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "    Warning!! Due to Deep Sleep is Enabled, if you remove AC power from the computer, Wake on USB function", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D13, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x25, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "    will be automatically disabled.", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D14, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x26, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Enable", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D15, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x27, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Disable", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D16, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x28, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Modern Standby", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D17, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x29, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Deep Sleep has been gray out because Modern Standby is set to On.", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D18, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x2A, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Power Control", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D19, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x2B, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Battery Management", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D1A, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x2C, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Battery Health Manager", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D1B, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x2D, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Maximize Battery Health Management", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D1C, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x2E, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Let HP Manage My Battery Health", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D1D, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x2F, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Minimize Battery Health Management", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D1E, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x30, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "This setting is ideal for users who primarily keep their notebook connected to AC power.", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D1F, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x31, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "This setting maximizes the long-term health of the battery by limiting its maximum charge capacity to 80% of the available full charge capacity (if the battery is currently charged above 80%, it can be discharged manually by disconnecting the device from AC or the system will discharge the battery slowly over time). Maximize Battery Health Management keeps the battery from entering a high state-of-charge which helps to slow the rate of natural degradation. As a result of this reduction, battery runtime between charges is reduced. As with all rechargeable batteries, the available full charge capacity of the battery will naturally decrease with time and usage.", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D20, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x11, Value: 0x1
+				EqIdVal QuestionId: 0x32, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "This setting is ideal for users who want to maximize battery runtime while also protecting their battery's health.", Help: "Right USB Ports", QuestionFlags: 0x4, QuestionId: 0x8D21, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+	End 
+	Form FormId: 0x3, Title: "Thunderbolt Options"
+		SuppressIf 
+			EqIdVal QuestionId: 0x8, Value: 0x0
+				EqIdVal QuestionId: 0xA, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0xA, Value: 0x2
+				Or 
+			End 
+			Subtitle Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "", Flags: 0x0
+			End 
+			Subtitle Prompt: "Hides the top USB ports from the OS", Help: "", Flags: 0x0
+			End 
+			Subtitle Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "", Flags: 0x0
+			End 
+			Subtitle Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "", Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x8, Value: 0x1
+				Not 
+			End 
+			OneOf Prompt: "Mobile Network Device (WWAN)", Help: "    VTx and VTd cannot be disabled while TXT is enabled.", QuestionFlags: 0x4, QuestionId: 0x1B00, VarStoreId: 0x9999, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Rear Option Port" Value: 0, Default, MfgDefault
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x8, Value: 0x2
+				Not 
+			End 
+			OneOf Prompt: "Mobile Network Device (WWAN)", Help: "    VTx and VTd cannot be disabled while TXT is enabled.", QuestionFlags: 0x4, QuestionId: 0x1B01, VarStoreId: 0x9999, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Rear Option Port" Value: 0, Default, MfgDefault
+				OneOfOption Option: "Hides the USB option port from the OS" Value: 1
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x8, Value: 0x3
+				Not 
+			End 
+			OneOf Prompt: "Mobile Network Device (WWAN)", Help: "    VTx and VTd cannot be disabled while TXT is enabled.", QuestionFlags: 0x4, QuestionId: 0x1B02, VarStoreId: 0x9999, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Rear Option Port" Value: 0, Default, MfgDefault
+				OneOfOption Option: "Hides the USB option port from the OS" Value: 1
+				OneOfOption Option: "Docking USB Ports" Value: 2
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x9, Value: 0x0
+			Numeric Prompt: "GPS Device", Help: "    Hyperthreading and Multi-processor has been enabled and grayed out because Deep sleep is set to On.", QuestionFlags: 0x4, QuestionId: 0x1901, VarStoreId: 0x9999, VarOffset: 0x2, Flags: 0x11, Size: 16, Min: 0x1, Max: 0xFFFF, Step: 0x0
+			End 
+		End 
+	End 
+	Form FormId: 0x12, Title: "Disable"
+		OneOf Prompt: "This setting balances battery run-time and battery health. Over time, the available charge capacity of the battery is reduced. This reduction in available charge capacity limits the battery's ability to enter a high state-of-charge, which helps to slow the rate of natural degradation. As a result of this reduction, battery runtime will decrease over time as available charge capacity is reduced. As with all rechargeable batteries, the available full charge capacity of the battery will naturally decrease with time and usage.", Help: "Hides the right USB ports from the OS", QuestionFlags: 0x4, QuestionId: 0x9200, VarStoreId: 0x9999, VarOffset: 0x6DA, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			OneOfOption Option: "Hides the bottom USB ports from the OS" Value: 0, Default, MfgDefault
+			OneOfOption Option: "Bottom USB Ports" Value: 1
+		End 
+		OneOf Prompt: "This setting is ideal for users who primarily use their notebook on battery power and want to maximize device runtime between charges.", Help: "Top USB Ports", QuestionFlags: 0x4, QuestionId: 0x9201, VarStoreId: 0x9999, VarOffset: 0x6DB, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			OneOfOption Option: "Hides the bottom USB ports from the OS" Value: 0, Default, MfgDefault
+			OneOfOption Option: "Bottom USB Ports" Value: 1
+		End 
+		SuppressIf 
+			True 
+			Numeric Prompt: "Thunderbolt PCIe Hot plug Mode", Help: "Thunderbolt PCIe Hot plug Mode", QuestionFlags: 0x0, QuestionId: 0x38, VarStoreId: 0x9999, VarOffset: 0x709, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF0, Step: 0x0
+			End 
+		End 
+	End 
+End 

@@ -1,0 +1,21 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 2D6398CA-3798-48CA-A453-C2C2D9F3FD1F, Title: "[83F3] There's no EFI option rom image on add-on VGA card in UEFI boot. Timeout 15 seconds and boot continually
+", Help: "TCEQ 3.3 Error - 83F2"
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	Form FormId: 0x1003, Title: "[83F3] There's no EFI option rom image on add-on VGA card in UEFI boot. Timeout 15 seconds and boot continually
+"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0xC80
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0xC81
+		Subtitle Prompt: "Video Memory Size Warning", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x12C0
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x12C1
+		Subtitle Prompt: "Video Memory Size Warning", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Video Memory Size > 32MB is required for a 4K display.", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Video Memory Size Warning", Help: "", Flags: 0x0
+		End 
+	End 
+End 

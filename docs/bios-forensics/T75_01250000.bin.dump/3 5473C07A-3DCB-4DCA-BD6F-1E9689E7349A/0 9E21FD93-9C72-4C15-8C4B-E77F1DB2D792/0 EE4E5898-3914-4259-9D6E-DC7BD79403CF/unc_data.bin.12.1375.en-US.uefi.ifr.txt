@@ -1,0 +1,27 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: D79DF6B0-EF44-43BD-9797-43E93BCF5FA8, Title: " ", Help: "HP BIOS Version Mismatch"
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: D79DF6B0-EF44-43BD-9797-43E93BCF5FA8, VarStoreId: 0x1, Size: 0x68, Name: "VlanNvData"
+	Form FormId: 0x2, Title: "The System BIOS version does not match the Boot Block Version."
+		Ref Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x3000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x1, Title: "The System BIOS version does not match the Boot Block Version."
+		Subtitle Prompt: "Once you perform the BIOS update, the system will synchronize the", Help: "", Flags: 0x0
+		End 
+		Numeric Prompt: "System BIOS and Boot Block versions.", Help: "OK", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x0, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFFE, Step: 0x0
+		End 
+		Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x1, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x7, Step: 0x0
+		End 
+		Action Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x1000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Subtitle Prompt: "InvalidId", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "InvalidId", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x1
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Action Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x2000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

@@ -1,0 +1,29 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: FE561596-E6BF-41A6-8376-C72B719874D0, Title: "Intel (R) Integrated Sensor Hub Firmware", Help: "Intel (R) Management Engine Firmware"
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	Form FormId: 0x1000, Title: "Intel (R) Integrated Sensor Hub Firmware"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x640
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+	End 
+	Form FormId: 0x2000, Title: "OK"
+		String Prompt: "the system was unable to find a valid firmware image file.", Help: "Intel Management Engine related functionality will be unavailable.  Please install", QuestionFlags: 0x4, QuestionId: 0x2001, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, MinSize: 0x2, MaxSize: 0x14, Flags: 0x0
+		End 
+		Subtitle Prompt: "Intel (R) Management Engine Firmware", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "the latest version of Intel Management Engine firmware to complete full recovery.", Help: "the latest version of Intel Management Engine firmware to complete full recovery.", QuestionFlags: 0x4, QuestionId: 0x2002, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "Update of the Intel Management Engine Firmware failed, because the", Help: "Update of the Intel Management Engine Firmware failed, because the", QuestionFlags: 0x4, QuestionId: 0x2003, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x3000, Title: "Full Recovery of the Intel Management Engine Firmware failed, because"
+		String Prompt: "The full recovery process of the Intel Management Engine firmware cannot complete because", Help: "the Intel Management Engine is disabled in BIOS setup.  Please enable the Intel", QuestionFlags: 0x4, QuestionId: 0x3001, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, MinSize: 0x2, MaxSize: 0x14, Flags: 0x0
+		End 
+		Subtitle Prompt: "Intel (R) Management Engine Firmware", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "Management Engine in BIOS setup to complete full recovery of the Intel Management", Help: "Management Engine in BIOS setup to complete full recovery of the Intel Management", QuestionFlags: 0x4, QuestionId: 0x3002, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "Engine firmware.", Help: "Engine firmware.", QuestionFlags: 0x4, QuestionId: 0x3003, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

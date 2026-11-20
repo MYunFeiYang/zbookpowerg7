@@ -1,0 +1,62 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 02EEA107-98DB-400E-9830-460A1542D799, Title: "", Help: "BIOS Authentication has failed. Press enter to continue."
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 02EEA107-98DB-400E-9830-460A1542D799, VarStoreId: 0x1, Size: 0x638, Name: "IP6_CONFIG_IFR_NVDATA"
+	Form FormId: 0x3, Title: "BIOS Authentication Failed"
+		Ref Prompt: "Step 1 of 3 BIOS update steps is about to begin - during the update:", Help: "Step 1 of 2 BIOS update steps is about to begin - during the update:", QuestionFlags: 0x4, QuestionId: 0x108, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x1, Title: "BIOS Authentication Failed"
+		Text Prompt: "OK", Help: "Reboot", Text: "You will be prompted for the BIOS Administrator password before BIOS Update can proceed."
+		Text Prompt: "For more information, please visit: www.hp.com/go/techcenter/startup", Help: "Update BIOS", Text: "Rollback BIOS"
+		Text Prompt: "Postpone update", Help: "Cancel update", Text: "Place the System BIOS on a FAT32 partition either on the "
+		Text Prompt: "system hard drive or on removable USB Key under the "HP\BIOS\New" folder", Help: "or under the "EFI\HP\BIOS\New" folder. It may also be placed under the "HP\BIOS\Previous" folder", Text: "Final step of BIOS update is in progress."
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3840
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "or under the "EFI\HP\BIOS\Previous" folder.", Help: "Invalid BIOS image", Text: "Final step of BIOS update is in progress."
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3E80
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Please download the correct file for your unit to HP\BIOS\New", Help: "or to EFI\HP\BIOS\New. It may also be placed under the "HP\BIOS\Previous" folder", Text: "Final step of BIOS update is in progress."
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x44C0
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "or under the "EFI\HP\BIOS\Previous" folder.", Help: "BIOS signature verification failed", Text: "Final step of BIOS update is in progress."
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x4B00
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		String Prompt: "Please download the file again to update system BIOS", Help: "The System BIOS update is complete.", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x1, VarStoreInfo: 0xC, MinSize: 0x1, MaxSize: 0x17, Flags: 0x0
+		End 
+		Numeric Prompt: "Upon restarting, the screen may be blank for a few minutes", Help: "This operation might take a few minutes to complete. Please be patient.", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x8, Flags: 0x12, Size: 32, Min: 0x0, Max: 0xA, Step: 0x0
+		End 
+		OneOf Prompt: "and various LED lights may flash. Please do not attempt to", Help: "interrupt or power down during this time", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x1, VarOffset: 0x4, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "System BIOS Update" Value: 0, Default
+			OneOfOption Option: "BIOS Recovery" Value: 1
+		End 
+		Subtitle Prompt: "Final step of BIOS update is in progress.", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2, Value: 0x0
+			Ref Prompt: "Final step of BIOS recovery is in progress.", Help: "Step 2 of BIOS update is in progress.", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+			Subtitle Prompt: "Final step of BIOS update is in progress.", Help: "", Flags: 0x0
+			End 
+		End 
+		Action Prompt: "The system could not find one of the BIOS Update binary files. Be sure that
+the correct binaries are present on the USB drive in
+"HP\BIOS\New", "HP\DEVFW", or "HP\BIOS\Previous" folder.
+The binaries may also be placed on the system hard drive in
+"EFI\HP\DEVFW", "EFI\HP\BIOS\New", or "EFI\HP\BIOS\Previous" folder.", Help: "Battery level is less than 50% and no AC Adapter is connected.", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x2, Title: "Final step of BIOS recovery is in progress."
+		String Prompt: "Final step of BIOS update is in progress.", Help: "BIOS recovery is in progress", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x1, VarStoreInfo: 0x3E, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "The BIOS Admin did not authenticate correctly, and the BIOS Update has failed.", Help: "Please perform the BIOS Update again with the correct BIOS Admin password.", QuestionFlags: 0x4, QuestionId: 0x103, VarStoreId: 0x1, VarStoreInfo: 0x23C, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "BIOS Admin Failed Authentication", Help: "The system could not find one of the BIOS Update binary files. Be sure that
+the correct binaries are present on the USB drive in "HP\DEVFW" folder.
+The binaries may also be placed on the system hard drive in "EFI\HP\DEVFW" folder.", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x1, VarStoreInfo: 0x43A, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		Action Prompt: "Plug in the AC Adapter, or consider canceling or postponing the BIOS update.", Help: "Plug in the AC Adapter, or consider canceling or postponing the BIOS update.", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "BIOS Update did not proceed because the system administrator has locked the BIOS version", Help: "BIOS Update did not proceed because the system administrator has locked the BIOS version", QuestionFlags: 0x4, QuestionId: 0x107, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

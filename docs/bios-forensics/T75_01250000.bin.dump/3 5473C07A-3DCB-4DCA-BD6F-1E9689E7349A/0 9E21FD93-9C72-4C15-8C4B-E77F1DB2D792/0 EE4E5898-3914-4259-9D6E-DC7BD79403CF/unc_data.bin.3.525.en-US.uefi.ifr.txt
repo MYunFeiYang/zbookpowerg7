@@ -1,0 +1,1155 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 4D2B0B66-3C1E-4115-B810-30EF8669EB08, Title: "Main", Help: ""
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0xC1
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x0
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x6, Size: 0x6, Name: "HP_BootOptions"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0xA, Size: 0x27, Name: "PlatformSupport"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0xD, Size: 0x6, Name: "HpCpuFlags"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0xE, Size: 0x6, Name: "SetupMiscMemFlags"
+	VarStore Guid: 20AB3EB1-3C8F-4A4C-B87E-372426066D97, VarStoreId: 0x12, Size: 0x1F4, Name: "FactoryConfig"
+	VarStore Guid: 20AB3EB1-3C8F-4A4C-B87E-372426066D97, VarStoreId: 0x13, Size: 0x70, Name: "BuildId"
+	VarStore Guid: 20AB3EB1-3C8F-4A4C-B87E-372426066D97, VarStoreId: 0x7, Size: 0x1AE, Name: "HP_MUD"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x18, Size: 0xB, Name: "SecurityMemFlags"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x1A, Size: 0x6, Name: "SetupMemFlags"
+	VarStore Guid: 20AB3EB1-3C8F-4A4C-B87E-372426066D97, VarStoreId: 0xB, Size: 0x1A, Name: "FactoryConfigFlags"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x25, Size: 0x1, Name: "BiosRollback"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x27, Size: 0x6, Name: "BiosFeatureMajorMinorVersion"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x2E, Size: 0x4, Name: "RestoreApplyDisplay"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x2F, Size: 0x2, Name: "MudAndSysIdsDisplay"
+	VarStore Guid: 20AB3EB1-3C8F-4A4C-B87E-372426066D97, VarStoreId: 0x44, Size: 0x10, Name: "E83D2AA9"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x41, Size: 0x1, Name: "HP_FwUpdate"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x1C, Size: 0x6, Name: "HP_SureStartSetup"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x23, Size: 0x1, Name: "SureStartGbeConfig"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x26, Size: 0x2, Name: "IntrusionDetectionConfiguration"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x28, Size: 0x1, Name: "BiosDataLock"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x39, Size: 0x1, Name: "B72460CE"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x7000, Size: 0x1, Name: "HpNetUpdateBiosViaNetwork"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x7002, Size: 0x1, Name: "HpNetBiosUpdateServerBaseSourceType"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x7004, Size: 0x1, Name: "HpNetBiosUpdateFrequencyType"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x7005, Size: 0x1, Name: "HpNetBiosUpdateAutomaticSetting"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x7001, Size: 0x1, Name: "HpNetBiosUpdateForceCheckOnNextReboot"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x7003, Size: 0x200, Name: "HpNetBiosUpdateServerBaseUserDefinedUrl"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x7100, Size: 0x1, Name: "HpNetworkTransferOptUseProxy"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x7103, Size: 0x1, Name: "HpNetworkTransferOptDnsOptions"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x7104, Size: 0x1, Name: "HpNetworkTransferOptIpConfigMethods"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x7101, Size: 0x2, Name: "HpNetworkTransferOptDataTransferTimeout"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x7102, Size: 0x1, Name: "HpNetworkTransferOptForceHttpNoCache"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x7105, Size: 0x200, Name: "HpNetworkTransferOptProxyServer"
+	VarStore Guid: 6718CECF-D788-11E3-A200-78E7D1AF36D1, VarStoreId: 0x7106, Size: 0x200, Name: "HpNetworkTransferOptDns"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x7107, Size: 0x200, Name: "HpNetworkTransferOptStaticIp"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x7108, Size: 0x200, Name: "HpNetworkTransferOptStaticMask"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x7109, Size: 0x200, Name: "HpNetworkTransferOptStaticGateway"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x710A, Size: 0x1, Name: "HpNetworkTransferOptForceIpConfigDefault"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x710B, Size: 0x3, Name: "C1E5937F"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x2C, Size: 0x1, Name: "HP_UsbTypeCCount"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x37, Size: 0x1, Name: "HpBiosAuditLogOptions"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0xC415, Size: 0x8, Name: "MiscConDevSysInfoOptions"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x8504, Size: 0x4, Name: "CommonBuiltInDevsSuppress"
+	VarStore Guid: FB3B9ECE-4ABA-4933-B49D-B4D67D892351, VarStoreId: 0x8B01, Size: 0x40, Name: "Thunderbolt"
+	Form FormId: 0x1, Title: "Main"
+		Ref Prompt: "System Information", Help: "", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+		Action Prompt: "System Diagnostics", Help: "", QuestionFlags: 0x4, QuestionId: 0x1001, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Ref Prompt: "BIOS Event Log", Help: "", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xD
+		GrayOutIf 
+			EqIdVal QuestionId: 0x25, Value: 0x0
+			Ref Prompt: "Update System BIOS", Help: "", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xA
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "Change Date And Time", Help: "", QuestionFlags: 0x0, QuestionId: 0x4, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xC
+		SuppressIf 
+			EqIdVal QuestionId: 0x41, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x40, Value: 0x1
+				Ref Prompt: "Set Machine Unique Data", Help: "", QuestionFlags: 0x0, QuestionId: 0x5, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x7
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3F, Value: 0x1
+			Ref Prompt: "System IDs", Help: "", QuestionFlags: 0x0, QuestionId: 0x6, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x8
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "Replicated Setup", Help: "", QuestionFlags: 0x0, QuestionId: 0x7, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x9
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3E, Value: 0x1
+			Ref Prompt: "Save Custom Defaults", Help: "", QuestionFlags: 0x0, QuestionId: 0x8, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xB
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3D, Value: 0x1
+			Ref Prompt: "Apply Custom Defaults and Exit", Help: "", QuestionFlags: 0x0, QuestionId: 0x9, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x6
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3C, Value: 0x1
+			Ref Prompt: "Apply Factory Defaults and Exit", Help: "", QuestionFlags: 0x0, QuestionId: 0xA, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x5
+		End 
+		Ref Prompt: "Ignore Changes and Exit", Help: "", QuestionFlags: 0x0, QuestionId: 0xB, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x4
+		Action Prompt: "Save Changes and Exit", Help: "", QuestionFlags: 0x4, QuestionId: 0x1007, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x2, Title: "System Information"
+		SuppressIf 
+			EqIdVal QuestionId: 0x3B, Value: 0x1
+			Subtitle Prompt: "BASIC SYSTEM INFORMATION", Help: "", Flags: 0x0
+			End 
+			Subtitle Prompt: "", Help: "", Flags: 0x0
+			End 
+			Ref Prompt: "Show Advanced System Information", Help: "", QuestionFlags: 0x0, QuestionId: 0xC, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x3
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3A, Value: 0x1
+			Text Prompt: "Product Name", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3A, Value: 0x0
+			Text Prompt: "Product Name", Help: "", Text: ""
+			Subtitle Prompt: "", Help: "", Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x38, Value: 0x0
+			Text Prompt: "Processor 1", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x36, Value: 0x0
+			Text Prompt: "Processor 2", Help: "", Text: ""
+		End 
+		Text Prompt: "Memory Size", Help: "", Text: ""
+		Text Prompt: "System BIOS", Help: "", Text: ""
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "SERVICE --------------------------------------------------------------------------", Help: "", Flags: 0x0
+		End 
+		Text Prompt: "Born On Date", Help: "", Text: ""
+		Text Prompt: "Serial Number", Help: "", Text: ""
+		Text Prompt: "SKU Number", Help: "", Text: ""
+		Text Prompt: "Universally Unique Identifier (UUID)", Help: "", Text: "1234567890-1234567890"
+		SuppressIf 
+			EqIdVal QuestionId: 0x3B, Value: 0x0
+			Text Prompt: "UUID (standard format)", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3B, Value: 0x1
+			Text Prompt: "UUID (standard format)", Help: ""UUID (standard format)" displays the Universally Unique Identifier, also known as Globally Unique Identifier or GUID, in the industry standard format with the 5 fields separated by hyphens.  "Universally Unique Identifier (UUID)" represents how the data is encoded and stored in memory. The first three fields are stored in little-endian format whereas the last two are big-endian, which is the reason the byte order for the first three fields are reversed between the two representations.", Text: ""
+		End 
+		Text Prompt: "Asset Tracking Number", Help: "", Text: ""
+		SuppressIf 
+			EqIdVal QuestionId: 0x2E, Value: 0x0
+			Text Prompt: "", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3B, Value: 0x0
+			Text Prompt: "Feature Byte", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3B, Value: 0x0
+				EqIdVal QuestionId: 0x2D, Value: 0x1
+				Or 
+			End 
+			Text Prompt: "", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3B, Value: 0x0
+				EqIdVal QuestionId: 0x2D, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x2D, Value: 0x2
+				Or 
+			End 
+			Text Prompt: "", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3B, Value: 0x0
+				EqIdVal QuestionId: 0x2D, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x2D, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x2D, Value: 0x3
+				Or 
+			End 
+			Text Prompt: "", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3B, Value: 0x0
+				EqIdVal QuestionId: 0x2D, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x2D, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x2D, Value: 0x3
+				Or 
+				EqIdVal QuestionId: 0x2D, Value: 0x4
+				Or 
+			End 
+			Text Prompt: "", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3B, Value: 0x0
+			Text Prompt: "System Board ID", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3B, Value: 0x0
+			Text Prompt: "System Board CT Number", Help: "", Text: ""
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Press Escape to Return", Help: "", Flags: 0x0
+		End 
+	End 
+	Form FormId: 0x3, Title: "ADVANCED SYSTEM INFORMATION"
+		Subtitle Prompt: "ADVANCED SYSTEM INFORMATION", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "Show Basic System Information", Help: "", QuestionFlags: 0x0, QuestionId: 0xD, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3A, Value: 0x1
+			Text Prompt: "Product Name", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3A, Value: 0x0
+			Text Prompt: "Product Name", Help: "", Text: ""
+			Subtitle Prompt: "", Help: "", Flags: 0x0
+			End 
+		End 
+		Text Prompt: "Memory Size", Help: "", Text: ""
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0xF
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x38, Value: 0x0
+			Subtitle Prompt: "PROCESSOR 1 ----------------------------------------------------------------------", Help: "", Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x38, Value: 0x0
+			Text Prompt: "Processor Type", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x38, Value: 0x0
+			Text Prompt: "Cache Size (L1/L2/L3)", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x38, Value: 0x0
+			Text Prompt: "Processor Speed", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x38, Value: 0x0
+			Text Prompt: "Processor Cores", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x38, Value: 0x0
+			Text Prompt: "MicroCode Revision", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x38, Value: 0x0
+			Text Prompt: "Processor Stepping", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x39, Value: 0x0
+				EqIdVal QuestionId: 0x38, Value: 0x0
+				Or 
+			End 
+			Text Prompt: "Memory Speed", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x39, Value: 0x0
+				EqIdVal QuestionId: 0x38, Value: 0x0
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x39, Value: 0x1
+				EqIdVal QuestionId: 0x39, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x38, Value: 0x0
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x39, Value: 0x2
+				EqIdVal QuestionId: 0x39, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x38, Value: 0x0
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x39, Value: 0x3
+				EqIdVal QuestionId: 0x39, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x38, Value: 0x0
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x39, Value: 0x4
+				EqIdVal QuestionId: 0x39, Value: 0x3
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x38, Value: 0x0
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x39, Value: 0x5
+				EqIdVal QuestionId: 0x39, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x3
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x38, Value: 0x0
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x39, Value: 0x6
+				EqIdVal QuestionId: 0x39, Value: 0x5
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x3
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x38, Value: 0x0
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x39, Value: 0x7
+				EqIdVal QuestionId: 0x39, Value: 0x6
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x5
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x3
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x39, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x38, Value: 0x0
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x38, Value: 0x0
+			Subtitle Prompt: "", Help: "", Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x36, Value: 0x0
+			Subtitle Prompt: "PROCESSOR 2 ----------------------------------------------------------------------", Help: "", Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x36, Value: 0x0
+			Text Prompt: "Processor Type", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x36, Value: 0x0
+			Text Prompt: "Processor Speed", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x36, Value: 0x0
+			Text Prompt: "Processor Cores", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x36, Value: 0x0
+			Text Prompt: "Cache Size (L1/L2/L3)", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x36, Value: 0x0
+			Text Prompt: "MicroCode Revision", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x36, Value: 0x0
+			Text Prompt: "Processor Stepping", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x37, Value: 0x0
+				EqIdVal QuestionId: 0x36, Value: 0x0
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x37, Value: 0x1
+				EqIdVal QuestionId: 0x37, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x36, Value: 0x0
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x37, Value: 0x2
+				EqIdVal QuestionId: 0x37, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x36, Value: 0x0
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x37, Value: 0x3
+				EqIdVal QuestionId: 0x37, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x36, Value: 0x0
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x37, Value: 0x4
+				EqIdVal QuestionId: 0x37, Value: 0x3
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x36, Value: 0x0
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x37, Value: 0x5
+				EqIdVal QuestionId: 0x37, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x3
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x36, Value: 0x0
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x37, Value: 0x6
+				EqIdVal QuestionId: 0x37, Value: 0x5
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x3
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x36, Value: 0x0
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x37, Value: 0x7
+				EqIdVal QuestionId: 0x37, Value: 0x6
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x5
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x3
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x37, Value: 0x0
+				Or 
+				EqIdVal QuestionId: 0x36, Value: 0x0
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x36, Value: 0x0
+			Subtitle Prompt: "", Help: "", Flags: 0x0
+			End 
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "FIRMWARE -------------------------------------------------------------------------", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Text Prompt: "System BIOS", Help: "", Text: ""
+		SuppressIf 
+			EqIdVal QuestionId: 0x35, Value: 0x0
+			Text Prompt: "ME Firmware Version", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x35, Value: 0x0
+			Text Prompt: "ME Firmware Mode", Help: "", Text: ""
+		End 
+		Text Prompt: "Audio Controller", Help: "", Text: ""
+		Text Prompt: "Video BIOS Version", Help: "", Text: ""
+		Text Prompt: "Reference Code Revision", Help: "", Text: ""
+		SuppressIf 
+			EqIdVal QuestionId: 0x34, Value: 0x0
+			Text Prompt: "Embedded Controller Firmware Version", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x34, Value: 0x1
+			Text Prompt: "Super I/O Firmware Version", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x33, Value: 0x0
+			Text Prompt: "USB Type-C Controller(s) Firmware Version:", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x33, Value: 0x0
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x33, Value: 0x0
+				EqIdVal QuestionId: 0x33, Value: 0x1
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x33, Value: 0x0
+				EqIdVal QuestionId: 0x33, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x33, Value: 0x2
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x33, Value: 0x0
+				EqIdVal QuestionId: 0x33, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x33, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x33, Value: 0x3
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x33, Value: 0x0
+				EqIdVal QuestionId: 0x33, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x33, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x33, Value: 0x3
+				Or 
+				EqIdVal QuestionId: 0x33, Value: 0x4
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x33, Value: 0x0
+				EqIdVal QuestionId: 0x33, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x33, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x33, Value: 0x3
+				Or 
+				EqIdVal QuestionId: 0x33, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x33, Value: 0x5
+				Or 
+			End 
+			Text Prompt: " ", Help: "", Text: " "
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x32, Value: 0x0
+			Text Prompt: "RFID Asset Management Tag", Help: "", Text: "Installed"
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x31, Value: 0x1
+			Text Prompt: "Camera Controller Firmware:", Help: "", Text: "CAMERA"
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x25, Value: 0x0
+				EqIdVal QuestionId: 0x30, Value: 0x0
+				Or 
+			End 
+			Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3D2C
+			Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3D2D
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "SERVICE --------------------------------------------------------------------------", Help: "", Flags: 0x0
+		End 
+		Text Prompt: "Born On Date", Help: "", Text: ""
+		Text Prompt: "Serial Number", Help: "", Text: ""
+		Text Prompt: "SKU Number", Help: "", Text: ""
+		Text Prompt: "Universally Unique Identifier (UUID)", Help: "", Text: "1234567890-1234567890"
+		Text Prompt: "UUID (standard format)", Help: "", Text: ""
+		SuppressIf 
+			EqIdVal QuestionId: 0x2F, Value: 0x0
+			Text Prompt: "SMBIOS UUID", Help: "", Text: ""
+		End 
+		Text Prompt: "Asset Tracking Number", Help: "", Text: ""
+		SuppressIf 
+			EqIdVal QuestionId: 0x2E, Value: 0x0
+			Text Prompt: "", Help: "", Text: ""
+		End 
+		Text Prompt: "Feature Byte", Help: "", Text: ""
+		SuppressIf 
+			EqIdVal QuestionId: 0x2D, Value: 0x1
+			Text Prompt: "", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2D, Value: 0x1
+				EqIdVal QuestionId: 0x2D, Value: 0x2
+				Or 
+			End 
+			Text Prompt: "", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2D, Value: 0x1
+				EqIdVal QuestionId: 0x2D, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x2D, Value: 0x3
+				Or 
+			End 
+			Text Prompt: "", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2D, Value: 0x1
+				EqIdVal QuestionId: 0x2D, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x2D, Value: 0x3
+				Or 
+				EqIdVal QuestionId: 0x2D, Value: 0x4
+				Or 
+			End 
+			Text Prompt: "", Help: "", Text: ""
+		End 
+		Text Prompt: "Build ID", Help: "", Text: ""
+		Text Prompt: "Product Family", Help: "", Text: ""
+		Text Prompt: "System Board ID", Help: "", Text: ""
+		Text Prompt: "System Board CT Number", Help: "", Text: ""
+		SuppressIf 
+			EqIdVal QuestionId: 0x2C, Value: 0x0
+			Text Prompt: "Primary Battery Serial Number", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2B, Value: 0x0
+			Text Prompt: "Secondary Battery Serial Number", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2A, Value: 0x0
+			Text Prompt: "Panel Type", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2A, Value: 0x0
+			Text Prompt: "Panel Serial Number", Help: "", Text: ""
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x29, Value: 0x0
+				EqIdVal QuestionId: 0x28, Value: 0x0
+				And 
+			End 
+			Subtitle Prompt: "", Help: "", Flags: 0x0
+			End 
+			Subtitle Prompt: "COMMUNICATION --------------------------------------------------------------------", Help: "", Flags: 0x0
+			End 
+			Subtitle Prompt: "", Help: "", Flags: 0x0
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x29, Value: 0x0
+				Text Prompt: "Integrated MAC Address 1", Help: "", Text: ""
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x28, Value: 0x0
+				Text Prompt: "Integrated MAC Address 2", Help: "", Text: ""
+			End 
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Press Escape to Return", Help: "", Flags: 0x0
+		End 
+	End 
+	Form FormId: 0xB, Title: "Save Custom Defaults"
+		Subtitle Prompt: "Are you sure you want to save your current settings as custom defaults?", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "Yes", Help: "", QuestionFlags: 0x4, QuestionId: 0x1003, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+		Ref Prompt: "No", Help: "", QuestionFlags: 0x0, QuestionId: 0xE, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x6, Title: "Apply Custom Defaults and Exit"
+		Subtitle Prompt: "Are you sure you want to restore defaults and exit?", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "Yes", Help: "", QuestionFlags: 0x4, QuestionId: 0x1004, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Ref Prompt: "No", Help: "", QuestionFlags: 0x0, QuestionId: 0xF, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x5, Title: "Apply Factory Defaults and Exit"
+		Subtitle Prompt: "Are you sure you want to restore defaults and exit?", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "Yes", Help: "", QuestionFlags: 0x4, QuestionId: 0x1005, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Ref Prompt: "No", Help: "", QuestionFlags: 0x0, QuestionId: 0x10, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x4, Title: "Ignore Changes and Exit"
+		Subtitle Prompt: "Are you sure you want to Ignore Changes and Exit?", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "Yes", Help: "", QuestionFlags: 0x4, QuestionId: 0x1006, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Ref Prompt: "No", Help: "", QuestionFlags: 0x0, QuestionId: 0x11, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0xA, Title: "Update System BIOS"
+		Subtitle Prompt: "Update System BIOS", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Text Prompt: "Current System BIOS Version:", Help: "", Text: " "
+		Text Prompt: "Current BIOS Release Date:", Help: "", Text: " "
+		Text Prompt: "Installation Date of Current BIOS:", Help: "", Text: "UNKNOWN"
+		Text Prompt: "Most Recent Update Check:", Help: "", Text: "Never Checked"
+		Subtitle Prompt: "-------------------------------------------------------------------------------------------------------------------------------------------------------------------", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x27, Value: 0x1
+			GrayOutIf 
+				EqIdVal QuestionId: 0x15, Value: 0x0
+					EqIdVal QuestionId: 0x12, Value: 0x1
+					Or 
+				End 
+				SuppressIf 
+					EqIdVal QuestionId: 0x19, Value: 0x1
+					Action Prompt: "Check HP.com for BIOS Updates", Help: "Checks for the latest BIOS release revision on the network, and lets the user decide whether to download the BIOS image and update the System.", QuestionFlags: 0x4, QuestionId: 0x7002, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+					End 
+				End 
+				SuppressIf 
+					EqIdVal QuestionId: 0x19, Value: 0x0
+					Action Prompt: "Check the Network for BIOS Updates", Help: "Checks for the latest BIOS release revision on the network, and lets the user decide whether to download the BIOS image and update the System.", QuestionFlags: 0x4, QuestionId: 0x7006, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+					End 
+				End 
+				Subtitle Prompt: "", Help: "", Flags: 0x0
+				End 
+			End 
+		End 
+		CheckBox Prompt: "Lock BIOS Version", Help: "If not selected, then BIOS updates are allowed, if selected then updates to BIOS are not allowed.", QuestionFlags: 0x0, QuestionId: 0x12, VarStoreId: 0x1C, VarOffset: 0x2, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		CheckBox Prompt: "Native OS Firmware Update Service", Help: "", QuestionFlags: 0x0, QuestionId: 0x13, VarStoreId: 0x41, VarOffset: 0x0, Flags: 0x1, Default: Enabled, MfgDefault: Disabled
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x25, Value: 0x0
+			OneOf Prompt: "BIOS Rollback Policy", Help: "", QuestionFlags: 0x0, QuestionId: 0x14, VarStoreId: 0x25, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Unrestricted Rollback to older BIOS" Value: 0, Default
+				OneOfOption Option: "Restricted Rollback to older BIOS" Value: 1
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x25, Value: 0x0
+				EqIdVal QuestionId: 0x14, Value: 0x0
+				Or 
+			End 
+			Action Prompt: "Minimum BIOS version", Help: "", QuestionFlags: 0x4, QuestionId: 0x3017, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x27, Value: 0x1
+			GrayOutIf 
+				EqIdVal QuestionId: 0x12, Value: 0x1
+				CheckBox Prompt: "Allow BIOS Updates Using a Network", Help: "Enable/Disable automatic BIOS updates through the network in a scheduled basis.", QuestionFlags: 0x10, QuestionId: 0x15, VarStoreId: 0x7000, VarOffset: 0x0, Flags: 0x1, Default: Enabled, MfgDefault: Disabled
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x27, Value: 0x1
+			GrayOutIf 
+				EqIdVal QuestionId: 0x15, Value: 0x0
+					EqIdVal QuestionId: 0x12, Value: 0x1
+					Or 
+				End 
+				Ref Prompt: "BIOS Update Preferences", Help: "Sets the configurations to perform BIOS updates through the network.", QuestionFlags: 0x0, QuestionId: 0x16, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x8011
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x27, Value: 0x1
+			GrayOutIf 
+				EqIdVal QuestionId: 0x15, Value: 0x0
+					EqIdVal QuestionId: 0x12, Value: 0x1
+					Or 
+				End 
+				Ref Prompt: "Network Configuration Settings", Help: "Configure network settings to be used for download and upload.", QuestionFlags: 0x0, QuestionId: 0x17, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x8013
+			End 
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "Update System and Supported Device Firmware Using Local Media", Help: "", QuestionFlags: 0x4, QuestionId: 0x1002, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x8011, Title: "BIOS Update Preferences"
+		Subtitle Prompt: "BIOS Update Preferences", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x15, Value: 0x0
+			CheckBox Prompt: "Check for Update on Next Reboot", Help: "Enable/Disable an automatic BIOS check on next reboot.", QuestionFlags: 0x0, QuestionId: 0x18, VarStoreId: 0x7001, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+			Subtitle Prompt: "", Help: "", Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x15, Value: 0x0
+			OneOf Prompt: "BIOS Source", Help: "Choose one of the available options.", QuestionFlags: 0x0, QuestionId: 0x19, VarStoreId: 0x7002, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "HP.com" Value: 0, Default
+				OneOfOption Option: "Custom URL" Value: 1
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x15, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x19, Value: 0x0
+				Action Prompt: "Edit Custom URL", Help: "Specify a custom BIOS update address.", QuestionFlags: 0x4, QuestionId: 0x7003, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+				End 
+			End 
+			Subtitle Prompt: "", Help: "", Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x15, Value: 0x0
+			OneOf Prompt: "Automatic BIOS Update Setting", Help: "Choose one of the available options.", QuestionFlags: 0x0, QuestionId: 0x7001, VarStoreId: 0x7005, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x5, Step: 0x0
+				OneOfOption Option: "Do not update" Value: 0, Default
+				OneOfOption Option: "Check for BIOS updates automatically, but let me decide whether to install them" Value: 1
+				OneOfOption Option: "Download and install normal BIOS updates automatically" Value: 2
+				OneOfOption Option: "Download and install important BIOS updates automatically" Value: 3
+				OneOfOption Option: "Download and install normal BIOS updates automatically without prompts" Value: 4
+				OneOfOption Option: "Download and install important BIOS updates automatically without prompts" Value: 5
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x15, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x7001, Value: 0x0
+				OneOf Prompt: "BIOS Update Frequency", Help: "Choose one of the available options.", QuestionFlags: 0x0, QuestionId: 0x1A, VarStoreId: 0x7004, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+					OneOfOption Option: "Daily" Value: 0
+					OneOfOption Option: "Weekly" Value: 1
+					OneOfOption Option: "Monthly" Value: 2, Default
+				End 
+			End 
+		End 
+	End 
+	Form FormId: 0x8013, Title: "Network Configuration Settings"
+		Subtitle Prompt: "Network Configuration Settings", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x15, Value: 0x0
+			CheckBox Prompt: "Proxy Server", Help: "Enable/Disable the use of a proxy server.", QuestionFlags: 0x0, QuestionId: 0x1B, VarStoreId: 0x7100, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x15, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1B, Value: 0x0
+				Action Prompt: "Edit Proxy Server", Help: "Specify the Proxy Server Address and the Port Number through the common-use <server>:<port> notation.", QuestionFlags: 0x4, QuestionId: 0x7100, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x15, Value: 0x0
+			Action Prompt: "Test Network Connection", Help: "Check the network connection using current BIOS update configuration.", QuestionFlags: 0x4, QuestionId: 0x7005, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+			Subtitle Prompt: "", Help: "", Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x15, Value: 0x0
+			OneOf Prompt: "IPv4 Configuration", Help: "Setup for static IPv4 address.", QuestionFlags: 0x4, QuestionId: 0x7106, VarStoreId: 0x7104, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Automatic" Value: 0, Default
+				OneOfOption Option: "Manual" Value: 1
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x15, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x7106, Value: 0x0
+				Action Prompt: "IPv4 Address", Help: "Setup for static IPv4 address.", QuestionFlags: 0x4, QuestionId: 0x7103, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x15, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x7106, Value: 0x0
+				Action Prompt: "IPv4 Subnet Mask", Help: "Configure a valid IPv4 address for subnet mask.", QuestionFlags: 0x4, QuestionId: 0x7104, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x15, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x7106, Value: 0x0
+				Action Prompt: "IPv4 Gateway", Help: "Configure a valid IPv4 address for gateway.", QuestionFlags: 0x4, QuestionId: 0x7105, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+				End 
+			End 
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x15, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x7106, Value: 0x1
+				OneOf Prompt: "DNS Configuration", Help: "Configure a list of DNS addresses.", QuestionFlags: 0x0, QuestionId: 0x1C, VarStoreId: 0x7103, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+					OneOfOption Option: "Automatic" Value: 0, Default
+					OneOfOption Option: "Manual" Value: 1
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x15, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1C, Value: 0x0
+				Action Prompt: "DNS Addresses", Help: "Configure a comma separated list of DNS addresses.", QuestionFlags: 0x4, QuestionId: 0x7101, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+				End 
+			End 
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x15, Value: 0x0
+			Numeric Prompt: "Data transfer timeout", Help: "Set data transfer timeout in seconds. It is recommended not to use values under 15 seconds.", QuestionFlags: 0x0, QuestionId: 0x1D, VarStoreId: 0x7101, VarOffset: 0x0, Flags: 0x11, Size: 16, Min: 0x1, Max: 0xFFFF, Step: 0x1
+				Default DefaultId: 0x0 Value: 30
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x15, Value: 0x0
+			CheckBox Prompt: "Force HTTP no-cache", Help: "Disable HTTP caching.", QuestionFlags: 0x0, QuestionId: 0x1E, VarStoreId: 0x7102, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Numeric Prompt: "Preboot Wi-Fi Timeout", Help: "", QuestionFlags: 0x0, QuestionId: 0x1F, VarStoreId: 0x710B, VarOffset: 0x0, Flags: 0x11, Size: 16, Min: 0x1, Max: 0xFFFF, Step: 0x1
+			Default DefaultId: 0x0 Value: 60
+		End 
+		CheckBox Prompt: "Preboot Wi-Fi Master Auto Connect", Help: "", QuestionFlags: 0x0, QuestionId: 0x20, VarStoreId: 0x710B, VarOffset: 0x2, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+	End 
+	Form FormId: 0x7, Title: "Set Machine Unique Data"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "Feature Byte", Help: "", QuestionFlags: 0x4, QuestionId: 0x1008, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "Build ID", Help: "", QuestionFlags: 0x4, QuestionId: 0x1009, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "Serial Number", Help: "", QuestionFlags: 0x4, QuestionId: 0x100A, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "SKU Number", Help: "", QuestionFlags: 0x4, QuestionId: 0x100B, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "Product Family", Help: "", QuestionFlags: 0x4, QuestionId: 0x100C, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "System Board CT Number", Help: "", QuestionFlags: 0x4, QuestionId: 0x100D, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "Product Name", Help: "", QuestionFlags: 0x4, QuestionId: 0x100E, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "SMBIOS UUID", Help: "", QuestionFlags: 0x4, QuestionId: 0x302D, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x8, Title: "System IDs"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "System IDs", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x25, Value: 0x0
+			Action Prompt: "Asset Tracking Number", Help: "", QuestionFlags: 0x4, QuestionId: 0x2000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x25, Value: 0x0
+			Action Prompt: "Ownership Tag", Help: "", QuestionFlags: 0x4, QuestionId: 0x2005, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+	End 
+	Form FormId: 0x9, Title: "Replicated Setup"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Replicated Setup", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x25, Value: 0x0
+			Action Prompt: "Backup current settings to USB device", Help: "", QuestionFlags: 0x4, QuestionId: 0x100F, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x25, Value: 0x0
+				EqIdVal QuestionId: 0x26, Value: 0x1
+				Or 
+			End 
+			Action Prompt: "Restore current settings from USB device", Help: "", QuestionFlags: 0x4, QuestionId: 0x1010, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+			End 
+		End 
+	End 
+	Form FormId: 0xC, Title: "Change Date And Time"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Change Date And Time", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x25, Value: 0x0
+			Date Prompt: "Set Date (MM/DD/YYYY): ", Help: "", QuestionFlags: 0x0, QuestionId: 0x21, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, Flags: 0x10
+				Default DefaultId: 0x0 Value: 2015-01-01
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x25, Value: 0x0
+			Time Prompt: "Set Time (HH:MM): ", Help: "", QuestionFlags: 0x0, QuestionId: 0x22, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, Flags: 0x14
+				Default DefaultId: 0x0 Value: 12:30:00
+			End 
+		End 
+	End 
+	Form FormId: 0xD, Title: "BIOS Event Log"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "BIOS Event Log", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "View BIOS Event Log", Help: "", QuestionFlags: 0x0, QuestionId: 0x23, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xE
+		Action Prompt: "Export to USB Key", Help: "", QuestionFlags: 0x4, QuestionId: 0x3108, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		CheckBox Prompt: "Clear BIOS Event Log on Next Boot", Help: "", QuestionFlags: 0x4, QuestionId: 0x24, VarStoreId: 0x37, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+	End 
+	Form FormId: 0xE, Title: "View BIOS Event Log"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "View BIOS Event Log", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Date                  Time         Description", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "-----------------------------------------------------------------------------------------------------------------------", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0xE
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		DisableIf 
+			True 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x25, VarStoreId: 0xE, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x26, VarStoreId: 0x2E, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x27, VarStoreId: 0xB, VarOffset: 0xE, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x28, VarStoreId: 0xA, VarOffset: 0x1A, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x29, VarStoreId: 0xA, VarOffset: 0x1E, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x2A, VarStoreId: 0xA, VarOffset: 0x25, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x2B, VarStoreId: 0xA, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x2C, VarStoreId: 0xA, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x2D, VarStoreId: 0x1A, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x2E, VarStoreId: 0x1A, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x2F, VarStoreId: 0x1A, VarOffset: 0x5, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x30, VarStoreId: 0x8B01, VarOffset: 0xA, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x31, VarStoreId: 0x8504, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x32, VarStoreId: 0xC415, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x33, VarStoreId: 0x2C, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x34, VarStoreId: 0xA, VarOffset: 0x10, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x35, VarStoreId: 0xA, VarOffset: 0x7, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x36, VarStoreId: 0xD, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x37, VarStoreId: 0xD, VarOffset: 0x4, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFFFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x38, VarStoreId: 0xD, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x39, VarStoreId: 0xD, VarOffset: 0x2, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFFFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3A, VarStoreId: 0x1A, VarOffset: 0x4, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3B, VarStoreId: 0x1A, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3C, VarStoreId: 0x2E, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3D, VarStoreId: 0x2E, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3E, VarStoreId: 0x2E, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x3F, VarStoreId: 0x2F, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x40, VarStoreId: 0x2F, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x41, VarStoreId: 0x18, VarOffset: 0x7, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+		End 
+	End 
+End 

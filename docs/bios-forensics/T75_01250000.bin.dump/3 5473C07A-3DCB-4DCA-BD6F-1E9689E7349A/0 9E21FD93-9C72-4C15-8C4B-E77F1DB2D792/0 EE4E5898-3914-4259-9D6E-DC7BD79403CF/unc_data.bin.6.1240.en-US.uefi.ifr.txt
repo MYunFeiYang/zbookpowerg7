@@ -1,0 +1,70 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 77F2EA2F-4312-4569-85C4-583ACD8DB7E2, Title: "Intel PRO/1000 Network Connection", Help: "Configure Gigabit Ethernet device parameters."
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x0
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: A31ABB16-C627-475B-988E-7EE0776740F3, VarStoreId: 0x1, Size: 0x2E, Name: "UndiNVData"
+	Form FormId: 0x1, Title: "Main Configuration Page"
+		Text Prompt: "", Help: "", Text: ""
+		Text Prompt: "", Help: "", Text: ""
+		Text Prompt: "UEFI Driver", Help: "UEFI driver name and version number", Text: "%s"
+		Text Prompt: "Device Name", Help: "Official product name of this device.", Text: "Intel Fortville device name"
+		Text Prompt: "", Help: "", Text: ""
+		GrayOutIf 
+			True 
+			OneOf Prompt: "Link Status", Help: "Link Status", QuestionFlags: 0x0, QuestionId: 0x1104, VarStoreId: 0x1, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Disconnected" Value: 0
+				OneOfOption Option: "Connected" Value: 1
+			End 
+		End 
+		Text Prompt: "", Help: "", Text: ""
+		Text Prompt: "MAC Address", Help: "Factory default MAC address of Ethernet port.", Text: "%02x:%02x:%02x:%02x:%02x:%02x"
+		SuppressIf 
+			True 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x1, QuestionId: 0x1407, VarStoreId: 0x1, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1407, Value: 0x0
+			GrayOutIf 
+				True 
+			End 
+		End 
+	End 
+	Form FormId: 0x1235, Title: "NIC Configuration"
+		Text Prompt: "", Help: "", Text: ""
+		SuppressIf 
+			True 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x1, Value: 0x0
+			OneOf Prompt: "Link Speed", Help: "Specifies the port speed used for the selected boot protocol.", QuestionFlags: 0x0, QuestionId: 0x1108, VarStoreId: 0x1, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x4, Step: 0x0
+				OneOfOption Option: "Auto Negotiated" Value: 0, Default
+				SuppressIf 
+					EqIdVal QuestionId: 0x1, Value: 0x0
+					OneOfOption Option: "10 Mbps Half" Value: 1
+					OneOfOption Option: "10 Mbps Full" Value: 2
+					OneOfOption Option: "100 Mbps Half" Value: 3
+					OneOfOption Option: "100 Mbps Full" Value: 4
+				End 
+			End 
+		End 
+		SuppressIf 
+			True 
+		End 
+		SuppressIf 
+			True 
+			Numeric Prompt: "", Help: "", QuestionFlags: 0x1, QuestionId: 0x1409, VarStoreId: 0x1, VarOffset: 0x28, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1409, Value: 0x0
+			Numeric Prompt: "Legacy Virtual LAN ID", Help: "Specifies the VLAN ID used for PXE VLAN Mode. The valid VLAN ID range is from 0 to 4094. PXE VLAN is disabled if the VLAN ID is set to 0. Note that this setting is only applicable when the System ROM boots in Legacy BIOS Mode.", QuestionFlags: 0x4, QuestionId: 0x110D, VarStoreId: 0x1, VarOffset: 0x2A, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFFE, Step: 0x0
+				Default DefaultId: 0x0 Value: 0
+			End 
+		End 
+	End 
+End 

@@ -1,0 +1,8 @@
+Type: Image
+Subtype: UEFI
+Base: 0h
+Address: FEFFFCE0h
+Offset: 0h
+Full size: 1ED17BEh (32315326)
+Body size: 1ED17BEh (32315326)
+

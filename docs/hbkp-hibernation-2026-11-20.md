@@ -188,3 +188,47 @@ HBFX README 的旁证也在这里：**"Fortunately, boot.efi can read key `IOHib
 
 HBFX 那条要改源码（`checkRTCExtendedMemory()` 无条件返回 false），属于逆上游设计意图，且它写的是 NVRAM 变量 `IOHibernateRTCVariables`，仍可能被 boot.efi 的 RTC 优先逻辑盖过。
 本方案**不改任何源码**、用的是上游两半配套设计、并且有"零 RTC 写入"的额外好处。唯一的"借用"是 `AuthRestart` 这个开关的用途移位：官方文档说它是给 FileVault 认证重启用（"Enable VirtualSMC-compatible authenticated restart... splitting and saving disk encryption keys between NVRAM and RTC"），但机制上与 hibernation 的取钥需求完全同构。这是本方案唯一的"非官方用法"。
+
+## 九、★结论撤回（2026-11-20 16:4x，本文档前八节判据被推翻）
+
+### 9.1 反证来源（xnu 一手源码）
+`iokit/Kernel/IOHibernateIO.cpp`（apple-oss-distributions/xnu, main）：
+
+```cpp
+if (vars->volumeCryptKeySize &&
+    (kOSBooleanTrue != ...getProperty(kIOPMDestroyFVKeyOnStandbyKey))) {
+    OSData * smcData = OSData::withBytesNoCopy(&gIOHibernateVars.volumeCryptKey[0],
+                                               vars->volumeCryptKeySize);
+    ...setProperty(kIOHibernateSMCVariablesKey, smcData);   // ← 只有 FV 卷密钥才进 SMC
+}
+
+struct AppleRTCHibernateVars {           // ← 非 FV 机器唯一的密钥/标记载体
+    uint8_t signature[4];                // 'AAPL'
+    uint32_t revision;
+    uint8_t booterSignature[20];
+    uint8_t wiredCryptKey[16];
+};
+bcopy(&vars->wiredCryptKey[0], &rtcVars.wiredCryptKey[0], sizeof(rtcVars.wiredCryptKey));
+```
+
+- SMC 侧（HBKP）只承载 **FileVault 卷密钥**（`volumeCryptKey`）；`volumeCryptKeySize == 0` 该分支整段不进。
+- 镜像加密用 `wiredCryptKey`（16B 随机），**只写 RTC 0x80–0xAB**，全文件唯一写入点，无 SMC 分支。
+
+### 9.2 本机事实
+- `fdesetup status` = **FileVault is Off**；`diskutil apfs list` 四个卷 FileVault 全 No ⇒ `volumeCryptKeySize = 0`。
+- 推论（≥85%）：HBKP 永远不会被内核写 ⇒ `VirtualSMCValueHBKP::update()` 不触发 ⇒ `submitEncryptionKey()` 不调用 ⇒ `vsmc-key` 永不产生。上一轮部署的 `vsmchbkp=2` + `AuthRestart=true` + `AppleSmcIo=true` 对休眠恢复**零作用**。
+
+### 9.3 撤销的判据
+| 旧结论（§一处） | 现判 | 理由 |
+|---|---|---|
+| 11-18 失败=三开关全关导致零 HBKP | **撤回（<30%）** | 零 HBKP 是 FV 关闭的必然结果，不是失败原因 |
+| 打开三开关后 SMC 通路可用 | **无意义（撤回）** | 通路存在但无密钥可运 |
+| 端到端 ~55% | **撤回** | 建立在错前提上的乘积 |
+| "rtcfx_exclude=0E-FF 只是附带因素(<80%)" | **恢复为 ≥90%** | wiredCryptKey/booterSignature 只写 RTC，被屏蔽即无恢复标记 |
+
+### 9.4 保留的有效结论
+- 恢复标记与镜像密钥**都在 RTC 0x80–0xAB**；`rtcfx_exclude=0E-FF` 屏蔽该段 ⇒ 恢复不可能发生（≥90%，本轮由 xnu 源码再加一份独立证据）。
+- 因此 005 不是"用 mode 2 就能绕开"的旁支，而是与"允许 RTC 写"强绑定的同一枚硬币两面（X250 先例：全屏蔽仍中招，唯一解=改 BIOS `DxeCmosInit`）。
+
+### 9.5 处置
+已回滚：`git checkout ee7755b~1 -- EFI/OC/config.plist`（config `851f0d98`，DeepIdle `0206720a`），双侧 sha 一致，commit `6ae67e6`。`hibernatemode` 保持 0。

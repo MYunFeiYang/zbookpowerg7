@@ -1,0 +1,19 @@
+Type: Volume
+Subtype: FFSv2
+Base: 3B320h
+Header address: FF03B000h
+Data address: FF03B048h
+Offset: 3B320h
+Full size: 11000h (69632)
+Header size: 48h (72)
+Body size: 10FB8h (69560)
+ZeroVector:
+00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00
+FileSystem GUID: 372B56DF-CC9F-4817-AB97-0A10A92CEAA5
+Revision: 2
+Attributes: 0004FEFFh
+Erase polarity: 1
+Checksum: 32E6h, valid
+NumBlocks: 11h (17), valid
+Length: 1000h (4096), valid

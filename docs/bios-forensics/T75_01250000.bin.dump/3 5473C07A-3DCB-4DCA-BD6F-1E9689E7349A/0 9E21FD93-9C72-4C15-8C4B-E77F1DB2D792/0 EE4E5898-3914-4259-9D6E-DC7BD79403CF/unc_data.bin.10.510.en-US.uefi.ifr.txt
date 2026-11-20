@@ -1,0 +1,35 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 9B942747-154E-4D29-A436-BF7100C8B53B, Title: "Physical Presence Interface", Help: "Physical Presence Interfaces are used to confirm that a programmatic change to a setting was intended by a true user."
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x3
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 9B942747-154E-4D29-A436-BF7100C8B53B, VarStoreId: 0x1, Size: 0x260, Name: "IP4_CONFIG2_IFR_NVDATA"
+	Form FormId: 0x1, Title: " A request has been made to disable the following Physical Presence Interfaces that may be supported on this system:"
+		CheckBox Prompt: "2.  Disabling Sure Start BIOS Settings Protection via WMI", Help: "3.  Resetting Security Settings to Defaults via WMI", QuestionFlags: 0x4, QuestionId: 0x100, VarStoreId: 0x1, VarOffset: 0x0, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x100, Value: 0x0
+			CheckBox Prompt: "4.  Changing Secure Boot state (Disable, Clear Keys, Import Custom Keys, or Reset to Factory Defaults)", Help: "4.  Changing Secure Boot state (Disable, Clear Keys, Import Custom Keys, or Reset to Factory Defaults)", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x1, VarOffset: 0x1, Flags: 0x0, Default: Disabled, MfgDefault: Disabled
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x101, Value: 0x1
+				EqIdVal QuestionId: 0x100, Value: 0x0
+				Or 
+			End 
+			String Prompt: "5.  Intel SGX Disable", Help: "6.  Theft Recovery Permanent Disable", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x1, VarStoreInfo: 0x2, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+			End 
+			String Prompt: "7.  Power-on Password set, changed, or deleted from WMI", Help: "8.  Reset Fingerprint Reader has been requested (F10 or WMI)", QuestionFlags: 0x4, QuestionId: 0x103, VarStoreId: 0x1, VarStoreInfo: 0x22, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+			End 
+			String Prompt: "9.  TPM Firmware Update requested", Help: "10. MBR Security (HDD or MBR changed)", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x1, VarStoreInfo: 0x42, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+			End 
+			String Prompt: "11. GPT Security (HDD or GPT changed)", Help: "12. Sure Start Policy Change (Secure BIOS, Aggressive Mode, Manual Mode, Runtime Scanning of Boot Block)", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x1, VarStoreInfo: 0x62, MinSize: 0x7, MaxSize: 0xFF, Flags: 0x0
+			End 
+		End 
+		Subtitle Prompt: "14. Pre-boot Authentication UEFI Application error message", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "13. Selected boot image did not authenticate (while Secure Boot is enabled)", Help: "13. Selected boot image did not authenticate (while Secure Boot is enabled)", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

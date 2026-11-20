@@ -1,0 +1,16 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 23D6D0FE-1F6F-4260-8AE2-5E97BF09B0C9, Title: "UEFIドライバー", Help: ""
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0xC9
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x0
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	Form FormId: 0x1, Title: "UEFIドライバー"
+		Subtitle Prompt: "これにより、システムを再起動して他社製オプションROMの管理アプリケーションを起動します。", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "このアプリケーションを直接起動するには、起動時に[f3]キーを押します。", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "他社製オプションROMの管理", Help: "", QuestionFlags: 0x4, QuestionId: 0xF001, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+End 

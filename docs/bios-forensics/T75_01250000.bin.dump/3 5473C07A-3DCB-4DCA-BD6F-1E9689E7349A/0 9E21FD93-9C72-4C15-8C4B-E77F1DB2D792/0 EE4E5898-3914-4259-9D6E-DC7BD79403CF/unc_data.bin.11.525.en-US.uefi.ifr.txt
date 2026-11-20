@@ -1,0 +1,56 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 02EEA107-98DB-400E-9830-460A1542D799, Title: "Energy Efficient Turbo", Help: ""
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 02EEA107-98DB-400E-9830-460A1542D799, VarStoreId: 0x1, Size: 0x638, Name: "IP6_CONFIG_IFR_NVDATA"
+	Form FormId: 0x3, Title: "Ambient Light Sensor"
+		Ref Prompt: "Discrete Graphics", Help: "Hybrid Graphics", QuestionFlags: 0x4, QuestionId: 0x108, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x1, Title: "Ambient Light Sensor"
+		Text Prompt: "PCIe and DisplayPort - No Security", Help: "PCIe and DisplayPort - User Authorization", Text: "PCIe and DisplayPort - Secure Connect"
+		Text Prompt: "DisplayPort and USB", Help: "Daisy Chaining Disabled", Text: "Thunderbolt Disable"
+		Text Prompt: "Thunderbolt Security Level", Help: "    Thunderbolt function is disable due to Thunderbolt Type-C Ports or Thunderbolt Mode disabled", Text: "Thunderbolt PCIe Hot plug Mode"
+		Text Prompt: "Thunderbolt Type-C Ports", Help: "Require BIOS PW to change Thunderbolt Security Level", Text: "UMA Graphics"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3840
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Thunderbolt Mode", Help: "When Thunderbolt Mode is disabled, only DisplayPort and USB Type C devices will function on the Thunderbolt Port", Text: "UMA Graphics"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3E80
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Legacy Mode", Help: "Native Mode", Text: "UMA Graphics"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x44C0
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Native + Lower Power Mode", Help: "Disable", Text: "UMA Graphics"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x4B00
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		String Prompt: "Thunderbolt Options", Help: "Power On When AC Detected", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x1, VarStoreInfo: 0xC, MinSize: 0x1, MaxSize: 0x17, Flags: 0x0
+		End 
+		Numeric Prompt: "Power On When Lid is Opened", Help: "Prompt on Battery Errors", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x8, Flags: 0x12, Size: 32, Min: 0x0, Max: 0xA, Step: 0x0
+		End 
+		OneOf Prompt: "Prompt on Memory Size Change", Help: "Prompt on Fixed Storage Change", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x1, VarOffset: 0x4, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Video memory size" Value: 0, Default
+			OneOfOption Option: "Auto" Value: 1
+		End 
+		Subtitle Prompt: "UMA Graphics", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2, Value: 0x0
+			Ref Prompt: "32 MB", Help: "64 MB", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+			Subtitle Prompt: "UMA Graphics", Help: "", Flags: 0x0
+			End 
+		End 
+		Action Prompt: "Provide UMA Graphics and Hybrid Graphics 2 selections.", Help: "Provide Hybrid Graphics, Discrete Graphics and Auto 3 selections. Auto option will base on OS to enable or disable Hybrid Graphics.", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x2, Title: "32 MB"
+		String Prompt: "128 MB", Help: "256 MB", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x1, VarStoreInfo: 0x3E, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "512 MB", Help: "1024 MB", QuestionFlags: 0x4, QuestionId: 0x103, VarStoreId: 0x1, VarStoreInfo: 0x23C, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "Graphics", Help: "Provide UMA Graphics, Hybrid Graphics, Discrete Graphics and Auto 4 selections. Auto option will base on OS to enable or disable Hybrid Graphics.", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x1, VarStoreInfo: 0x43A, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		Action Prompt: "Provide Hybrid Graphics and Discrete Graphics 2 selections.", Help: "Provide Hybrid Graphics and Discrete Graphics 2 selections.", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "Provide UMA Graphics, Hybrid Graphics and Discrete Graphics 3 selection.", Help: "Provide UMA Graphics, Hybrid Graphics and Discrete Graphics 3 selection.", QuestionFlags: 0x4, QuestionId: 0x107, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

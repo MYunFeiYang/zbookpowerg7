@@ -1,0 +1,52 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 5D208ABD-7BB7-4D55-B3B8-A91FAE0C6247, Title: "New Gateway addresses", Help: "Interface Type    :"
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x0
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x3
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	Form FormId: 0x1000, Title: "New Gateway addresses"
+		Subtitle Prompt: "IPv6 Network Configuration", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x1
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x2
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x4
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x8
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x10
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x6A4
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Subtitle Prompt: "Interface Type    :", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x40
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Subtitle Prompt: "Interface Type    :", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "Gateway IP address can only be configured under manual policy. e.g. 2002::3. Separate the IP address with blank space to configure more than one address.", Help: "Interface Type    :", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x8000
+	End 
+	Form FormId: 0x1001, Title: "manual"
+		Subtitle Prompt: "Advanced Configuration", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x6A5
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Subtitle Prompt: "Interface Type    :", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Current gateway IPv6 addresses.", Help: "", Flags: 0x0
+		End 
+	End 
+	Form FormId: 0x1002, Title: "Policy"
+		Subtitle Prompt: "automatic or manual", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x6A6
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Subtitle Prompt: "Interface Type    :", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Current gateway IPv6 addresses.", Help: "", Flags: 0x0
+		End 
+	End 
+	Form FormId: 0x8000, Title: "Gateway IP address can only be configured under manual policy. e.g. 2002::3. Separate the IP address with blank space to configure more than one address."
+		Subtitle Prompt: "New DNS addresses", Help: "", Flags: 0x0
+		End 
+		Action Prompt: "DNS addresses can only be configured under manual policy. e.g. 2002::4. Separate the IP address with blank space to configure more than one address.", Help: "Interface Type    :", QuestionFlags: 0x4, QuestionId: 0x8100, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Ref Prompt: "Save Changes and Exit", Help: "Interface Type    :", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1000
+	End 
+End 

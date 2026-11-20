@@ -1,0 +1,27 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: D79DF6B0-EF44-43BD-9797-43E93BCF5FA8, Title: "Front USB Ports", Help: "Rear USB Ports"
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: D79DF6B0-EF44-43BD-9797-43E93BCF5FA8, VarStoreId: 0x1, Size: 0x68, Name: "VlanNvData"
+	Form FormId: 0x2, Title: "Left USB Ports"
+		Ref Prompt: "Front USB Port 10", Help: "Rear USB Port 1", QuestionFlags: 0x4, QuestionId: 0x3000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x1, Title: "Left USB Ports"
+		Subtitle Prompt: "Top USB Ports", Help: "", Flags: 0x0
+		End 
+		Numeric Prompt: "Bottom USB Ports", Help: "Enables individual legacy or Type-C USB port. On Desktop platforms, ports are typically numbered bottom to top, then left to right when in horizontal orientation. On Notebook platforms, Ports are typically numbered front to rear.", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x0, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFFE, Step: 0x0
+		End 
+		Numeric Prompt: "Front USB Port 1", Help: "Front USB Port 2", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x1, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x7, Step: 0x0
+		End 
+		Action Prompt: "Front USB Port 3", Help: "Front USB Port 4", QuestionFlags: 0x4, QuestionId: 0x1000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Subtitle Prompt: "Front USB Port 9", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "Front USB Port 5", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x1
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Action Prompt: "Front USB Port 7", Help: "Front USB Port 8", QuestionFlags: 0x4, QuestionId: 0x2000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

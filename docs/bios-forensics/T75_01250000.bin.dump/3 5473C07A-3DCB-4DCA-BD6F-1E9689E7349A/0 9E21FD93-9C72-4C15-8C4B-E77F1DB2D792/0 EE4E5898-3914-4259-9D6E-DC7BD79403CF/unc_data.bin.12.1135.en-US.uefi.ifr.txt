@@ -1,0 +1,71 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: D79DF6B0-EF44-43BD-9797-43E93BCF5FA8, Title: "HP Battery Alert
+", Help: "BIOS has detected that the capacity of the internal battery has been reduced. 
+This may be caused by environmental factors such as low ambient operating temperature, 
+or it could be due to aging of the battery pack. 
+Operating your system in a warmer location or operating your unit for a while might resolve this condition. 
+If the condition persists or if you have an older system, please contact HP service. 
+Primary(Internal) Battery(601)
+
+Enter - Continue Startup
+"
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: D79DF6B0-EF44-43BD-9797-43E93BCF5FA8, VarStoreId: 0x1, Size: 0x68, Name: "VlanNvData"
+	Form FormId: 0x2, Title: "The system has detected the storage capacity of the battery stated below to be very low.
+For optimal performance,this battery may need to be replaced.
+Secondary(External)Battery (602)
+
+Enter - Continue Startup
+"
+		Ref Prompt: "For more information, please visit:  www.hp.com\go\techcenter\startup", Help: "Wireless Module not supported
+", QuestionFlags: 0x4, QuestionId: 0x3000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x1, Title: "The system has detected the storage capacity of the battery stated below to be very low.
+For optimal performance,this battery may need to be replaced.
+Secondary(External)Battery (602)
+
+Enter - Continue Startup
+"
+		Subtitle Prompt: "For more information, please visit:  www.hp.com\go\60xbatteryerror", Help: "", Flags: 0x0
+		End 
+		Numeric Prompt: "The system has detected that a cooling fan is not operating correctly.
+Continued operation is not recommended and may cause unpredictable behavior that could result in random shutdown, 
+data loss or possible system damage.The system will shut down in 15 seconds.
+To prevent shutdown and continue operation, press the enter key now.
+", Help: "
+System Fan (90B)
+
+", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x0, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFFE, Step: 0x0
+		End 
+		Numeric Prompt: "For more information, please visit: www.hp.com\go\90Xfanerror", Help: "The system has detected that a cooling fan may not be working properly.  Before continued operation it is recommended to:
+-Press enter to clear the message and allow the system to arrive at Windows Desktop
+-Perform a Windows shutdown
+-Clean the exterior of the vents to remove dust buildup while the computer is off
+-Check for BIOS update", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x1, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x7, Step: 0x0
+		End 
+		Action Prompt: "
+Fan Speed Failure (90F)
+
+", Help: "For more information, please visit: www.hp.com\go\90Xfanerror", QuestionFlags: 0x4, QuestionId: 0x1000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Subtitle Prompt: "Warning - installing memory in DIMM3 and DIMM4 slots first will cause system memory performance to be reduced.
+To achieve optimum memory performance, please install memory in DIMM1 and DIMM2 slots first.
+
+Press Power Button - shut down
+", Help: "", Flags: 0x0
+		End 
+		Subtitle Prompt: "The System BIOS has detected your machine was previously shut down to avoid overheating.
+Overheating may occur if the cooling vents are blocked or the operating temperature exceeds the system specifications. 
+The machine should return to normal operation once the situation is resolved.
+", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x1
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Action Prompt: "ENTER – Continue Startup
+
+
+For more information, please visit: www.hp.com\go\90Xfanerror", Help: "Dimm Check Error", QuestionFlags: 0x4, QuestionId: 0x2000, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

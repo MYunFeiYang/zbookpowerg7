@@ -1,0 +1,56 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 02EEA107-98DB-400E-9830-460A1542D799, Title: "Command Authentication", Help: "Enter BIOS Admin Password"
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 02EEA107-98DB-400E-9830-460A1542D799, VarStoreId: 0x1, Size: 0x638, Name: "IP6_CONFIG_IFR_NVDATA"
+	Form FormId: 0x3, Title: "Enter Power-On Password"
+		Ref Prompt: "Enter your new password and press Enter to continue.", Help: "Press Escape to cancel", QuestionFlags: 0x4, QuestionId: 0x108, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1
+	End 
+	Form FormId: 0x1, Title: "Enter Power-On Password"
+		Text Prompt: "POST Power-On Password", Help: "Power-On Authentication", Text: "Enter Password"
+		Text Prompt: "Enter Password Again", Help: "Authentication Failed", Text: "System Locked"
+		Text Prompt: "To turn off the system, press the power button.", Help: "To restart the system, press the power button again.", Text: ""
+		Text Prompt: "Keyboard Layout", Help: "BIOS Administrator", Text: "Otherwise enter your new password and press Enter to continue."
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3840
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "Select a user", Help: "Please enter password or", Text: "Otherwise enter your new password and press Enter to continue."
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x3E80
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "swipe fingerprint to authenticate", Help: "Swipe your finger", Text: "Otherwise enter your new password and press Enter to continue."
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x44C0
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		Text Prompt: "   ", Help: "Your fingerprint was verified.", Text: "Otherwise enter your new password and press Enter to continue."
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x4B00
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x649B
+		String Prompt: "Fingerprint not recognized.", Help: "Please swipe again.", QuestionFlags: 0x4, QuestionId: 0x101, VarStoreId: 0x1, VarStoreInfo: 0xC, MinSize: 0x1, MaxSize: 0x17, Flags: 0x0
+		End 
+		Numeric Prompt: "Swipe your finger faster.", Help: "Swipe your finger slower.", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x8, Flags: 0x12, Size: 32, Min: 0x0, Max: 0xA, Step: 0x0
+		End 
+		OneOf Prompt: "Swipe finger from first joint to tip.", Help: "Fingerprint", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x1, VarOffset: 0x4, Flags: 0x12, Size: 32, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Password" Value: 0, Default
+			OneOfOption Option: "OK" Value: 1
+		End 
+		Subtitle Prompt: "Otherwise enter your new password and press Enter to continue.", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x2, Value: 0x0
+			Ref Prompt: "Doesn't meet the Password Policy requirements", Help: "Press F7 to change Power on Password", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+			Subtitle Prompt: "Otherwise enter your new password and press Enter to continue.", Help: "", Flags: 0x0
+			End 
+		End 
+		Action Prompt: "Enter new Power-on Password", Help: "Confirm New Power-on Password", QuestionFlags: 0x4, QuestionId: 0x105, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+	Form FormId: 0x2, Title: "Doesn't meet the Password Policy requirements"
+		String Prompt: "Press F7 to change Power on Password or Press Esc to enter Administrator Credential", Help: "Press Esc to enter administrator credential.", QuestionFlags: 0x4, QuestionId: 0x102, VarStoreId: 0x1, VarStoreInfo: 0x3E, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "Change Power-on Password", Help: "Enter current Power-on Password", QuestionFlags: 0x4, QuestionId: 0x103, VarStoreId: 0x1, VarStoreInfo: 0x23C, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		String Prompt: "Press Enter to continue or Escape to cancel", Help: "Incorrect existing password", QuestionFlags: 0x4, QuestionId: 0x104, VarStoreId: 0x1, VarStoreInfo: 0x43A, MinSize: 0x2, MaxSize: 0xFF, Flags: 0x0
+		End 
+		Action Prompt: "New Passwords do not match", Help: "New Passwords do not match", QuestionFlags: 0x4, QuestionId: 0x106, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+		Action Prompt: "To disable Power-on Password, enter a blank password.", Help: "To disable Power-on Password, enter a blank password.", QuestionFlags: 0x4, QuestionId: 0x107, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, QuestionConfig: ""
+		End 
+	End 
+End 

@@ -1,0 +1,70 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 77F2EA2F-4312-4569-85C4-583ACD8DB7E2, Title: "Onboard RAID", Help: "You have OPAL security enabled hard drives present."
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x0
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: A31ABB16-C627-475B-988E-7EE0776740F3, VarStoreId: 0x1, Size: 0x2E, Name: "UndiNVData"
+	Form FormId: 0x1, Title: "Enabling RAID mode while OPAL is on may cause problems."
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		GrayOutIf 
+			True 
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1104, VarStoreId: 0x1, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "InvalidId" Value: 0
+				OneOfOption Option: "InvalidId" Value: 1
+			End 
+		End 
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		Text Prompt: "HP does not recommend this configuration.", Help: "Cancel", Text: "Confirm"
+		SuppressIf 
+			True 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x1407, VarStoreId: 0x1, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1407, Value: 0x0
+			GrayOutIf 
+				True 
+			End 
+		End 
+	End 
+	Form FormId: 0x1235, Title: "InvalidId"
+		Text Prompt: "InvalidId", Help: "InvalidId", Text: "InvalidId"
+		SuppressIf 
+			True 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x1, Value: 0x0
+			OneOf Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x0, QuestionId: 0x1108, VarStoreId: 0x1, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x4, Step: 0x0
+				OneOfOption Option: "InvalidId" Value: 0, Default
+				SuppressIf 
+					EqIdVal QuestionId: 0x1, Value: 0x0
+					OneOfOption Option: "InvalidId" Value: 1
+					OneOfOption Option: "InvalidId" Value: 2
+					OneOfOption Option: "InvalidId" Value: 3
+					OneOfOption Option: "InvalidId" Value: 4
+				End 
+			End 
+		End 
+		SuppressIf 
+			True 
+		End 
+		SuppressIf 
+			True 
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x1, QuestionId: 0x1409, VarStoreId: 0x1, VarOffset: 0x28, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1409, Value: 0x0
+			Numeric Prompt: "InvalidId", Help: "InvalidId", QuestionFlags: 0x4, QuestionId: 0x110D, VarStoreId: 0x1, VarOffset: 0x2A, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFFE, Step: 0x0
+				Default DefaultId: 0x0 Value: 0
+			End 
+		End 
+	End 
+End 

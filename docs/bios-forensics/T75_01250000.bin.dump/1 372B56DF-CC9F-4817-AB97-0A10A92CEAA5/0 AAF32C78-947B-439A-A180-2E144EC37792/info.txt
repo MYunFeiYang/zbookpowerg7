@@ -1,0 +1,15 @@
+Type: File
+Subtype: Raw
+Base: 3B368h
+Header address: FF03B048h
+Data address: FF03B060h
+Offset: 48h
+Full size: FE5Ah (65114)
+Header size: 18h (24)
+Body size: FE42h (65090)
+File GUID: AAF32C78-947B-439A-A180-2E144EC37792
+Type: 01h
+Attributes: 00h
+State: 00h
+Header checksum: B8h, invalid, should be FDh
+Data checksum: 0Fh, invalid, should be AAh

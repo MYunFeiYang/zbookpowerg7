@@ -1,0 +1,245 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 77F2EA2F-4312-4569-85C4-583ACD8DB7E2, Title: "Energy Efficient Turbo", Help: ""
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x0
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: A31ABB16-C627-475B-988E-7EE0776740F3, VarStoreId: 0x1234, Size: 0x588, Name: "UndiNVData"
+	Form FormId: 0x1, Title: "Ambient Light Sensor"
+		Text Prompt: "Secondary Battery Fast Charge", Help: "Secondary Battery Fast Charge", Text: "Secondary Battery Fast Charge"
+		Subtitle Prompt: "Power Management Options", Help: "", Flags: 0x0
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x750
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x751
+		Ref Prompt: "Auto", Help: "32 MB", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1235
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x754
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x755
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x742
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x743
+		SuppressIf 
+			True 
+			Text Prompt: "All PCIe devices with approved exceptions", Help: "Secondary Battery Fast Charge", Text: "All PCIe devices"
+			Text Prompt: "    Hyperthreading and Multi-processor has been enabled and grayed out because Deep sleep is set to On.", Help: "Secondary Battery Fast Charge", Text: "DMA Protection"
+			Text Prompt: "Pre-boot DMA protection", Help: "Secondary Battery Fast Charge", Text: "Thunderbolt Only"
+			Text Prompt: "Selecting The Device Scope For Pre-Boot DMA Protection", Help: "Secondary Battery Fast Charge", Text: "Enhanced Hello Sign-in"
+			Numeric Prompt: "Secondary Battery Fast Charge", Help: "Secondary Battery Fast Charge", QuestionFlags: 0x0, QuestionId: 0x1405, VarStoreId: 0x1234, VarOffset: 0x586, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+			Numeric Prompt: "Secondary Battery Fast Charge", Help: "Secondary Battery Fast Charge", QuestionFlags: 0x0, QuestionId: 0x1406, VarStoreId: 0x1234, VarOffset: 0x587, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x752
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x753
+		SuppressIf 
+			True 
+			Text Prompt: "Wake on WLAN", Help: "Secondary Battery Fast Charge", Text: "POST Prompt for RAID Configuration"
+			Numeric Prompt: "Wake on WiGig", Help: "BT Wake from S3", QuestionFlags: 0x1, QuestionId: 0x2, VarStoreId: 0x1234, VarOffset: 0x2E, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+			OneOf Prompt: "Tile Deactivate", Help: "This option deactivates the laptop tile, but does not remove the laptop icon from the user’s Tile account. When the deactivation completes successfully the laptop tile will play a song.", QuestionFlags: 0x1, QuestionId: 0x3, VarStoreId: 0x1234, VarOffset: 0x2F, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Fan Always on while on AC Power" Value: 0
+				OneOfOption Option: "Backlit keyboard timeout" Value: 1, Default
+			End 
+			Numeric Prompt: "5 secs.", Help: "15 secs.", QuestionFlags: 0x1, QuestionId: 0x4, VarStoreId: 0x1234, VarOffset: 0x30, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			End 
+		End 
+		Text Prompt: "Secondary Battery Fast Charge", Help: "Secondary Battery Fast Charge", Text: "Secondary Battery Fast Charge"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x756
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x757
+		Numeric Prompt: "Prompt on Fixed Storage Change", Help: "Video memory size", QuestionFlags: 0x4, QuestionId: 0x110A, VarStoreId: 0x1234, VarOffset: 0x34, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		Text Prompt: "Secondary Battery Fast Charge", Help: "Secondary Battery Fast Charge", Text: "Secondary Battery Fast Charge"
+		Subtitle Prompt: "PCIe and DisplayPort - No Security", Help: "", Flags: 0x0
+		End 
+		Text Prompt: "Power On When Lid is Opened", Help: "Prompt on Memory Size Change", Text: "Prompt on Battery Errors"
+		Text Prompt: "Thunderbolt Type-C Ports", Help: "Thunderbolt Mode", Text: "Require BIOS PW to change Thunderbolt Security Level"
+		Text Prompt: "When Thunderbolt Mode is disabled, only DisplayPort and USB Type C devices will function on the Thunderbolt Port", Help: "Native Mode", Text: "Legacy Mode"
+		Text Prompt: "Native + Lower Power Mode", Help: "Power On When AC Detected", Text: "Thunderbolt Options"
+		Text Prompt: "Thunderbolt Security Level", Help: "Thunderbolt PCIe Hot plug Mode", Text: "    Thunderbolt function is disable due to Thunderbolt Type-C Ports or Thunderbolt Mode disabled"
+		OneOf Prompt: "Mobile Network Device (WWAN)", Help: "GPS Device", QuestionFlags: 0x1, QuestionId: 0x1104, VarStoreId: 0x1234, VarOffset: 0x28, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Wireless Network Device (WLAN)" Value: 0, Default
+			OneOfOption Option: "Embedded WiGig Device" Value: 1
+		End 
+		SuppressIf 
+			True 
+			Numeric Prompt: "Secondary Battery Fast Charge", Help: "Secondary Battery Fast Charge", QuestionFlags: 0x0, QuestionId: 0x1408, VarStoreId: 0x1234, VarOffset: 0x2A, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1408, Value: 0x0
+			OneOf Prompt: "30 secs.", Help: "1 min.", QuestionFlags: 0x1, QuestionId: 0x110C, VarStoreId: 0x1234, VarOffset: 0x29, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x20, Step: 0x0
+				OneOfOption Option: "UMA Graphics" Value: 0
+				OneOfOption Option: "Discrete Graphics" Value: 1
+				OneOfOption Option: "Hybrid Graphics" Value: 2
+				OneOfOption Option: "Auto" Value: 3
+				OneOfOption Option: "Disabled" Value: 4
+				OneOfOption Option: "Audio Device" Value: 5
+				OneOfOption Option: "Hides the Audio device from OS" Value: 6
+				OneOfOption Option: "Internal Speakers" Value: 7
+				OneOfOption Option: "Microphone" Value: 8
+				OneOfOption Option: "Intel Smart Sound" Value: 32, Default
+			End 
+		End 
+		Text Prompt: "PCIe and DisplayPort - User Authorization", Help: "DisplayPort and USB", Text: "PCIe and DisplayPort - Secure Connect"
+		SuppressIf 
+			True 
+			Numeric Prompt: "Secondary Battery Fast Charge", Help: "Secondary Battery Fast Charge", QuestionFlags: 0x0, QuestionId: 0x1407, VarStoreId: 0x1234, VarOffset: 0x36, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1407, Value: 0x0
+			String Prompt: "Daisy Chaining Disabled", Help: "Thunderbolt Disable", QuestionFlags: 0x1, QuestionId: 0x1106, VarStoreId: 0x1234, VarStoreInfo: 0x4, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+			End 
+		End 
+	End 
+	Form FormId: 0x1235, Title: "64 MB"
+		Text Prompt: "Secondary Battery Fast Charge", Help: "Secondary Battery Fast Charge", Text: "Secondary Battery Fast Charge"
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x740
+		Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Label, LabelNumber: 0x741
+		SuppressIf 
+			True 
+			Numeric Prompt: "Secondary Battery Fast Charge", Help: "Secondary Battery Fast Charge", QuestionFlags: 0x0, QuestionId: 0x5, VarStoreId: 0x1234, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		OneOf Prompt: "Provide Hybrid Graphics and Discrete Graphics 2 selections.", Help: "Provide UMA Graphics, Hybrid Graphics and Discrete Graphics 3 selection.", QuestionFlags: 0x0, QuestionId: 0x1108, VarStoreId: 0x1234, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x4, Step: 0x0
+			OneOfOption Option: "UMA Graphics" Value: 0, Default
+			SuppressIf 
+				EqIdVal QuestionId: 0x5, Value: 0x0
+				OneOfOption Option: "Discrete Graphics" Value: 1
+				OneOfOption Option: "Hybrid Graphics" Value: 2
+				OneOfOption Option: "Auto" Value: 3
+				OneOfOption Option: "Disabled" Value: 4
+			End 
+		End 
+		SuppressIf 
+			True 
+			Numeric Prompt: "Secondary Battery Fast Charge", Help: "Secondary Battery Fast Charge", QuestionFlags: 0x0, QuestionId: 0x6, VarStoreId: 0x1234, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x6, Value: 0x0
+			OneOf Prompt: "Enable", Help: "Disable", QuestionFlags: 0x0, QuestionId: 0x1109, VarStoreId: 0x1234, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+				SuppressIf 
+					EqIdVal QuestionId: 0x6, Value: 0x0
+					OneOfOption Option: "Headphone Output" Value: 0
+					OneOfOption Option: "Disable and Lock" Value: 1
+				End 
+				SuppressIf 
+					EqIdVal QuestionId: 0x6, Value: 0x1
+					OneOfOption Option: "Intel Smart Sound" Value: 2
+				End 
+			End 
+		End 
+		SuppressIf 
+			True 
+			Numeric Prompt: "Secondary Battery Fast Charge", Help: "Secondary Battery Fast Charge", QuestionFlags: 0x0, QuestionId: 0x1409, VarStoreId: 0x1234, VarOffset: 0x31, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1409, Value: 0x0
+			Numeric Prompt: "On Battery Only", Help: "Power Button Protection", QuestionFlags: 0x4, QuestionId: 0x110D, VarStoreId: 0x1234, VarOffset: 0x32, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFFF, Step: 0x0
+				Default DefaultId: 0x0 Value: 0
+			End 
+		End 
+	End 
+	Form FormId: 0x1248, Title: "Bluetooth"
+		OneOf Prompt: "Lock Wireless Button", Help: "WWAN Quick Connect", QuestionFlags: 0x10, QuestionId: 0x110F, VarStoreId: 0x1234, VarOffset: 0x2C, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "HP LAN-Wireless Protection" Value: 0
+			OneOfOption Option: "  LAN / WLAN Auto Switching" Value: 1
+		End 
+	End 
+	Form FormId: 0x1247, Title: "Never"
+		Text Prompt: "Secondary Battery Fast Charge", Help: "Secondary Battery Fast Charge", Text: "Secondary Battery Fast Charge"
+		Subtitle Prompt: "Boost Converter", Help: "", Flags: 0x0
+		End 
+		Text Prompt: "Wake on LAN in Battery Mode", Help: "Automatic Keyboard Backlit", Text: "Force enable HP Sure View"
+	End 
+	Form FormId: 0x1237, Title: "This setting helps to keep “HP Sure Shutter” status as “close on every power up or resume” or “stays in last known state”."
+		Ref Prompt: "Camera Shutter stays in last known state", Help: "Camera Shutter closes on boot or resume", QuestionFlags: 0x0, QuestionId: 0x7, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1244
+		Ref Prompt: "Integrated Rear Camera", Help: "Fingerprint Device", QuestionFlags: 0x0, QuestionId: 0x8, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1245
+		Ref Prompt: "NFC", Help: "Disable battery on next shut down", QuestionFlags: 0x0, QuestionId: 0x9, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x1246
+	End 
+	Form FormId: 0x1244, Title: "Integrated Front Camera"
+		SuppressIf 
+			EqIdVal QuestionId: 0x1405, Value: 0x0
+			OneOf Prompt: "Do not disable", Help: "Set this item to ‘Next shut down’ to disconnect the battery.
+This is to maintain battery life in situations where the system will not be used for long periods of time.
+Once in this state, AC power must be disconnected and reconnected to turn the system back on.", QuestionFlags: 0x0, QuestionId: 0x1200, VarStoreId: 0x1234, VarOffset: 0x37, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Headphone Output" Value: 0
+				OneOfOption Option: "Disable and Lock" Value: 1, Default
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1200, Value: 0x0
+				OneOf Prompt: "Runtime Power Management", Help: "Enables Runtime Power Management.", QuestionFlags: 0x0, QuestionId: 0x1201, VarStoreId: 0x1234, VarOffset: 0x38, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+					OneOfOption Option: "Extended Idle Power States" Value: 0
+					SuppressIf 
+						EqIdVal QuestionId: 0x1200, Value: 0x0
+						OneOfOption Option: "Increases the OS's Idle Power Savings." Value: 1, Default
+					End 
+				End 
+			End 
+			OneOf Prompt: "Deep sleep", Help: "Wake when Lid is Opened", QuestionFlags: 0x0, QuestionId: 0x1202, VarStoreId: 0x1234, VarOffset: 0x39, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Headphone Output" Value: 0, Default
+				OneOfOption Option: "Disable and Lock" Value: 1
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1202, Value: 0x0
+				OneOf Prompt: "Wake When AC is Detected", Help: "Wake on USB", QuestionFlags: 0x0, QuestionId: 0x1203, VarStoreId: 0x1234, VarOffset: 0x3A, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+					OneOfOption Option: "    Warning!! Due to Deep Sleep is Enabled, if you remove AC power from the computer, Wake on USB function" Value: 0, Default
+					SuppressIf 
+						EqIdVal QuestionId: 0x1202, Value: 0x0
+						OneOfOption Option: "    will be automatically disabled." Value: 1
+					End 
+				End 
+			End 
+			OneOf Prompt: "Enable", Help: "Disable", QuestionFlags: 0x1, QuestionId: 0x1204, VarStoreId: 0x1234, VarOffset: 0x3B, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+				OneOfOption Option: "Modern Standby" Value: 0, Default
+			End 
+		End 
+	End 
+	Form FormId: 0x1245, Title: "Touch Device"
+		SuppressIf 
+			EqIdVal QuestionId: 0x1405, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1200, Value: 0x1
+				String Prompt: "Deep Sleep has been gray out because Modern Standby is set to On.", Help: "Power Control", QuestionFlags: 0x4, QuestionId: 0x1210, VarStoreId: 0x1234, VarStoreInfo: 0x3C, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				End 
+				String Prompt: "Battery Management", Help: "Battery Health Manager", QuestionFlags: 0x4, QuestionId: 0x1211, VarStoreId: 0x1234, VarStoreInfo: 0x5C, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				End 
+				String Prompt: "Maximize Battery Health Management", Help: "Let HP Manage My Battery Health", QuestionFlags: 0x4, QuestionId: 0x1212, VarStoreId: 0x1234, VarStoreInfo: 0x7C, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				End 
+			End 
+			String Prompt: "Minimize Battery Health Management", Help: "This setting is ideal for users who primarily keep their notebook connected to AC power.", QuestionFlags: 0x4, QuestionId: 0x1213, VarStoreId: 0x1234, VarStoreInfo: 0x9C, MinSize: 0x0, MaxSize: 0xDF, Flags: 0x0
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1202, Value: 0x0
+				String Prompt: "This setting maximizes the long-term health of the battery by limiting its maximum charge capacity to 80% of the available full charge capacity (if the battery is currently charged above 80%, it can be discharged manually by disconnecting the device from AC or the system will discharge the battery slowly over time). Maximize Battery Health Management keeps the battery from entering a high state-of-charge which helps to slow the rate of natural degradation. As a result of this reduction, battery runtime between charges is reduced. As with all rechargeable batteries, the available full charge capacity of the battery will naturally decrease with time and usage.", Help: "This setting is ideal for users who want to maximize battery runtime while also protecting their battery's health.", QuestionFlags: 0x4, QuestionId: 0x1214, VarStoreId: 0x1234, VarStoreInfo: 0x25C, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+				End 
+				String Prompt: "This setting balances battery run-time and battery health. Over time, the available charge capacity of the battery is reduced. This reduction in available charge capacity limits the battery's ability to enter a high state-of-charge, which helps to slow the rate of natural degradation. As a result of this reduction, battery runtime will decrease over time as available charge capacity is reduced. As with all rechargeable batteries, the available full charge capacity of the battery will naturally decrease with time and usage.", Help: "This setting is ideal for users who primarily use their notebook on battery power and want to maximize device runtime between charges.", QuestionFlags: 0x4, QuestionId: 0x1215, VarStoreId: 0x1234, VarStoreInfo: 0x35E, MinSize: 0xC, MaxSize: 0x10, Flags: 0x0
+				End 
+			End 
+		End 
+	End 
+	Form FormId: 0x1246, Title: "Next shut down"
+		SuppressIf 
+			EqIdVal QuestionId: 0x1405, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1201, Value: 0x1
+				String Prompt: "This setting disables those features designed to manage the long-term health of the battery and allows the battery to charge to its available full charge capacity. Disablement of these features will allow the battery to enter a high state-of-charge, which can increase the rate of the battery's natural degradation. As with all rechargeable batteries, the available full charge capacity of the battery will naturally decrease with time and usage.", Help: "For more information, please see HP.COM/SUPPORT/BATTERY", QuestionFlags: 0x4, QuestionId: 0x1220, VarStoreId: 0x1234, VarStoreInfo: 0x380, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				End 
+				Numeric Prompt: "Configure Storage Controller for Intel Optane", Help: "    Optane is gray out due to Legacy Support Enable", QuestionFlags: 0x0, QuestionId: 0x1221, VarStoreId: 0x1234, VarOffset: 0x3A0, Flags: 0x11, Size: 16, Min: 0x400, Max: 0xFFFF, Step: 0x0
+					Default DefaultId: 0x0 Value: 3260
+				End 
+				Numeric Prompt: "Turbo-boost", Help: "Hyperthreading", QuestionFlags: 0x0, QuestionId: 0x1222, VarStoreId: 0x1234, VarOffset: 0x3A2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+					Default DefaultId: 0x0 Value: 1
+				End 
+				String Prompt: "Permits the user to control the processor capability", Help: "Virtualization Technology (VTx)", QuestionFlags: 0x4, QuestionId: 0x1223, VarStoreId: 0x1234, VarStoreInfo: 0x3A3, MinSize: 0x0, MaxSize: 0xDF, Flags: 0x0
+				End 
+			End 
+			GrayOutIf 
+				EqIdVal QuestionId: 0x1203, Value: 0x0
+				String Prompt: "Virtualization Technology for Directed I/O (VTd)", Help: "    VTx and VTd cannot be disabled while TXT is enabled.", QuestionFlags: 0x4, QuestionId: 0x1224, VarStoreId: 0x1234, VarStoreInfo: 0x563, MinSize: 0xC, MaxSize: 0x10, Flags: 0x0
+				End 
+			End 
+		End 
+	End 
+End 

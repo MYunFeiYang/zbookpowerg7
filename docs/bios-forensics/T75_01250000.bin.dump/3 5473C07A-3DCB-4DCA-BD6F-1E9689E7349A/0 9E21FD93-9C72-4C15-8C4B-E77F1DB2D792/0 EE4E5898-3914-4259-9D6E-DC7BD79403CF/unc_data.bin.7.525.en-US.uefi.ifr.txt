@@ -1,0 +1,732 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 61FA5536-FE13-4B37-B1D0-0E7CDBD517F2, Title: "Energy Efficient Turbo", Help: "Ambient Light Sensor"
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x0
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: 61FA5536-FE13-4B37-B1D0-0E7CDBD517F2, VarStoreId: 0x1234, Size: 0x2458, Name: "MyIfrNVData"
+	Form FormId: 0x1, Title: "Do Not Apply"
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x1
+			Ref Prompt: "Fan Always on while on AC Power", Help: "5 secs.", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x8
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x0
+			Ref Prompt: "5 mins.", Help: "5 secs.", QuestionFlags: 0x0, QuestionId: 0x2, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xB
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "CIRA Timeout (min.)", Help: "CIRA Timeout (min.)", QuestionFlags: 0x0, QuestionId: 0x3085, VarStoreId: 0x1234, VarOffset: 0x1773, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3085, Value: 0x1
+			SuppressIf 
+				EqIdVal QuestionId: 0x3095, Value: 0x1
+				Ref Prompt: "WWAN Quick Connect", Help: "  LAN / WLAN Auto Switching", QuestionFlags: 0x0, QuestionId: 0x3, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x6
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x3095, Value: 0x0
+				Ref Prompt: "  LAN / WWAN Auto Switching", Help: "  LAN / WLAN Auto Switching", QuestionFlags: 0x0, QuestionId: 0x4, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xC
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x3003, Value: 0x0
+				SuppressIf 
+					EqIdVal QuestionId: 0x3095, Value: 0x1
+					Ref Prompt: "Wake on WLAN", Help: "BT Wake from S3", QuestionFlags: 0x0, QuestionId: 0x5, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x7
+				End 
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x3003, Value: 0x0
+				SuppressIf 
+					EqIdVal QuestionId: 0x3095, Value: 0x0
+					Ref Prompt: "Tile Deactivate", Help: "BT Wake from S3", QuestionFlags: 0x0, QuestionId: 0x6, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xD
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3085, Value: 0x0
+			OneOf Prompt: "480 MB", Help: "512 MB", QuestionFlags: 0x0, QuestionId: 0x3123, VarStoreId: 0x1234, VarOffset: 0x2450, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "GPS Device" Value: 1
+				OneOfOption Option: "Wireless Network Device (WLAN)" Value: 0, Default
+			End 
+		End 
+		Numeric Prompt: "Thunderbolt Options", Help: "Power On When AC Detected", QuestionFlags: 0x4, QuestionId: 0x601, VarStoreId: 0x1234, VarOffset: 0x2451, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3085, Value: 0x0
+			OneOf Prompt: "Provide UMA Graphics, Hybrid Graphics, Discrete Graphics and Auto 4 selections. Auto option will base on OS to enable or disable Hybrid Graphics.", Help: "Provide UMA Graphics and Hybrid Graphics 2 selections.", QuestionFlags: 0x0, QuestionId: 0x3088, VarStoreId: 0x1234, VarOffset: 0xA42, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "GPS Device" Value: 0, Default
+				OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+			End 
+		End 
+		Text Prompt: "Thunderbolt Security Level", Help: "Thunderbolt PCIe Hot plug Mode", Text: "    Thunderbolt function is disable due to Thunderbolt Type-C Ports or Thunderbolt Mode disabled"
+		Text Prompt: "4096 MB", Help: "2048 MB", Text: "1024 MB"
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x1
+			Text Prompt: "Thunderbolt Type-C Ports", Help: "When Thunderbolt Mode is disabled, only DisplayPort and USB Type C devices will function on the Thunderbolt Port", Text: "Thunderbolt Mode"
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x0
+			Text Prompt: "Require BIOS PW to change Thunderbolt Security Level", Help: "When Thunderbolt Mode is disabled, only DisplayPort and USB Type C devices will function on the Thunderbolt Port", Text: "Thunderbolt Mode"
+		End 
+		OneOf Prompt: "Legacy Mode", Help: "Native Mode", QuestionFlags: 0x1, QuestionId: 0x3083, VarStoreId: 0x1234, VarOffset: 0xA4D, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "Disable" Value: 0
+			OneOfOption Option: "Native + Lower Power Mode" Value: 1
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x1
+			String Prompt: "Power Management Options", Help: "PCIe and DisplayPort - User Authorization", QuestionFlags: 0x1, QuestionId: 0x3001, VarStoreId: 0x1234, VarStoreInfo: 0x150C, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x0
+			String Prompt: "PCIe and DisplayPort - No Security", Help: "PCIe and DisplayPort - User Authorization", QuestionFlags: 0x1, QuestionId: 0x3119, VarStoreId: 0x1234, VarStoreInfo: 0x150C, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+			End 
+		End 
+		String Prompt: "DisplayPort and USB", Help: "Daisy Chaining Disabled", QuestionFlags: 0x1, QuestionId: 0x3002, VarStoreId: 0x1234, VarStoreInfo: 0x1578, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "CIRA Timeout (min.)", Help: "CIRA Timeout (min.)", QuestionFlags: 0x0, QuestionId: 0x3003, VarStoreId: 0x1234, VarOffset: 0x4B, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "CIRA Timeout (min.)", Help: "CIRA Timeout (min.)", QuestionFlags: 0x0, QuestionId: 0x3004, VarStoreId: 0x1234, VarOffset: 0x1779, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "CIRA Timeout (min.)", Help: "CIRA Timeout (min.)", QuestionFlags: 0x0, QuestionId: 0x3005, VarStoreId: 0x1234, VarOffset: 0x177A, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			String Prompt: "96 MB", Help: "CIRA Timeout (min.)", QuestionFlags: 0x1, QuestionId: 0x3006, VarStoreId: 0x1234, VarStoreInfo: 0x13EA, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "128 MB", Help: "CIRA Timeout (min.)", QuestionFlags: 0x1, QuestionId: 0x3007, VarStoreId: 0x1234, VarStoreInfo: 0x1402, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "160 MB", Help: "CIRA Timeout (min.)", QuestionFlags: 0x1, QuestionId: 0x3008, VarStoreId: 0x1234, VarStoreInfo: 0x13BA, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "192 MB", Help: "CIRA Timeout (min.)", QuestionFlags: 0x1, QuestionId: 0x3009, VarStoreId: 0x1234, VarStoreInfo: 0x13D2, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "224 MB", Help: "CIRA Timeout (min.)", QuestionFlags: 0x1, QuestionId: 0x3010, VarStoreId: 0x1234, VarStoreInfo: 0x13A2, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "256 MB", Help: "CIRA Timeout (min.)", QuestionFlags: 0x1, QuestionId: 0x3011, VarStoreId: 0x1234, VarStoreInfo: 0x1432, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "288 MB", Help: "CIRA Timeout (min.)", QuestionFlags: 0x1, QuestionId: 0x3012, VarStoreId: 0x1234, VarStoreInfo: 0x141A, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "320 MB", Help: "CIRA Timeout (min.)", QuestionFlags: 0x1, QuestionId: 0x3013, VarStoreId: 0x1234, VarStoreInfo: 0x144A, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			String Prompt: "352 MB", Help: "CIRA Timeout (min.)", QuestionFlags: 0x1, QuestionId: 0x3014, VarStoreId: 0x1234, VarStoreInfo: 0x1462, MinSize: 0x0, MaxSize: 0xC, Flags: 0x0
+			End 
+			OneOf Prompt: "CIRA Timeout (min.)", Help: "CIRA Timeout (min.)", QuestionFlags: 0x0, QuestionId: 0x3016, VarStoreId: 0x1234, VarOffset: 0xA45, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "CIRA Timeout (min.)", Help: "CIRA Timeout (min.)", QuestionFlags: 0x0, QuestionId: 0x3017, VarStoreId: 0x1234, VarOffset: 0xA49, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "CIRA Timeout (min.)", Help: "CIRA Timeout (min.)", QuestionFlags: 0x0, QuestionId: 0x3018, VarStoreId: 0x1234, VarOffset: 0x754, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "CIRA Timeout (min.)", Help: "CIRA Timeout (min.)", QuestionFlags: 0x0, QuestionId: 0x3019, VarStoreId: 0x1234, VarOffset: 0xA4B, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "CIRA Timeout (min.)", Help: "CIRA Timeout (min.)", QuestionFlags: 0x0, QuestionId: 0x3020, VarStoreId: 0x1234, VarOffset: 0x755, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "CIRA Timeout (min.)", Help: "CIRA Timeout (min.)", QuestionFlags: 0x0, QuestionId: 0x3082, VarStoreId: 0x1234, VarOffset: 0x177D, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "CIRA Timeout (min.)", Help: "CIRA Timeout (min.)", QuestionFlags: 0x0, QuestionId: 0x3084, VarStoreId: 0x1234, VarOffset: 0x1773, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "CIRA Timeout (min.)", Help: "CIRA Timeout (min.)", QuestionFlags: 0x0, QuestionId: 0x3087, VarStoreId: 0x1234, VarOffset: 0x178B, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+			OneOf Prompt: "CIRA Timeout (min.)", Help: "CIRA Timeout (min.)", QuestionFlags: 0x0, QuestionId: 0x3089, VarStoreId: 0x1234, VarOffset: 0x1774, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+	End 
+	Form FormId: 0x2, Title: "ANSI"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "CIRA Timeout (min.)", Help: "CIRA Timeout (min.)", QuestionFlags: 0x1, QuestionId: 0x3021, VarStoreId: 0x1234, VarOffset: 0x755, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3021, Value: 0x1
+			OneOf Prompt: "Boost Converter", Help: "Wake on LAN in Battery Mode", QuestionFlags: 0x0, QuestionId: 0x3022, VarStoreId: 0x1234, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "GPS Device" Value: 0
+				OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1, Default
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x1
+			GrayOutIf 
+				EqIdVal QuestionId: 0x3021, Value: 0x0
+				OneOf Prompt: "Force enable HP Sure View", Help: "Integrated Camera", QuestionFlags: 0x0, QuestionId: 0x3023, VarStoreId: 0x1234, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+					OneOfOption Option: "GPS Device" Value: 0
+					OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1, Default
+				End 
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x0
+			GrayOutIf 
+				EqIdVal QuestionId: 0x3021, Value: 0x0
+				OneOf Prompt: "Automatic Keyboard Backlit", Help: "Integrated Camera", QuestionFlags: 0x0, QuestionId: 0x3120, VarStoreId: 0x1234, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+					OneOfOption Option: "GPS Device" Value: 0
+					OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1, Default
+				End 
+			End 
+		End 
+		OneOf Prompt: "HP Sure Shutter", Help: "This setting helps to keep “HP Sure Shutter” status as “close on every power up or resume” or “stays in last known state”.", QuestionFlags: 0x0, QuestionId: 0x3024, VarStoreId: 0x1234, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "GPS Device" Value: 0
+			OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1, Default
+		End 
+		OneOf Prompt: "Camera Shutter stays in last known state", Help: "Camera Shutter closes on boot or resume", QuestionFlags: 0x0, QuestionId: 0x3025, VarStoreId: 0x1234, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "GPS Device" Value: 0, Default
+			OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x1
+			OneOf Prompt: "Integrated Front Camera", Help: "Fingerprint Device", QuestionFlags: 0x0, QuestionId: 0x3026, VarStoreId: 0x1234, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+				OneOfOption Option: "GPS Device" Value: 0
+				OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1, Default
+				OneOfOption Option: "Embedded WiGig Device" Value: 2
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x0
+			OneOf Prompt: "Integrated Rear Camera", Help: "Fingerprint Device", QuestionFlags: 0x0, QuestionId: 0x3121, VarStoreId: 0x1234, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x2, Step: 0x0
+				OneOfOption Option: "GPS Device" Value: 0
+				OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1, Default
+				OneOfOption Option: "Embedded WiGig Device" Value: 2
+			End 
+		End 
+		String Prompt: "Touch Device", Help: "NFC", QuestionFlags: 0x0, QuestionId: 0x3027, VarStoreId: 0x1234, VarStoreInfo: 0x4, MinSize: 0x0, MaxSize: 0x20, Flags: 0x0
+			Default DefaultId: 0x0 String: "Allow to configure IGD aperture size (DSM)"
+		End 
+		Numeric Prompt: "Disable battery on next shut down", Help: "Next shut down", QuestionFlags: 0x0, QuestionId: 0x3028, VarStoreId: 0x1234, VarOffset: 0x46, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x1
+			OneOf Prompt: "Do not disable", Help: "Runtime Power Management", QuestionFlags: 0x0, QuestionId: 0x3029, VarStoreId: 0x1234, VarOffset: 0x47, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "GPS Device" Value: 0, Default
+				OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3089, Value: 0x0
+			OneOf Prompt: "Set this item to ‘Next shut down’ to disconnect the battery.
+This is to maintain battery life in situations where the system will not be used for long periods of time.
+Once in this state, AC power must be disconnected and reconnected to turn the system back on.", Help: "Runtime Power Management", QuestionFlags: 0x0, QuestionId: 0x3122, VarStoreId: 0x1234, VarOffset: 0x47, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "GPS Device" Value: 0, Default
+				OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+			End 
+		End 
+		OneOf Prompt: "Enables Runtime Power Management.", Help: "Extended Idle Power States", QuestionFlags: 0x0, QuestionId: 0x3030, VarStoreId: 0x1234, VarOffset: 0x48, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "GPS Device" Value: 0, Default
+			OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+		End 
+		Numeric Prompt: "Increases the OS's Idle Power Savings.", Help: "Deep sleep", QuestionFlags: 0x0, QuestionId: 0x3031, VarStoreId: 0x1234, VarOffset: 0x49, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x3C, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		OneOf Prompt: "Wake when Lid is Opened", Help: "Wake When AC is Detected", QuestionFlags: 0x4, QuestionId: 0x3032, VarStoreId: 0x1234, VarOffset: 0x755, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			SuppressIf 
+				EqIdVal QuestionId: 0x3082, Value: 0x0
+					EqIdVal QuestionId: 0x3082, Value: 0x6
+					Or 
+				End 
+				OneOfOption Option: "Bluetooth" Value: 0, Default
+			End 
+			SuppressIf 
+				EqIdVal QuestionId: 0x3082, Value: 0x0
+					EqIdVal QuestionId: 0x3082, Value: 0x4
+					Or 
+				End 
+				OneOfOption Option: "Lock Wireless Button" Value: 1
+			End 
+		End 
+	End 
+	Form FormId: 0x3, Title: "This option allows for a user to disable the Intel Management Engine, which disables Intel Active Management Technology and all underlying Intel ME technologies. This option also disables ME functions that allow for ME firmware updates. It is suggested to periodically enable this option to update ME firmware, as the ME firmware may contains platform stability fixes."
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "CIRA Timeout (min.)", Help: "CIRA Timeout (min.)", QuestionFlags: 0x0, QuestionId: 0x3033, VarStoreId: 0x1234, VarOffset: 0x755, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		String Prompt: "Wake on USB", Help: "    Warning!! Due to Deep Sleep is Enabled, if you remove AC power from the computer, Wake on USB function", QuestionFlags: 0x4, QuestionId: 0x201, VarStoreId: 0x1234, VarStoreInfo: 0x4C, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "128 MB"
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3033, Value: 0x1
+			String Prompt: "Deep Sleep has been gray out because Modern Standby is set to On.", Help: "Power Control", QuestionFlags: 0x4, QuestionId: 0x202, VarStoreId: 0x1234, VarStoreInfo: 0x9C, MinSize: 0x7, MaxSize: 0xF, Flags: 0x0
+				Default DefaultId: 0x0 String: "128 MB"
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3033, Value: 0x0
+			String Prompt: "Battery Management", Help: "Battery Health Manager", QuestionFlags: 0x4, QuestionId: 0x209, VarStoreId: 0x1234, VarStoreInfo: 0xEC, MinSize: 0x1, MaxSize: 0x3, Flags: 0x0
+			End 
+		End 
+		String Prompt: "Maximize Battery Health Management", Help: "Let HP Manage My Battery Health", QuestionFlags: 0x4, QuestionId: 0x203, VarStoreId: 0x1234, VarStoreInfo: 0x13C, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "128 MB"
+		End 
+		String Prompt: "Minimize Battery Health Management", Help: "This setting is ideal for users who primarily keep their notebook connected to AC power.", QuestionFlags: 0x4, QuestionId: 0x204, VarStoreId: 0x1234, VarStoreInfo: 0x18C, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "128 MB"
+		End 
+		String Prompt: "This setting maximizes the long-term health of the battery by limiting its maximum charge capacity to 80% of the available full charge capacity (if the battery is currently charged above 80%, it can be discharged manually by disconnecting the device from AC or the system will discharge the battery slowly over time). Maximize Battery Health Management keeps the battery from entering a high state-of-charge which helps to slow the rate of natural degradation. As a result of this reduction, battery runtime between charges is reduced. As with all rechargeable batteries, the available full charge capacity of the battery will naturally decrease with time and usage.", Help: "This setting is ideal for users who want to maximize battery runtime while also protecting their battery's health.", QuestionFlags: 0x4, QuestionId: 0x205, VarStoreId: 0x1234, VarStoreInfo: 0x1DC, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "128 MB"
+		End 
+		String Prompt: "This setting balances battery run-time and battery health. Over time, the available charge capacity of the battery is reduced. This reduction in available charge capacity limits the battery's ability to enter a high state-of-charge, which helps to slow the rate of natural degradation. As a result of this reduction, battery runtime will decrease over time as available charge capacity is reduced. As with all rechargeable batteries, the available full charge capacity of the battery will naturally decrease with time and usage.", Help: "This setting is ideal for users who primarily use their notebook on battery power and want to maximize device runtime between charges.", QuestionFlags: 0x4, QuestionId: 0x206, VarStoreId: 0x1234, VarStoreInfo: 0x22C, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+			Default DefaultId: 0x0 String: "256 MB"
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x1
+			String Prompt: "Hyperthreading", Help: "Virtualization Technology (VTx)", QuestionFlags: 0x4, QuestionId: 0x20A, VarStoreId: 0x1234, VarStoreInfo: 0x32E, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+				Default DefaultId: 0x0 String: "CIRA Timeout (min.)"
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x2
+			String Prompt: "Turbo-boost", Help: "Permits the user to control the processor capability", QuestionFlags: 0x4, QuestionId: 0x207, VarStoreId: 0x1234, VarStoreInfo: 0x430, MinSize: 0x0, MaxSize: 0x20, Flags: 0x0
+				Default DefaultId: 0x0 String: "CIRA Timeout (min.)"
+			End 
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "CIRA Timeout (min.)", Help: "CIRA Timeout (min.)", QuestionFlags: 0x0, QuestionId: 0x3093, VarStoreId: 0x1234, VarOffset: 0x1774, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3093, Value: 0x0
+			String Prompt: "Selecting The Device Scope For Pre-Boot DMA Protection", Help: "Enables enhanced Hello sign-in for supported versions of Windows by adding Secure Devices (SDEV) ACPI table.", QuestionFlags: 0x4, QuestionId: 0x208, VarStoreId: 0x1234, VarStoreInfo: 0x472, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+				Default DefaultId: 0x0 String: "CIRA Timeout (min.)"
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3093, Value: 0x1
+			Password Prompt: "Enhanced Hello Sign-in", Help: "Enables enhanced Hello sign-in for supported versions of Windows by adding Secure Devices (SDEV) ACPI table.", QuestionFlags: 0x4, QuestionId: 0x20B, VarStoreId: 0x1234, VarStoreInfo: 0x472, MinSize: 0x0, MaxSize: 0x10
+			End 
+		End 
+	End 
+	Form FormId: 0x4, Title: "Enable/Disable WatchDog Timer."
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		OneOf Prompt: "Always", Help: "This feature ensures that unintentional activation of the power button while it is being transported in a bag does not cause the system to wake up.
+On Battery Only: Power button is only disabled when the lid is closed, the system is in a low power state, and no power external power source is present.
+Always: Power button is always disabled when the lid is closed.
+Never: Power button is enabled always when this lid is closed.", QuestionFlags: 0x0, QuestionId: 0x3044, VarStoreId: 0x1234, VarOffset: 0x494, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "GPS Device" Value: 0, Default
+			OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+		End 
+		String Prompt: "    will be automatically disabled.", Help: "Enable", QuestionFlags: 0x4, QuestionId: 0x302, VarStoreId: 0x1234, VarStoreInfo: 0x498, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "128 MB"
+		End 
+		Numeric Prompt: "Enable High Resolution mode when connected to a USB-C DP alt mode dock ", Help: "Special Keys mapped to Fn + keypress", QuestionFlags: 0x0, QuestionId: 0x3046, VarStoreId: 0x1234, VarOffset: 0x4E8, Flags: 0x11, Size: 16, Min: 0x1, Max: 0xFFFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 3260
+			InconsistentIf Error: "416 MB"
+				EqIdVal QuestionId: 0x3046, Value: 0x0
+			End 
+		End 
+		Numeric Prompt: "Power button delay to avoid accidental activation for system sleep or power down", Help: "Launch Hotkeys without Fn Keypress", QuestionFlags: 0x0, QuestionId: 0x3047, VarStoreId: 0x1234, VarOffset: 0x4EA, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		String Prompt: "This setting disables those features designed to manage the long-term health of the battery and allows the battery to charge to its available full charge capacity. Disablement of these features will allow the battery to enter a high state-of-charge, which can increase the rate of the battery's natural degradation. As with all rechargeable batteries, the available full charge capacity of the battery will naturally decrease with time and usage.", Help: "For more information, please see HP.COM/SUPPORT/BATTERY", QuestionFlags: 0x4, QuestionId: 0x305, VarStoreId: 0x1234, VarStoreInfo: 0x4EC, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+			Default DefaultId: 0x0 String: "CIRA Timeout (min.)"
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x1
+			String Prompt: "    VTx and VTd cannot be disabled while TXT is enabled.", Help: "DMA Protection", QuestionFlags: 0x4, QuestionId: 0x308, VarStoreId: 0x1234, VarStoreInfo: 0x5EE, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+				Default DefaultId: 0x0 String: "CIRA Timeout (min.)"
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x2
+			String Prompt: "Virtualization Technology for Directed I/O (VTd)", Help: "    Hyperthreading and Multi-processor has been enabled and grayed out because Deep sleep is set to On.", QuestionFlags: 0x4, QuestionId: 0x306, VarStoreId: 0x1234, VarStoreInfo: 0x6F0, MinSize: 0x0, MaxSize: 0x20, Flags: 0x0
+				Default DefaultId: 0x0 String: "CIRA Timeout (min.)"
+			End 
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "CIRA Timeout (min.)", Help: "CIRA Timeout (min.)", QuestionFlags: 0x0, QuestionId: 0x3094, VarStoreId: 0x1234, VarOffset: 0x1774, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3094, Value: 0x0
+			String Prompt: "POST Prompt for RAID Configuration", Help: "Fast Charge", QuestionFlags: 0x4, QuestionId: 0x307, VarStoreId: 0x1234, VarStoreInfo: 0x732, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+				Default DefaultId: 0x0 String: "CIRA Timeout (min.)"
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3094, Value: 0x1
+			Password Prompt: "Secondary Battery Fast Charge", Help: "Fast Charge", QuestionFlags: 0x4, QuestionId: 0x309, VarStoreId: 0x1234, VarStoreInfo: 0x732, MinSize: 0x0, MaxSize: 0x10
+			End 
+		End 
+	End 
+	Form FormId: 0x5, Title: "Set BIOS watchdog timer (Minutes)."
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		OneOf Prompt: "USB Type-C Connector System Software Interface (UCSI)", Help: "The UCSI option should be disabled if booting a Microsoft Windows 10 version before 1709 to avoid system stability issues.", QuestionFlags: 0x0, QuestionId: 0x3052, VarStoreId: 0x1234, VarOffset: 0x756, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "GPS Device" Value: 0, Default
+			OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+		End 
+		String Prompt: "Disable", Help: "Modern Standby", QuestionFlags: 0x4, QuestionId: 0x402, VarStoreId: 0x1234, VarStoreInfo: 0x75A, MinSize: 0x2, MaxSize: 0x27, Flags: 0x0
+			Default DefaultId: 0x0 String: "128 MB"
+		End 
+		Numeric Prompt: "When enabled on systems without legacy special keys, Fn+R, Fn+S, and Fn+C will function as Break, Sys Rq, and Scroll Lock respectively.
+When enabled on systems with special keys for telecommunication features, Fn+W and Fn+E will function as Pause and Insert.", Help: "Swap Arrow Up/Down and Page Up/Down Function", QuestionFlags: 0x0, QuestionId: 0x3054, VarStoreId: 0x1234, VarOffset: 0x7AA, Flags: 0x11, Size: 16, Min: 0x1, Max: 0xFFFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 3260
+			InconsistentIf Error: "416 MB"
+				EqIdVal QuestionId: 0x3054, Value: 0x0
+			End 
+		End 
+		Numeric Prompt: "Swap Fn and Ctrl (Keys)", Help: "Enable", QuestionFlags: 0x0, QuestionId: 0x3055, VarStoreId: 0x1234, VarOffset: 0x7AC, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFF, Step: 0x0
+			Default DefaultId: 0x0 Value: 0
+		End 
+		String Prompt: "Configure Storage Controller for Intel Optane", Help: "    Optane is gray out due to Legacy Support Enable", QuestionFlags: 0x4, QuestionId: 0x405, VarStoreId: 0x1234, VarStoreInfo: 0x7AE, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+			Default DefaultId: 0x0 String: "CIRA Timeout (min.)"
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x1
+			String Prompt: "Thunderbolt Only", Help: "All PCIe devices", QuestionFlags: 0x4, QuestionId: 0x408, VarStoreId: 0x1234, VarStoreInfo: 0x8B0, MinSize: 0x0, MaxSize: 0x80, Flags: 0x0
+				Default DefaultId: 0x0 String: "CIRA Timeout (min.)"
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3016, Value: 0x2
+			String Prompt: "Pre-boot DMA protection", Help: "All PCIe devices with approved exceptions", QuestionFlags: 0x4, QuestionId: 0x406, VarStoreId: 0x1234, VarStoreInfo: 0x9B2, MinSize: 0x0, MaxSize: 0x20, Flags: 0x0
+				Default DefaultId: 0x0 String: "CIRA Timeout (min.)"
+			End 
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "CIRA Timeout (min.)", Help: "CIRA Timeout (min.)", QuestionFlags: 0x0, QuestionId: 0x3095, VarStoreId: 0x1234, VarOffset: 0x1774, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x0, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x0
+			String Prompt: "On Battery Only", Help: "Never", QuestionFlags: 0x4, QuestionId: 0x407, VarStoreId: 0x1234, VarStoreInfo: 0x9F4, MinSize: 0x0, MaxSize: 0x10, Flags: 0x0
+				Default DefaultId: 0x0 String: "CIRA Timeout (min.)"
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3095, Value: 0x1
+			Password Prompt: "Power Button Protection", Help: "Never", QuestionFlags: 0x4, QuestionId: 0x409, VarStoreId: 0x1234, VarStoreInfo: 0x9F4, MinSize: 0x0, MaxSize: 0x10
+			End 
+		End 
+	End 
+	Form FormId: 0x6, Title: "HP LAN-Wireless Protection"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "Set CIRA Timeout (Minutes).", Help: "2 mins", QuestionFlags: 0x0, QuestionId: 0x3060, VarStoreId: 0x1234, VarOffset: 0xA50, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "GPS Device" Value: 0
+				OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+			End 
+		End 
+		OneOf Prompt: "Power On When Lid is Opened", Help: "Prompt on Memory Size Change", QuestionFlags: 0x0, QuestionId: 0x3061, VarStoreId: 0x1234, VarOffset: 0xA40, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x7, Step: 0x0
+			OneOfOption Option: "Prompt on Fixed Storage Change" Value: 0
+			SuppressIf 
+				EqIdVal QuestionId: 0x3003, Value: 0x0
+				OneOfOption Option: "Video memory size" Value: 3
+			End 
+			OneOfOption Option: "Auto" Value: 7, Default
+		End 
+		OneOf Prompt: "64 MB", Help: "256 MB", QuestionFlags: 0x0, QuestionId: 0x3062, VarStoreId: 0x1234, VarOffset: 0xA53, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x3, Step: 0x0
+			OneOfOption Option: "3 mins" Value: 0, Default
+			OneOfOption Option: "4 mins" Value: 1
+			OneOfOption Option: "Never" Value: 2
+			OneOfOption Option: "OK" Value: 3
+		End 
+		OneOf Prompt: "Electronic Labels", Help: "Chipset Advanced Setup Options Active", QuestionFlags: 0x0, QuestionId: 0x3063, VarStoreId: 0x1234, VarOffset: 0xA51, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "GPS Device" Value: 0, Default
+			OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+		End 
+		OneOf Prompt: "Override Platform Policy Setting", Help: "SA Policy *****", QuestionFlags: 0x0, QuestionId: 0x3064, VarStoreId: 0x1234, VarOffset: 0xA54, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "PCH Policy *****" Value: 0, Default
+			OneOfOption Option: "CPU Policy *****" Value: 1
+		End 
+		Numeric Prompt: "ME Policy *****", Help: "IGD Aperture Size", QuestionFlags: 0x0, QuestionId: 0x3065, VarStoreId: 0x1234, VarOffset: 0xA52, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF, Step: 0x0
+			Default DefaultId: 0x0 Value: 5
+		End 
+		OneOf Prompt: "512 MB", Help: "Graphics", QuestionFlags: 0x0, QuestionId: 0x3066, VarStoreId: 0x1234, VarOffset: 0xA41, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x4, Step: 0x0
+			OneOfOption Option: "Audio Device" Value: 0, Default
+			OneOfOption Option: "Hides the Audio device from OS" Value: 1
+			OneOfOption Option: "Internal Speakers" Value: 2
+			OneOfOption Option: "Microphone" Value: 3
+			OneOfOption Option: "Enable" Value: 4
+		End 
+		OneOf Prompt: "Provide UMA Graphics, Hybrid Graphics, Discrete Graphics and Auto 4 selections. Auto option will base on OS to enable or disable Hybrid Graphics.", Help: "Provide UMA Graphics and Hybrid Graphics 2 selections.", QuestionFlags: 0x0, QuestionId: 0x3067, VarStoreId: 0x1234, VarOffset: 0xA42, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "GPS Device" Value: 0, Default
+			OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+		End 
+		OneOf Prompt: "Provide UMA Graphics, Hybrid Graphics and Discrete Graphics 3 selection.", Help: "Discrete Graphics", QuestionFlags: 0x0, QuestionId: 0x3068, VarStoreId: 0x1234, VarOffset: 0xA43, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "GPS Device" Value: 0, Default
+			OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3068, Value: 0x0
+			Numeric Prompt: "Hybrid Graphics", Help: "Disabled", QuestionFlags: 0x0, QuestionId: 0x3069, VarStoreId: 0x1234, VarOffset: 0xA3C, Flags: 0x12, Size: 32, Min: 0x1, Max: 0xFFE, Step: 0x0
+				Default DefaultId: 0x0 Value: 1
+				InconsistentIf Error: "448 MB"
+					EqIdVal QuestionId: 0x3069, Value: 0x0
+				End 
+			End 
+		End 
+	End 
+	Form FormId: 0x7, Title: "Wake on WiGig"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "Apply", Help: "VT100", QuestionFlags: 0x0, QuestionId: 0x7, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+		Ref Prompt: "Verbose Boot Messages", Help: "Intel Active Management Technology (AMT)", QuestionFlags: 0x0, QuestionId: 0x8, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x3
+		Ref Prompt: "This option allows for a user to enable Intel Active Management Technology, which is tied to all ME-regulated remote management functions. Disabling AMT will still allow for ME firmware updates, which are recommended for receiving platform stability fixes.", Help: "    OS Watchdog Timer (min.)", QuestionFlags: 0x0, QuestionId: 0x9, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x4
+		Ref Prompt: "Set OS watchdog timer (Minutes).", Help: "5", QuestionFlags: 0x0, QuestionId: 0xA, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x5
+		SuppressIf 
+			EqIdVal QuestionId: 0x3018, Value: 0x0
+			Ref Prompt: "10", Help: "20", QuestionFlags: 0x0, QuestionId: 0xB, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x9
+		End 
+	End 
+	Form FormId: 0x8, Title: "Backlit keyboard timeout"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3017, Value: 0x0
+			String Prompt: "Front USB Ports", Help: "CIRA Timeout (min.)", QuestionFlags: 0x1, QuestionId: 0x3070, VarStoreId: 0x1234, VarStoreInfo: 0x127E, MinSize: 0x0, MaxSize: 0x14, Flags: 0x0
+			End 
+		End 
+		Subtitle Prompt: "CIRA Timeout (min.)", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3084, Value: 0x0
+			Text Prompt: "Allow to configure GTT stolen memory size (GSM)", Help: "1 min.", Text: "2 MB"
+		End 
+		String Prompt: "Rear USB Ports", Help: "Right USB Type-C Downstream Charging", QuestionFlags: 0x1, QuestionId: 0x3071, VarStoreId: 0x1234, VarStoreInfo: 0x12A6, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x6
+				Or 
+			End 
+			String Prompt: "Hides the rear USB ports from the OS", Help: "Top USB Type-C Downstream Charging", QuestionFlags: 0x1, QuestionId: 0x3072, VarStoreId: 0x1234, VarStoreInfo: 0x12B8, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x5
+				Or 
+			End 
+			String Prompt: "Bottom USB Ports", Help: "Bottom USB Type-C Downstream Charging", QuestionFlags: 0x1, QuestionId: 0x3073, VarStoreId: 0x1234, VarStoreInfo: 0x12CA, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x3
+				Or 
+			End 
+			String Prompt: "Hides the bottom USB ports from the OS", Help: "USB Type-C Downstream Charging", QuestionFlags: 0x1, QuestionId: 0x3074, VarStoreId: 0x1234, VarStoreInfo: 0x12DC, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "Left USB Ports", Help: "Smart Card", QuestionFlags: 0x1, QuestionId: 0x3075, VarStoreId: 0x1234, VarStoreInfo: 0x12EE, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3005, Value: 0x0
+			String Prompt: "Hides the left USB ports from the OS", Help: "Remote Management Options", QuestionFlags: 0x1, QuestionId: 0x3076, VarStoreId: 0x1234, VarStoreInfo: 0x1324, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3004, Value: 0x0
+			String Prompt: "Hides the top USB ports from the OS", Help: "USB Key Provisioning Support", QuestionFlags: 0x1, QuestionId: 0x3077, VarStoreId: 0x1234, VarStoreInfo: 0x1336, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "Right USB Ports", Help: "Smart Card Power Savings", QuestionFlags: 0x1, QuestionId: 0x3078, VarStoreId: 0x1234, VarStoreInfo: 0x1300, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3087, Value: 0x0
+			String Prompt: "Hides the right USB ports from the OS", Help: "Unconfigure AMT on next boot", QuestionFlags: 0x1, QuestionId: 0x3086, VarStoreId: 0x1234, VarStoreInfo: 0x1390, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "Top USB Ports", Help: "Perform AMT/ME unconfigure without password operation.", QuestionFlags: 0x1, QuestionId: 0xC, VarStoreId: 0x1234, VarStoreInfo: 0x137E, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3084, Value: 0x1
+			Text Prompt: "CIRA Timeout (min.)", Help: "15 secs.", Text: ""
+			Text Prompt: "CIRA Timeout (min.)", Help: "30 secs.", Text: ""
+		End 
+	End 
+	Form FormId: 0x9, Title: "15"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		String Prompt: "Disable", Help: "Auto", QuestionFlags: 0x4, QuestionId: 0x501, VarStoreId: 0x1234, VarStoreInfo: 0xA18, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+			Default DefaultId: 0x0 String: "512 MB"
+		End 
+		OneOf Prompt: "Previously called "Dynamic Platform and Thermal Framework (DPTF)"", Help: "Power Slider Plus", QuestionFlags: 0x0, QuestionId: 0x3080, VarStoreId: 0x1234, VarOffset: 0xA16, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "GPS Device" Value: 0, Default
+			OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+		End 
+		OneOf Prompt: "HP Application Driver", Help: "USB Ports", QuestionFlags: 0x0, QuestionId: 0x3081, VarStoreId: 0x1234, VarOffset: 0xA17, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "GPS Device" Value: 0, Default
+			OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+		End 
+	End 
+	Form FormId: 0xA, Title: "USB Redirection Support"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		String Prompt: "Intel Dynamic Tuning", Help: "Auto", QuestionFlags: 0x4, QuestionId: 0x502, VarStoreId: 0x1234, VarStoreInfo: 0xA18, MinSize: 0x11, MaxSize: 0x11, Flags: 0x0
+		End 
+		OneOf Prompt: "High Performance", Help: "Power Slider Plus", QuestionFlags: 0x0, QuestionId: 0x3097, VarStoreId: 0x1234, VarOffset: 0xA16, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "GPS Device" Value: 0, Default
+			OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+		End 
+		OneOf Prompt: "Media Card Reader", Help: "USB Ports", QuestionFlags: 0x0, QuestionId: 0x3098, VarStoreId: 0x1234, VarOffset: 0xA17, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "GPS Device" Value: 0, Default
+			OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+		End 
+	End 
+	Form FormId: 0xB, Title: "Never"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3017, Value: 0x0
+			String Prompt: "Hides the front USB ports from the OS", Help: "CIRA Timeout (min.)", QuestionFlags: 0x1, QuestionId: 0x3099, VarStoreId: 0x1234, VarStoreInfo: 0x127E, MinSize: 0x0, MaxSize: 0x14, Flags: 0x0
+			End 
+		End 
+		Subtitle Prompt: "CIRA Timeout (min.)", Help: "", Flags: 0x0
+		End 
+		String Prompt: "Rear Option Port", Help: "Right USB Type-C Downstream Charging", QuestionFlags: 0x1, QuestionId: 0x3100, VarStoreId: 0x1234, VarStoreInfo: 0x12A6, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x6
+				Or 
+			End 
+			String Prompt: "Hides the USB option port from the OS", Help: "Top USB Type-C Downstream Charging", QuestionFlags: 0x1, QuestionId: 0x3101, VarStoreId: 0x1234, VarStoreInfo: 0x12B8, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x4
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x5
+				Or 
+			End 
+			String Prompt: "Front USB Type-C Downstream Charging", Help: "Bottom USB Type-C Downstream Charging", QuestionFlags: 0x1, QuestionId: 0x3102, VarStoreId: 0x1234, VarStoreInfo: 0x12CA, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3019, Value: 0x0
+				EqIdVal QuestionId: 0x3019, Value: 0x1
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x2
+				Or 
+				EqIdVal QuestionId: 0x3019, Value: 0x3
+				Or 
+			End 
+			String Prompt: "Rear USB Type-C Downstream Charging", Help: "USB Type-C Downstream Charging", QuestionFlags: 0x1, QuestionId: 0x3103, VarStoreId: 0x1234, VarStoreInfo: 0x12DC, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "Docking USB Ports", Help: "Smart Card", QuestionFlags: 0x1, QuestionId: 0x3104, VarStoreId: 0x1234, VarStoreInfo: 0x12EE, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3005, Value: 0x0
+			String Prompt: "Enables all USB ports on the expansion dock", Help: "Remote Management Options", QuestionFlags: 0x1, QuestionId: 0x3105, VarStoreId: 0x1234, VarStoreInfo: 0x1324, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3004, Value: 0x0
+			String Prompt: "in sleep/off if battery below (%):", Help: "USB Key Provisioning Support", QuestionFlags: 0x1, QuestionId: 0x3106, VarStoreId: 0x1234, VarStoreInfo: 0x1336, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "USB Legacy Port Charging", Help: "Smart Card Power Savings", QuestionFlags: 0x1, QuestionId: 0x3107, VarStoreId: 0x1234, VarStoreInfo: 0x1300, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x3087, Value: 0x0
+			String Prompt: "Enable USB Charging port for charging capability when system Hibernate/Shutdown", Help: "Unconfigure AMT on next boot", QuestionFlags: 0x1, QuestionId: 0x3108, VarStoreId: 0x1234, VarStoreInfo: 0x1390, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+			End 
+		End 
+		String Prompt: "Disable Charging Port", Help: "Perform AMT/ME unconfigure without password operation.", QuestionFlags: 0x1, QuestionId: 0xD, VarStoreId: 0x1234, VarStoreInfo: 0x137E, MinSize: 0x0, MaxSize: 0x9, Flags: 0x0
+		End 
+	End 
+	Form FormId: 0xC, Title: "Mobile Network Device (WWAN) and GPS Combo Device"
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		SuppressIf 
+			True 
+			OneOf Prompt: "1 min", Help: "2 mins", QuestionFlags: 0x0, QuestionId: 0x3109, VarStoreId: 0x1234, VarOffset: 0xA50, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "GPS Device" Value: 0
+				OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+			End 
+		End 
+		OneOf Prompt: "Prompt on Battery Errors", Help: "Prompt on Memory Size Change", QuestionFlags: 0x0, QuestionId: 0x3110, VarStoreId: 0x1234, VarOffset: 0xA40, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x7, Step: 0x0
+			OneOfOption Option: "Prompt on Fixed Storage Change" Value: 0
+			SuppressIf 
+				EqIdVal QuestionId: 0x3003, Value: 0x0
+				OneOfOption Option: "Video memory size" Value: 3
+			End 
+			OneOfOption Option: "32 MB" Value: 7, Default
+		End 
+		OneOf Prompt: "128 MB", Help: "256 MB", QuestionFlags: 0x0, QuestionId: 0x3111, VarStoreId: 0x1234, VarOffset: 0xA53, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x3, Step: 0x0
+			OneOfOption Option: "3 mins" Value: 0, Default
+			OneOfOption Option: "4 mins" Value: 1
+			OneOfOption Option: "Never" Value: 2
+			OneOfOption Option: "OK" Value: 3
+		End 
+		OneOf Prompt: "Electronic Label", Help: "Chipset Advanced Setup Options Active", QuestionFlags: 0x0, QuestionId: 0x3112, VarStoreId: 0x1234, VarOffset: 0xA51, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "GPS Device" Value: 0, Default
+			OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+		End 
+		OneOf Prompt: "Chipset Advanced Setup Options", Help: "SA Policy *****", QuestionFlags: 0x0, QuestionId: 0x3113, VarStoreId: 0x1234, VarOffset: 0xA54, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "PCH Policy *****" Value: 0, Default
+			OneOfOption Option: "CPU Policy *****" Value: 1
+		End 
+		Numeric Prompt: "AMT Policy *****", Help: "IGD Aperture Size", QuestionFlags: 0x0, QuestionId: 0x3114, VarStoreId: 0x1234, VarOffset: 0xA52, Flags: 0x10, Size: 8, Min: 0x0, Max: 0xF, Step: 0x0
+			Default DefaultId: 0x0 Value: 5
+		End 
+		OneOf Prompt: "1024 MB", Help: "Graphics", QuestionFlags: 0x0, QuestionId: 0x3115, VarStoreId: 0x1234, VarOffset: 0xA41, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x4, Step: 0x0
+			OneOfOption Option: "Disable" Value: 0, Default
+			OneOfOption Option: "Disable and Lock" Value: 1
+			OneOfOption Option: "Headphone Output" Value: 2
+			OneOfOption Option: "Intel Smart Sound" Value: 3
+			OneOfOption Option: "Mobile Network Device (WWAN)" Value: 4
+		End 
+		OneOf Prompt: "Provide Hybrid Graphics, Discrete Graphics and Auto 3 selections. Auto option will base on OS to enable or disable Hybrid Graphics.", Help: "Provide Hybrid Graphics and Discrete Graphics 2 selections.", QuestionFlags: 0x0, QuestionId: 0x3116, VarStoreId: 0x1234, VarOffset: 0xA42, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "GPS Device" Value: 0, Default
+			OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+		End 
+		OneOf Prompt: "UMA Graphics", Help: "Discrete Graphics", QuestionFlags: 0x0, QuestionId: 0x3117, VarStoreId: 0x1234, VarOffset: 0xA43, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			OneOfOption Option: "GPS Device" Value: 0, Default
+			OneOfOption Option: "Wireless Network Device (WLAN)" Value: 1
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x3117, Value: 0x0
+			Numeric Prompt: "Auto", Help: "Disabled", QuestionFlags: 0x0, QuestionId: 0x3118, VarStoreId: 0x1234, VarOffset: 0xA3C, Flags: 0x12, Size: 32, Min: 0x1, Max: 0xFFE, Step: 0x0
+				Default DefaultId: 0x0 Value: 1
+				InconsistentIf Error: "448 MB"
+					EqIdVal QuestionId: 0x3118, Value: 0x0
+				End 
+			End 
+		End 
+	End 
+	Form FormId: 0xD, Title: "This option deactivates the laptop tile, but does not remove the laptop icon from the user’s Tile account. When the deactivation completes successfully the laptop tile will play a song."
+		Subtitle Prompt: "", Help: "", Flags: 0x0
+		End 
+		Ref Prompt: "SOL Terminal Emulation Mode", Help: "VT100", QuestionFlags: 0x0, QuestionId: 0xE, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x2
+		Ref Prompt: "Intel Management Engine (ME)", Help: "Intel Active Management Technology (AMT)", QuestionFlags: 0x0, QuestionId: 0xF, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x3
+		Ref Prompt: "Watchdog Timer", Help: "    OS Watchdog Timer (min.)", QuestionFlags: 0x0, QuestionId: 0x10, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x4
+		Ref Prompt: "    BIOS Watchdog Timer (min.)", Help: "5", QuestionFlags: 0x0, QuestionId: 0x11, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0x5
+		SuppressIf 
+			EqIdVal QuestionId: 0x3018, Value: 0x0
+			Ref Prompt: "25", Help: "Show Unconfigure ME Confirmation Prompt", QuestionFlags: 0x0, QuestionId: 0x12, VarStoreId: 0x0, VarStoreInfo: 0xFFFF, FormId: 0xA
+		End 
+	End 
+End 

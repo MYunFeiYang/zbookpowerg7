@@ -1,0 +1,70 @@
+Program version: 1.6.1, Extraction mode: UEFI, SHA256: 1ace72c90306c00f8d59c06b1219a31e8c0092b56da7deec04e14edc4e064cdd
+FormSet Guid: 77F2EA2F-4312-4569-85C4-583ACD8DB7E2, Title: "IPv6 Network Configuration", Help: "Configure IPv6 network parameters."
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: Class, Class: 0x4
+	Guid Guid: 0F0B1735-87A0-4193-B266-538C38AF48CE, ExtendedOpCode: SubClass, SubClass: 0x0
+	DefaultStore DefaultId: 0x0, Name: ""
+	DefaultStore DefaultId: 0x1, Name: ""
+	VarStore Guid: A31ABB16-C627-475B-988E-7EE0776740F3, VarStoreId: 0x1, Size: 0x2E, Name: "UndiNVData"
+	Form FormId: 0x1, Title: "IPv6 Current Setting"
+		Text Prompt: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured.", Help: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured.", Text: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured."
+		Text Prompt: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured.", Help: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured.", Text: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured."
+		Text Prompt: "MAC address       :", Help: "", Text: "The hardware address of the network interface."
+		Text Prompt: "manual", Help: "automatic", Text: "Advanced Configuration"
+		Text Prompt: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured.", Help: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured.", Text: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured."
+		GrayOutIf 
+			True 
+			OneOf Prompt: "DAD Transmit Count", Help: "The number of consecutive Neighbor Solicitation messages sent while performing Duplicate Address Detection on a tentative address. A value of zero indicates that Duplicate Address Detection is not performed.", QuestionFlags: 0x0, QuestionId: 0x1104, VarStoreId: 0x1, VarOffset: 0x3, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+				OneOfOption Option: "Policy" Value: 0
+				OneOfOption Option: "automatic or manual" Value: 1
+			End 
+		End 
+		Text Prompt: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured.", Help: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured.", Text: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured."
+		Text Prompt: "Display IPv6 network parameters.", Help: "The name of the interface.", Text: "Interface Name    :"
+		SuppressIf 
+			True 
+			Numeric Prompt: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured.", Help: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured.", QuestionFlags: 0x1, QuestionId: 0x1407, VarStoreId: 0x1, VarOffset: 0x2, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1407, Value: 0x0
+			GrayOutIf 
+				True 
+			End 
+		End 
+	End 
+	Form FormId: 0x1235, Title: "Route Table       :"
+		Text Prompt: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured.", Help: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured.", Text: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured."
+		SuppressIf 
+			True 
+			Numeric Prompt: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured.", Help: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured.", QuestionFlags: 0x0, QuestionId: 0x1, VarStoreId: 0x1, VarOffset: 0x0, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		GrayOutIf 
+			EqIdVal QuestionId: 0x1, Value: 0x0
+			OneOf Prompt: "The route table of the IPv6 network stack runs on this interface.", Help: "Gateway addresses :", QuestionFlags: 0x0, QuestionId: 0x1108, VarStoreId: 0x1, VarOffset: 0x1, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x4, Step: 0x0
+				OneOfOption Option: "Current gateway IPv6 addresses." Value: 0, Default
+				SuppressIf 
+					EqIdVal QuestionId: 0x1, Value: 0x0
+					OneOfOption Option: "DNS addresses     :" Value: 1
+					OneOfOption Option: "Current DNS server list." Value: 2
+					OneOfOption Option: "Interface ID" Value: 3
+					OneOfOption Option: "The 64 bit alternative interface ID for the device. The string is colon separated. e.g. ff:dd:88:66:cc:1:2:3" Value: 4
+				End 
+			End 
+		End 
+		SuppressIf 
+			True 
+		End 
+		SuppressIf 
+			True 
+			Numeric Prompt: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured.", Help: "Configure the interface manually. IP address, gateway address, and DNS server address can be configured.", QuestionFlags: 0x1, QuestionId: 0x1409, VarStoreId: 0x1, VarOffset: 0x28, Flags: 0x10, Size: 8, Min: 0x0, Max: 0x1, Step: 0x0
+			End 
+		End 
+		SuppressIf 
+			EqIdVal QuestionId: 0x1409, Value: 0x0
+			Numeric Prompt: "New IPv6 address", Help: "Manual IP address can only be configured under manual policy. Separate the IP address with blank space to configure more than one address. e.g. 2002::1/64 2002::2/64", QuestionFlags: 0x4, QuestionId: 0x110D, VarStoreId: 0x1, VarOffset: 0x2A, Flags: 0x11, Size: 16, Min: 0x0, Max: 0xFFE, Step: 0x0
+				Default DefaultId: 0x0 Value: 0
+			End 
+		End 
+	End 
+End 
