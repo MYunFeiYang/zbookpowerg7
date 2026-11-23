@@ -1373,7 +1373,7 @@
 				<key>BundlePath</key>
 				<string>PMCDump.kext</string>
 				<key>Comment</key>
-				<string>V1.4.5 | port of keenerdavid18/hackintosh-power-tools PMCDump (MIT) | READ-ONLY PCH PMC observer (cnp_reg_map) + residency MSRs; write path only via root sysctl debug.pmcdump.*</string>
+				<string>V1.6.1 | port of keenerdavid18/hackintosh-power-tools PMCDump (MIT) | READ-ONLY PCH PMC observer + PM-tree sleep scan; sleep_gate default 0 = diagnostic only (no device writes)</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
