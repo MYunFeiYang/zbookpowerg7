@@ -115,3 +115,58 @@
 回退：旧版 1.4.5 已字节级备份在 `/Users/thinkway/automation-workspace/pmcdump-kext-backup-1.4.5/`（sha `4809f0db…`），`ditto` 回 ESP 即可。
 
 ⚠️ 部署时踩到一次已有记录的坑：往 ESP 写完并当场 sha 复验通过后，**几秒内又被 FreeFileSync 从仓库反向覆盖回去**（`EFI/OC/sync.ffs_lock` 出现，ESP 侧变回 `4809f0db…`）。重写后连测两次才稳定。⇒ ESP 写入必须以「间隔 ≥5 秒的两次 sha 复验」为准，不能只验一次。
+
+## §11 v1.6.1 首次真实睡眠结果（2026-11-23 20:38:23 → 20:40:10，107 s）
+
+### 11.1 回调确实被调用了（历史首次）
+
+| 计数器 | 开机 20:35 | 睡后 20:40 | 判读 |
+|---|---|---|---|
+| `powerdriver-hits` | 1 | **3** | 睡眠一次 + 唤醒一次 ⇒ `setPowerState` 真被调用 |
+| `pm-last-ordinal` | 1 | 1 | 最后一次是唤醒（ordinal 1），与事实一致 |
+| `interest-hits` | 21 | 38 | interest 路径同时活着 |
+| `pm-reg-driver` / `pm-join-root` | 0 / 0 | 0 / 0 | 注册成功、挂 root domain |
+
+⇒ 「`rd->joinPMtree + registerPowerDriver + setPowerState`」这条路在本机**确实通了**（1.4.0~1.4.5 全程 never run 的真空档被补上，>95%）。
+
+### 11.2 `sleep-scan` 已发布，但**全部 D0**（不可直接判读）
+
+25 台设备（比开机时的 22 台多了 XHCI 06ed、GbE 0d4e、TB xHCI 15e9），PMCSR 解码结果：
+
+- D0：21 台（含 `06ed` xHCI、`0d4e` I219-LM、`06c8` HDEF、`06e8/06e9` I2C、`06e0` MEI、`15e8` TB NHI、`15e9` TB xHCI、四个 `15e7` 根端口、NVMe）
+- 读不到（PMCSR=0xFFFF）：4 台（`9b54` host bridge、`068e` LPC、`06a3` SMBus、`06a4` SPI）
+
+**判读（<80%，标未知）**：`setPowerState(0)` 在电源管理树里被调用得**过早**——此时驱动栈尚未开始把设备拉下去。因此这份快照既不能证明"设备赖在 D0"，也不能证明"设备会进 D3"。**结论：采样时机不对，不是数据结论。**
+
+### 11.3 顺带做实的一件事：清醒态根本不尝试 PC6
+
+关屏（`pmset displaysleepnow`，非系统睡眠）75 秒：`PKGC_C3_ENTRANCE` 13388 → 13388、`IOSF_NOT_BLOCKED` 13388 → 13388、`PKGC_C6_ENTRANCE` 0 → 0。**零增量。**
+
+⇒ macOS 在清醒空闲（含关屏）状态下**完全不发起**封装 C6 尝试；BCLK 关断这一层只在系统睡眠期发生。这条把"睡眠 3.6W"与"PC3→PC6 被 IOSF 挡回"的绑定关系钉死。
+
+### 11.4 第四次独立验证 1:1
+
+本次开机至 20:40：`PKGC_C3_ENTRANCE = 13,388`、`PKGC_BCLK_MODE_DEMOTE_CAUSE_IOSF_NOT_BLOCKED = 13,388`（**严格相等，第四次**）；`PC6/C7/C8/C9/C10` 全 0；5 个 DEMOTE 原因里其余 4 个、10 个 RESOLVE 原因全部为 0。
+
+另记两条原始计数（同批，供后续比对）：`PKGC_BREAK_CAUSE_SB_RING` = 35,415 / 61,300（sideband ring 打断，居首）、`PKGC_BREAK_CAUSE_DOUBLE_STRIKE` = 64,770。这两个数大于 C3 进入次数，说明它们不是"每次进入一次"的 1:1 计数，量纲待定（<80%）。
+
+### 11.5 v1.6.2：把单点快照改成过渡期连续采样
+
+改动（`PMCDump.cpp`）：
+
+| 项 | v1.6.1 | v1.6.2 |
+|---|---|---|
+| 采样次数 | 1 次（`setPowerState(0)` 内） | **首次 + 每 200 ms 一次，最多 16 轮** |
+| 设备枚举 | 每轮重新 `getMatchingServices` | 首轮枚举后 retain 缓存，索引稳定 |
+| 后续轮次 | — | 只读 PMCSR（不碰扩展配置空间），降低拆卸期风险 |
+| 新增属性 | — | `sleep-scan-first`（首轮全量）、`sleep-scan`（末轮）、`sleep-scan-d3mask`（每轮 D3 位图，uint64/轮）、`sleep-scan-passes`（实际轮数） |
+| 发布时间 | 睡眠入口 | **唤醒时**（避免睡眠期写 registry） |
+
+D3 位图直接回答"谁进了 D3、谁没有"：位 i 置 1 = 缓存中第 i 台设备该轮 PMCSR 的 PowerState=3。
+
+产物：`PMCDump.kext` 50,464 B，sha256 `b775f9a4c0d50ca86fc96423988b17b11ff7f17125f5220f7178a93329680eb3`，`CFBundleVersion 1.6.2`，三处一致（构建目录 / 仓库镜像 / ESP），6 秒后复验未回落，`config.plist` 两份 `Kernel:Add[31].Comment` → V1.6.2，`plutil -lint` 通过。
+
+### 11.6 仍存在的残余风险（<80%）
+
+- 若定时器在平台真正入睡前全部跑完且每轮都是 D0，仍无法区分"设备不进 D3"与"定时器太早停"。届时改看 `sleep-scan-passes`：若 passes=16（说明 3.2 s 窗口全部跑完）而 D3 位图恒 0，则倾向"macOS 不为 S0ix 把设备置 D3"这一结论。
+- 若唤醒时先跑了定时器再执行 `setPowerState(1)`，末轮会记到全 D0。缓解：`scanRunning` 在 `setPowerState(1)` 第一句置 false，且位图序列本身能暴露这种异常（前面几轮非零、末轮归零）。
