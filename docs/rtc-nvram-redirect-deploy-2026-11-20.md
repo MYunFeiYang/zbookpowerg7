@@ -91,7 +91,16 @@ hibernatemode 0        standby 1    standbydelayhigh/low 60
 代价：这会改变当前已调好的 S0ix/standby 行为链（`standby 1` + 2×60s），
 等于用"现在这套 3.6W 的睡眠形态"去换"S4 路线"。**该不该换由用户决定，不是技术细节。**
 
-## 五、部署步骤（确认要换之后才执行）
+## 五、部署步骤
+
+> **状态：EFI 部分已部署完成（2026-11-23 09:15）。** 等用户执行 `hibernatemode` 与重启。
+>
+> | 项 | 值 |
+> |---|---|
+> | 部署前 config sha（回滚锚点） | `851f0d9879bfd6554cad05dd8819bd7136989125c1a89674dc82a8d0e6969e90` |
+> | 部署后 config sha | `4f568901a96758b7b6ae8bc3a2034eb8e312b98d50cd370d39c5df41bf258ab0` |
+> | 驱动 sha | `c57316513222157cc44d6329548ff05a509daa585b994e65ae587418dfe29252` |
+> | 差异 | 仅新增 `UEFI/Drivers[8]` = RtcRamRedirect.efi（Enabled/LoadEarly=false）；AppleRtcRam、rtc-blacklist、boot-args 均未动 |
 
 ```bash
 cd /Volumes/Common/workplace/zbookpowerg7
@@ -134,10 +143,44 @@ PE32+ / subsystem 11 / x86-64 / entry RVA 0x2e4d。
 sudo nvram -x -p | grep -A2 -i hibernate        # 前 4 字节应为 41 50 50 4C
 ```
 
+### 实测操作顺序（必须按序，顺序错了测不出来）
+
+1. **保存全部工作。** 第 4 步之后机器可能直接断电，未保存内容会丢。
+2. `sudo pmset -a hibernatemode 25`（立即生效，无需重启）
+3. **重启**（驱动只在开机时加载；不重启就合盖 = 用旧驱动进 S4 = 必然恢复失败）
+4. 重启后确认能正常进系统 —— 进不去就用下面"最快回滚"
+5. 记一次基线：`nvram -p | grep -ci hibernate`（现在应为 0）
+6. 合盖（或 `sudo pmset sleepnow`），**等 30 秒以上**让镜像写完再按电源键
+7. 观察唤醒：苹果 logo + 进度条并回桌面 = 成功；直接黑屏冷启动 = 失败
+8. 无论成败，进系统后立刻跑：`nvram -x -p | grep -A2 -i hibernate`
+
+第 8 步是判读关键：
+
+| 变量 | 唤醒结果 | 判读 |
+|---|---|---|
+| `AAPL` 开头 44 B 存在 | 恢复成功 | 全链路通 → 只剩花屏墙 |
+| 变量存在 | 冷启动 | NVRAM 有副本但 boot.efi 没读到 → 驱动/委托未生效 |
+| 变量不存在 | 冷启动 | AppleRTC 没写 NVRAM → hibernatemode 未生效或走了单 bank 分支 |
+
 ## 七、回滚（三粒度）
 
-1. **只关驱动**：`PlistBuddy -c "Set :UEFI:Drivers:<index>:Enabled false"`
-2. **撤全部**：删两份 `RtcRamRedirect.efi` + `git checkout <锚点> -- EFI/OC/config.plist` + 拷回 ESP + sync×3
+**最快回滚（EFI 部分，一条命令，不用 root）**
+
+```bash
+cd /Volumes/Common/workplace/zbookpowerg7 && \
+cp -f EFI/OC/Drivers/RtcRamRedirect.efi /tmp/ 2>/dev/null; \
+/usr/libexec/PlistBuddy -c "Delete :UEFI:Drivers:8" EFI/OC/config.plist && \
+plutil -lint EFI/OC/config.plist && \
+cp -f EFI/OC/config.plist /Volumes/ESP/EFI/OC/config.plist && \
+rm -f /Volumes/ESP/EFI/OC/Drivers/RtcRamRedirect.efi && \
+sync; sync; sleep 3; sync; \
+shasum -a 256 EFI/OC/config.plist /Volumes/ESP/EFI/OC/config.plist
+```
+
+`hibernatemode` 回滚：`sudo pmset -a hibernatemode 0`
+
+1. **只关驱动（保留 EFI 文件）**：`PlistBuddy -c "Set :UEFI:Drivers:8:Enabled false"` + 拷回 ESP
+2. **撤全部**：见上面"最快回滚" + `git checkout 851f0d98 -- EFI/OC/config.plist`（若仓库版本也要回）
 3. **进不去系统**：OC 选择器（`PollAppleHotKeys` 已开）→ `Reset NVRAM`，或备用 U 盘换 ESP 的 EFI 目录
 
 > 不写固件、不刷 BIOS，最坏结果只是开机不进系统，可从 ESP 层完全恢复。
