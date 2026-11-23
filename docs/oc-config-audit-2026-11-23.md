@@ -69,7 +69,7 @@
 ### 7.1 禁用条目（config 里 Enabled=false，仍保留登记）
 | 条目 | 状态 | 定性 | 依据 |
 |---|---|---|---|
-| `Kernel/Add[15] IntelBTPatcher.kext` | OFF (Min21) | **有意禁用，保留** | 11:49 外部改动把它关掉、换成 `BTLEAdvFixup`+`ForbiddenItlwm` 新栈；留着是回滚点 |
+| ~~`Kernel/Add IntelBTPatcher.kext`~~ | OFF → **已删（13:1x 第二轮）** | 与 `BTLEAdvFixup` 互斥，禁用态零运行影响，git 已覆盖回滚 | 见 §7.4 |
 | `ACPI/Patch[5] RTC _CRS 0x08->0x02` | OFF | **禁止重开，保留标注** | Comment 原文："cannot fix 005; regresses S4. Do not re-enable." |
 | `UEFI/Drivers[6] ext4_x64.efi` | OFF | 备用（无当前用途） | 10-22 为 Linux 选单加入，未启用 |
 | `UEFI/Drivers[7] OpenLinuxBoot.efi` | OFF | 备用（无当前用途） | 同上，依赖 ext4_x64 |
@@ -81,7 +81,7 @@
 | `Kexts/CStatePatch.kext` | **实验残留，建议优先清** | §1345 核心进 C7 但包级仍 C3；§1386"直接改内核 cstate 表，长期跑反有稳定性风险，更应撤" |
 | `ACPI/SSDT-I219-LTR.aml` | **实验残留，无长期价值** | §1262 实测 `_INI` 写入未落地，确定失败 |
 | `Kexts/AirportItlwm-Tahoe.kext` (2.4.0) | **被替代的旧 WiFi 栈** | 当前用 `ForbiddenItlwm.kext` (0.6.0)，二者 bundle id 不同、互斥；10-22 后不再登记 |
-| `Kexts/IntelBTPatcher.kext` | 见 7.1（禁用但保留回滚点） | 物理文件与禁用条目是一回事 |
+| ~~`Kexts/IntelBTPatcher.kext`~~ | 见 §7.4（13:1x 已删） | 与禁用条目同批删除 |
 | `Drivers/AudioDxe.efi` | **备用后端，建议保留** | 文件在但未登记进 Drivers 数组；AudioSupport=false。恢复音频只需登记，删了要重新找 |
 | `Drivers/ext4_x64.efi` / `Drivers/OpenLinuxBoot.efi` | 见 7.1（禁用条目的物理文件） | 一一对应 |
 
@@ -89,11 +89,23 @@
 用户授权"验证该删就删"后，**五项验证全绿才动手**：① 5 个文件全部 git 已跟踪（可恢复）；② config 全文零引用（不只 BundlePath，全文 grep 计数均为 0）；③ 无其他 kext 把它们列为 dependency（`ForbiddenItlwm` 依赖里全是系统框架，不碰旧 AirportItlwm）；④ 内核 kextstat 未加载这四个；⑤ ESP 有副本须一并删。
 
 **已删除（工作区 + ESP 双删）**：`CStatePatch.kext`、`I219LTR.kext`、`SSDT-I219-LTR.aml`、`SSDT-I219-LTR.dsl`、`AirportItlwm-Tahoe.kext` 共 5 个文件组。
-**保留**：`AudioDxe.efi`、禁用 Linux 驱动一对、`IntelBTPatcher.kext`（回滚点/备用），`RTC _CRS` 禁用 patch（禁止重开）。
+**保留**：`AudioDxe.efi`、禁用 Linux 驱动一对、`RTC _CRS` 禁用 patch（禁止重开）。`IntelBTPatcher.kext` 原列回滚点保留，**13:1x 第二轮已删，见 §7.4**。
 
 **删后核验**：config 启用的 54 项引用零缺失；工作区与 ESP 全目录 `diff -rq` 无差异；config sha 保持 `523e9b37`、`plutil -lint` OK。**零运行影响、不需重启**。
 
-### 7.4 判据纠正
+### 7.4 第二轮：IntelBTPatcher.kext（用户追问后验证删除，13:1x）
+
+用户追问"IntelBTPatcher.kext 呢"后单独取证。结论：**删物理文件 + 删 config 死条目**，工作区 + ESP 双删。
+
+**为什么不留作回滚点**（推翻 §7.1/§7.3 旧定性，依据为 GitHub 一手、两独立仓库交叉一致、把握 ≥90%）：
+- `iceworld009/ax200-bt-macos` 与 `UNDERDOG07/legion-y7000p-update-macos26-drivers/docs/wireless.en.md` 均明确：**IntelBTPatcher 与 BTLEAdvFixup 钩同一函数，两者同时加载会让 Lilu panic；用 ForbiddenItlwm 新栈时必须 disable IntelBTPatcher，由 BTLEAdvFixup 接管其工作**。本机 11:49 外部改动正是照此切换（关 IntelBTPatcher、加 BTLEAdvFixup+ForbiddenItlwm、加 `-btleadv`），不是遗漏。
+- 本机现状与上游方案逐项对齐：config/NVRAM 有 `-btleadv`、无 `-ibtcompatbeta`（后者是 IntelBTPatcher 的开关，禁用后本就无效）；`BTLEAdvFixup`/`ForbiddenItlwm` 均 Enabled=true。
+- 依赖检查：BTLEAdvFixup、ForbiddenItlwm、IntelBluetoothFirmware 三者的 `OSBundleLibraries` 均无 IntelBTPatcher；仓库与 ESP 二进制 sha256 一致（`ddef8d04…`）；git 已跟踪 ⇒ 回滚路径（文件 checkout + config 两布尔 + 启动参数）全部留痕，不必靠保留已禁用的物理文件。
+- 它**不是**"禁用但可能有用"的普通备用件，而是**与新栈有副作用的互斥对象**——真要回退必须成组切（关 BTLEAdvFixup / 开 IntelBTPatcher / 去 `-btleadv`），单独留一个死条目反而增加误开风险。
+
+**删后核验**：config 全文 `IntelBTPatcher` 引用 = 0；`plutil -lint` OK；config sha `523e9b37 → f4cef6a2`；仓库与 ESP 全目录 `diff -rq` 一致、config sha 双端均 `f4cef6a21326aea4dd90cb16713deb293ed0889b76015dc8bb6d21f7fd73ce69`。**条目本就 Enabled=false ⇒ 零运行影响、不需重启**。
+
+### 7.5 判据纠正
 - `kextstat` / `ioreg -c IOKit` 在本环境无法列出已加载 kext 的 bundle id（无权限/过滤失效）⇒ 判断"是否在用"以 **config 的 Kernel/Add + 实测文档**为准，不靠这两个命令的空输出下结论。
 - `Kernel/Add` 键名 = `BundlePath`（非 `Path`），前轮曾因用错键名误判 orphan，已纠正。
 - `Tools/OpenShell.efi` 是 `Misc/Tools[0]` 且 Enabled=true **在用**，临时核验脚本路径拼接错误曾误报为孤儿，已澄清。
