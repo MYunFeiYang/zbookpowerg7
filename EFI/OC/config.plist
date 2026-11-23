@@ -1494,6 +1494,8 @@
 				<integer>0</integer>
 			</dict>
 			<dict>
+				<key>Arch</key>
+				<string>Any</string>
 				<key>Base</key>
 				<string></string>
 				<key>Comment</key>
@@ -1521,10 +1523,11 @@
 				<data>
 				QfaH7wEAABCQkA==
 				</data>
+				<key>ReplaceMask</key>
+				<data>
+				</data>
 				<key>Skip</key>
 				<integer>0</integer>
-				<key>TableId</key>
-				<string></string>
 			</dict>
 		</array>
 		<key>Quirks</key>
