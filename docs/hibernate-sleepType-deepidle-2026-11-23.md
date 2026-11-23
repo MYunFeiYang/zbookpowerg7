@@ -52,3 +52,25 @@ ioreg  "Hibernate Mode" = 3   "Hibernate File" = "/var/vm/sleepimage"
 
 保留 `hibernatemode 3` + `standby 0` 作为会话安全基线（纯 S0ix、3.6W、合盖不断电）。
 S4 若要继续，唯一有意义的下一步是「OC 侧伪造 RTC 0x80–0xAB 读取（数据源取 NVRAM `IOHibernateRTCVariables`）」+ 一次强制断电实测，代价一次会话；在此之前不必再跑 mode 3 类实验。
+
+---
+
+## 7. 终局更新（11-23 12:40，覆盖 §5/§6）
+
+§5/§6 写于内核补丁之前，**已被实测推翻，作废**。以本节为准。
+
+**patch 已生效（≥95%）**：`Kernel/Patch` NOP 掉 `hibernateDisabled → *mode=0` 的 `jne` 后，11-23 12:08 合盖睡眠日志出现完整写盘链：
+`hibernateMode 0x3` → `hibernate image path` → `hibernate_page_list_setall(preflight 0) found pageCount 2639101` → `IOHibernatePollerOpen(0)` → `PMStats: Hibernate write took 9353 ms` → `hibernate_write_image done(0)`。
+sleepimage mtime `10:17 → 12:10`，inode/大小对齐。会话完整保留（写盘后回 S0ix）。
+⇒ **本机确实能"mode 3 写盘 + 不断电"**，§5 的"不存在此形态"结论作废。
+
+**两个新事实**：
+1. `kern.hibernatemode` = **31**（0x1F，含 Encrypt 位），而 pmset = 3、内核日志打印 0x3。patch 跳过清零后写入全局变量的是 `IOPMrootDomain+0x1f4` 的 31，不是 pmset 值。含 Sleep 位 ⇒ 仍 PostWriteSleep、会话安全；Encrypt 位只在"万一恢复"时有影响。
+2. S4 断电恢复的第一道门 `H:IS` 要 `boot-signature` + `boot-image-key` 两个 NVRAM 变量同时在。全系统核查：`boot-image-key` 在 BootKernelExtensions.kc / SystemKernelExtensions.kc 各 0 次，xnu 里只建符号从不读写；boot.efi 全文对该变量只有 GetVariable 与 SetVariable 删除、**无写入**；HBFX 也不写。本次 boot-log 三条 `#[EB|H:IS] 0`（Err 0xE = NOT_FOUND）。⇒ 缺写入方，把握 ~85%。
+
+**终局决策（11-23 12:48 更新，用户拍板撤补丁）**：
+- **S4 断电实测不做**。两条独立理由：① 会话保留是硬约束，S4=断电=会话必丢，定义上互斥，非配置/源码可解；② 恢复链 `H:IS` 缺写入方（~85%）且恢复后 iGPU 花屏社区无解（>90%）。投入产出比不成立。
+- **patch 已撤除（12:48）**。撤的原因不是安全，而是**性价比翻盘**：12:08 那次睡眠证明写盘完成的同一瞬间（uptime 893.9s done(0) → 894.0s Wake）机器被唤醒，整段只睡 73 秒；历史上无补丁时同样场景能睡数小时。即 patch 把"睡得久但不写盘"换成"写盘但每次 73 秒被叫醒"——那份镜像本就是半成品（`H:IS` 缺写入方，真断电未必能恢复），拿睡眠质量换它不划算。用户一句"之前没这问题，第一次发现"直接命中：这就是补丁引入的新变量。
+- 撤法：删 `Kernel/Patch` 中 Comment 含 `DeepIdle: allow hibernate write-back` 的条目 → 同步 ESP → **重启才生效**（内核补丁在 OpenCore 引导期应用）。config sha `dc17a641 → 523e9b37`，仓库与 ESP 逐字节一致；11:49 外部新增的 3 颗 kext 与 Kernel/Add 重排原样保留。
+- `sleep=1` 无需再改：补丁撤掉后 mode 3 不写盘，闲置 1 分钟自动睡只是进 S0ix、不丢会话，地雷自动消失。
+- pmset 保持 `hibernatemode 3` + `standby 0`（会话安全基线）。8GB sleepimage 留在磁盘无妨；想收回改 `hibernatemode 0` 即可。
