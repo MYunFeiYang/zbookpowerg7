@@ -1,42 +1,47 @@
 /** @file
-  RtcRamRedirect - Apple RTC RAM protocol replacement.
+  RtcRamRedirect - serve the AppleRTC hibernation window from NVRAM.
 
-  Purpose
+  Problem
   -------
-  macOS stores its hibernation variables (AppleRTCHibernateVars: 'AAPL' signature,
-  booterSignature[20], wiredCryptKey[16]) in CMOS RTC offsets 0x80-0xAB. On HP
-  laptops writing that region makes the firmware believe the RTC lost power and
-  it throws POST error 005 ("Real-Time Clock Power Loss") and reloads factory
-  defaults.
+  macOS keeps its hibernation credentials in CMOS RTC offsets 0x80-0xAB
+  (xnu: AppleRTCHibernateVars = 'AAPL' + revision + booterSignature[20] +
+  wiredCryptKey[16] = 44 bytes). On this HP laptop any write to that region
+  makes the firmware declare "Real-Time Clock Power Loss" (POST 005) and reload
+  factory defaults, so every mechanism that protects the region also destroys
+  hibernation resume:
 
-  boot.efi reads/writes that region through the Apple RTC RAM protocol, so if we
-  install our own instance we can serve that window from a persistent UEFI
-  variable instead of CMOS. The firmware never sees a modified RTC, and
-  boot.efi still finds the resume marker -> no 005, resume still possible.
+    kernel stage  -> RTCMemoryFixup with rtcfx_exclude=0E-FF swallows the write
+                     inside AppleRTC.kext, so CMOS never receives the blob.
+    firmware stage-> OpenCore's AppleRtcRam protocol with rtc-blacklist=0E..FF
+                     swallows boot.efi's write the same way.
 
-  Where the variable comes from
-  -----------------------------
-  Stock AppleRTC.kext::setHibernateState() already publishes the exact same 44
-  byte blob twice during hibernation: once into RTC offset 0x80 and once into
-  the IODTNVRAM "/options" node as variable "IOHibernateRTCVariables". Only the
-  RTC copy is what the firmware later complains about, so this driver reuses the
-  NVRAM copy that macOS itself wrote. No kernel component is required.
+  Both layers are correct for avoiding 005 and both are fatal for resume.
+  What nobody noticed is that AppleRTC.kext publishes the *same* 44 byte blob a
+  second time, as the IODTNVRAM "/options" property "IOHibernateRTCVariables",
+  and that path does not touch CMOS at all.
 
-  Verified against the AppleRTC image inside BootKernelExtensions.kc
-  (com.apple.driver.AppleRTC, macOS 26): the function first rejects RTC RAM
-  smaller than 256 bytes, then calls a helper with (this, blob, 0x80, len) and
-  afterwards sets the property on "/options".
+  What this driver does
+  ---------------------
+  It takes over the AppleRtcRam protocol (the one boot.efi actually uses, see
+  OpenCore Configuration.tex: DisableRtcChecksum "will not protect areas from
+  being overwritten at firmware stage (e.g. macOS bootloader), see AppleRtcRam
+  protocol description") and hands boot.efi the NVRAM copy for 0x80-0xAB
+  instead of the CMOS copy.
 
-  Fail-safe behaviour
-  -------------------
-  The redirect is armed only when the NVRAM variable exists. If it does not
-  exist, every access falls straight through to the real hardware, so a machine
-  that never hibernated behaves exactly as if this driver were absent.
+  Everything else is delegated to the instance that was already installed, i.e.
+  to OpenCore's blacklist implementation. That is deliberate: this driver must
+  not open a new 005 surface by letting boot.efi touch checksum (0x58/0x59),
+  boot status (0x5C) or power bytes (0xB0) directly. Net behaviour change is
+  therefore exactly one bit of logic: "who answers reads of 0x80-0xAB".
 
-  This driver only redirects the hibernate window 0x80-0xAB. Every other RTC
-  offset is passed through to the real hardware unchanged.
+  Fail-safe
+  ---------
+  - No pre-existing protocol instance -> the driver does not install anything
+    and stays inert. A machine without AppleRtcRam=true keeps today's behaviour.
+  - NVRAM blob absent -> the hibernation window falls back to the pre-existing
+    instance as well, so a machine that never hibernated behaves identically.
 
-  Note: this does NOT fix the iGPU garbled framebuffer after resume.
+  Note: this does NOT address the iGPU garbled framebuffer after resume.
 
   Copyright (C) 2026. BSD-2-Clause.
 **/
@@ -50,13 +55,11 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/IoLib.h>
-#include <Library/PrintLib.h>
 
 #include "AppleRtcRam.h"
 
 //
-// Apple's protocol GUID. Defined here as an object so the header can stay a
-// pure declaration (same pattern Apple/OpenCore use).
+// Apple's protocol GUID. Defined as an object so the header stays declarative.
 //
 EFI_GUID gAppleRtcRamProtocolGuid = APPLE_RTC_RAM_PROTOCOL_GUID;
 
@@ -74,37 +77,37 @@ EFI_GUID gAppleRtcRamProtocolGuid = APPLE_RTC_RAM_PROTOCOL_GUID;
 #define RTC_OFFSET_MASK     0x7F
 
 //
-// Hibernate variable window: 0x80..0xAB inclusive == 44 bytes.
+// Hibernation window: 0x80..0xAB inclusive == 44 bytes.
 //
 #define HIB_START           0x80
 #define HIB_END             0xAC
 #define HIB_LEN             (HIB_END - HIB_START)
 
 //
-// xnu publishes the blob as IOService property "IOHibernateRTCVariables"
-// (see xnu iokit/Kernel/IOHibernateIO.cpp). HibernationFixup stores that blob
-// through Lilu NVStorage, which writes a plain NVRAM variable of the same name
-// into IODTNVRAM "/options". We therefore look it up as a UEFI variable.
+// AppleRTC.kext stores the blob through IODTNVRAM "/options", which surfaces as
+// a plain NVRAM variable.
 //
 STATIC CHAR16 mHibVarName[] = L"IOHibernateRTCVariables";
 
 //
-// Default guess: Apple boot variable namespace. The real GUID is discovered by
-// enumerating variables at runtime, so this is only a fallback.
+// Apple boot variable namespace (7C436110-...). Correct for "/options" on every
+// Apple build we know of; the real GUID is still discovered by enumeration.
 //
 STATIC EFI_GUID mHibVarGuid = {
   0x7C436110, 0xAB2A, 0x4BBB, { 0xA8, 0x80, 0xFE, 0x41, 0x99, 0x5C, 0x9F, 0x82 }
 };
 
-STATIC BOOLEAN mHibGuidResolved = FALSE;
+STATIC BOOLEAN mHibGuidScanned = FALSE;
 
-STATIC APPLE_RTC_RAM_PROTOCOL mRtcRamProtocol;
+//
+// Instance we replaced. All non-hibernation traffic is delegated to it.
+//
+STATIC APPLE_RTC_RAM_PROTOCOL  *mOrigRtc = NULL;
+STATIC APPLE_RTC_RAM_PROTOCOL  mRtcRamProtocol;
 
 /**
-  Read one byte from real CMOS/RTC.
-
-  @param[in] Offset  RTC offset 0..255.
-  @retval Byte value.
+  Read one byte from real CMOS/RTC. Used only when no previous protocol
+  instance exists (i.e. AppleRtcRam=false).
 **/
 STATIC
 UINT8
@@ -130,10 +133,7 @@ RtcHwRead (
 }
 
 /**
-  Write one byte to real CMOS/RTC.
-
-  @param[in] Offset  RTC offset 0..255.
-  @param[in] Value   Byte to write.
+  Write one byte to real CMOS/RTC. Fallback path only.
 **/
 STATIC
 VOID
@@ -160,27 +160,8 @@ RtcHwWrite (
 }
 
 /**
-  Return TRUE when the byte range [Address, Address+Size) touches the
-  hibernation window that we redirect to NVRAM.
-**/
-STATIC
-BOOLEAN
-TouchesHibWindow (
-  IN UINTN  Address,
-  IN UINTN  Size
-  )
-{
-  if (Size == 0) {
-    return FALSE;
-  }
-
-  return (Address < HIB_END) && ((Address + Size) > HIB_START);
-}
-
-/**
   Walk the UEFI variable namespace once to learn which GUID carries
-  IOHibernateRTCVariables. HibernationFixup writes it via IODTNVRAM, and the
-  namespace used may differ from our fallback guess.
+  IOHibernateRTCVariables.
 **/
 STATIC
 VOID
@@ -193,7 +174,7 @@ ResolveHibVarGuid (
   EFI_GUID    Guid;
   UINTN       NameSize;
 
-  if (mHibGuidResolved) {
+  if (mHibGuidScanned) {
     return;
   }
 
@@ -202,9 +183,9 @@ ResolveHibVarGuid (
   Status   = gRT->GetNextVariableName (&NameSize, Name, &Guid);
   while (!EFI_ERROR (Status)) {
     if (StrCmp (Name, mHibVarName) == 0) {
-      mHibVarGuid      = Guid;
-      mHibGuidResolved = TRUE;
-      DEBUG ((DEBUG_INFO, "RtcRamRedirect: hibernate var GUID = %g\n", &Guid));
+      mHibVarGuid   = Guid;
+      mHibGuidScanned = TRUE;
+      DEBUG ((DEBUG_INFO, "RtcRamRedirect: hibernate var GUID %g\n", &Guid));
       return;
     }
 
@@ -212,12 +193,14 @@ ResolveHibVarGuid (
     NameSize = sizeof (Name);
     Status   = gRT->GetNextVariableName (&NameSize, Name, &Guid);
   }
+
+  mHibGuidScanned = TRUE;
 }
 
 /**
   Load the hibernation blob from NVRAM.
 
-  @param[out] Buffer  HIB_LEN bytes, pre-filled with 0xFF.
+  @param[out] Buffer  HIB_LEN bytes.
   @retval Number of valid bytes, 0 when the variable is absent.
 **/
 STATIC
@@ -230,7 +213,6 @@ LoadHibVar (
   UINTN       Size;
 
   SetMem (Buffer, HIB_LEN, 0xFF);
-
   ResolveHibVarGuid ();
 
   Size   = HIB_LEN;
@@ -247,10 +229,7 @@ LoadHibVar (
 }
 
 /**
-  Persist the hibernation blob into NVRAM.
-
-  A zero-size write deletes the variable, which is what boot.efi effectively
-  does once the image has been consumed.
+  Persist the blob back into NVRAM. Zero size deletes the variable.
 **/
 STATIC
 EFI_STATUS
@@ -274,6 +253,54 @@ StoreHibVar (
                 );
 }
 
+/**
+  Read a sub-range, delegating to the original instance when possible.
+**/
+STATIC
+EFI_STATUS
+ChainRead (
+  OUT UINT8  *Buffer,
+  IN  UINTN   BufferSize,
+  IN  UINTN   Address
+  )
+{
+  UINTN  Index;
+
+  if (mOrigRtc != NULL) {
+    return mOrigRtc->ReadMemory (mOrigRtc, Buffer, BufferSize, Address);
+  }
+
+  for (Index = 0; Index < BufferSize; ++Index) {
+    Buffer[Index] = RtcHwRead (Address + Index);
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Write a sub-range, delegating to the original instance when possible.
+**/
+STATIC
+EFI_STATUS
+ChainWrite (
+  IN CONST UINT8  *Buffer,
+  IN UINTN         BufferSize,
+  IN UINTN         Address
+  )
+{
+  UINTN  Index;
+
+  if (mOrigRtc != NULL) {
+    return mOrigRtc->WriteMemory (mOrigRtc, Buffer, BufferSize, Address);
+  }
+
+  for (Index = 0; Index < BufferSize; ++Index) {
+    RtcHwWrite (Address + Index, Buffer[Index]);
+  }
+
+  return EFI_SUCCESS;
+}
+
 //
 // Protocol implementation
 //
@@ -285,6 +312,10 @@ RtcGetAvailableMemory (
   IN APPLE_RTC_RAM_PROTOCOL  *This
   )
 {
+  if (mOrigRtc != NULL) {
+    return mOrigRtc->GetAvailableMemory (mOrigRtc);
+  }
+
   return RTC_TOTAL_SIZE;
 }
 
@@ -298,9 +329,13 @@ RtcReadMemory (
   IN  UINTN                    Address
   )
 {
-  UINT8  Hib[HIB_LEN];
-  UINTN  HibLen;
-  UINTN  Index;
+  EFI_STATUS  Status;
+  UINT8       Hib[HIB_LEN];
+  UINTN       HibLen;
+  UINTN       Offset;
+  UINTN       End;
+  UINTN       SegEnd;
+  UINTN       SegLen;
 
   if ((Buffer == NULL) || (BufferSize == 0)) {
     return EFI_INVALID_PARAMETER;
@@ -310,25 +345,47 @@ RtcReadMemory (
     return EFI_INVALID_PARAMETER;
   }
 
-  HibLen = 0;
-  if (TouchesHibWindow (Address, BufferSize)) {
-    HibLen = LoadHibVar (Hib);
-  }
+  HibLen = LoadHibVar (Hib);
 
-  for (Index = 0; Index < BufferSize; ++Index) {
-    UINTN Offset = Address + Index;
+  Offset = Address;
+  End    = Address + BufferSize;
+  while (Offset < End) {
+    if ((Offset >= HIB_START) && (Offset < HIB_END)) {
+      //
+      // Hibernation window: answer from NVRAM when the kernel published a blob.
+      //
+      SegEnd = End < HIB_END ? End : HIB_END;
+      SegLen = SegEnd - Offset;
 
-    //
-    // Serve the window from NVRAM only when a blob is actually there.
-    // Otherwise pass straight through to the hardware: a machine that never
-    // hibernated must behave exactly as if this driver were absent.
-    //
-    if ((HibLen != 0) && (Offset >= HIB_START) && (Offset < HIB_END)) {
-      UINTN HibIndex = Offset - HIB_START;
-      Buffer[Index] = (HibIndex < HibLen) ? Hib[HibIndex] : 0xFF;
+      if (HibLen != 0) {
+        UINTN Index;
+        for (Index = 0; Index < SegLen; ++Index) {
+          UINTN HibIndex = (Offset - HIB_START) + Index;
+          Buffer[Offset - Address + Index] = (HibIndex < HibLen) ? Hib[HibIndex] : 0xFF;
+        }
+
+        Status = EFI_SUCCESS;
+      } else {
+        //
+        // No blob -> behave exactly as before (the chained instance will
+        // swallow it through rtc-blacklist).
+        //
+        Status = ChainRead (Buffer + (Offset - Address), SegLen, Offset);
+      }
     } else {
-      Buffer[Index] = RtcHwRead (Offset);
+      //
+      // Everything else is not ours. Keep the pre-existing protection intact.
+      //
+      SegEnd = (Offset < HIB_START) ? (End < HIB_START ? End : HIB_START) : End;
+      SegLen = SegEnd - Offset;
+      Status = ChainRead (Buffer + (Offset - Address), SegLen, Offset);
     }
+
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    Offset = SegEnd;
   }
 
   return EFI_SUCCESS;
@@ -344,10 +401,14 @@ RtcWriteMemory (
   IN UINTN                    Address
   )
 {
-  UINT8  Hib[HIB_LEN];
-  UINTN  HibLen;
-  UINTN  Index;
-  BOOLEAN Redirected;
+  EFI_STATUS  Status;
+  UINT8       Hib[HIB_LEN];
+  UINTN       HibLen;
+  UINTN       Offset;
+  UINTN       End;
+  UINTN       SegEnd;
+  UINTN       SegLen;
+  BOOLEAN     HibDirty;
 
   if ((Buffer == NULL) || (BufferSize == 0)) {
     return EFI_INVALID_PARAMETER;
@@ -357,41 +418,57 @@ RtcWriteMemory (
     return EFI_INVALID_PARAMETER;
   }
 
-  Redirected = TouchesHibWindow (Address, BufferSize);
+  HibLen   = LoadHibVar (Hib);
+  HibDirty = FALSE;
 
-  if (Redirected) {
-    //
-    // Read-modify-write so a partial update does not wipe the rest of the blob.
-    //
-    HibLen = LoadHibVar (Hib);
+  Offset = Address;
+  End    = Address + BufferSize;
+  while (Offset < End) {
+    if ((Offset >= HIB_START) && (Offset < HIB_END) && (HibLen != 0)) {
+      //
+      // Blob exists: absorb the write into NVRAM, never into CMOS.
+      //
+      SegEnd = End < HIB_END ? End : HIB_END;
+      SegLen = SegEnd - Offset;
 
-    //
-    // No blob yet -> no hibernation has happened, so stay a pure pass-through
-    // and never invent a variable the kernel did not publish.
-    //
-    if (HibLen == 0) {
-      Redirected = FALSE;
-    } else {
-      for (Index = 0; Index < BufferSize; ++Index) {
-        UINTN Offset = Address + Index;
-
-        if ((Offset >= HIB_START) && (Offset < HIB_END)) {
-          Hib[Offset - HIB_START] = Buffer[Index];
+      {
+        UINTN Index;
+        for (Index = 0; Index < SegLen; ++Index) {
+          UINTN HibIndex = (Offset - HIB_START) + Index;
+          if (HibIndex < HIB_LEN) {
+            Hib[HibIndex] = Buffer[Offset - Address + Index];
+          }
         }
       }
 
-      StoreHibVar (Hib, HIB_LEN);
+      HibDirty = TRUE;
+      Status   = EFI_SUCCESS;
+    } else if ((Offset >= HIB_START) && (Offset < HIB_END)) {
+      //
+      // No blob yet: stay a pure pass-through so we never invent a variable
+      // the kernel did not publish.
+      //
+      SegEnd = End < HIB_END ? End : HIB_END;
+      SegLen = SegEnd - Offset;
+      Status = ChainWrite (Buffer + (Offset - Address), SegLen, Offset);
+    } else {
+      SegEnd = (Offset < HIB_START) ? (End < HIB_START ? End : HIB_START) : End;
+      SegLen = SegEnd - Offset;
+      Status = ChainWrite (Buffer + (Offset - Address), SegLen, Offset);
     }
+
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    Offset = SegEnd;
   }
 
-  for (Index = 0; Index < BufferSize; ++Index) {
-    UINTN Offset = Address + Index;
-
-    if ((Offset >= HIB_START) && (Offset < HIB_END) && Redirected) {
-      continue;
+  if (HibDirty) {
+    Status = StoreHibVar (Hib, HIB_LEN);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_WARN, "RtcRamRedirect: NVRAM write failed - %r\n", Status));
     }
-
-    RtcHwWrite (Offset, Buffer[Index]);
   }
 
   return EFI_SUCCESS;
@@ -407,9 +484,9 @@ RtcResetMemory (
   EFI_STATUS  Status;
 
   //
-  // Only the redirected window is reset. Real CMOS is deliberately left alone:
-  // the hibernate window there is either stale or never written, and touching
-  // it is exactly what we are trying to avoid.
+  // Drop the redirected copy only. CMOS is deliberately left untouched: the
+  // chained implementation cannot reach it either (rtc-blacklist covers the
+  // whole 0x0E-0xFF span), so calling it would only add risk.
   //
   Status = StoreHibVar (NULL, 0);
   if (Status == EFI_NOT_FOUND) {
@@ -420,7 +497,7 @@ RtcResetMemory (
 }
 
 /**
-  Entry point: install (or take over) the Apple RTC RAM protocol.
+  Entry point: take over the existing Apple RTC RAM protocol instance.
 **/
 EFI_STATUS
 EFIAPI
@@ -440,9 +517,9 @@ RtcRamRedirectEntry (
   mRtcRamProtocol.WriteMemory        = RtcWriteMemory;
   mRtcRamProtocol.ResetMemory        = RtcResetMemory;
 
-  Handles     = NULL;
-  HandleCount = 0;
-  Existing    = NULL;
+  Handles      = NULL;
+  HandleCount  = 0;
+  Existing     = NULL;
   TargetHandle = NULL;
 
   Status = gBS->LocateHandleBuffer (
@@ -457,17 +534,23 @@ RtcRamRedirectEntry (
     gBS->HandleProtocol (TargetHandle, &gAppleRtcRamProtocolGuid, &Existing);
 
     //
-    // Preferred path: the firmware/OpenCore already published an instance, so
-    // swap ours in under the same handle. boot.efi resolves by GUID, therefore
-    // whoever holds the protocol last wins.
+    // Keep the old table: every access outside 0x80-0xAB is forwarded to it so
+    // the rtc-blacklist protection stays exactly as it was.
     //
+    mOrigRtc = (APPLE_RTC_RAM_PROTOCOL *)Existing;
+
     Status = gBS->ReinstallProtocolInterface (
                     TargetHandle,
                     &gAppleRtcRamProtocolGuid,
                     Existing,
                     &mRtcRamProtocol
                     );
-    DEBUG ((DEBUG_INFO, "RtcRamRedirect: reinstall status %r\n", Status));
+    DEBUG ((
+      EFI_ERROR (Status) ? DEBUG_ERROR : DEBUG_INFO,
+      "RtcRamRedirect: chained onto %p, status %r\n",
+      Existing,
+      Status
+      ));
     FreePool (Handles);
     return Status;
   }
@@ -476,13 +559,11 @@ RtcRamRedirectEntry (
     FreePool (Handles);
   }
 
-  TargetHandle = NULL;
-  Status       = gBS->InstallProtocolInterface (
-                        &TargetHandle,
-                        &gAppleRtcRamProtocolGuid,
-                        EFI_NATIVE_INTERFACE,
-                        &mRtcRamProtocol
-                        );
-  DEBUG ((DEBUG_INFO, "RtcRamRedirect: install status %r\n", Status));
-  return Status;
+  //
+  // Nothing to chain onto. Installing our own instance here would bypass every
+  // firmware-stage protection, so stay inert instead and let the config be
+  // fixed (AppleRtcRam=true is required).
+  //
+  DEBUG ((DEBUG_WARN, "RtcRamRedirect: no AppleRtcRam protocol instance, staying inert\n"));
+  return EFI_SUCCESS;
 }

@@ -1,154 +1,152 @@
-# RtcRamRedirect 部署与回滚方案（2026-11-20，22:00 修订）
+# RtcRamRedirect 部署与回滚方案（2026-11-23 重写）
 
-> 驱动源码：仓库内 `drivers/RtcRamRedirectPkg/`（构建产物 `dist/RtcRamRedirect.efi`）
+> 驱动源码：仓库内 `drivers/RtcRamRedirectPkg/`（产物 `dist/RtcRamRedirect.efi`）
 > 设计依据：`docs/rtc-nvram-redirect-design-2026-11-20.md`
-> 状态：**已编译、已静态验证**；未上机实测。**本文件每一步都可逆，不写固件、不刷 BIOS。**
+> 状态：**已编译、已静态验证**；未上机实测。**不写固件、不刷 BIOS、每一步可逆。**
 
-## 〇、关键前提修正（本次最重要的一条）
+## 〇、本轮修订把三个前提全部推翻了
 
-原先设计假设"需要自己造内核侧组件把休眠变量搬进 NVRAM"。**这个假设已被推翻。**
-把 macOS 26 的 `com.apple.driver.AppleRTC` 从 `BootKernelExtensions.kc` 里切出来反汇编后确认：
-
-```
-AppleRTC::setHibernateState(this, mode):
-    if (this->rtcSize <= 0xff)              // 只有单 bank（128B）
-        return 0xe00002db;                  // 直接报错 "RTC: setHibernateState() error"
-                                            //   ← HBFX 在单 bank 机器上自己写 NVRAM 就是替这一步
-    data = OSDynamicCast(OSData,
-             PMRootDomain->getProperty("IOHibernateRTCVariables"));
-    if (!data || mode != 0 || data->getLength() > 0x2c) -> 跳过写入
-    this->shadow = IOMalloc(this->rtcSize);         // 整块 RTC RAM 的影子拷贝
-    memcpy(this->shadow, this->ramMap, this->rtcSize);
-    helper(this, data->bytes, 0x80, data->length);  // ① 写进 RTC 偏移 0x80
-    nvramEntry = IODeviceTree("/options");          // ② 同一个 blob 再写进 NVRAM
-    nvramEntry->setProperty(OSSymbol("IOHibernateRTCVariables"), data);
-```
-
-结论：**在双 bank（256B）机器上，AppleRTC 自己就会把同一份 44 字节 blob 同时写 CMOS 0x80 和
-NVRAM 的 `/options`（GUID `7C436110-AB2A-4BBB-A880-FE41995C9F82`）。** 我们不需要写任何内核代码，
-驱动直接复用 macOS 亲手写下的那份 NVRAM 副本即可。
-
-把握度：>90%（反汇编逐条读过，分支条件与字符串一一对上）。
-
-## 一、部署前置检查
-
-| 检查项 | 命令 / 位置 | 期望 |
+| 旧说法 | 现状 | 依据 |
 |---|---|---|
-| 基线 config sha | `shasum -a 256 EFI/OC/config.plist` | 记录当前值，作回滚锚点 |
-| ESP 双侧一致 | repo 与 `/Volumes/ESP/EFI/OC/config.plist` | 同 sha |
-| 现有 Drivers | `ls EFI/OC/Drivers` | 无 `RtcRamRedirect.efi` |
-| `AppleRtcRam` | `UEFI/ProtocolOverrides` | 当前 `<true/>` → 将改为 `false` |
+| 需要自研内核组件把 blob 搬进 NVRAM | **错**。AppleRTC 双 bank 路径自己就同时写 CMOS 和 NVRAM | AppleRTC 反汇编（>90%） |
+| 部署时必须把 `AppleRtcRam` 关掉 | **错**。必须保持 `true` 并**链式委托**给它 | OC 源码 + 本次查证（>95%） |
+| `rtcfx_exclude` 语义未查证、暂不动 | **已查清**，它正是"CMOS 从未被 macOS 写"的那把锁 | RTCMemoryFixup 1.0.8 源码（>95%） |
 
-## 二、驱动的安全语义（为什么可以放心装）
+## 一、`rtcfx_exclude` 到底是什么（源码级）
 
-改成"**按需武装**"之后：
+它**不是** OpenCore 的配置键，而是 kext **RTCMemoryFixup** 的 boot-arg（本机已加载 1.0.8、Enabled）。
 
-| NVRAM 里有没有 `IOHibernateRTCVariables` | 驱动行为 |
-|---|---|
-| **没有**（从未真正休眠过） | 0x80–0xAB 全部透传真实硬件 —— 与没装这个驱动**完全等价** |
-| **有**（发生过一次 hibernation） | 该窗口的读走 NVRAM 副本，写回 NVRAM，不碰 CMOS |
+`RTCMemoryFixup.cpp::excludeAddresses()` 把每个偏移标记进 `emulated_flag[256]`；
+随后 `hookProvider()` 用 `KernelPatcher::routeVirtual` 挂钩 `AppleRTC` 的
+`IOPortAccess::ioRead8 / ioWrite8`：
 
-所以首次安装的失败面只有"驱动本身能不能加载"，不涉及行为变化。
-真正开始起作用，是在下一次真正写入休眠镜像之后。
+```c
+ioWrite8:  if (emulated_flag[off]) { emulated_rtc_mem[off] = value; write_enabled = false; }
+           // 真实硬件一个字节都不写，值只进内核内存影子
+ioRead8:   先读硬件；若 emulated_flag[off] 则 result = emulated_rtc_mem[off];
+           // 影子初值全 0（memset），所以读到的是"被吸收后的值"
+```
 
-## 三、为什么关掉 `AppleRtcRam`
+关键词：**双向**（写拦、读也拦）、**内核态**、`emulated_rtc_mem` 初始全 0。
 
-OC 的 `AppleRtcRam=true` 会自己装一份同名协议（只做 blacklist 过滤）。我们的驱动若装在它之后，
-用 `ReinstallProtocolInterface` 能接管；但若加载时序反过来，OC 会盖掉我们。
-**关掉它，让本驱动成为唯一实例**，时序问题就不存在了。
+本机 `rtcfx_exclude=0E-FF` ⇒ `for (i = 0x0E; i <= 0xFF; ++i) emulated_flag[i] = true`
+（range 分支，`soffset < eoffset` 校验通过）⇒ **0x0E–0xFF 全段双向拦截，含 0x80–0xAB**。
 
-代价：OC 的 `rtc-blacklist` 随之失效。本驱动对 0x80–0xAB 是整段接管，blacklist 本来就轮不到；
-而 0x80 以下的偏移本驱动一律透传，与 blacklist 为空的行为一致。
+## 二、两层拦截，恰好叠成死锁
 
-## 四、部署步骤（严格三写 + 复验）
+| 阶段 | 执行体 | 拦截者 | 效果 |
+|---|---|---|---|
+| kernel（睡眠瞬间） | `AppleRTC.kext` 写 CMOS 0x80 | `rtcfx_exclude=0E-FF` | 写被吸收进内核影子，CMOS 不变 |
+| firmware（boot.efi） | boot.efi 读写 RTC | OC `AppleRtcRam` + `rtc-blacklist`（`4D1FDA02-…:rtc-blacklist` = 0x0E..0xFF，242 B） | `SyncRtcWrite` 吸收、`SyncRtcRead` 返回影子 |
+
+⇒ **CMOS 0x80–0xAB 永远不会被 macOS 侧写入**（这同时解释了"近期不再报 005"），
+但也 **boot.efi 永远读不到签名** ⇒ S4 只能冷启动。
+
+官方文档把分工写得很直白（`Docs/Configuration.tex`，`Kernel/Quirks/DisableRtcChecksum`）：
+
+> Note 2: This option will not protect areas from being overwritten at firmware stage
+> (e.g. macOS bootloader), see `AppleRtcRam` protocol description if this is desired.
+
+即 kernel 阶段归 RTCMemoryFixup，firmware 阶段归 AppleRtcRam。**两条都需要，也两条都被锁死。**
+
+## 三、本驱动的插入点：只解 firmware 那一层
+
+保持 `rtcfx_exclude` 与 `rtc-blacklist` **原样不动**（CMOS 继续零写入，005 源头继续关闭），
+把 boot.efi 对 0x80–0xAB 的**读**改由 NVRAM 副本供给：
+
+```
+RtcReadMemory(0x80..0xAB)  -> NVRAM IOHibernateRTCVariables
+RtcReadMemory(其余偏移)     -> 委托原实例（OC，blacklist 继续生效）
+RtcWriteMemory(0x80..0xAB) -> 只更新 NVRAM，不碰 CMOS
+RtcWriteMemory(其余偏移)    -> 委托原实例
+ResetMemory                -> 只删 NVRAM 变量
+```
+
+**为什么必须委托而不是自己实现**：OC 的 blacklist 覆盖 0x0E–0xFF，包含 checksum
+（0x58/0x59）、boot status（0x5C）、power bytes（0xB0–0xB4）。自己实现等于把这些保护全撤掉，
+平白新开一个 005 面。委托后**净行为差异只有一条**：谁来回答 0x80–0xAB 的读。
+
+链路安全性（源码级，>95%）：
+- `Application/OpenCore/OpenCore.c` 主流程：`OcLoadUefiSupport` → 内部先
+  `OcReinstallProtocols()`（其中 `OpenCoreUefi.c:490` 装 AppleRtcRam），**之后**才
+  `OcLoadDrivers()`（同函数 ~990 行）。
+- ⇒ 本驱动作为普通 driver 加载时，OC 实例已存在，`LocateHandleBuffer` 必中，
+  `ReinstallProtocolInterface` 必成，**不存在被 OC 反向覆盖的时序风险**（驱动必须 `LoadEarly=false`）。
+- OC 自始不卸载自身，`mOrigRtc` 函数指针在 boot.efi 调用期间始终有效；协议本身是
+  Boot Services 协议，boot.efi 的休眠判定必然发生在 `ExitBootServices` 之前。
+
+## 四、⚠️ 上机前必须先决的阻断点：`hibernatemode 0`
+
+2026-11-23 实测本机：
+
+```
+hibernatemode 0        standby 1    standbydelayhigh/low 60
+/var/vm/sleepimage    0 字节
+```
+
+`hibernatemode 0` ⇒ 永不写休眠镜像 ⇒ `AppleRTC::setHibernateState()` 不被调用 ⇒
+**NVRAM 里永远没有 `IOHibernateRTCVariables`** ⇒ 本驱动每次都走"委托"分支 ⇒ **装上等于没装**。
+
+要让驱动有东西可喂，必须先把 `hibernatemode` 改成 `25`（或 `3`）并真正写一次 sleepimage。
+代价：这会改变当前已调好的 S0ix/standby 行为链（`standby 1` + 2×60s），
+等于用"现在这套 3.6W 的睡眠形态"去换"S4 路线"。**该不该换由用户决定，不是技术细节。**
+
+## 五、部署步骤（确认要换之后才执行）
 
 ```bash
-# 0) 记录锚点
 cd /Volumes/Common/workplace/zbookpowerg7
-shasum -a 256 EFI/OC/config.plist            # 记下 A
+shasum -a 256 EFI/OC/config.plist              # 记锚点 A
 
-# 1) 放驱动（repo + ESP 双写）
+# 1) 驱动双写
 cp drivers/RtcRamRedirectPkg/dist/RtcRamRedirect.efi EFI/OC/Drivers/
 cp drivers/RtcRamRedirectPkg/dist/RtcRamRedirect.efi /Volumes/ESP/EFI/OC/Drivers/
 
-# 2) 改 config（PlistBuddy，勿手写整文件）
-/usr/libexec/PlistBuddy -c "Set :UEFI:ProtocolOverrides:AppleRtcRam false" EFI/OC/config.plist
+# 2) UEFI/Drivers 追加条目（PlistBuddy）
+#    Path=RtcRamRedirect.efi / Enabled=true / LoadEarly=false / Arguments="" / Comment="RTC hib -> NVRAM"
 plutil -lint EFI/OC/config.plist
 
-# 3) 部署 config（repo → ESP），三次 sync
+# 3) 部署 config + 三次 sync
 cp -f EFI/OC/config.plist /Volumes/ESP/EFI/OC/config.plist
 sync; sync; sleep 3; sync
 
-# 4) 复验（必须全部相等）
+# 4) 复验（四值必须相等）
 shasum -a 256 EFI/OC/config.plist /Volumes/ESP/EFI/OC/config.plist \
               EFI/OC/Drivers/RtcRamRedirect.efi /Volumes/ESP/EFI/OC/Drivers/RtcRamRedirect.efi
 ```
 
-`UEFI/Drivers` 新增条目模板：
+`AppleRtcRam` **保持 `true`**，`rtc-blacklist` **保持原值**，`rtcfx_exclude` **保持 `0E-FF`**。
 
-```
-Dict {
-  Arguments =
-  Comment = RTC hibernate vars -> NVRAM
-  Enabled = true
-  LoadEarly = false          # 必须 false
-  Path = RtcRamRedirect.efi
-}
-```
+当前产物：`RtcRamRedirect.efi`，15456 B，
+sha256 `c57316513222157cc44d6329548ff05a509daa585b994e65ae587418dfe29252`，
+PE32+ / subsystem 11 / x86-64 / entry RVA 0x2e4d。
 
-当前产物：`RtcRamRedirect.efi`，14944 B，
-sha256 `79365e6a2d4424c7878f0a42af370787d6186c7452a8d9deb6a5b98a2766acc5`，
-PE32+ / subsystem 11（EFI boot service driver）/ x86-64 / 3 段 / 1 条基址重定位。
-
-## 五、判定标准（实测时看什么）
+## 六、判定标准
 
 | 观察点 | 成功 | 失败 |
 |---|---|---|
-| 开机进系统 | 正常启动、无卡顿 | 卡在 OC 选择器之前 → 驱动加载崩 |
-| 休眠前 NVRAM | 存在 `IOHibernateRTCVariables`（44 B，首 4 字节 `AAPL`） | 变量不存在 → AppleRTC 那条路没走通 |
-| 休眠后上电 | 出现苹果 logo + 进度条并恢复到桌面 | 直接冷启动 → boot.efi 没读到签名 |
-| 再次重启发 BIOS 画面 | **无 005** | 出现 005 → 见 §七 第 1 条 |
-| 恢复后画面 | 大概率**花屏**（已知未解） | 若正常则意外之喜 |
-
-取值命令（休眠前后各跑一次对比）：
+| 开机 | 正常进系统 | 卡在 OC 之前 → 驱动加载崩（粒度 1 回滚） |
+| 休眠前 NVRAM | 存在 `IOHibernateRTCVariables`（44 B，首 4 字节 `AAPL`） | 变量不存在 → hibernatemode 还没生效 |
+| 休眠后上电 | 苹果 logo + 进度条 → 回桌面 | 直接冷启动 → boot.efi 仍未读到签名 |
+| 再重启发 BIOS | 无 005 | 出现 005 → 见 §八 |
+| 恢复后画面 | 大概率花屏（已知未解） | 正常则意外之喜 |
 
 ```bash
-sudo nvram -p | grep -i hibernate          # 或
-ioreg -p IODeviceTree -n options -r -d 1 -w0 | grep -i hibernate
-# 十六进制看前 4 字节应为 41 50 50 4C ("AAPL")
-sudo nvram -x -p | grep -A2 -i hibernate
+sudo nvram -x -p | grep -A2 -i hibernate        # 前 4 字节应为 41 50 50 4C
 ```
 
-## 六、回滚（三种粒度，任选其一）
+## 七、回滚（三粒度）
 
-**粒度 1 — 只关驱动（保留 config 其他改动）**
-```
-PlistBuddy: Set :UEFI:Drivers:<index>:Enabled false
-```
+1. **只关驱动**：`PlistBuddy -c "Set :UEFI:Drivers:<index>:Enabled false"`
+2. **撤全部**：删两份 `RtcRamRedirect.efi` + `git checkout <锚点> -- EFI/OC/config.plist` + 拷回 ESP + sync×3
+3. **进不去系统**：OC 选择器（`PollAppleHotKeys` 已开）→ `Reset NVRAM`，或备用 U 盘换 ESP 的 EFI 目录
 
-**粒度 2 — 撤掉全部部署**
-```bash
-cd /Volumes/Common/workplace/zbookpowerg7
-rm -f EFI/OC/Drivers/RtcRamRedirect.efi /Volumes/ESP/EFI/OC/Drivers/RtcRamRedirect.efi
-git checkout <锚点commit> -- EFI/OC/config.plist
-cp -f EFI/OC/config.plist /Volumes/ESP/EFI/OC/config.plist
-sync; sync; sleep 3; sync
-```
+> 不写固件、不刷 BIOS，最坏结果只是开机不进系统，可从 ESP 层完全恢复。
 
-**粒度 3 — 系统都进不去**
-1. 开机按住 → 进 OC 选择器（`PollAppleHotKeys` 已开，可空格进扩展模式）
-2. 选 `Reset NVRAM`（若有），或
-3. 用备用 U 盘启动到任意 EFI，把 ESP 里 `RtcRamRedirect.efi` 删掉 / 把 config 换回锚点版本
-4. 最坏情况：把 ESP 的 EFI 目录整体替换为仓库里已知可用的备份
+## 八、已知限制
 
-> 本方案**不写固件、不刷 BIOS**，最坏结果只是开机不进系统，可从 ESP 层完全恢复。
-
-## 七、已知限制（必须再次明确）
-
-1. **005 不能保证消失。** AppleRTC 在睡眠时**仍然会把 blob 写进 CMOS 0x80–0xAB**（反汇编
-   第一段就写着 `helper(this, bytes, 0x80, len)`）。本驱动只接管 boot.efi 的读写，
-   管不到内核在睡眠那一刻的直写。005 是否还会出现，取决于 HP 固件到底对哪段 CMOS 做校验——
-   这一条目前 **<80%，属未知**。可能的杠杆是 `rtcfx_exclude=0E-FF`（当前 boot-args 里带着，
-   把 0x80–0xAB 排除在 OC 的 RTC 保留/恢复之外），但 OC 这段语义尚未查证，暂不动。
-2. **不解决恢复后 iGPU 花屏。** 这是独立问题，社区无解（>90%）。
-3. 驱动按需武装：变量不存在时完全透传，因此"装上但没效果"是预期中的安全状态，不是故障。
+1. **005 与"能不能恢复"仍是一对矛盾**，但矛盾已被推到最窄处：只要 `rtcfx_exclude` 覆盖面
+   不小于固件校验的范围，固件就看不到改动。若放开 0x80–0xAB 后仍出 005，说明固件校验的是
+   整段 CMOS 一致性（参考 X250 案例 `zamkara` issue #11：全 blacklist + RTCMemoryFixup 仍挡不住，
+   最终只能 UEFITool 删 `DxeCmosInit`），本机即为无解。<80%，需实测。
+2. **不解决恢复后 iGPU 花屏**（独立问题，社区无解 >90%）。
+3. 驱动按需武装：变量不存在时完全委托，所以"装上没效果"是预期安全状态。
