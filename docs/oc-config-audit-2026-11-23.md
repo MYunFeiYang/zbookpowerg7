@@ -58,3 +58,39 @@
 
 ## 6. 变更记录
 **本次审计未修改任何配置键**。config sha 保持 `523e9b37`（仓库 = ESP 逐字节一致），`plutil -lint` 通过。
+
+---
+
+## 7. 闲置资产清点（用户追问"不使用的配置，包括但不限于 kext"）
+
+交叉比对 config 引用集 vs 物理文件集，并枚举所有 `Enabled=false` 条目。
+结果：**config 引用但物理缺失 = 0**；**禁用条目 4 项**；**孤儿文件 8 项**。逐项定性如下。
+
+### 7.1 禁用条目（config 里 Enabled=false，仍保留登记）
+| 条目 | 状态 | 定性 | 依据 |
+|---|---|---|---|
+| `Kernel/Add[15] IntelBTPatcher.kext` | OFF (Min21) | **有意禁用，保留** | 11:49 外部改动把它关掉、换成 `BTLEAdvFixup`+`ForbiddenItlwm` 新栈；留着是回滚点 |
+| `ACPI/Patch[5] RTC _CRS 0x08->0x02` | OFF | **禁止重开，保留标注** | Comment 原文："cannot fix 005; regresses S4. Do not re-enable." |
+| `UEFI/Drivers[6] ext4_x64.efi` | OFF | 备用（无当前用途） | 10-22 为 Linux 选单加入，未启用 |
+| `UEFI/Drivers[7] OpenLinuxBoot.efi` | OFF | 备用（无当前用途） | 同上，依赖 ext4_x64 |
+
+### 7.2 孤儿文件（物理存在，config 未引用）
+| 文件 | 定性 | 依据 |
+|---|---|---|
+| `Kexts/I219LTR.kext` | **实验残留，无长期价值** | deepidle audit §39f/§42：写 LTRV 无效，主假设证伪；§1388"保留作证据/回滚点，无害" |
+| `Kexts/CStatePatch.kext` | **实验残留，建议优先清** | §1345 核心进 C7 但包级仍 C3；§1386"直接改内核 cstate 表，长期跑反有稳定性风险，更应撤" |
+| `ACPI/SSDT-I219-LTR.aml` | **实验残留，无长期价值** | §1262 实测 `_INI` 写入未落地，确定失败 |
+| `Kexts/AirportItlwm-Tahoe.kext` (2.4.0) | **被替代的旧 WiFi 栈** | 当前用 `ForbiddenItlwm.kext` (0.6.0)，二者 bundle id 不同、互斥；10-22 后不再登记 |
+| `Kexts/IntelBTPatcher.kext` | 见 7.1（禁用但保留回滚点） | 物理文件与禁用条目是一回事 |
+| `Drivers/AudioDxe.efi` | **备用后端，建议保留** | 文件在但未登记进 Drivers 数组；AudioSupport=false。恢复音频只需登记，删了要重新找 |
+| `Drivers/ext4_x64.efi` / `Drivers/OpenLinuxBoot.efi` | 见 7.1（禁用条目的物理文件） | 一一对应 |
+
+### 7.3 处置建议（未执行，待用户拍板）
+- **可安全删（纯实验残留/被替代，删前留 git 可回滚）**：`I219LTR.kext`、`CStatePatch.kext`、`SSDT-I219-LTR.aml/.dsl`、`AirportItlwm-Tahoe.kext`。config 均已不引用，删除**零运行影响、不需重启**。CStatePatch 因涉及内核表改写，优先清。
+- **建议保留**：`AudioDxe.efi`（音频备用后端）、禁用的 Linux 驱动一对（Linux 选单备用）、`IntelBTPatcher.kext`（BT 回滚点）。
+- **勿动**：`RTC _CRS` 那条禁用 patch（注释明写禁止重开）。
+- 所有待删文件均已在 git 历史中（除实验文件从未提交但早已按 §1388 决定留档），删除可随时从 git 恢复。
+
+### 7.4 判据纠正
+- `kextstat` / `ioreg -c IOKit` 在本环境无法列出已加载 kext 的 bundle id（无权限/过滤失效）⇒ 判断"是否在用"以 **config 的 Kernel/Add + 实测文档**为准，不靠这两个命令的空输出下结论。
+- `Kernel/Add` 键名 = `BundlePath`（非 `Path`），前轮曾因用错键名误判 orphan，已纠正。
