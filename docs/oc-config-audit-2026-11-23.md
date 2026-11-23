@@ -85,12 +85,15 @@
 | `Drivers/AudioDxe.efi` | **备用后端，建议保留** | 文件在但未登记进 Drivers 数组；AudioSupport=false。恢复音频只需登记，删了要重新找 |
 | `Drivers/ext4_x64.efi` / `Drivers/OpenLinuxBoot.efi` | 见 7.1（禁用条目的物理文件） | 一一对应 |
 
-### 7.3 处置建议（未执行，待用户拍板）
-- **可安全删（纯实验残留/被替代，删前留 git 可回滚）**：`I219LTR.kext`、`CStatePatch.kext`、`SSDT-I219-LTR.aml/.dsl`、`AirportItlwm-Tahoe.kext`。config 均已不引用，删除**零运行影响、不需重启**。CStatePatch 因涉及内核表改写，优先清。
-- **建议保留**：`AudioDxe.efi`（音频备用后端）、禁用的 Linux 驱动一对（Linux 选单备用）、`IntelBTPatcher.kext`（BT 回滚点）。
-- **勿动**：`RTC _CRS` 那条禁用 patch（注释明写禁止重开）。
-- 所有待删文件均已在 git 历史中（除实验文件从未提交但早已按 §1388 决定留档），删除可随时从 git 恢复。
+### 7.3 处置结果（2026-11-23 13:0x 已执行）
+用户授权"验证该删就删"后，**五项验证全绿才动手**：① 5 个文件全部 git 已跟踪（可恢复）；② config 全文零引用（不只 BundlePath，全文 grep 计数均为 0）；③ 无其他 kext 把它们列为 dependency（`ForbiddenItlwm` 依赖里全是系统框架，不碰旧 AirportItlwm）；④ 内核 kextstat 未加载这四个；⑤ ESP 有副本须一并删。
+
+**已删除（工作区 + ESP 双删）**：`CStatePatch.kext`、`I219LTR.kext`、`SSDT-I219-LTR.aml`、`SSDT-I219-LTR.dsl`、`AirportItlwm-Tahoe.kext` 共 5 个文件组。
+**保留**：`AudioDxe.efi`、禁用 Linux 驱动一对、`IntelBTPatcher.kext`（回滚点/备用），`RTC _CRS` 禁用 patch（禁止重开）。
+
+**删后核验**：config 启用的 54 项引用零缺失；工作区与 ESP 全目录 `diff -rq` 无差异；config sha 保持 `523e9b37`、`plutil -lint` OK。**零运行影响、不需重启**。
 
 ### 7.4 判据纠正
 - `kextstat` / `ioreg -c IOKit` 在本环境无法列出已加载 kext 的 bundle id（无权限/过滤失效）⇒ 判断"是否在用"以 **config 的 Kernel/Add + 实测文档**为准，不靠这两个命令的空输出下结论。
 - `Kernel/Add` 键名 = `BundlePath`（非 `Path`），前轮曾因用错键名误判 orphan，已纠正。
+- `Tools/OpenShell.efi` 是 `Misc/Tools[0]` 且 Enabled=true **在用**，临时核验脚本路径拼接错误曾误报为孤儿，已澄清。
