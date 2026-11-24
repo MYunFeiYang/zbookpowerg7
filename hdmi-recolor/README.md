@@ -35,7 +35,7 @@ HDMI 外接屏插上或热插拔后，画面整体**偏红**（像少了绿/蓝�
 ## 安装
 
 ```bash
-bash tools/hdmi-recolor/bootstrap.sh      # 编译 + 装 LaunchAgent + 自检
+bash hdmi-recolor/bootstrap.sh      # 编译 + 装 LaunchAgent + 自检
 ```
 
 前置：`xcode-select --install`（首次需要）。装完无需重启，登录后自动常驻。
@@ -88,6 +88,8 @@ bash tools/hdmi-recolor/bootstrap.sh      # 编译 + 装 LaunchAgent + 自检
 ## 已验证记录
 
 - `15:02:52` 端到端：`1920x1080@60 → @30 → 切回`，`err=0/0`，分辨率未动。
+- `15:21:28` 真实拔插 → 检测到断开 → `15:21:40` 开始修 → `15:21:43` `err=0/0` 成功，
+  尾随事件全部落在 15 秒抑制窗口内被吸收，未形成循环。
 - `14:39`、`12:47` 两次插拔后自动消红成功。
 - 检测通道：IOKit framebuffer interest 通知跨进程有效（2 事件），空闲 0 事件；
   1 秒兜底轮询单次 183µs（约 0.018% CPU）。
