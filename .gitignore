@@ -40,7 +40,11 @@ docs/fixes/
 
 # 工具脚本（本地辅助，不入库）
 # 注意限定在仓库根目录：原先写 tools/ 会连带忽略 EFI/OC/Tools/ 下的 startup.nsh
-/tools/
+# 写成 /tools/* 而非 /tools/：目录被整体排除后 git 无法再包含其子项（.gitignore 硬规则）
+/tools/*
+# 例外：外接屏泛红修复整套（2026-11-24）——用户明确要求"重装系统后不能丢"，
+# 且源码即全部资产（无二进制依赖，bootstrap.sh 一条命令重建）⇒ 单独入库。
+!/tools/hdmi-recolor/
 
 # 睡眠日志采集产物（含 465 MB 级 .logarchive，绝不入库）
 /hbfx-capture/
