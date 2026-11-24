@@ -1114,7 +1114,7 @@
 				<key>BundlePath</key>
 				<string>BTLEAdvFixup.kext</string>
 				<key>Comment</key>
-				<string>V0.9.4 Tahoe | -btleadv</string>
+				<string>V0.9.6 Tahoe | -btleadv</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -1132,7 +1132,7 @@
 				<key>BundlePath</key>
 				<string>ForbiddenItlwm.kext</string>
 				<key>Comment</key>
-				<string>V0.6.0-beta.4 Tahoe | replaces AirportItlwm</string>
+				<string>V0.7.0-alpha.2 Tahoe | replaces AirportItlwm; AWDL test set now built-in => only -btleadv needed</string>
 				<key>Enabled</key>
 				<true/>
 				<key>ExecutablePath</key>
@@ -1729,7 +1729,7 @@
 				AAAAAAAAAAAAAAAAAAA=
 				</data>
 				<key>boot-args</key>
-				<string>-igfxblr -igfxblt -igfxhdmidivs igfxonln=1 igfxonlnfbs=0 igfxrpsc=1 -amfipassbeta -lilubetaall revpatch=sbvmm rtcfx_exclude=0E-FF keepsyms=1 -vi2c-force-polling -btlfxallowanyaddr -tgldmiclilu -btleadv -itlawdlcoexprobe -itlawdliface -itlawdlnativeup -itlawdlcoexrx -itlawdlcoextx -itlawdlcoexmulti -itlawdlcoexdata -itlawdlmitx -itlawdlelicit -itlawdlcaps -itlawdlsvcmerge -itlawdlawsync itlawdlintcoal=4 -itlawdlcoexbatx -itlawdlcoexpeerpause -itlawdlcoexbatrace itlawdltxqueue=4096</string>
+				<string>-igfxblr -igfxblt -igfxhdmidivs igfxonln=1 igfxonlnfbs=0 igfxrpsc=1 -amfipassbeta -lilubetaall revpatch=sbvmm rtcfx_exclude=0E-FF keepsyms=1 -vi2c-force-polling -btlfxallowanyaddr -tgldmiclilu -btleadv</string>
 				<key>csr-active-config</key>
 				<data>
 				/w8AAA==
