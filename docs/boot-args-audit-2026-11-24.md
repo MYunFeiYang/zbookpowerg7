@@ -12,6 +12,7 @@
 | 删除 | 17 条 `-itlawdl*` + `itlawdlintcoal=4` 等（见 §3）；`igfxonln=1`（重复项，见 §8） |
 | 保留不动 | 14 条（每条都有证据，见 §2） |
 | 前置动作 | ForbiddenItlwm 0.6.0-beta.4 → **0.7.0-alpha.2**；BTLEAdvFixup 0.9.4 → **0.9.6** |
+| 验证状态 | ✅ **已于 2026-11-24 16:03 重启验证通过，零回退**（逐项实测见 §5.2） |
 
 **为什么这些能删**：那 17 条是 ForbiddenItlwm **旧版**的 AWDL 测试集。官方 `docs/BOOT-FLAGS.md` 原文：
 
@@ -95,9 +96,9 @@ done
 | 改前 sha | config `c1d12c77…bf0669` |
 | 改后 sha | config `d974207c…a74f1a7` |
 
-## 5. 生效验证（需重启一次）
+## 5. 生效验证（2026-11-24 16:03 已执行，全部通过）
 
-重启后依次确认：
+### 5.1 验证清单
 
 ```bash
 # 1. Wi-Fi 正常（能连上、能上网）
@@ -109,17 +110,52 @@ ifconfig awdl0
 # 4. AirDrop 双向实测（Mac ↔ iPhone）
 ```
 
+### 5.2 实测结果（重启于 15:59:57，macOS 26.7.3 / Darwin 25.6.0）
+
+| 项 | 实测值 | 判定 |
+|---|---|---|
+| 启动 | `kern.boottime` = 15:59:57，`/Library/Logs/DiagnosticReports` 无 panic 文件 | ✅ 无 panic |
+| boot-args | `nvram boot-args` = **14 条**，不含 `igfxonln=1` | ✅ config 已写入 NVRAM |
+| 驱动版本 | `kmutil`：`ForbiddenItlwm (0.7.0)`、`BTLEAdvFixup (0.9.6)` | ✅ 已换版 |
+| AWDL 构建 | `ItlwmAWDLInterfaceBuild = "forbidden-0.7.0-alpha.2"`、`BuildCheck = "verified"` | ✅ |
+| **AWDL 默认值** | `ItlwmAWDLDefaults = "on: the tested set needs no Wi-Fi flags"` | ✅ **驱动自证 17 条参数已内置默认** |
+| AWDL 接口 | `awdl0` UP/RUNNING、`NativeUp = Yes`、`MiState = on` | ✅ |
+| Wi-Fi 连接 | Connected，802.11ac，5GHz ch44 | ✅ |
+| `igfxonln=1` 兜底 | `ioreg -p IODeviceTree -n IGPU -r -l` → `"force-online" = <01000000>` | ✅ 属性在，不依赖 boot-arg |
+| `-tgldmiclilu` | `TGLDmic`：`LiluHook = Yes`、`LiluMode = Yes`、`PlatformFamily = Comet Lake / Cannon Lake (cAVS 1.8)` | ✅ 数字麦注入仍在 |
+| `-vi2c-force-polling` | VoodooI2C 2.9.1 + VoodooI2CHID 已加载，触控板 `Magic Trackpad 2 / Transport = I2C` | ✅ |
+| 蓝牙 | `State = On`（芯片报 `THIRD_PARTY_DONGLE`，Intel 卡正常识别） | ✅ |
+| 显示 | 双屏 1920x1080@60，Mirror Off，内屏为主屏 | ✅ |
+| 修屏 agent | pid 3839 自启；16:03:36 开机握手判 hotplug → 16:03:48 修 → `err=0/0`；8 个尾随事件被 15s 窗口吸收，未成循环 | ✅ |
+
+**最有价值的一条是 `ItlwmAWDLDefaults`**：它由运行中的驱动自己报出「测试集已默认开启、无需任何 Wi-Fi 参数」，
+等于把 §3「删掉 17 条不改变行为」从「依据官方文档推断」升级为「运行态实证」。
+
+**仍待人工确认**（非阻塞）：① 屏幕颜色是否正常 ② AirDrop 双向 ③ 睡眠+唤醒不 panic
+（③ 属 `igfxonlnfbs=0` 的独立遗留项，与本轮参数精简无关）。
+
 ## 6. 回滚
 
 ```bash
 cd /Volumes/Common/workplace/zbookpowerg7
-cp -R ~/automation-workspace/wifi-kext-rollback-0.6.0b4/*.kext EFI/OC/Kexts/
-cp EFI/OC/Kexts/ForbiddenItlwm.kext -R /Volumes/ESP/EFI/OC/Kexts/
-# boot-args 复原
+# 1. 旧 kext 回到 workspace
+rm -rf EFI/OC/Kexts/ForbiddenItlwm.kext EFI/OC/Kexts/BTLEAdvFixup.kext
+cp -R ~/automation-workspace/wifi-kext-rollback-0.6.0b4/ForbiddenItlwm.kext \
+      ~/automation-workspace/wifi-kext-rollback-0.6.0b4/BTLEAdvFixup.kext EFI/OC/Kexts/
+# 2. 双写到 ESP
+rm -rf /Volumes/ESP/EFI/OC/Kexts/ForbiddenItlwm.kext /Volumes/ESP/EFI/OC/Kexts/BTLEAdvFixup.kext
+cp -R EFI/OC/Kexts/ForbiddenItlwm.kext EFI/OC/Kexts/BTLEAdvFixup.kext /Volumes/ESP/EFI/OC/Kexts/
+# 3. boot-args 复原（32 条原文）
 /usr/libexec/PlistBuddy -c "Set :NVRAM:Add:7C436110-AB2A-4BBB-A880-FE41995C9F82:boot-args $(cat ~/automation-workspace/wifi-kext-rollback-0.6.0b4/boot-args.before.txt)" EFI/OC/config.plist
+cp EFI/OC/config.plist /Volumes/ESP/EFI/OC/config.plist
+plutil -lint EFI/OC/config.plist /Volumes/ESP/EFI/OC/config.plist
 ```
 
-或直接 `git checkout` 上一版 `EFI/OC/Kexts/ForbiddenItlwm.kext EFI/OC/Kexts/BTLEAdvFixup.kext EFI/OC/config.plist`（git 里有 0.6.0-beta.4 完整原件）。
+或直接 `git checkout <改前提交> -- EFI/OC/Kexts/ForbiddenItlwm.kext EFI/OC/Kexts/BTLEAdvFixup.kext EFI/OC/config.plist`
+（git 里有 0.6.0-beta.4 完整原件），再 `cp` 同步到 ESP。
+
+> 注：只回滚 kext 而不回滚 boot-args 也能工作——旧驱动会忽略那 17 条已删的参数名，
+> 但 AirDrop 会关闭；反之只回滚 boot-args 无意义（新驱动不依赖它们）。
 
 ## 7. 还能再删吗？（2026-11-24 15:50 复核）
 
