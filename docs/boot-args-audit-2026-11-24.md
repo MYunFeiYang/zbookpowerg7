@@ -1,4 +1,4 @@
-# boot-args 审计：32 条 → 15 条（2026-11-24）
+# boot-args 审计：32 条 → 14 条（2026-11-24）
 
 > 目标：只删「在本机当前状态下不可能起作用」的参数，其余一律保留并写明理由。
 > 判据分级：①源码 ②上游文档原文 ③本机实测事实。凡把握 <80% 的一律标「未知」，不当结论用。
@@ -8,9 +8,9 @@
 | 项 | 数值 |
 |---|---|
 | 改前 | 32 条 |
-| 改后 | **15 条** |
-| 删除 | 17 条 `-itlawdl*` + `itlawdlintcoal=4` 等（见 §3） |
-| 保留不动 | 15 条（每条都有证据，见 §2） |
+| 改后 | **14 条** |
+| 删除 | 17 条 `-itlawdl*` + `itlawdlintcoal=4` 等（见 §3）；`igfxonln=1`（重复项，见 §8） |
+| 保留不动 | 14 条（每条都有证据，见 §2） |
 | 前置动作 | ForbiddenItlwm 0.6.0-beta.4 → **0.7.0-alpha.2**；BTLEAdvFixup 0.9.4 → **0.9.6** |
 
 **为什么这些能删**：那 17 条是 ForbiddenItlwm **旧版**的 AWDL 测试集。官方 `docs/BOOT-FLAGS.md` 原文：
@@ -51,12 +51,14 @@ done
 
 ## 2. 保留的 15 条（逐条理由）
 
+> 后续变更：`igfxonln=1` 已删除（与属性 `force-online` 重复），见 §8；当前实为 **14 条**。
+
 | 参数 | 归属 | 判定依据 |
 |---|---|---|
 | `-igfxblr` | WhateverGreen | 源码 L38，CFL 背光寄存器修复。与 BLT 功能重叠，但删错的表现是**开机背光黑屏**，收益为零 ⇒ 保留 |
 | `-igfxblt` | WhateverGreen | 源码 L247 + 注释：macOS 13.4 起 Apple 把寄存器写内联进 `hwSetBacklight`，BLR 的 hook **失效**，由 BLT 接管。本机 Darwin 25 ⇒ 这是实际生效的那条 |
 | `-igfxhdmidivs` | WhateverGreen | README：修 SKL/KBL/CFL 平台「高像素时钟 HDMI 连接死循环」；本机 CFL 系 + HDMI 1080p60（148.5MHz）正属该场景 |
-| `igfxonln=1` | WhateverGreen | 修 IGPU 唤醒 panic（前情见 `docs/hdmi-audio-a348-spoof-2026-11-24.md` §12） |
+| ~~`igfxonln=1`~~ | WhateverGreen | **已删除（§8）**：与 `DeviceProperties` 的 `force-online=<01000000>` 完全重复，WEG 源码是 if/else 二选一 |
 | `igfxonlnfbs=0` | WhateverGreen | 只对内建强制 online，外接恢复真实检测（同上 §12.10） |
 | `igfxrpsc=1` | WhateverGreen | CometLake 分支 `available = true`（源码 L135）⇒ 真的会打补丁，提升 iGPU 性能 |
 | `-amfipassbeta` | AMFIPass 1.4.1 | 绕过内核版本检查使 kext 在未声明支持的版本上加载；去掉后若 kext 不加载，依赖 AMFI 放行的功能会坏 ⇒ 保留 |
@@ -135,14 +137,13 @@ cp EFI/OC/Kexts/ForbiddenItlwm.kext -R /Volumes/ESP/EFI/OC/Kexts/
 2. 三个的失效模式都不好：`-lilubetaall` 去掉后若有插件静默拒载，是**无日志的功能缺失**；`-igfxblr` 去掉后若 BLT 在某次系统更新后失效，表现是**开机背光黑屏**；`-btlfxallowanyaddr` 去掉后蓝牙问题已关档、不值得动。
 3. 验证成本：每删一条都要重启一次才知道，且都属「删对了看不出、删错了很明显」。
 
-**12 条确认在起作用（删了会坏）**：
+**11 条确认在起作用（删了会坏）**（`igfxonln=1` 已按 §8 作重复项删除）：
 
 | 参数 | 证据 |
 |---|---|
 | `-igfxblt` | WEG 源码：Darwin ≥ 13.4 由它接管背光寄存器修复；本机 Darwin 25 ⇒ 这是实际生效的那条 |
 | `-igfxhdmidivs` | WEG README L103：修 SKL/KBL/CFL 上「高像素时钟 HDMI 连接死循环」；失效表现是**开不了机** |
-| `igfxonln=1` | 修 IGPU 唤醒 panic（见 §12） |
-| `igfxonlnfbs=0` | WEG `ForceOnlineDisplay::processKernel`：**只有写了这条 `customised` 才为真**；删掉 ⇒ 回退成「所有 framebuffer 一律强制 online」 |
+| `igfxonlnfbs=0` | WEG `ForceOnlineDisplay::processKernel`：**只有写了这条 `customised` 才为真**；删掉 ⇒ 回退成「所有 framebuffer 一律强制 online」（同段还解析属性 `force-online-framebuffers`，本机**没有**该属性，所以这条不能删） |
 | `igfxrpsc=1` | CometLake 分支 `available = true` ⇒ 真打 RPS 补丁 |
 | `-amfipassbeta` | AMFIPass 1.4.1 的 `DTPlatformVersion = 14.2`、`BuildMachineOSBuild = 22G630`；`-amfipassbeta` 的作用是「覆盖内核版本检查」，Tahoe 上靠它才加载 |
 | `revpatch=sbvmm` | RestrictEvents：让不受支持机型拿到 OTA 更新 |
@@ -151,3 +152,41 @@ cp EFI/OC/Kexts/ForbiddenItlwm.kext -R /Volumes/ESP/EFI/OC/Kexts/
 | `-vi2c-force-polling` | VoodooI2C 强制轮询；是否可去必须实测触控板 |
 | `-tgldmiclilu` | ioreg 实测 `LiluHook = Yes` / `LiluMode = Yes`；kext 内有消息「Lilu hook disabled (boot without -tgldmiclilu/-tgldmicinject)」⇒ 删了内建数字麦的 AppleHDAEngine 注入就停 |
 | `-btleadv` | ForbiddenItlwm 0.7.0-alpha.2 下**唯一仍需手写**的 flag |
+
+## 8. `igfxonln=1` 已删（15 → 14，2026-11-24 15:55）
+
+**它是唯一一条「重复表达」的参数，删掉是去重，不是赌。**
+
+WEG `kern_igfx.cpp` L689–697 是 if / else if，二选一：
+
+```cpp
+if (PE_parse_boot_argn("igfxonln", &forceOnline, sizeof(forceOnline)))
+    enabled = forceOnline != 0;                                  // boot-arg 优先
+else if (WIOKit::getOSDataValue(info->videoBuiltin, "force-online", forceOnline))
+    enabled = forceOnline != 0;                                  // 否则读属性
+```
+
+而本机 `DeviceProperties` 的 `PciRoot(0x0)/Pci(0x2,0x0)` 里**早就有** `force-online = <01000000>`，
+且 `ioreg -p IODeviceTree -n IGPU -r -l` 实测该属性**已注入到 IGPU 节点**（不是只躺在 config 里）：
+
+```
+"force-online" = <01000000>
+```
+
+⇒ 删掉 boot-arg 后 `enabled` 仍为真，来源从 boot-arg 换成属性，`getDisplayStatus` 行为不变。
+WEG README L120 也把二者列为同一功能的两种写法（`igfxonln=1` ↔ `force-online` 属性）。
+
+**为什么保留属性、删 boot-arg**：属性是「按设备配置」，与 `ig-platform-id`、`enable-lspcon-support`
+等放在一起，一眼能看出这台机器的 iGPU 配了什么；boot-arg 是全局串，两条同时存在只会有两份来源不同步的风险。
+
+**没动的**：`igfxonlnfbs=0`。它虽然也有对应属性 `force-online-framebuffers`，但本机没有该属性，
+删 boot-arg 就会回退成「全部 framebuffer 强制 online」。把它搬成属性只是搬家、不改条数，故不做。
+
+**失效风险与验证**：改后行为应当完全无变化。若休眠唤醒出现 IGPU `SafeForceWake` MEDIA 域超时硬冻
+（#967 复现），说明属性没被读到 —— 把 `igfxonln=1` 加回 boot-args 即可，一条命令。
+
+| 项 | 值 |
+|---|---|
+| 改后条数 | **14 条** |
+| config sha256 | `c98cf1f7…9bc37`（workspace 与 ESP 一致） |
+| 其他改动 | 仅 boot-args 一行；`diff -rq EFI/OC /Volumes/ESP/EFI/OC` 无差异；`plutil -lint` 两侧 OK |
