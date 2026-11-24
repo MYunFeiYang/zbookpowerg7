@@ -190,3 +190,34 @@ WEG README L120 也把二者列为同一功能的两种写法（`igfxonln=1` ↔
 | 改后条数 | **14 条** |
 | config sha256 | `c98cf1f7…9bc37`（workspace 与 ESP 一致） |
 | 其他改动 | 仅 boot-args 一行；`diff -rq EFI/OC /Volumes/ESP/EFI/OC` 无差异；`plutil -lint` 两侧 OK |
+
+## 9. `-amfipassbeta` 与 `rtcfx_exclude=0E-FF`：都不删（2026-11-24 16:00 复核）
+
+### 9.1 `-amfipassbeta` —— 它是 AMFIPass 在 Tahoe 上能加载的前提
+
+| 证据 | 内容 |
+|---|---|
+| 本机 kext 元信息 | `AMFIPass.kext` 1.4.1：`DTPlatformVersion = 14.2`、`BuildMachineOSBuild = 22G630`、`LSMinimumSystemVersion = 10.15` |
+| ioreg 运行态 | `VersionInfo = "REL-141-2024-06-28"`、`IOMatchedAtBoot = Yes` ⇒ 靠 boot 时的这条 flag 才匹配起来 |
+| 二进制 | 只导出 `-amfipassoff` / `-amfipassdbg` / `-amfipassbeta` 三个旗，无其他开关 |
+| 上游说明 | 该旗的作用是**覆盖内核版本检查**，让 kext 在「尚未声明支持」的 macOS 上加载 |
+
+⇒ 这个 2024-06 编译的 kext 不可能声明支持 Tahoe；删掉旗，AMFIPass 大概率**直接不加载**（~85–90%）。
+
+**删了会怎样**：本机 SIP 已是 Custom Configuration（`Kext Signing: disabled`）、无 OCLP 根补丁、`/Library/Extensions` 只有 HP 的 HighPoint RAID 两个 kext ⇒ 短期内可能**看不出任何异常**（~70%）。但一旦需要 AMFI 放行（打根补丁、往 L/E 装第三方驱动、某些依赖未签名代码的 app），就会突然坏，且症状与 AMFIPass 无关、极难归因。⇒ 保留。
+
+### 9.2 `rtcfx_exclude=0E-FF` —— 保留，但要说清它现在大概率是"空闲的安全网"
+
+| 事实 | 值 |
+|---|---|
+| 本机 `hibernatemode` | **0** |
+| 本机 `standby` | **0** |
+| 该参数已知拦截的写路径 | RTC **0x80–0xAB**（`AppleRTCHibernateVars`：'AAPL' 签名 + booterSignature + wiredCryptKey），只在休眠模式下由 xnu 写入 |
+| 实测前科 | 本机做 S4 实验时确实踩过 `RTC/POST 005`；HP 官方定义是 **load factory defaults**（比"按 Esc 过"重得多） |
+
+⇒ 在 `hibernatemode 0 / standby 0` 下，**那条已知写路径本来就不会触发**；至于是否有其他路径写 0x0E–0xFF，本机**未知（<80%）**——`-rtcfxdbg` 的日志只进 IOLog，本机 IOLog 不进 unified log，读不到，所以没有廉价验证手段。
+
+**结论**：删它的收益是 0（RTCMemoryFixup 在没有该参数时等同不工作），失效模式是 CMOS 被写坏 / BIOS 恢复出厂设置；把握不足 80% 就不赌。保留。
+
+> 与 §7 的判据一致：`igfxonln=1` 之所以能删，是因为有**属性兜底 + 源码 if/else + ioreg 实证**三重证据；
+> 这两条都没有等价兜底，属于"删了也没好处、错了很麻烦"，不动。
