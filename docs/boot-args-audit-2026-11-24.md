@@ -118,3 +118,36 @@ cp EFI/OC/Kexts/ForbiddenItlwm.kext -R /Volumes/ESP/EFI/OC/Kexts/
 ```
 
 或直接 `git checkout` 上一版 `EFI/OC/Kexts/ForbiddenItlwm.kext EFI/OC/Kexts/BTLEAdvFixup.kext EFI/OC/config.plist`（git 里有 0.6.0-beta.4 完整原件）。
+
+## 7. 还能再删吗？（2026-11-24 15:50 复核）
+
+**结论：不建议再删。** 15 条里只有 3 条属于「当前可能无作用」，而删它们的收益是 0、风险不是 0。
+
+| 参数 | 当前是否生效 | 判定 | 把握 |
+|---|---|---|---|
+| `-lilubetaall` | 可能无作用 | Lilu README L27–28：`-lilubeta` 已默认覆盖「macOS 26 及以下」；`-lilubetaall` 只在**某插件声明不支持当前 OS** 时才起作用 | ~75–80% 无作用 |
+| `-igfxblr` | 很可能无作用 | WEG `kern_igfx_backlight.cpp` L247 注释（FireWolf 2023.06）：macOS 13.4 起 Apple 把寄存器写内联进 `hwSetBacklight()`，`WriteRegister32` hook 不再被调用 ⇒ BLR 失效、由 BLT 接管 | ~85% 无作用 |
+| `-btlfxallowanyaddr` | 条件为假 | BrcmPatchRAM README L265：仅在「两台蓝牙设备地址相同」时绕过 `bluetoothd` 地址检查；本机单控制器 | ~80% 无作用 |
+
+**为什么还是不删**：
+
+1. 收益是字面意义的 0——15 条合计约 190 字节，离 NVRAM 变量上限（~1KB）很远，对启动时间影响在微秒级。
+2. 三个的失效模式都不好：`-lilubetaall` 去掉后若有插件静默拒载，是**无日志的功能缺失**；`-igfxblr` 去掉后若 BLT 在某次系统更新后失效，表现是**开机背光黑屏**；`-btlfxallowanyaddr` 去掉后蓝牙问题已关档、不值得动。
+3. 验证成本：每删一条都要重启一次才知道，且都属「删对了看不出、删错了很明显」。
+
+**12 条确认在起作用（删了会坏）**：
+
+| 参数 | 证据 |
+|---|---|
+| `-igfxblt` | WEG 源码：Darwin ≥ 13.4 由它接管背光寄存器修复；本机 Darwin 25 ⇒ 这是实际生效的那条 |
+| `-igfxhdmidivs` | WEG README L103：修 SKL/KBL/CFL 上「高像素时钟 HDMI 连接死循环」；失效表现是**开不了机** |
+| `igfxonln=1` | 修 IGPU 唤醒 panic（见 §12） |
+| `igfxonlnfbs=0` | WEG `ForceOnlineDisplay::processKernel`：**只有写了这条 `customised` 才为真**；删掉 ⇒ 回退成「所有 framebuffer 一律强制 online」 |
+| `igfxrpsc=1` | CometLake 分支 `available = true` ⇒ 真打 RPS 补丁 |
+| `-amfipassbeta` | AMFIPass 1.4.1 的 `DTPlatformVersion = 14.2`、`BuildMachineOSBuild = 22G630`；`-amfipassbeta` 的作用是「覆盖内核版本检查」，Tahoe 上靠它才加载 |
+| `revpatch=sbvmm` | RestrictEvents：让不受支持机型拿到 OTA 更新 |
+| `rtcfx_exclude=0E-FF` | 屏蔽 RTC 存储区写入，踩了就是 POST 005 起不来 |
+| `keepsyms=1` | panic 保留符号（本机仍在查睡眠） |
+| `-vi2c-force-polling` | VoodooI2C 强制轮询；是否可去必须实测触控板 |
+| `-tgldmiclilu` | ioreg 实测 `LiluHook = Yes` / `LiluMode = Yes`；kext 内有消息「Lilu hook disabled (boot without -tgldmiclilu/-tgldmicinject)」⇒ 删了内建数字麦的 AppleHDAEngine 注入就停 |
+| `-btleadv` | ForbiddenItlwm 0.7.0-alpha.2 下**唯一仍需手写**的 flag |
