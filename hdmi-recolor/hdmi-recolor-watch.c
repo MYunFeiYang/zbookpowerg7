@@ -19,6 +19,10 @@
 //     ⇒ 与发起者无关（对比：CGDisplayRegisterReconfigurationCallback 跨进程 0 事件）。
 //   · 收到事件即便集合没变化，也判定为 hotplug 并修复。
 //   · 1 秒轮询保留作兜底（单次 183µs / 约 0.018% CPU，实测）。
+//   · 睡眠唤醒是**另一种泛红来源**（LSPCON 掉电后重训错乱），且不一定伴随事件：
+//     唤醒后静默 WAKE_SUPPRESS_SEC 秒，然后只要外接屏存在就无条件重训一次。
+//     静默期内的判定记成待办（g_wakePending），窗口结束补做，绝不丢弃。
+//     ⚠ 旧版是"唤醒后 30 秒内丢事件"，导致醒来一直红（2026-11-25 实测）。
 #include <ApplicationServices/ApplicationServices.h>
 #include <IOKit/IOKitLib.h>
 #include <IOKit/pwr_mgt/IOPMLib.h>
@@ -50,6 +54,10 @@
  * 窗口必须大于 10 秒，否则第二批会把刚修好的状态当成新 hotplug，陷入每 10 秒闪一次的循环。 */
 #define SUPPRESS_AFTER_FIX 15.0
 #define SLEEP_JUMP_SEC 6
+/* 唤醒抑制窗口：只用来躲开唤醒瞬间的 PM/RTC 噪声。
+ * ⚠ 这里**不是"不修"**：窗口内判定出的 hotplug 会记成待办，窗口一结束补修一次。
+ * 旧版是 30 秒内直接丢弃事件，结果睡眠唤醒（LSPCON 掉电后重训错乱）永远不修 ⇒ 一直红。 */
+#define WAKE_SUPPRESS_SEC 10.0
 
 /* IOGraphics 家族的显示模式变更通知（实测收到的值） */
 #define kIOFBNotifyDisplayModeChanged 0xe0016007
@@ -58,6 +66,7 @@ static int            g_fixing = 0;
 static int            g_allowResChange = 0;   /* 0 = 只换刷新率；env HDMI_RECOLOR_DEEP=1 才允许换分辨率 */
 static CFAbsoluteTime g_lastFixEnd = 0;
 static CFAbsoluteTime g_suppressUntil = 0;
+static int            g_wakePending = 0;   /* 唤醒后待补修：窗口结束时无条件重训一次链路 */
 static CFRunLoopTimerRef g_checkTimer = NULL;
 static time_t         g_lastTick = 0;
 static CGDirectDisplayID g_prev[MAXDISP];
@@ -68,6 +77,9 @@ static io_connect_t          g_pmPort = 0;
 static IONotificationPortRef g_pmPortRef = NULL;
 static io_object_t           g_pmNotifier = 0;
 static IONotificationPortRef g_fbPortRef = NULL;
+
+static void scheduleCheck(CFTimeInterval delay);
+static void enterWakeSuppression(const char *why);
 
 static void logmsg(const char *fmt, ...)
 {
@@ -423,6 +435,15 @@ static void evaluate(const char *trigger, int byEvent)
 
     CGDirectDisplayID cur[MAXDISP];
     int ncur = listExternal(cur, MAXDISP);
+    CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
+
+    /* 唤醒补修：窗口已过 ⇒ 本轮即使集合丝毫未变也按 hotplug 处理。
+     * LSPCON 在睡眠掉电后重训错乱，往往不伴随集合变化，不能等差异。 */
+    int wakeRecheck = 0;
+    if (g_wakePending && now >= g_suppressUntil) {
+        g_wakePending = 0;
+        wakeRecheck = 1;
+    }
 
     CGDirectDisplayID appeared = 0;
     for (int i = 0; i < ncur; i++)
@@ -440,19 +461,22 @@ static void evaluate(const char *trigger, int byEvent)
     if (disconnected) g_lastFixEnd = 0;
 
     CGDirectDisplayID target = appeared;
-    if (!target && byEvent && ncur > 0) {
+    if (!target && (byEvent || wakeRecheck) && ncur > 0) {
         target = cur[ncur - 1];
-        logmsg("收到显示配置变化且集合未变 ⇒ 判定为快速拔插（旧版会在此漏检）");
+        if (wakeRecheck)
+            logmsg("唤醒抑制结束 ⇒ 补修一次（集合未变也重训链路）");
+        else
+            logmsg("收到显示配置变化且集合未变 ⇒ 判定为快速拔插（旧版会在此漏检）");
     }
 
     if (!target) { snapshotBaseline(); return; }
 
-    CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
     if (now < g_suppressUntil) {
-        logmsg("处于睡眠唤醒抑制窗口内，不动作（距窗口结束 %.0f 秒）",
+        logmsg("处于睡眠唤醒抑制窗口内，记下待办、窗口结束后补修（距结束 %.0f 秒）",
                g_suppressUntil - now);
-        snapshotBaseline();
-        return;
+        g_wakePending = 1;
+        scheduleCheck(g_suppressUntil - now + 0.3);
+        return;                       /* 刻意不更新基线，保留差异给补修那一轮 */
     }
     if (now - g_lastFixEnd < SUPPRESS_AFTER_FIX) {
         logmsg("距上次修复不足 %.0f 秒，判定为自身尾随事件，忽略",
@@ -483,6 +507,23 @@ static void scheduleCheck(CFTimeInterval delay)
                                         CFAbsoluteTimeGetCurrent() + delay,
                                         0, 0, 0, checkTimerFired, NULL);
     if (g_checkTimer) CFRunLoopAddTimer(CFRunLoopGetCurrent(), g_checkTimer, kCFRunLoopDefaultMode);
+}
+
+/* 进入唤醒抑制窗口，并**预约**窗口结束后的补修。
+ * 睡眠唤醒后 LSPCON 会重新握手，macOS 侧读到的属性与正常态完全一致（无法判红），
+ * 所以补修是"外接屏存在就无条件重训一次链路"，与"每次插拔都修"同一策略。 */
+static void enterWakeSuppression(const char *why)
+{
+    g_suppressUntil = CFAbsoluteTimeGetCurrent() + WAKE_SUPPRESS_SEC;
+    g_wakePending = 1;
+    g_lastTick = time(NULL);           /* 吃掉这次时间跳跃，别让轮询再报一次 */
+    logmsg("%s：抑制 %.0f 秒后补修一次外接屏（无条件重训链路）", why, WAKE_SUPPRESS_SEC);
+    if (g_checkTimer) {                /* 丢掉排队中的 debounce，改约窗口结束那一刻 */
+        CFRunLoopTimerInvalidate(g_checkTimer);
+        CFRelease(g_checkTimer);
+        g_checkTimer = NULL;
+    }
+    scheduleCheck(WAKE_SUPPRESS_SEC + 0.3);
 }
 
 /* 主检测通道：framebuffer 属性变化由驱动 setProperty 逐回调注册者，
@@ -542,9 +583,8 @@ static void pollFired(CFRunLoopTimerRef timer, void *info)
     long jump = (long)(now - g_lastTick);
     g_lastTick = now;
     if (jump > SLEEP_JUMP_SEC) {
-        logmsg("检测到睡眠/挂起（时间跳跃 %lds），唤醒后 30 秒内不动作", jump);
-        g_suppressUntil = CFAbsoluteTimeGetCurrent() + 30.0;
-        snapshotBaseline();
+        logmsg("检测到睡眠/挂起（时间跳跃 %lds）", jump);
+        enterWakeSuppression("唤醒");
         return;
     }
     evaluate("轮询兜底", 0);
@@ -568,10 +608,7 @@ static void pmCallback(void *refcon, io_service_t svc, natural_t msgType, void *
         IOAllowPowerChange(g_pmPort, (long)(intptr_t)msgArg);
         break;
     case kIOMessageSystemHasPoweredOn:
-        g_suppressUntil = CFAbsoluteTimeGetCurrent() + 30.0;
-        g_lastTick = time(NULL);
-        logmsg("系统已唤醒：30 秒内不动作");
-        snapshotBaseline();
+        enterWakeSuppression("系统已唤醒");
         break;
     default:
         break;
@@ -625,6 +662,14 @@ int main(void)
         logmsg("自检模式：基线置空并立即走完整流程");
         g_nprev = 0;
         evaluate("自检", 0);
+    }
+
+    /* 离线验证"睡眠唤醒"分支：不真睡，直接进唤醒抑制窗口，
+     * 约 WAKE_SUPPRESS_SEC 秒后应自动补修一次（集合未变也修）。 */
+    const char *tw = getenv("HDMI_RECOLOR_TEST_WAKE");
+    if (tw && tw[0] == '1') {
+        logmsg("自测唤醒：进入抑制窗口，验证窗口结束后会补修");
+        enterWakeSuppression("自测唤醒");
     }
 
     CFRunLoopRun();
