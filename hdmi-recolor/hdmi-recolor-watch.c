@@ -45,10 +45,14 @@
 #define MAXDISP        16
 #define POLL_MS        1000
 #define EVENT_DEBOUNCE 1.2        /* 事件成批到达，等这批落定再判断 */
-#define MIN_SETTLE_SEC 8          /* 距判定 hotplug 至少等这么久才动手 */
+/* 等待下限 6.5s：实测 ICC 重写最晚发生在 hotplug 后 3.5s，加 QUIET_SEC=3 ⇒ 6.5s
+ * 是色彩配置真正稳定的最早时刻（32 次历史日志统计，最大 elapsed 3.5s）。
+ * 旧值 8s 留了 1.5s 冗余但把总延迟拉到 22s；6.5s 只是下限，QUIET_SEC 仍会兜底：
+ * 若某次 ICC 重写晚于 3.5s，elapsed-lastChange<3 会继续等，不会提前动手被覆盖。 */
+#define MIN_SETTLE_SEC 6.5        /* 距判定 hotplug 至少等这么久才动手 */
 #define QUIET_SEC      3          /* 显示配置连续无变化多少秒算稳定 */
 #define MAX_SETTLE_SEC 20
-#define SWITCH_HOLD_US 1500000
+#define SWITCH_HOLD_US 700000     /* 切到 30Hz 后的停留时间：1.5s→0.7s（README 原始设计值） */
 /* 修复后吸收自身尾随事件的窗口。实测（/tmp/iokidle + 一次 --deep）：
  * 一次自身修复会产生**两批**事件——切回完成瞬间一批(+~7s)，其后整 10 秒再来一批(+~17s)。
  * 窗口必须大于 10 秒，否则第二批会把刚修好的状态当成新 hotplug，陷入每 10 秒闪一次的循环。 */
@@ -385,7 +389,7 @@ static double waitForSettle(void)
     double last = activityStamp();
     double lastChange = 0;
 
-    logmsg("  等待系统收尾（色彩配置需连续 %d 秒无变化，至少等 %d 秒）",
+    logmsg("  等待系统收尾（色彩配置需连续 %d 秒无变化，至少等 %.1f 秒）",
            QUIET_SEC, MIN_SETTLE_SEC);
 
     for (;;) {

@@ -269,7 +269,7 @@ static int doFix(int round)
     saveState(ow, oh, ohz, origId);
 
     int e1 = switchTo(d, alt);
-    usleep(1500000);
+    usleep(700000);   /* 30Hz 停留时间，与 watcher 的 SWITCH_HOLD_US 一致 */
 
     CGDisplayModeRef back = resolveMode(d, origId, ow, oh, ohz, cur);
     int e2 = back ? switchTo(d, back) : -1;
