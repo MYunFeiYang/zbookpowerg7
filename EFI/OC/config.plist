@@ -767,6 +767,10 @@
 				</data>
 				<key>framebuffer-con1-index</key>
 				<integer>3</integer>
+				<key>framebuffer-con1-preferred-lspcon-mode</key>
+				<data>
+				AAAAAA==
+				</data>
 				<key>framebuffer-con1-type</key>
 				<data>
 				AAgAAA==
