@@ -767,6 +767,10 @@
 				</data>
 				<key>framebuffer-con1-index</key>
 				<integer>3</integer>
+				<key>framebuffer-con1-type</key>
+				<data>
+				AAgAAA==
+				</data>
 				<key>framebuffer-con3-flags</key>
 				<data>
 				xwEAAA==

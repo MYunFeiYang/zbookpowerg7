@@ -89,8 +89,15 @@ bash hdmi-recolor/bootstrap.sh      # 编译 + 装 LaunchAgent + 自检
 
 - **只能事后修，做不到无感**：约 6.5 秒延迟 + 闪一下。这 6.5 秒是刻意等 WindowServer/ColorSync
   收尾的下限，太早动手会被系统覆盖（实测过）；若 ColorSync 重写更晚会自动续等。
-- **红不红只能靠眼睛判断**：已实测封死的客观判红手段——`CGGetDisplayTransferByTable`
-  （外接屏返回 1001）、`vcgt`（当前 profile 无此 tag）、截屏（帧缓冲中性）。
+- **红不红只能靠眼睛判断**（11-27 泛红态实测确认）：泛红态外接屏 gamma 表 R/G/B 五点
+  `0.0000/0.2502/0.5005/0.7507/1.0000`，与正常态逐点相同；截屏平均 RGB `86.51/92.61/111.84`
+  亦相同；`vcgt` 无 tag；ICC 每次切档重新生成（两次正常态 md5 不同），均不能判红。
+  注意 `CGGetDisplayTransferByTable` API 本身可用（err=0/actual=1024），旧记"外接屏返回 1001"错误
+  （疑为旧调用缓冲区不足）；但本机泛红不改变 gamma 值，所以仍无法用该 API 判红。
+  用户态读 LSPCON DPCD 仍不可行（`IOI2CTransactionTypes=19` 不含 native AUX）。
+  显示器侧 DDC/CI 也测不出（13:06 泛红态全量 VCP 与正常态逐项相同，diff 0 行，
+  用 jworrsf/ddcctl fork 读 PHL 241B8Q）⇒ 主机侧/显示器侧/上游/寄存器四路全封，
+  泛红发生在双方都读不到的 LSPCON 输出/链路层，只能靠人眼。
   所以是"每次插拔都无条件修一次"，而不是"检测到红了才修"。
 - **抑制窗口 15 秒（修复后）**：自身修复会尾随出两批 framebuffer 事件（+7s / +17s），
   窗口短于 10 秒会形成每 10 秒闪一次的循环。真实断开连接会立即解除抑制。
